@@ -1,1 +1,58 @@
-#mtoc
+# dry
+[![License MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/moncho/dry#license-mit)
+
+**dry** is an interactive console application that connects to a Docker host, shows the list of containers and offers a few Docker commands to run on them.
+
+![Screenshot](https://raw.github.com/moncho/dry/master/docs/dry.png "dry Screenshot")
+
+It can be used as alternative to the following commands of the official Docker cli:
+
+* kill
+* logs
+* ps
+* rm
+* stats
+* start
+* stop
+
+The application is still in alpha stage, but usable.
+
+ ***stats*** and ***logs*** commands are not working properly.
+
+### Installation
+
+Implemented in Go, make sure that $GOPATH exists.
+
+```
+$ go get github.com/moncho/dry
+$ cd $GOPATH/src/github.com/moncho/dry
+$ make install
+```
+
+A mechanism to install binaries will be provided in the future.
+
+### Usage
+
+Open a console, type ```dry```. It will connect to whatever host defined in **$DOCKER_HOST** environment variable.
+
+```dry -p``` launches dry with [pprof](https://golang.org/pkg/net/http/pprof/) package active.
+
+### Contributing ###
+All contributions are welcome.
+
+* Fork the project.
+* Make changes on a topic branch.
+* Pull request.
+
+## Copyright and license
+
+Code released under the MIT license. See
+[LICENSE](https://github.com/moncho/dry/blob/master/LICENSE) for the full license text.
+
+## Credits
+
+Built on top of:
+* [termbox](https://github.com/nsf/termbox-go)
+* [go-dockerclient](https://github.com/fsouza/go-dockerclient)
+
+Also reused some code and ideas from the [Docker project](https://github.com/docker/docker) and [mop](https://github.com/michaeldv/mop).
