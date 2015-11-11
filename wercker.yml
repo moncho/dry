@@ -1,0 +1,53 @@
+box: monochromegane/golang-xc
+build:
+  steps:
+    - setup-go-workspace
+    - script:
+        name: go get
+        code: |
+          go version
+          godep restore
+    - script:
+        name: go test
+        code: |
+          godep go test ./...
+    - script:
+        name: goxc build & archive
+        code: |
+          GODEPPATH=`godep path`
+          export GOPATH="$GODEPPATH:$GOPATH"
+          goxc -tasks='xc archive' -bc 'linux windows darwin' -d $WERCKER_OUTPUT_DIR/ -resources-include='README*' -n pt
+    - script:
+        name: output release tag
+        code: |
+          git describe --tags --exact --match 'v*' > $WERCKER_OUTPUT_DIR/.release_tag || true
+deploy:
+  steps:
+    - script:
+        name: restore release tag
+        code: |
+          export RELEASE_TAG=$(cat .release_tag)
+    - wercker/github-create-release:
+        token: $GITHUB_TOKEN
+        tag: $RELEASE_TAG
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: snapshot/dry_linux_386.tar.gz
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: snapshot/dry_linux_amd64.tar.gz
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: snapshot/dry_linux_arm.tar.gz
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: snapshot/dry_darwin_386.zip
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: snapshot/dry_darwin_amd64.zip
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: snapshot/dry_windows_386.zip
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: snapshot/dry_windows_amd64.zip
