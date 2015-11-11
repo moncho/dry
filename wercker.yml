@@ -16,7 +16,7 @@ build:
         code: |
           GODEPPATH=`godep path`
           export GOPATH="$GODEPPATH:$GOPATH"
-          goxc -tasks='xc archive' -bc 'linux windows darwin' -d $WERCKER_OUTPUT_DIR/ -resources-include='README*' -n pt
+          goxc -tasks='xc archive' -bc 'linux windows darwin' -d $WERCKER_OUTPUT_DIR/ -resources-include='README*' -n dry
     - script:
         name: output release tag
         code: |
