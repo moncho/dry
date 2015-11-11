@@ -1,0 +1,49 @@
+{
+	"ImportPath": "github.com/moncho/dry",
+	"GoVersion": "go1.5.1",
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.7.3",
+			"Rev": "55eb11d21d2a31a3cc93838241d04800f52e823d"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/random",
+			"Comment": "v1.4.1-6830-g9a13c2d",
+			"Rev": "9a13c2dc79cc868ba3a863137ba27297314167e4"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/stringid",
+			"Comment": "v1.4.1-6830-g9a13c2d",
+			"Rev": "9a13c2dc79cc868ba3a863137ba27297314167e4"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/stringutils",
+			"Comment": "v1.4.1-6830-g9a13c2d",
+			"Rev": "9a13c2dc79cc868ba3a863137ba27297314167e4"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/units",
+			"Comment": "v1.4.1-6830-g9a13c2d",
+			"Rev": "9a13c2dc79cc868ba3a863137ba27297314167e4"
+		},
+		{
+			"ImportPath": "github.com/fsouza/go-dockerclient",
+			"Rev": "ef410296f87750305e1e1acf9ad2ba3833dcb004"
+		},
+		{
+			"ImportPath": "github.com/jessevdk/go-flags",
+			"Comment": "v1-322-gfc93116",
+			"Rev": "fc93116606d0a71d7e9de0ad5734fdb4b8eae834"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-runewidth",
+			"Comment": "travisish-37-g12e0ff7",
+			"Rev": "12e0ff74603c9a3209d8bf84f8ab349fe1ad9477"
+		},
+		{
+			"ImportPath": "github.com/nsf/termbox-go",
+			"Rev": "4f9984b1541648f3a03da24e0f5987fd1c64247d"
+		}
+	]
+}
