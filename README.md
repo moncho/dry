@@ -4,7 +4,7 @@
 
 **dry** is an interactive console application that connects to a Docker host, shows the list of containers and offers a few Docker commands to run on them.
 
-![Screenshot](https://raw.github.com/moncho/dry/master/docs/dry.png "dry Screenshot")
+[![asciicast](https://asciinema.org/a/1cqxo1sy61ad6x5upnmwbhs5f.png)](https://asciinema.org/a/1cqxo1sy61ad6x5upnmwbhs5f)
 
 It can be used as alternative to the following commands of the official Docker cli:
 
