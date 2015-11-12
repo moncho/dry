@@ -59,9 +59,12 @@ func (c *ContainerFormatter) Image() string {
 	if c.c.Image == "" {
 		return "<no image>"
 	}
-	if c.trunc {
-		return stringutils.Truncate(c.c.Image, 20)
-	}
+	//No ImageID field on the go-docker API yet
+	//if c.trunc {
+	//if stringid.TruncateID(c.c.ImageID) == stringid.TruncateID(c.c.Image) {
+	//			return stringutils.Truncate(c.c.Image, 12)
+	//		}
+	//}
 	return c.c.Image
 }
 

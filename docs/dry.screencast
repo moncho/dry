@@ -1,0 +1,2278 @@
+{
+  "version": 1,
+  "width": 181,
+  "height": 24,
+  "duration": 43.859681,
+  "command": "/bin/zsh",
+  "title": "dry",
+  "env": {
+    "TERM": "xterm-256color",
+    "SHELL": "/bin/zsh"
+  },
+  "stdout": [
+    [
+      0.053813,
+      "\u001b]7;file://mongopro2.local/opt/gocode/src/github.com/moncho/dry\u0007"
+    ],
+    [
+      0.053147,
+      "\u001b[1m\u001b[7m%\u001b[27m\u001b[1m\u001b[0m                                                                                                                                                                                    \r \r"
+    ],
+    [
+      0.000259,
+      "\u001b]2;moncho@mongopro2\u0007\u001b]1;..om/moncho/dry\u0007"
+    ],
+    [
+      0.002755,
+      "\u001b]7;file://mongopro2.local/opt/gocode/src/github.com/moncho/dry\u0007"
+    ],
+    [
+      0.024338,
+      "\r\u001b[0m\u001b[27m\u001b[24m\u001b[J\u001b[01;32m➜ \u001b[01;32m \u001b[36mdry \u001b[01;34mgit:(\u001b[31mmaster\u001b[34m) \u001b[33m✗\u001b[00m\u001b[00m\u001b[01;34m \u001b[00m"
+    ],
+    [
+      0.000017,
+      "\u001b[K"
+    ],
+    [
+      0.000142,
+      "\u001b[?1h\u001b="
+    ],
+    [
+      0.617444,
+      "e"
+    ],
+    [
+      0.000252,
+      "\u0008eva"
+    ],
+    [
+      0.000297,
+      "l "
+    ],
+    [
+      0.000468,
+      "\""
+    ],
+    [
+      0.000163,
+      "$"
+    ],
+    [
+      0.000159,
+      "("
+    ],
+    [
+      0.000014,
+      "d"
+    ],
+    [
+      0.000172,
+      "o"
+    ],
+    [
+      0.000106,
+      "c"
+    ],
+    [
+      0.000048,
+      "k"
+    ],
+    [
+      0.000108,
+      "e"
+    ],
+    [
+      0.000120,
+      "r"
+    ],
+    [
+      0.000213,
+      "-m"
+    ],
+    [
+      0.000115,
+      "a"
+    ],
+    [
+      0.000004,
+      "c"
+    ],
+    [
+      0.000117,
+      "h"
+    ],
+    [
+      0.000111,
+      "i"
+    ],
+    [
+      0.000108,
+      "n"
+    ],
+    [
+      0.000324,
+      "e "
+    ],
+    [
+      0.000128,
+      "e"
+    ],
+    [
+      0.000108,
+      "n"
+    ],
+    [
+      0.000745,
+      "v"
+    ],
+    [
+      0.000011,
+      " defaul"
+    ],
+    [
+      0.000223,
+      "t"
+    ],
+    [
+      0.000007,
+      ")"
+    ],
+    [
+      0.000131,
+      "\""
+    ],
+    [
+      1.137814,
+      "\u001b[?1l\u001b\u003e"
+    ],
+    [
+      0.000102,
+      "\r\r\n"
+    ],
+    [
+      0.000806,
+      "\u001b]2;eval \"$(docker-machine env default)\"\u0007\u001b]1;eval\u0007"
+    ],
+    [
+      0.244811,
+      "\u001b[1m\u001b[7m%\u001b[27m\u001b[1m\u001b[0m                                                                                                                                                                                    \r \r"
+    ],
+    [
+      0.000068,
+      "\u001b]2;moncho@mongopro2\u0007"
+    ],
+    [
+      0.000043,
+      "\u001b]1;..om/moncho/dry\u0007"
+    ],
+    [
+      0.002958,
+      "\u001b]7;file://mongopro2.local/opt/gocode/src/github.com/moncho/dry\u0007"
+    ],
+    [
+      0.021180,
+      "\r\u001b[0m\u001b[27m\u001b[24m\u001b[J\u001b[01;32m➜ \u001b[01;32m \u001b[36mdry \u001b[01;34mgit:(\u001b[31mmaster\u001b[34m) \u001b[33m✗\u001b[00m\u001b[00m\u001b[01;34m \u001b[00m"
+    ],
+    [
+      0.000008,
+      "\u001b[K"
+    ],
+    [
+      0.000031,
+      "\u001b[?1h\u001b="
+    ],
+    [
+      1.009039,
+      "."
+    ],
+    [
+      0.470386,
+      "\u0008./"
+    ],
+    [
+      0.564398,
+      "d"
+    ],
+    [
+      0.191780,
+      "r"
+    ],
+    [
+      0.264187,
+      "y"
+    ],
+    [
+      0.618252,
+      "\u001b[?1l\u001b\u003e"
+    ],
+    [
+      0.000029,
+      "\r\r\n"
+    ],
+    [
+      0.001333,
+      "\u001b]2;./dry\u0007"
+    ],
+    [
+      0.000009,
+      "\u001b]1;./dry\u0007"
+    ],
+    [
+      0.010493,
+      "\u001b[34mINFO\u001b[0m[0000] Launching dry true                           \r\n"
+    ],
+    [
+      0.027639,
+      "\u001b[?1049h\u001b[?1h\u001b="
+    ],
+    [
+      0.000010,
+      "\u001b[?25l\u001b[H\u001b[2J"
+    ],
+    [
+      0.002635,
+      "\u001b(B\u001b[m\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:31am PST"
+    ],
+    [
+      0.000973,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.002796,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000033,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.004420,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.001450,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.001494,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.002155,
+      "\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.001103,
+      "\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.006148,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.795794,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000015,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.001333,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:32am PST"
+    ],
+    [
+      0.001080,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.001045,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000973,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002730,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.001094,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000891,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000885,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000924,
+      "\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004461,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.189869,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000007,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.001310,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:32am PST"
+    ],
+    [
+      0.001038,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000972,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000982,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002713,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.000942,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000967,
+      "\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000884,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000888,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004645,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.208568,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000007,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.001323,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:32am PST"
+    ],
+    [
+      0.001008,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.001066,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.001003,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002902,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.001035,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.001017,
+      "\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.001065,
+      "\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000948,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004837,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.183072,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000015,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.001432,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:32am PST"
+    ],
+    [
+      0.001011,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.001015,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000960,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002767,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.000929,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000890,
+      "\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000880,
+      "\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000907,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004559,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.421068,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000008,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.001411,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:33am PST"
+    ],
+    [
+      0.001064,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.001020,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.001008,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002891,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.000947,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000933,
+      "\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000947,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000901,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004451,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.192977,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000022,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.001383,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:33am PST"
+    ],
+    [
+      0.001011,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000991,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000946,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002696,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.000917,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000930,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000908,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000912,
+      "\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004484,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.196695,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000031,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.001340,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:33am PST"
+    ],
+    [
+      0.000991,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000968,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000961,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.003017,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.000938,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000963,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000903,
+      "\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000892,
+      "\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004580,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.687490,
+      "\u001b[1;175H4"
+    ],
+    [
+      0.875911,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000009,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.003022,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:35am PST"
+    ],
+    [
+      0.000970,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000954,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000911,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002744,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1HCONTAINER ID   ↓IMAGE                COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.000894,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000908,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[9;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000927,
+      "\u001b[10;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.000935,
+      "\u001b[11;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.004552,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      1.107223,
+      "\u001b[1;175H6"
+    ],
+    [
+      0.085013,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                            \u001b[10;1H                                                                                                                                                  \u001b[11;1H                                                                                                                                          \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000009,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.003636,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:36am PST"
+    ],
+    [
+      0.000946,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000949,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000994,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002750,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1HCONTAINER ID   IMAGE                 COMMAND                  CREATED               ↓STATUS               PORTS                 NAMES"
+    ],
+    [
+      0.000972,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000937,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[9;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000911,
+      "\u001b[10;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.000919,
+      "\u001b[11;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.004929,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.895589,
+      "\u001b[1;175H7"
+    ],
+    [
+      0.044570,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                            \u001b[10;1H                                                                                                                                                  \u001b[11;1H                                                                                                                                          \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000006,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.003099,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:37am PST"
+    ],
+    [
+      0.001573,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.001441,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.001413,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.004314,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1HCONTAINER ID   IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 ↓NAMES"
+    ],
+    [
+      0.002023,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[8;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.001011,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000974,
+      "\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000991,
+      "\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.005546,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.934480,
+      "\u001b[1;175H8"
+    ],
+    [
+      0.363010,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                      \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                            \u001b[10;1H                                                                                                                                          \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                        "
+    ],
+    [
+      0.000015,
+      " \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.003125,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:38am PST"
+    ],
+    [
+      0.000954,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000909,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000882,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002731,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.000884,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000899,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000888,
+      "\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000975,
+      "\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004445,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.619322,
+      "\u001b[1;175H9"
+    ],
+    [
+      0.673796,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000007,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.001244,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:39am PST"
+    ],
+    [
+      0.000968,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000976,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.001004,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002676,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.000881,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000894,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000921,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000926,
+      "\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004439,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.237028,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000008,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.001254,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:40am PST"
+    ],
+    [
+      0.000944,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000980,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000997,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002724,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.000933,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000910,
+      "\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000937,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.001008,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004500,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.451798,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000025,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.001313,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:40am PST"
+    ],
+    [
+      0.000944,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000942,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000989,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002667,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.000893,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000915,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000943,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000908,
+      "\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004440,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.591730,
+      "\u001b[1;175H1"
+    ],
+    [
+      0.246252,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                                                  \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         "
+    ],
+    [
+      0.000009,
+      "\u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.004419,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b[1;169H1:47:41am PST"
+    ],
+    [
+      0.000901,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000889,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000916,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002668,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                   PORTS                 NAMES"
+    ],
+    [
+      0.000899,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Exited (0) 2 minutes ago                       berserk_keller"
+    ],
+    [
+      0.000888,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes             80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000919,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000930,
+      "\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                        adoring_kilby"
+    ],
+    [
+      0.000893,
+      "\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                        romantic_babbage"
+    ],
+    [
+      0.000881,
+      "\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                        cocky_chandrasekhar"
+    ],
+    [
+      0.000946,
+      "\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000888,
+      "\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                        admiring_wilson"
+    ],
+    [
+      0.000920,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                        small_pike"
+    ],
+    [
+      0.000941,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004447,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.732135,
+      "\u001b[1;175H2"
+    ],
+    [
+      0.859670,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                        \u001b[8;1H                                                                                                                                                 \u001b[9;1H                                                                                                                                               \u001b[10;1H                                                                                                                                             \u001b[11;1H                                                                                                                                                \u001b[12;1H                                                                "
+    ],
+    [
+      0.000045,
+      "                                                                                   \u001b[13;1H                                                                                                                                                      \u001b[14;1H                                                                                                                                               \u001b[15;1H                                                                                                                                                  \u001b[16;1H                                                                                                                                             \u001b[17;1H                                                                                                                                                     \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;"
+    ],
+    [
+      0.000014,
+      "91H    "
+    ],
+    [
+      0.002080,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b[1;169H1:47:43am PST"
+    ],
+    [
+      0.001017,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.001011,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.001045,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.003016,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                   PORTS                 NAMES"
+    ],
+    [
+      0.000995,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Exited (0) 2 minutes ago                       berserk_keller"
+    ],
+    [
+      0.001003,
+      "\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes             80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000996,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000888,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                        adoring_kilby"
+    ],
+    [
+      0.000971,
+      "\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                        romantic_babbage"
+    ],
+    [
+      0.000918,
+      "\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                        cocky_chandrasekhar"
+    ],
+    [
+      0.001029,
+      "\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000923,
+      "\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                        admiring_wilson"
+    ],
+    [
+      0.000923,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                        small_pike"
+    ],
+    [
+      0.000912,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004544,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.234864,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                        \u001b[8;1H                                                                                                                                                 \u001b[9;1H                                                                                                                                               \u001b[10;1H                                                                                                                                             \u001b[11;1H                                                                                                                                                \u001b[12;1H                                                                "
+    ],
+    [
+      0.000010,
+      "                                                                                   \u001b[13;1H                                                                                                                                                      \u001b[14;1H                                                                                                                                               \u001b[15;1H                                                                                                                                                  \u001b[16;1H                                                                                                                                             \u001b[17;1H                                                                                                                                                     \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;"
+    ],
+    [
+      0.000027,
+      "91H    "
+    ],
+    [
+      0.001386,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b[1;169H1:47:43am PST"
+    ],
+    [
+      0.001011,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.001012,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.001047,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002948,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                   PORTS                 NAMES"
+    ],
+    [
+      0.000967,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Exited (0) 2 minutes ago                       berserk_keller"
+    ],
+    [
+      0.000949,
+      "\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes             80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.001030,
+      "\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000928,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                        adoring_kilby"
+    ],
+    [
+      0.000930,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                        romantic_babbage"
+    ],
+    [
+      0.000947,
+      "\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                        cocky_chandrasekhar"
+    ],
+    [
+      0.000957,
+      "\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000922,
+      "\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                        admiring_wilson"
+    ],
+    [
+      0.000934,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                        small_pike"
+    ],
+    [
+      0.000904,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.005791,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.214600,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                        \u001b[8;1H                                                                                                                                                 \u001b[9;1H                                                                                                                                               \u001b[10;1H                                                                                                                                             \u001b[11;1H                                                                                                                                                \u001b[12;1H                                                                "
+    ],
+    [
+      0.000013,
+      "                                                                                   \u001b[13;1H                                                                                                                                                      \u001b[14;1H                                                                                                                                               \u001b[15;1H                                                                                                                                                  \u001b[16;1H                                                                                                                                             \u001b[17;1H                                                                                                                                                     \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;"
+    ],
+    [
+      0.000034,
+      "91H    "
+    ],
+    [
+      0.001426,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b[1;169H1:47:43am PST"
+    ],
+    [
+      0.000986,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000974,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000900,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002692,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                   PORTS                 NAMES"
+    ],
+    [
+      0.000954,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Exited (0) 2 minutes ago                       berserk_keller"
+    ],
+    [
+      0.000921,
+      "\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes             80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000922,
+      "\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000940,
+      "\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                        adoring_kilby"
+    ],
+    [
+      0.000905,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                        romantic_babbage"
+    ],
+    [
+      0.000924,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                        cocky_chandrasekhar"
+    ],
+    [
+      0.000953,
+      "\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000928,
+      "\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                        admiring_wilson"
+    ],
+    [
+      0.000974,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                        small_pike"
+    ],
+    [
+      0.000938,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004579,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.271428,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                        \u001b[8;1H                                                                                                                                                 \u001b[9;1H                                                                                                                                               \u001b[10;1H                                                                                                                                             \u001b[11;1H                                                                                                                                                \u001b[12;1H                                                                "
+    ],
+    [
+      0.000010,
+      "                                                                                   \u001b[13;1H                                                                                                                                                      \u001b[14;1H                                                                                                                                               \u001b[15;1H                                                                                                                                                  \u001b[16;1H                                                                                                                                             \u001b[17;1H                                                                                                                                                     \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;"
+    ],
+    [
+      0.000007,
+      "91H    "
+    ],
+    [
+      0.001488,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b[1;169H1:47:43am PST"
+    ],
+    [
+      0.001015,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.001088,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000961,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002796,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                   PORTS                 NAMES"
+    ],
+    [
+      0.000927,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Exited (0) 2 minutes ago                       berserk_keller"
+    ],
+    [
+      0.000928,
+      "\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes             80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000892,
+      "\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000880,
+      "\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                        adoring_kilby"
+    ],
+    [
+      0.000929,
+      "\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                        romantic_babbage"
+    ],
+    [
+      0.000911,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                        cocky_chandrasekhar"
+    ],
+    [
+      0.000900,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000932,
+      "\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                        admiring_wilson"
+    ],
+    [
+      0.000921,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                        small_pike"
+    ],
+    [
+      0.000941,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004426,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.327898,
+      "\u001b[1;175H4"
+    ],
+    [
+      1.003571,
+      "\u001b[1;175H5"
+    ],
+    [
+      0.516039,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                        \u001b[8;1H                                                                                                                                                 \u001b[9;1H                                                                                                                                               \u001b[10;1H                                                                                                                                             \u001b[11;1H                                                                                                                                                \u001b[12;1H                                                                "
+    ],
+    [
+      0.000012,
+      "                                                                                   \u001b[13;1H                                                                                                                                                      \u001b[14;1H                                                                                                                                               \u001b[15;1H                                                                                                                                                  \u001b[16;1H                                                                                                                                             \u001b[17;1H                                                                                                                                                     \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;"
+    ],
+    [
+      0.000016,
+      "91H    "
+    ],
+    [
+      0.001263,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b[1;169H1:47:45am PST"
+    ],
+    [
+      0.000903,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000885,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000937,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002778,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                   PORTS                 NAMES"
+    ],
+    [
+      0.000966,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Exited (0) 2 minutes ago                       berserk_keller"
+    ],
+    [
+      0.000949,
+      "\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes             80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000982,
+      "\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000891,
+      "\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                        adoring_kilby"
+    ],
+    [
+      0.000905,
+      "\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                        romantic_babbage"
+    ],
+    [
+      0.000871,
+      "\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                        cocky_chandrasekhar"
+    ],
+    [
+      0.000942,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000890,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                        admiring_wilson"
+    ],
+    [
+      0.000880,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                        small_pike"
+    ],
+    [
+      0.000932,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004620,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.462599,
+      "\u001b[1;175H6"
+    ],
+    [
+      0.997104,
+      "\u001b[1;175H7"
+    ],
+    [
+      1.004572,
+      "\u001b[1;175H8"
+    ],
+    [
+      0.148315,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                        \u001b[8;1H                                                                                                                                                 \u001b[9;1H                                                                                                                                               \u001b[10;1H                                                                                                                                             \u001b[11;1H                                                                                                                                                \u001b[12;1H                                                                "
+    ],
+    [
+      0.000012,
+      "                                                                                   \u001b[13;1H                                                                                                                                                      \u001b[14;1H                                                                                                                                               \u001b[15;1H                                                                                                                                                  \u001b[16;1H                                                                                                                                             \u001b[17;1H                                                                                                                                                     \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;"
+    ],
+    [
+      0.000013,
+      "91H    "
+    ],
+    [
+      0.001408,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b[1;169H1:47:48am PST"
+    ],
+    [
+      0.000926,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.001029,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000964,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002797,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                   PORTS                 NAMES"
+    ],
+    [
+      0.000897,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Exited (0) 2 minutes ago                       berserk_keller"
+    ],
+    [
+      0.000888,
+      "\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes             80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000944,
+      "\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000945,
+      "\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                        adoring_kilby"
+    ],
+    [
+      0.000886,
+      "\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                        romantic_babbage"
+    ],
+    [
+      0.000939,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                        cocky_chandrasekhar"
+    ],
+    [
+      0.000920,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000978,
+      "\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                        admiring_wilson"
+    ],
+    [
+      0.000932,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                        small_pike"
+    ],
+    [
+      0.000967,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.005151,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.226706,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                        \u001b[8;1H                                                                                                                                                 \u001b[9;1H                                                                                                                                               \u001b[10;1H                                                                                                                                             \u001b[11;1H                                                                                                                                                \u001b[12;1H                                                                "
+    ],
+    [
+      0.000009,
+      "                                                                                   \u001b[13;1H                                                                                                                                                      \u001b[14;1H                                                                                                                                               \u001b[15;1H                                                                                                                                                  \u001b[16;1H                                                                                                                                             \u001b[17;1H                                                                                                                                                     \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;"
+    ],
+    [
+      0.000030,
+      "91H    "
+    ],
+    [
+      0.001419,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b[1;169H1:47:48am PST"
+    ],
+    [
+      0.001042,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.001018,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.001030,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002807,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                   PORTS                 NAMES"
+    ],
+    [
+      0.000940,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Exited (0) 2 minutes ago                       berserk_keller"
+    ],
+    [
+      0.000887,
+      "\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes             80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000956,
+      "\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000941,
+      "\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                        adoring_kilby"
+    ],
+    [
+      0.000902,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                        romantic_babbage"
+    ],
+    [
+      0.000936,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                        cocky_chandrasekhar"
+    ],
+    [
+      0.000889,
+      "\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000921,
+      "\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                        admiring_wilson"
+    ],
+    [
+      0.000888,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                        small_pike"
+    ],
+    [
+      0.000933,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004577,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.184838,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                        \u001b[8;1H                                                                                                                                                 \u001b[9;1H                                                                                                                                               \u001b[10;1H                                                                                                                                             \u001b[11;1H                                                                                                                                                \u001b[12;1H                                                                "
+    ],
+    [
+      0.000011,
+      "                                                                                   \u001b[13;1H                                                                                                                                                      \u001b[14;1H                                                                                                                                               \u001b[15;1H                                                                                                                                                  \u001b[16;1H                                                                                                                                             \u001b[17;1H                                                                                                                                                     \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;"
+    ],
+    [
+      0.000020,
+      "91H    "
+    ],
+    [
+      0.001356,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b[1;169H1:47:48am PST"
+    ],
+    [
+      0.000986,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000937,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000958,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002658,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                   PORTS                 NAMES"
+    ],
+    [
+      0.000890,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Exited (0) 2 minutes ago                       berserk_keller"
+    ],
+    [
+      0.000881,
+      "\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes             80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000926,
+      "\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000886,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                        adoring_kilby"
+    ],
+    [
+      0.000897,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                        romantic_babbage"
+    ],
+    [
+      0.000912,
+      "\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                        cocky_chandrasekhar"
+    ],
+    [
+      0.000891,
+      "\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000931,
+      "\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                        admiring_wilson"
+    ],
+    [
+      0.000879,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                        small_pike"
+    ],
+    [
+      0.000925,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004429,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.188778,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                        \u001b[8;1H                                                                                                                                                 \u001b[9;1H                                                                                                                                               \u001b[10;1H                                                                                                                                             \u001b[11;1H                                                                                                                                                \u001b[12;1H                                                                "
+    ],
+    [
+      0.000049,
+      "                                                                                   \u001b[13;1H                                                                                                                                                      \u001b[14;1H                                                                                                                                               \u001b[15;1H                                                                                                                                                  \u001b[16;1H                                                                                                                                             \u001b[17;1H                                                                                                                                                     \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;"
+    ],
+    [
+      0.000009,
+      "91H    "
+    ],
+    [
+      0.001454,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b[1;169H1:47:49am PST"
+    ],
+    [
+      0.001122,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.001095,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000977,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002839,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                   PORTS                 NAMES"
+    ],
+    [
+      0.000981,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Exited (0) 2 minutes ago                       berserk_keller"
+    ],
+    [
+      0.000961,
+      "\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes             80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000945,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000922,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                        adoring_kilby"
+    ],
+    [
+      0.000948,
+      "\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                        romantic_babbage"
+    ],
+    [
+      0.000984,
+      "\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                        cocky_chandrasekhar"
+    ],
+    [
+      0.000892,
+      "\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000916,
+      "\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                        admiring_wilson"
+    ],
+    [
+      0.000902,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                        small_pike"
+    ],
+    [
+      0.000922,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004463,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.190227,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                        \u001b[8;1H                                                                                                                                                 \u001b[9;1H                                                                                                                                               \u001b[10;1H                                                                                                                                             \u001b[11;1H                                                                                                                                                \u001b[12;1H                                                                "
+    ],
+    [
+      0.000013,
+      "                                                                                   \u001b[13;1H                                                                                                                                                      \u001b[14;1H                                                                                                                                               \u001b[15;1H                                                                                                                                                  \u001b[16;1H                                                                                                                                             \u001b[17;1H                                                                                                                                                     \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;"
+    ],
+    [
+      0.000018,
+      "91H    "
+    ],
+    [
+      0.001483,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b[1;169H1:47:49am PST"
+    ],
+    [
+      0.000964,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000977,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000954,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002891,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                   PORTS                 NAMES"
+    ],
+    [
+      0.000890,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Exited (0) 2 minutes ago                       berserk_keller"
+    ],
+    [
+      0.000919,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes             80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000946,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000940,
+      "\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                        adoring_kilby"
+    ],
+    [
+      0.000888,
+      "\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                        romantic_babbage"
+    ],
+    [
+      0.000920,
+      "\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                        cocky_chandrasekhar"
+    ],
+    [
+      0.000963,
+      "\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000900,
+      "\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                        admiring_wilson"
+    ],
+    [
+      0.000940,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                        small_pike"
+    ],
+    [
+      0.000909,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004470,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.237966,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                        \u001b[8;1H                                                                                                                                                 \u001b[9;1H                                                                                                                                               \u001b[10;1H                                                                                                                                             \u001b[11;1H                                                                                                                                                \u001b[12;1H                                                                "
+    ],
+    [
+      0.000010,
+      "                                                                                   \u001b[13;1H                                                                                                                                                      \u001b[14;1H                                                                                                                                               \u001b[15;1H                                                                                                                                                  \u001b[16;1H                                                                                                                                             \u001b[17;1H                                                                                                                                                     \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;"
+    ],
+    [
+      0.000032,
+      "91H    "
+    ],
+    [
+      0.001279,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b[1;169H1:47:49am PST"
+    ],
+    [
+      0.000872,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000874,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000912,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002667,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                   PORTS                 NAMES"
+    ],
+    [
+      0.000877,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Exited (0) 2 minutes ago                       berserk_keller"
+    ],
+    [
+      0.000912,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 minutes             80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000968,
+      "\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000907,
+      "\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                        adoring_kilby"
+    ],
+    [
+      0.000969,
+      "\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                        romantic_babbage"
+    ],
+    [
+      0.000979,
+      "\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                        cocky_chandrasekhar"
+    ],
+    [
+      0.000953,
+      "\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000912,
+      "\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                        admiring_wilson"
+    ],
+    [
+      0.000905,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                        small_pike"
+    ],
+    [
+      0.000901,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours              80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004895,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.696938,
+      "\u001b[1;174H50"
+    ],
+    [
+      0.995371,
+      "\u001b[1;175H1"
+    ],
+    [
+      0.117806,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                        \u001b[8;1H                                                                                                                                                 \u001b[9;1H                                                                                                                                               \u001b[10;1H                                                                                                                                             \u001b[11;1H                                                                                                                                                \u001b[12;1H                                                                "
+    ],
+    [
+      0.000022,
+      "                                                                                   \u001b[13;1H                                                                                                                                                      \u001b[14;1H                                                                                                                                               \u001b[15;1H                                                                                                                                                  \u001b[16;1H                                                                                                                                             \u001b[17;1H                                                                                                                                                     \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;"
+    ],
+    [
+      0.000025,
+      "91H    "
+    ],
+    [
+      0.003715,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HAll Containers\u001b(B\u001b[m\u001b[38;5;1m\u001b[1;25HContainer with id \u001b(B\u001b[m\u001b[38;5;7m06befb639e6590770300906bc877286f00993ac977159e6b759b709dcf88b724\u001b(B\u001b[m\u001b[38;5;1m\u001b[1;108Hrestarted\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;169H1:47:51am PST"
+    ],
+    [
+      0.000890,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000958,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000992,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002594,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                  PORTS                 NAMES"
+    ],
+    [
+      0.000880,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up Less than a second   80/tcp, 443/tcp       berserk_keller"
+    ],
+    [
+      0.000877,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 3 minutes            80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000914,
+      "\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours             80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000926,
+      "\u001b[11;1H457b0283df64   docker/whalesay       \"/bin/bash\"              26 hours ago          Exited (0) 26 hours ago                       adoring_kilby"
+    ],
+    [
+      0.000892,
+      "\u001b[12;1H7e789ce3a799   docker/whalesay       \"cowsay really\"          26 hours ago          Exited (0) 26 hours ago                       romantic_babbage"
+    ],
+    [
+      0.000892,
+      "\u001b[13;1H83e871adcfed   docker/whalesay       \"cowsay asd\"             26 hours ago          Exited (0) 26 hours ago                       cocky_chandrasekhar"
+    ],
+    [
+      0.000914,
+      "\u001b[14;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours             80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000880,
+      "\u001b[15;1He006bab95874   docker/whalesay       \"cowsay bla\"             26 hours ago          Exited (0) 26 hours ago                       admiring_wilson"
+    ],
+    [
+      0.000916,
+      "\u001b[16;1He4d8e0804ef4   docker/whalesay       \"cowsay dry is the best\" 26 hours ago          Exited (0) 26 hours ago                       small_pike"
+    ],
+    [
+      0.000923,
+      "\u001b[17;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours             80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004717,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.860176,
+      "\u001b[1;175H2"
+    ],
+    [
+      0.998544,
+      "\u001b[1;175H3"
+    ],
+    [
+      0.942575,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H              \u001b[1;25H                                                                                  \u001b[1;108H         \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                       \u001b[8;1H                                                                                                                                                \u001b[9;1H                                                                                                                                              \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                 "
+    ],
+    [
+      0.000012,
+      "                              \u001b[12;1H                                                                                                                                                  \u001b[13;1H                                                                                                                                                     \u001b[14;1H                                                                                                                                              \u001b[15;1H                                                                                                                                                 \u001b[16;1H                                                                                                                                            \u001b[17;1H                                                                                                                                                    \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[2"
+    ],
+    [
+      0.000017,
+      "4;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.003520,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:47:54am PST"
+    ],
+    [
+      0.000970,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000928,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000914,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002835,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.000963,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[8;1H06befb639e65   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 2 seconds          80/tcp, 443/tcp       berserk_keller"
+    ],
+    [
+      0.000860,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[9;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 3 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000955,
+      "\u001b[10;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000979,
+      "\u001b[11;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000891,
+      "\u001b[12;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004554,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      1.041276,
+      "\u001b[1;175H5"
+    ],
+    [
+      1.002796,
+      "\u001b[1;175H6"
+    ],
+    [
+      0.999911,
+      "\u001b[1;175H7"
+    ],
+    [
+      0.997564,
+      "\u001b[1;175H8"
+    ],
+    [
+      1.003012,
+      "\u001b[1;175H9"
+    ],
+    [
+      0.999438,
+      "\u001b[1;172H8\u001b[1;174H00"
+    ],
+    [
+      0.219138,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                              \u001b[9;1H                                                                                                                                            \u001b[10;1H                                                                                                                                          \u001b[11;1H                                                                                                                                            \u001b[12;1H                                                                            "
+    ],
+    [
+      0.000099,
+      "                                                                      \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.003244,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b(B\u001b[m\u001b[38;5;1m\u001b[1;29HContainer with id \u001b(B\u001b[m\u001b[38;5;7m06befb639e6590770300906bc877286f00993ac977159e6b759b709dcf88b724\u001b(B\u001b[m\u001b[38;5;1m\u001b[1;112Hstopped\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;169H1:48:00am PST"
+    ],
+    [
+      0.001153,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000777,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000928,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.002609,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.000926,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 3 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000915,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.000941,
+      "\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000886,
+      "\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004474,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.761819,
+      "\u001b[1;175H1"
+    ],
+    [
+      0.996656,
+      "\u001b[1;175H2"
+    ],
+    [
+      2.262616,
+      "\u001b(B\u001b[m\u001b[1;1H        \u001b[1;10H                  \u001b[1;29H                                                                                  \u001b[1;112H       \u001b[1;169H             \u001b[2;1H      \u001b[2;8H     \u001b[2;14H                         \u001b[3;1H    \u001b[3;6H     \u001b[3;12H                                              \u001b[4;1H    \u001b[4;12H    \u001b[7;1H                                                                                                                                     \u001b[8;1H                                                                                                                                            \u001b[9;1H                                                                                                                                          \u001b[10;1H                                                                                                                                            \u001b[11;1H                                                                                                                         "
+    ],
+    [
+      0.000027,
+      "                         \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.001081,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;169H1:48:04am PST"
+    ],
+    [
+      0.000920,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[2;1HCONTAINER      CPU %                 MEM USAGE / LIMIT     MEM %                 NET I/O               BLOCK I/O"
+    ],
+    [
+      0.001012,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;1H26a30aa4def1   0.00%                 1.384 MB / 1.045 GB   0.13%                 0 B / 0 B             0 B / 0 B"
+    ],
+    [
+      0.005732,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.734122,
+      "\u001b[1;175H5"
+    ],
+    [
+      0.994035,
+      "\u001b[1;175H6"
+    ],
+    [
+      0.181268,
+      "\u001b(B\u001b[m\u001b[1;169H             \u001b[2;1H                                                                                                                \u001b[3;1H                                                                                                                \u001b[24;1H    \u001b[24;6H    \u001b[24;11H \u001b[24;13H       \u001b[24;21H                         \u001b[24;47H          \u001b[24;58H \u001b[24;60H      \u001b[24;67H    \u001b[24;72H    \u001b[24;77H       \u001b[24;85H     \u001b[24;91H    "
+    ],
+    [
+      0.001305,
+      "\u001b[1;1HShowing:\u001b(B\u001b[m\u001b[38;5;7m\u001b[1;10HRunning Containers\u001b[1;169H1:48:06am PST"
+    ],
+    [
+      0.000955,
+      "\u001b(B\u001b[m\u001b[2;1HDocker\u001b[2;8HHost:\u001b(B\u001b[m\u001b[38;5;7m\u001b[2;14Htcp://192.168.99.101:2376"
+    ],
+    [
+      0.000951,
+      "\u001b(B\u001b[m\u001b[3;1HCert\u001b[3;6HPath:\u001b(B\u001b[m\u001b[38;5;7m\u001b[3;12H/Users/moncho/.docker/machine/machines/default"
+    ],
+    [
+      0.000963,
+      "\u001b(B\u001b[m\u001b[4;1HTLS:\u001b(B\u001b[m\u001b[38;5;7m\u001b[4;12Htrue"
+    ],
+    [
+      0.004011,
+      "\u001b(B\u001b[m\u001b[38;5;2m\u001b[7;1H↓CONTAINER ID  IMAGE                 COMMAND                  CREATED               STATUS                PORTS                 NAMES"
+    ],
+    [
+      0.001008,
+      "\u001b(B\u001b[m\u001b[38;5;7m\u001b[8;1H26a30aa4def1   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 3 minutes          80/tcp, 443/tcp       sleepy_payne"
+    ],
+    [
+      0.000956,
+      "\u001b(B\u001b[m\u001b[38;5;243m\u001b[9;1H276fef44190b   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       some-nginx"
+    ],
+    [
+      0.001051,
+      "\u001b[10;1Hc323d46f7f9a   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       grave_swartz"
+    ],
+    [
+      0.000934,
+      "\u001b[11;1Head12bc1dd7c   nginx                 \"nginx -g 'daemon off;'\" 26 hours ago          Up 26 hours           80/tcp, 443/tcp       suspicious_perlman"
+    ],
+    [
+      0.004549,
+      "\u001b(B\u001b[m\u001b[24;1HH\u001b(B\u001b[m\u001b[38;5;7melp\u001b(B\u001b[m\u001b[24;6HQ\u001b(B\u001b[m\u001b[38;5;7muit\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;11H|\u001b(B\u001b[m\u001b[24;13HF1:\u001b(B\u001b[m\u001b[38;5;7mSort\u001b(B\u001b[m\u001b[24;21HF2:\u001b(B\u001b[m\u001b[38;5;7mToggle Show Containers\u001b(B\u001b[m\u001b[24;47HF5:\u001b(B\u001b[m\u001b[38;5;7mRefresh\u001b(B\u001b[m\u001b[38;5;4m\u001b[24;58H|\u001b(B\u001b[m\u001b[38;5;7m\u001b[24;60HR\u001b(B\u001b[me\u001b(B\u001b[m\u001b[38;5;7mmove\u001b(B\u001b[m\u001b[24;67HK\u001b(B\u001b[m\u001b[38;5;7mill\u001b(B\u001b[m\u001b[24;72HL\u001b(B\u001b[m\u001b[38;5;7mogs\u001b(B\u001b[m\u001b[24;77HR\u001b(B\u001b[m\u001b[38;5;7mestart\u001b(B\u001b[m\u001b[24;85HS\u001b(B\u001b[m\u001b[38;5;7mtats\u001b[24;91HS\u001b(B\u001b[mt\u001b(B\u001b[m\u001b[38;5;7mop"
+    ],
+    [
+      0.808121,
+      "\u001b[1;175H7"
+    ],
+    [
+      0.785634,
+      "\u001b[34mINFO\u001b[0m[0036] something broke the loop                     \n"
+    ],
+    [
+      0.000008,
+      "\u001b[?12l\u001b[?25h\u001b(B\u001b[m\u001b[H\u001b[2J\u001b[?1049l\u001b[?1l\u001b\u003e\u001b[?1000l"
+    ],
+    [
+      0.000090,
+      "\u001b[34mINFO\u001b[0m[0036] Bye                                          \r\n"
+    ],
+    [
+      0.002630,
+      "\u001b[1m\u001b[7m%\u001b[27m\u001b[1m\u001b[0m                                                                                                                                                                                    \r \r"
+    ],
+    [
+      0.000253,
+      "\u001b]2;moncho@mongopro2\u0007\u001b]1;..om/moncho/dry\u0007"
+    ],
+    [
+      0.003122,
+      "\u001b]7;file://mongopro2.local/opt/gocode/src/github.com/moncho/dry\u0007"
+    ],
+    [
+      0.022848,
+      "\r\u001b[0m\u001b[27m\u001b[24m\u001b[J\u001b[01;32m➜ \u001b[01;32m \u001b[36mdry \u001b[01;34mgit:(\u001b[31mmaster\u001b[34m) \u001b[33m✗\u001b[00m\u001b[00m\u001b[01;34m \u001b[00m"
+    ],
+    [
+      0.000012,
+      "\u001b[K"
+    ],
+    [
+      0.000185,
+      "\u001b[?1h\u001b="
+    ],
+    [
+      1.086890,
+      "e"
+    ],
+    [
+      0.180639,
+      "\u0008ex"
+    ],
+    [
+      0.208953,
+      "i"
+    ],
+    [
+      0.104055,
+      "t"
+    ],
+    [
+      0.111403,
+      "\u001b[?1l\u001b\u003e"
+    ],
+    [
+      0.000032,
+      "\r\r\n"
+    ],
+    [
+      0.000689,
+      "\u001b]2;exit\u0007"
+    ],
+    [
+      0.000006,
+      "\u001b]1;exit\u0007"
+    ]
+  ]
+}
