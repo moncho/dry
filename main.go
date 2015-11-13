@@ -137,7 +137,7 @@ func stream(screen *ui.Screen, stream io.Reader) {
 
 //-----------------------------------------------------------------------------
 func main() {
-	log.Infof("Launching dry %v", true)
+	log.Infof("Launching dry")
 	// parse flags
 	_, err := flags.Parse(&opts)
 	if err != nil {
