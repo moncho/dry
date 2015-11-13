@@ -6,7 +6,7 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
-//Allowed
+//Allowed sort methods
 const (
 	NoSort = iota
 	SortByContainerID
@@ -18,6 +18,7 @@ const (
 //SortMode represents allowed modes to sort a container slice
 type SortMode uint16
 
+//TODO figure out how to avoid so much duplicated code
 type byContainerID []docker.APIContainers
 type byImage []docker.APIContainers
 type byStatus []docker.APIContainers
