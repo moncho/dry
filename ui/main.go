@@ -16,19 +16,22 @@ type column struct {
 	mode  docker.SortMode
 }
 
-type ps struct {
+type DockerPs struct {
+	layout *Layout
+
 	columns                []column // List of columns.
-	dockerInfo             string   // Docker environment information
 	containerTableTemplate *template.Template
 	containerTemplate      *template.Template
-	daemon                 *docker.DockerDaemon
 	cursor                 *Cursor
+	daemon                 *docker.DockerDaemon
+	dockerInfo             string // Docker environment information
+	appHeadear             *Renderer
 	sortMode               docker.SortMode
 }
 
 //NewDockerRenderer creates renderer for a container list
-func NewDockerRenderer(daemon *docker.DockerDaemon, cursor *Cursor, sortMode docker.SortMode) Renderer {
-	r := &ps{}
+func NewDockerRenderer(daemon *docker.DockerDaemon, cursor *Cursor, sortMode docker.SortMode, appHeader Renderer) *DockerPs {
+	r := &DockerPs{}
 
 	r.columns = []column{
 		{`ID`, `CONTAINER ID`, docker.SortByContainerID},
@@ -40,6 +43,8 @@ func NewDockerRenderer(daemon *docker.DockerDaemon, cursor *Cursor, sortMode doc
 		{`Names`, `NAMES`, docker.SortByName},
 	}
 	di := dockerInfo(daemon)
+	r.layout = NewLayout()
+	r.layout.Header = appHeader
 	r.containerTableTemplate = buildContainerTableTemplate(di)
 	r.containerTemplate = buildContainerTemplate()
 	r.cursor = cursor
@@ -49,7 +54,11 @@ func NewDockerRenderer(daemon *docker.DockerDaemon, cursor *Cursor, sortMode doc
 	return r
 }
 
-func (r *ps) Render() string {
+func (r *DockerPs) SortMode(sortMode docker.SortMode) {
+	r.sortMode = sortMode
+}
+
+func (r *DockerPs) Render() string {
 	if ok, err := r.daemon.Ok(); !ok { // If there was an error connecting to the Docker host...
 		return err.Error() // then simply return the error string.
 	}
@@ -66,7 +75,7 @@ func (r *ps) Render() string {
 
 	return buffer.String()
 }
-func (r *ps) containerTable() string {
+func (r *DockerPs) containerTable() string {
 	buffer := new(bytes.Buffer)
 	t := tabwriter.NewWriter(buffer, 22, 0, 1, ' ', 0)
 	replacer := strings.NewReplacer(`\t`, "\t", `\n`, "\n")
@@ -75,7 +84,7 @@ func (r *ps) containerTable() string {
 	t.Flush()
 	return buffer.String()
 }
-func (r *ps) tableHeader() string {
+func (r *DockerPs) tableHeader() string {
 	columns := make([]string, len(r.columns))
 	for i, col := range r.columns {
 		if r.sortMode != col.mode {
@@ -87,7 +96,7 @@ func (r *ps) tableHeader() string {
 	return "<green>" + strings.Join(columns, "\t") + "</>"
 }
 
-func (r *ps) containerInformation(daemon *docker.DockerDaemon, cursor *Cursor) string {
+func (r *DockerPs) containerInformation(daemon *docker.DockerDaemon, cursor *Cursor) string {
 	buf := bytes.NewBufferString("")
 	context := docker.FormattingContext{
 		Output:   buf,

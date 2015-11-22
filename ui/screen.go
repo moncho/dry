@@ -1,30 +1,21 @@
 package ui
 
 import (
-	"bytes"
-	`fmt`
 	`strings`
-	"text/template"
 	`time`
 
-	"github.com/moncho/dry/app"
-	mdocker "github.com/moncho/dry/docker"
 	"github.com/nsf/termbox-go"
 )
 
 // Screen is thin wrapper aroung Termbox library to provide basic display
 // capabilities as required by dry.
 type Screen struct {
-	width    int     // Current number of columns.
-	height   int     // Current number of rows.
+	Width    int     // Current number of columns.
+	Height   int     // Current number of rows.
 	cleared  bool    // True after the screens gets cleared.
-	layout   *Layout // Pointer to layout (gets created by screen).
 	markup   *Markup // Pointer to markup processor (gets created by screen).
 	pausedAt *time.Time
-	cursor   *Cursor // Pointer to cursor (gets created by screen).
-	header   *header
-	App      *app.Dry
-	footer   *Renderer
+	Cursor   *Cursor // Pointer to cursor (gets created by screen).
 }
 
 type Cursor struct {
@@ -36,18 +27,15 @@ type Cursor struct {
 // Initializes Termbox, creates screen along with layout and markup, and
 // calculates current screen dimensions. Once initialized the screen is
 // ready for display.
-func NewScreen(dry *app.Dry) *Screen {
+func NewScreen() *Screen {
 
 	if err := termbox.Init(); err != nil {
 		panic(err)
 	}
 	termbox.SetOutputMode(termbox.Output256)
 	screen := &Screen{}
-	screen.layout = NewLayout()
 	screen.markup = NewMarkup()
-	screen.cursor = &Cursor{Line: 0, Fg: termbox.ColorRed, Ch: '옷'}
-	screen.header = newHeader(dry.State)
-	screen.App = dry
+	screen.Cursor = &Cursor{Line: 0, Fg: termbox.ColorRed, Ch: '옷'}
 
 	return screen.Resize()
 }
@@ -61,7 +49,7 @@ func (screen *Screen) Close() *Screen {
 // Resize gets called when the screen is being resized. It recalculates screen
 // dimensions and requests to clear the screen on next update.
 func (screen *Screen) Resize() *Screen {
-	screen.width, screen.height = termbox.Size()
+	screen.Width, screen.Height = termbox.Size()
 	screen.cleared = false
 	return screen
 }
@@ -95,7 +83,7 @@ func (screen *Screen) Sync() *Screen {
 // ClearLine erases the contents of the line starting from (x,y) coordinate
 // till the end of the line.
 func (screen *Screen) ClearLine(x int, y int) *Screen {
-	for i := x; i < screen.width; i++ {
+	for i := x; i < screen.Width; i++ {
 		termbox.SetCell(i, y, ' ', termbox.ColorDefault, termbox.ColorDefault)
 	}
 	termbox.Flush()
@@ -103,10 +91,8 @@ func (screen *Screen) ClearLine(x int, y int) *Screen {
 	return screen
 }
 
-// Render accepts variable number of arguments and knows how to display
-// containers, current time, and an arbitrary string.
-func (screen *Screen) Render(objects ...interface{}) *Screen {
-	for _, ptr := range objects {
+func (screen *Screen) render(objects ...interface{}) *Screen {
+	/*for _, ptr := range objects {
 		switch ptr.(type) {
 		case *mdocker.DockerDaemon:
 			server := ptr.(*mdocker.DockerDaemon)
@@ -130,9 +116,10 @@ func (screen *Screen) Render(objects ...interface{}) *Screen {
 
 		}
 	}
-	screen.layout.Header = screen.header
-	screen.render(0, screen.layout.Render())
-	screen.renderLine(0, screen.height-1, app.KeyMappings)
+	termbox.Flush()*/
+	return screen
+}
+func (screen *Screen) Flush() *Screen {
 	termbox.Flush()
 	return screen
 }
@@ -140,13 +127,6 @@ func (screen *Screen) Render(objects ...interface{}) *Screen {
 // RenderLine takes the incoming string, tokenizes it to extract markup
 // elements, and displays it all starting at (x,y) location.
 func (screen *Screen) RenderLine(x int, y int, str string) {
-	screen.renderLine(x, y, str)
-	termbox.Flush()
-}
-
-// RenderLine takes the incoming string, tokenizes it to extract markup
-// elements, and displays it all starting at (x,y) location.
-func (screen *Screen) renderLine(x int, y int, str string) {
 	start, column := 0, 0
 
 	for _, token := range screen.markup.Tokenize(str) {
@@ -161,7 +141,7 @@ func (screen *Screen) renderLine(x int, y int, str string) {
 				start = x + column
 				column++
 			} else {
-				start = screen.width - len(token) + i
+				start = screen.Width - len(token) + i
 			}
 			termbox.SetCell(start, y, char, screen.markup.Foreground, screen.markup.Background)
 		}
@@ -169,53 +149,22 @@ func (screen *Screen) renderLine(x int, y int, str string) {
 }
 
 func (screen *Screen) MoveCursorDown() {
-	screen.cursor.Line = screen.cursor.Line + 1
+	screen.Cursor.Line = screen.Cursor.Line + 1
 
 }
 func (screen *Screen) MoveCursorUp() {
-	screen.cursor.Line = screen.cursor.Line - 1
+	screen.Cursor.Line = screen.Cursor.Line - 1
 }
 
 func (screen *Screen) CursorPosition() int {
-	return screen.cursor.Line
+	return screen.Cursor.Line
 }
 
-func (screen *Screen) render(column int, str string) {
+func (screen *Screen) Render(column int, str string) {
 	if !screen.cleared {
 		screen.Clear()
 	}
 	for row, line := range strings.Split(str, "\n") {
 		screen.RenderLine(column, row, line)
 	}
-}
-
-type header struct {
-	template *template.Template
-	appState *app.AppState
-}
-
-func newHeader(state *app.AppState) *header {
-	return &header{
-		buildHeaderTemplate(),
-		state,
-	}
-}
-func buildHeaderTemplate() *template.Template {
-	markup := `{{.AppMessage}}<right><white>{{.Now}}</></right>`
-	return template.Must(template.New(`header`).Parse(markup))
-}
-
-func (h *header) Render() string {
-	vars := struct {
-		Now        string // Current timestamp.
-		AppMessage string
-	}{
-		time.Now().Format(`3:04:05pm PST`),
-		h.appState.Render(),
-	}
-
-	_ = "breakpoint"
-	buffer := new(bytes.Buffer)
-	h.template.Execute(buffer, vars)
-	return buffer.String()
 }

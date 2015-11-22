@@ -1,40 +1,26 @@
 package app
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"text/template"
+	"time"
 
 	mdocker "github.com/moncho/dry/docker"
+	"github.com/moncho/dry/ui"
+	tb "github.com/nsf/termbox-go"
 )
-
-const help = `
-<white>dry</>
-
-Connects to a Docker daemon if environment variable DOCKER_HOST (and DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH) is present
-then shows the list of containers and allows some interaction with them.
-
-<u>Command</u>    <u>Description                                </u>
-	<white>F1</>       Cycles through containers sort modes (by Id | by Image | by Status | by Name)
-	<white>F2</>       Toggles showing all containers (default shows just running)
-	<white>F5</>       Refresh container list
-	<white>k</>        Kills the selected container
-	<white>l</>        Fetch the logs of the selected container
-	<white>r</>        Restarts selected container (noop if it is already running)
-	<white>s</>        Displays a live stream of the selected container resource usage statistics
-	<white>t</>        Stops selected container (noop if it is not running)
-	<white>q</>        Quits mop.
-	<white>esc</>      Ditto.
-<r> Press any key to continue </r>
-`
-const KeyMappings = "H<b><white>elp</></b> Q<b><white>uit</></b> <blue>|</> " +
-	"F1:<b><white>Sort</></b> F2:<b><white>Toggle Show Containers</></b> F5:<b><white>Refresh</></b> <blue>|</> " +
-	"<b><white>R</></b>e<b><white>move</></b> K<b><white>ill</></b> L<b><white>ogs</></b> R<b><white>estart</></b> S<b><white>tats</></b> <b><white>S</></b>t<b><white>op</></b>"
 
 //Dry is the application representation.
 type Dry struct {
-	State        *AppState
-	dockerDaemon *mdocker.DockerDaemon
-	stats        *mdocker.Stats
+	dockerDaemon         *mdocker.DockerDaemon
+	dockerDaemonRenderer *ui.DockerPs
+	header               *header
+	screen               *ui.Screen
+	State                *AppState
+	stats                *mdocker.Stats
+	keyboardHelpText     string
 }
 
 func (m *Dry) Changed() bool {
@@ -70,18 +56,22 @@ func (m *Dry) Refresh() {
 	m.State.changed = true
 }
 
-func (m *Dry) Render() interface{} {
+func (m *Dry) Render() {
 	if m.State.ShowingHelp {
-		return help
-	}
-	if m.State.showingStats && m.stats != nil {
-		return m.stats
-	}
-	if m.State.changed {
+		m.screen.Clear()
+		m.screen.Render(0, help)
+		m.State.ShowingHelp = false
+	} else if m.State.showingStats && m.stats != nil {
+		m.screen.Render(0, ui.NewDockerStatsRenderer(m.stats).Render())
+	} else {
 		m.dockerDaemon.Refresh(m.State.showingAllContainers)
+		m.dockerDaemonRenderer.SortMode(m.State.SortMode)
+		m.screen.Render(0, m.dockerDaemonRenderer.Render())
+		m.screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`3:04:05pm PST`)+`</></right>`)
+		m.screen.RenderLine(0, m.screen.Height-1, keyMappings)
+		m.State.changed = false
 	}
-	m.State.changed = false
-	return m.dockerDaemon
+	m.screen.Flush()
 }
 
 func (m *Dry) Rm(position int) {
@@ -95,6 +85,7 @@ func (m *Dry) Rm(position int) {
 
 func (m *Dry) ShowDockerInfo() {
 	m.State.ShowingHelp = false
+	m.State.changed = true
 }
 
 func (m *Dry) ShowHelp() {
@@ -173,9 +164,9 @@ func (m *Dry) errormessage(cid string, action string, err error) {
 }
 
 //NewDryApp creates a new dry application
-func NewDryApp() *Dry {
+func NewDryApp(screen *ui.Screen) *Dry {
 	state := &AppState{
-		changed:              false,
+		changed:              true,
 		message:              "",
 		Paused:               false,
 		showingAllContainers: false,
@@ -183,7 +174,69 @@ func NewDryApp() *Dry {
 		SortMode:             mdocker.SortByContainerID,
 	}
 	app := &Dry{}
+	newHeader(state)
 	app.State = state
+	app.header = newHeader(state)
 	app.dockerDaemon = mdocker.ConnectToDaemon()
+	app.screen = screen
+	app.dockerDaemonRenderer = ui.NewDockerRenderer(
+		app.dockerDaemon,
+		screen.Cursor,
+		state.SortMode,
+		app.header)
 	return app
+}
+
+//Not sure if this is the right approach
+func newKeyMapping(app *Dry) []KeyPressEvent {
+	mapping := []KeyPressEvent{
+		KeyPressEvent{
+			Key: ui.Key{
+				KeyCodes: []rune{'?', 'h', 'H'},
+				HelpText: "<b>H:</b><white>Help</>",
+			},
+			Action: func(app Dry) { app.ShowHelp() },
+		},
+		KeyPressEvent{
+			Key: ui.Key{
+				KeyCodes: []rune{'q', 'Q'},
+				Keys:     []tb.Key{tb.KeyEsc},
+				HelpText: "<b>Q:</b><white>Quit</>",
+			},
+			Action: func(app Dry) { app.ShowHelp() },
+		},
+	}
+	return mapping
+}
+
+//header
+type header struct {
+	template *template.Template
+	appState *AppState
+}
+
+func newHeader(state *AppState) *header {
+	return &header{
+		buildHeaderTemplate(),
+		state,
+	}
+}
+func buildHeaderTemplate() *template.Template {
+	markup := `{{.AppMessage}}<right><white>{{.Now}}</></right>`
+	return template.Must(template.New(`header`).Parse(markup))
+}
+
+func (h *header) Render() string {
+	vars := struct {
+		Now        string // Current timestamp.
+		AppMessage string
+	}{
+		time.Now().Format(`3:04:05pm PST`),
+		h.appState.Render(),
+	}
+
+	_ = "breakpoint"
+	buffer := new(bytes.Buffer)
+	h.template.Execute(buffer, vars)
+	return buffer.String()
 }

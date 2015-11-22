@@ -18,7 +18,7 @@ type DockerDaemon struct {
 	DockerEnv  *DockerEnv
 }
 
-//DockerEnv are the Docker related environment variables found
+//DockerEnv are the Docker-related environment variables defined
 type DockerEnv struct {
 	DockerHost      string
 	DockerTLSVerify bool
@@ -37,6 +37,11 @@ func (daemon *DockerDaemon) ContainerIDAt(position int) (string, error) {
 		return "", fmt.Errorf("Invalid position %d", position)
 	}
 	return daemon.Containers[position].ID, nil
+}
+
+//Inspect the container with the given id
+func (daemon *DockerDaemon) Inspect(id string) (*docker.Container, error) {
+	return daemon.client.InspectContainer(id)
 }
 
 //Kill the container with the given id

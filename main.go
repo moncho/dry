@@ -23,8 +23,8 @@ var opts struct {
 }
 
 //-----------------------------------------------------------------------------
-func mainLoop(screen *ui.Screen) {
-	app := screen.App
+func mainLoop(app *app.Dry, screen *ui.Screen) {
+
 	if ok, _ := app.Ok(); !ok {
 		return
 	}
@@ -38,7 +38,7 @@ func mainLoop(screen *ui.Screen) {
 		}
 	}()
 
-	screen.Render(app.Render())
+	app.Render()
 	//belongs outside the loop
 	var streamMode = false
 	var readOnlyMode = false
@@ -62,6 +62,7 @@ loop:
 						app.Refresh()
 					} else if event.Ch == '?' || event.Ch == 'h' || event.Ch == 'H' { //help
 						app.ShowHelp()
+						refresh = true
 					} else if event.Ch == 'e' || event.Ch == 'E' { //remove
 						app.Rm(screen.CursorPosition())
 					} else if event.Ch == 'k' || event.Ch == 'K' { //kill
@@ -104,11 +105,13 @@ loop:
 			if !streamMode {
 				timestamp := time.Now().Format(`3:04:05pm PST`)
 				screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
+				screen.Flush()
 			}
 		}
 		if !streamMode && (refresh || app.Changed()) {
 			_ = "breakpoint"
-			screen.Clear().Render(app.Render())
+			screen.Clear()
+			app.Render()
 		}
 	}
 
@@ -163,9 +166,10 @@ func main() {
 		}()
 	}
 	_ = "breakpoint"
-	app := app.NewDryApp()
-	screen := ui.NewScreen(app)
-	mainLoop(screen)
+
+	screen := ui.NewScreen()
+	app := app.NewDryApp(screen)
+	mainLoop(app, screen)
 	screen.Close()
 	log.Info("Bye")
 }
