@@ -38,7 +38,12 @@ Open a console, type ```dry```. It will connect to whatever host defined in **$D
 
 ```dry -p``` launches dry with [pprof](https://golang.org/pkg/net/http/pprof/) package active.
 
-### Contributing ###
+### Debug
+
+```
+godebug run -instrument github.com/moncho/dry,github.com/moncho/dry/app,github.com/moncho/dry/docker,github.com/moncho/dry/gui main.go
+```
+### Contributing
 All contributions are welcome.
 
 * Fork the project.
