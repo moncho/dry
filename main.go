@@ -23,14 +23,21 @@ var opts struct {
 }
 
 //-----------------------------------------------------------------------------
-func mainLoop(app *app.Dry, screen *ui.Screen) {
+func mainLoop(dry *app.Dry, screen *ui.Screen) {
 
-	if ok, _ := app.Ok(); !ok {
+	if ok, _ := dry.Ok(); !ok {
 		return
 	}
 
 	keyboardQueue := make(chan termbox.Event)
 	timestampQueue := time.NewTicker(1 * time.Second)
+
+	viewClosed := make(chan bool)
+	keyboardQueueForView := make(chan termbox.Event)
+
+	defer close(keyboardQueue)
+	defer close(viewClosed)
+	defer close(keyboardQueueForView)
 
 	go func() {
 		for {
@@ -38,80 +45,85 @@ func mainLoop(app *app.Dry, screen *ui.Screen) {
 		}
 	}()
 
-	app.Render()
+	app.Render(dry, screen)
 	//belongs outside the loop
 	var streamMode = false
-	var readOnlyMode = false
+	var viewMode = false
 loop:
 	for {
+		//Used for refresh-forcing events outside dry
 		var refresh = false
 		select {
-
-		case event := <-keyboardQueue:
-			switch event.Type {
-			case termbox.EventKey:
-				if !app.State.ShowingHelp && !readOnlyMode {
-					if event.Key == termbox.KeyEsc || event.Ch == 'q' || event.Ch == 'Q' {
-						break loop
-					} else if event.Key == termbox.KeyF1 { //sort
-						app.Sort()
-						app.Refresh()
-					} else if event.Key == termbox.KeyF2 { //show all containers
-						app.ToggleShowAllContainers()
-					} else if event.Key == termbox.KeyF5 { // refresh
-						app.Refresh()
-					} else if event.Ch == '?' || event.Ch == 'h' || event.Ch == 'H' { //help
-						app.ShowHelp()
-						refresh = true
-					} else if event.Ch == 'e' || event.Ch == 'E' { //remove
-						app.Rm(screen.CursorPosition())
-					} else if event.Ch == 'k' || event.Ch == 'K' { //kill
-						app.Kill(screen.CursorPosition())
-					} else if event.Ch == 'l' || event.Ch == 'L' { //logs
-						if logs, err := app.Logs(screen.CursorPosition()); err == nil {
-							readOnlyMode = true
-							streamMode = true
-							stream(screen, logs)
-						}
-					} else if event.Ch == 'r' || event.Ch == 'R' { //start
-						app.StartContainer(screen.CursorPosition())
-					} else if event.Ch == 's' || event.Ch == 'S' { //stats
-						app.Stats(screen.CursorPosition())
-						readOnlyMode = true
-						refresh = true
-					} else if event.Ch == 't' || event.Ch == 'T' { //stop
-						app.StopContainer(screen.CursorPosition())
-					} else if event.Key == termbox.KeyArrowUp { //cursor up
-						screen.MoveCursorUp()
-						refresh = true
-					} else if event.Key == termbox.KeyArrowDown { // cursor down
-						screen.MoveCursorDown()
-						refresh = true
-					}
-				} else if app.State.ShowingHelp {
-					app.ShowDockerInfo()
-				} else if readOnlyMode && event.Key == termbox.KeyEsc {
-					readOnlyMode = false
-					streamMode = false
-					refresh = true
-				}
-
-			case termbox.EventResize:
-				screen.Resize()
-				refresh = true
-			}
-
 		case <-timestampQueue.C:
 			if !streamMode {
 				timestamp := time.Now().Format(`3:04:05pm PST`)
 				screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
 				screen.Flush()
 			}
+		case <-viewClosed:
+			viewMode = false
+			streamMode = false
+			dry.ShowDockerHostInfo()
+		case event := <-keyboardQueue:
+			switch event.Type {
+			case termbox.EventKey:
+				if !dry.State.ShowingHelp && !viewMode {
+					if event.Key == termbox.KeyEsc || event.Ch == 'q' || event.Ch == 'Q' {
+						break loop
+					} else if event.Key == termbox.KeyArrowUp { //cursor up
+						screen.MoveCursorUp()
+						refresh = true
+					} else if event.Key == termbox.KeyArrowDown { // cursor down
+						screen.MoveCursorDown()
+						refresh = true
+					} else if event.Key == termbox.KeyF1 { //sort
+						dry.Sort()
+						dry.Refresh()
+					} else if event.Key == termbox.KeyF2 { //show all containers
+						dry.ToggleShowAllContainers()
+					} else if event.Key == termbox.KeyF5 { // refresh
+						dry.Refresh()
+					} else if event.Ch == '?' || event.Ch == 'h' || event.Ch == 'H' { //help
+						dry.ShowHelp()
+					} else if event.Ch == 'e' || event.Ch == 'E' { //remove
+						dry.Rm(screen.CursorPosition())
+					} else if event.Ch == 'k' || event.Ch == 'K' { //kill
+						dry.Kill(screen.CursorPosition())
+					} else if event.Ch == 'l' || event.Ch == 'L' { //logs
+						if logs, err := dry.Logs(screen.CursorPosition()); err == nil {
+							viewMode = true
+							streamMode = true
+							stream(screen, logs)
+						}
+					} else if event.Ch == 'r' || event.Ch == 'R' { //start
+						dry.StartContainer(screen.CursorPosition())
+					} else if event.Ch == 's' || event.Ch == 'S' { //stats
+						dry.Stats(screen.CursorPosition())
+						viewMode = true
+						go overlayView(dry, screen, keyboardQueueForView, viewClosed)
+					} else if event.Ch == 't' || event.Ch == 'T' { //stop
+						dry.StopContainer(screen.CursorPosition())
+					} else if event.Key == termbox.KeyEnter { //inspect
+						dry.Inspect(screen.CursorPosition())
+						viewMode = true
+						go overlayView(dry, screen, keyboardQueueForView, viewClosed)
+
+					}
+				} else if viewMode {
+					//The view handles the event
+					keyboardQueueForView <- event
+				} else if dry.State.ShowingHelp {
+					dry.ShowDockerHostInfo()
+				}
+
+			case termbox.EventResize:
+				screen.Resize()
+				refresh = true
+			}
 		}
-		if !streamMode && (refresh || app.Changed()) {
-			_ = "breakpoint"
+		if !streamMode && (refresh || dry.Changed()) {
 			screen.Clear()
-			app.Render()
+			app.Render(dry, screen)
 		}
 	}
 
@@ -136,6 +148,46 @@ func stream(screen *ui.Screen, stream io.Reader) {
 	}()
 
 	log.Debugf("[stream] End of stdout")
+}
+
+func overlayView(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan bool) {
+	screen.Clear()
+	v := ui.NewView("", 0, 0, screen.Width, screen.Height)
+	v.Highlight = true
+	app.Write(dry, v)
+	err := v.Render()
+	if err != nil {
+		log.Panicf("Alarm!!! %s", err)
+	}
+	screen.Flush()
+loop:
+	for {
+		select {
+		case event := <-keyboardQueue:
+			switch event.Type {
+			case termbox.EventKey:
+				screen.Clear()
+				if event.Key == termbox.KeyEsc {
+					break loop
+				} else if event.Key == termbox.KeyArrowDown { //cursor up
+					v.CursorDown()
+					x, y := v.Origin()
+					cx, cy := v.Cursor()
+				} else if event.Key == termbox.KeyArrowUp { // cursor down
+					v.CursorUp()
+				} else if event.Ch == 'g' { //to the top of the view
+					v.MoveCursorToTop()
+				} else if event.Ch == 'G' { //to the bottom of the view
+					v.MoveCursorToBottom()
+				}
+
+				v.Render()
+				screen.Flush()
+			}
+		}
+	}
+	screen.Clear()
+	done <- true
 }
 
 //-----------------------------------------------------------------------------

@@ -8,7 +8,7 @@ import (
 
 //Allowed sort methods
 const (
-	NoSort = iota
+	NoSort SortMode = iota
 	SortByContainerID
 	SortByImage
 	SortByStatus

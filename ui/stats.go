@@ -10,18 +10,18 @@ import (
 	mdocker "github.com/moncho/dry/docker"
 )
 
-type statsRender struct {
+type statsRenderer struct {
 	stats *mdocker.Stats
 }
 
 //NewDockerStatsRenderer creates renderer for docker stats
 func NewDockerStatsRenderer(stats *mdocker.Stats) Renderer {
-	return &statsRender{
+	return &statsRenderer{
 		stats: stats,
 	}
 }
 
-func (r *statsRender) Render() string {
+func (r *statsRenderer) Render() string {
 	s := r.stats
 	buf := bytes.NewBufferString("")
 	w := tabwriter.NewWriter(buf, 22, 0, 1, ' ', 0)

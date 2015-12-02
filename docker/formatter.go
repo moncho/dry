@@ -33,7 +33,6 @@ type FormattingContext struct {
 }
 
 // Format helps to format the output using the parameters set in the FormattingContext.
-// Currently Format allow to display in raw, table or custom format the output.
 func Format(ctx FormattingContext, containers []docker.APIContainers) {
 	tableFormat(ctx, containers)
 }
