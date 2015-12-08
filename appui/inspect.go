@@ -1,10 +1,11 @@
-package ui
+package appui
 
 import (
 	"bytes"
 	"encoding/json"
 
 	godocker "github.com/fsouza/go-dockerclient"
+	"github.com/moncho/dry/ui"
 )
 
 type inspectRenderer struct {
@@ -12,7 +13,7 @@ type inspectRenderer struct {
 }
 
 //NewDockerInspectRenderer creates renderer for inspect information
-func NewDockerInspectRenderer(container *godocker.Container) Renderer {
+func NewDockerInspectRenderer(container *godocker.Container) ui.Renderer {
 	return &inspectRenderer{
 		container: container,
 	}

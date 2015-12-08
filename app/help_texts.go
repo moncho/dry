@@ -1,5 +1,13 @@
 package app
 
+const ShortHelp = `
+dry
+
+Connects to a Docker daemon if environment variable DOCKER_HOST is present
+then shows the list of containers and allows some interaction with them.
+
+`
+
 const help = `
 <white>dry</>
 

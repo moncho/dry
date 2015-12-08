@@ -1,4 +1,4 @@
-package ui
+package appui
 
 import (
 	`bytes`
@@ -8,6 +8,7 @@ import (
 	`text/template`
 
 	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/ui"
 )
 
 type column struct {
@@ -17,20 +18,20 @@ type column struct {
 }
 
 type DockerPs struct {
-	layout *Layout
+	layout *ui.Layout
 
 	columns                []column // List of columns.
 	containerTableTemplate *template.Template
 	containerTemplate      *template.Template
-	cursor                 *Cursor
+	cursor                 *ui.Cursor
 	daemon                 *docker.DockerDaemon
 	dockerInfo             string // Docker environment information
-	appHeadear             *Renderer
+	appHeadear             *ui.Renderer
 	sortMode               docker.SortMode
 }
 
 //NewDockerRenderer creates renderer for a container list
-func NewDockerRenderer(daemon *docker.DockerDaemon, cursor *Cursor, sortMode docker.SortMode, appHeader Renderer) *DockerPs {
+func NewDockerRenderer(daemon *docker.DockerDaemon, cursor *ui.Cursor, sortMode docker.SortMode, appHeader ui.Renderer) *DockerPs {
 	r := &DockerPs{}
 
 	r.columns = []column{
@@ -43,7 +44,7 @@ func NewDockerRenderer(daemon *docker.DockerDaemon, cursor *Cursor, sortMode doc
 		{`Names`, `NAMES`, docker.SortByName},
 	}
 	di := dockerInfo(daemon)
-	r.layout = NewLayout()
+	r.layout = ui.NewLayout()
 	r.layout.Header = appHeader
 	r.containerTableTemplate = buildContainerTableTemplate(di)
 	r.containerTemplate = buildContainerTemplate()
@@ -96,14 +97,13 @@ func (r *DockerPs) tableHeader() string {
 	return "<green>" + strings.Join(columns, "\t") + "</>"
 }
 
-func (r *DockerPs) containerInformation(daemon *docker.DockerDaemon, cursor *Cursor) string {
+func (r *DockerPs) containerInformation(daemon *docker.DockerDaemon, cursor *ui.Cursor) string {
 	buf := bytes.NewBufferString("")
 	context := docker.FormattingContext{
 		Output:   buf,
 		Template: r.containerTemplate,
 		Trunc:    true,
 		Selected: cursor.Line,
-		SortMode: r.sortMode,
 	}
 	docker.Format(
 		context,
@@ -147,7 +147,7 @@ func arrow() string {
 }
 
 //Updates the cursor position in case it is out of bounds
-func updateCursorPosition(cursor *Cursor, noOfContainers int) {
+func updateCursorPosition(cursor *ui.Cursor, noOfContainers int) {
 	if cursor.Line >= noOfContainers {
 		cursor.Line = noOfContainers - 1
 	} else if cursor.Line < 0 {

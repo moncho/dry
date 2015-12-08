@@ -10,6 +10,7 @@ import (
 //Stats holds runtime stats for a container
 type Stats struct {
 	CID              string
+	Command          string
 	CPUPercentage    float64
 	Memory           float64
 	MemoryLimit      float64
@@ -21,10 +22,12 @@ type Stats struct {
 	Stats            *godocker.Stats
 }
 
-func BuildStats(cid string, stats *godocker.Stats) *Stats {
+//BuildStats builds Stats with the given information
+func BuildStats(container godocker.APIContainers, stats *godocker.Stats) *Stats {
 	s := &Stats{
-		CID:   stringid.TruncateID(cid),
-		Stats: stats,
+		CID:     stringid.TruncateID(container.ID),
+		Command: container.Command,
+		Stats:   stats,
 	}
 	s.CPUPercentage = calculateCPUPercent(stats)
 	br, bw := calculateBlockIO(stats)

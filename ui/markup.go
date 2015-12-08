@@ -48,11 +48,10 @@ func NewMarkup() *Markup {
 	markup.tags[`grey`] = 0xE9
 	markup.tags[`grey2`] = 0xF4
 	markup.tags[`right`] = termbox.ColorDefault // Termbox can combine attributes and a single color using bitwise OR.
-	markup.tags[`b`] = termbox.AttrBold         // Attribute = 1 << (iota + 4)
+	markup.tags[`b`] = termbox.AttrBold
 	markup.tags[`u`] = termbox.AttrUnderline
 	markup.tags[`r`] = termbox.AttrReverse
-	markup.regex = markup.supportedTags() // Once we have the hash we could build the regex.
-
+	markup.regex = markup.supportedTags()
 	return markup
 }
 

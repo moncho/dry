@@ -29,7 +29,7 @@
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Rev": "ef410296f87750305e1e1acf9ad2ba3833dcb004"
+			"Rev": "b515e07d61c4e873407b54c4843b0f3ac9aa16f1"
 		},
 		{
 			"ImportPath": "github.com/jessevdk/go-flags",

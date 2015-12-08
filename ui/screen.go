@@ -91,34 +91,6 @@ func (screen *Screen) ClearLine(x int, y int) *Screen {
 	return screen
 }
 
-func (screen *Screen) render(objects ...interface{}) *Screen {
-	/*for _, ptr := range objects {
-		switch ptr.(type) {
-		case *mdocker.DockerDaemon:
-			server := ptr.(*mdocker.DockerDaemon)
-			screen.layout.Content = NewDockerRenderer(
-				server,
-				screen.cursor,
-				screen.App.State.SortMode)
-
-		case *mdocker.Stats:
-			_ = "breakpoint"
-			stats := ptr.(*mdocker.Stats)
-			screen.layout.Content = NewDockerStatsRenderer(
-				stats,
-			)
-		case string:
-			s := stringRenderer(ptr.(string))
-			screen.layout.Content = s
-		default:
-			s := stringRenderer(fmt.Sprint("Dont know how to render a %s", ptr))
-			screen.layout.Content = s
-
-		}
-	}
-	termbox.Flush()*/
-	return screen
-}
 func (screen *Screen) Flush() *Screen {
 	termbox.Flush()
 	return screen

@@ -1,9 +1,10 @@
 package main
 
 import (
-	"bufio"
+	"fmt"
 	"io"
 	"os"
+	"sync"
 	"time"
 
 	"net/http"
@@ -12,18 +13,21 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/moncho/dry/app"
 	"github.com/moncho/dry/ui"
+	"github.com/moncho/dry/version"
 	"github.com/nsf/termbox-go"
 )
 import _ "net/http/pprof"
 
 // command line flags variable
 var opts struct {
+	Description bool `short:"d" long:"description" description:"Dry description"`
 	// enable profiling
 	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
+	Version bool `short:"v" long:"version" description:"Dry version"`
 }
 
 //-----------------------------------------------------------------------------
-func mainLoop(dry *app.Dry, screen *ui.Screen) {
+func mainScreen(dry *app.Dry, screen *ui.Screen) {
 
 	if ok, _ := dry.Ok(); !ok {
 		return
@@ -32,12 +36,13 @@ func mainLoop(dry *app.Dry, screen *ui.Screen) {
 	keyboardQueue := make(chan termbox.Event)
 	timestampQueue := time.NewTicker(1 * time.Second)
 
-	viewClosed := make(chan bool)
+	viewClosed := make(chan bool, 1)
 	keyboardQueueForView := make(chan termbox.Event)
 
-	defer close(keyboardQueue)
-	defer close(viewClosed)
+	defer timestampQueue.Stop()
 	defer close(keyboardQueueForView)
+	defer close(viewClosed)
+	defer close(keyboardQueue)
 
 	go func() {
 		for {
@@ -47,7 +52,6 @@ func mainLoop(dry *app.Dry, screen *ui.Screen) {
 
 	app.Render(dry, screen)
 	//belongs outside the loop
-	var streamMode = false
 	var viewMode = false
 loop:
 	for {
@@ -55,14 +59,13 @@ loop:
 		var refresh = false
 		select {
 		case <-timestampQueue.C:
-			if !streamMode {
+			if !viewMode {
 				timestamp := time.Now().Format(`3:04:05pm PST`)
 				screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
 				screen.Flush()
 			}
 		case <-viewClosed:
 			viewMode = false
-			streamMode = false
 			dry.ShowDockerHostInfo()
 		case event := <-keyboardQueue:
 			switch event.Type {
@@ -92,21 +95,24 @@ loop:
 					} else if event.Ch == 'l' || event.Ch == 'L' { //logs
 						if logs, err := dry.Logs(screen.CursorPosition()); err == nil {
 							viewMode = true
-							streamMode = true
-							stream(screen, logs)
+							go stream(screen, logs, keyboardQueueForView, viewClosed)
 						}
 					} else if event.Ch == 'r' || event.Ch == 'R' { //start
 						dry.StartContainer(screen.CursorPosition())
 					} else if event.Ch == 's' || event.Ch == 'S' { //stats
-						dry.Stats(screen.CursorPosition())
-						viewMode = true
-						go overlayView(dry, screen, keyboardQueueForView, viewClosed)
+						done, err := dry.Stats(screen.CursorPosition())
+						if err == nil {
+							viewMode = true
+							go autorefresh(dry, screen, keyboardQueueForView, viewClosed, done)
+						} else {
+							log.Warn(err)
+						}
 					} else if event.Ch == 't' || event.Ch == 'T' { //stop
 						dry.StopContainer(screen.CursorPosition())
 					} else if event.Key == termbox.KeyEnter { //inspect
 						dry.Inspect(screen.CursorPosition())
 						viewMode = true
-						go overlayView(dry, screen, keyboardQueueForView, viewClosed)
+						go less(dry, screen, keyboardQueueForView, viewClosed)
 
 					}
 				} else if viewMode {
@@ -121,7 +127,7 @@ loop:
 				refresh = true
 			}
 		}
-		if !streamMode && (refresh || dry.Changed()) {
+		if refresh || dry.Changed() {
 			screen.Clear()
 			app.Render(dry, screen)
 		}
@@ -130,30 +136,99 @@ loop:
 	log.Info("something broke the loop")
 }
 
-func stream(screen *ui.Screen, stream io.Reader) {
-	log.Info("[stream] Showing stream")
+func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.Event, done chan bool) {
 	screen.Clear()
 	screen.Sync()
+	v := ui.NewView("", 0, 0, screen.Width, screen.Height, true)
 	go func() {
-		//io.Copy(os.Stdout, stream)
-		scanner := bufio.NewScanner(stream)
-
-		screen.RenderLine(0, 0, "ESC to go back")
-		for i := 1; scanner.Scan(); i++ {
-			screen.RenderLine(0, i, scanner.Text())
-		}
-		if err := scanner.Err(); err != nil {
-			screen.RenderLine(0, 0, "There was an error with the scanner")
-		}
+		io.Copy(v, stream)
 	}()
-
-	log.Debugf("[stream] End of stdout")
+	screen.RenderLine(0, 0, "Use the arrow keys, 'g' or 'G' to move through the log.")
+	screen.Flush()
+loop:
+	for {
+		select {
+		case event := <-keyboardQueue:
+			switch event.Type {
+			case termbox.EventKey:
+				screen.Clear()
+				if event.Key == termbox.KeyEsc {
+					break loop
+				} else if event.Key == termbox.KeyArrowDown { //cursor up
+					v.CursorDown()
+				} else if event.Key == termbox.KeyArrowUp { // cursor down
+					v.CursorUp()
+				} else if event.Ch == 'g' { //to the top of the view
+					v.MoveCursorToTop()
+				} else if event.Ch == 'G' { //to the bottom of the view
+					v.MoveCursorToBottom()
+				}
+				v.Render()
+				screen.Flush()
+			}
+		}
+	}
+	stream.Close()
+	termbox.HideCursor()
+	screen.Clear()
+	screen.Sync()
+	done <- true
 }
 
-func overlayView(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan bool) {
+//autorefresh view that autorefreshes its content every second
+func autorefresh(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan<- bool, doneStats chan<- bool) {
+	defer func() { doneStats <- true }()
+	defer func() { done <- true }()
 	screen.Clear()
-	v := ui.NewView("", 0, 0, screen.Width, screen.Height)
-	v.Highlight = true
+	v := ui.NewMarkupView("", 0, 0, screen.Width, screen.Height, false)
+	//used to coordinate rendering betwen the ticker
+	//and the exit event
+	var mutex = &sync.Mutex{}
+	app.Write(dry, v)
+	err := v.Render()
+	if err != nil {
+		log.Panicf("Alarm!!! %s", err)
+	}
+	screen.Flush()
+	//the ticker is created after the first render
+	timestampQueue := time.NewTicker(1000 * time.Millisecond)
+
+loop:
+	for {
+		select {
+		case event := <-keyboardQueue:
+			switch event.Type {
+			case termbox.EventKey:
+				if event.Key == termbox.KeyEsc {
+					//the lock is acquired and the time-based refresh queue is stopped
+					//before breaking the loop
+					mutex.Lock()
+					timestampQueue.Stop()
+					break loop
+				}
+			}
+		case <-timestampQueue.C:
+			{
+				mutex.Lock()
+				v.Clear()
+				app.Write(dry, v)
+				v.Render()
+				screen.Flush()
+				mutex.Unlock()
+			}
+		}
+	}
+	//A bit cleanup before exiting, the screen is clear and the lock released
+	termbox.HideCursor()
+	screen.Clear()
+	screen.Sync()
+	mutex.Unlock()
+}
+
+//less shows dry output in a "less" emulator
+func less(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan bool) {
+	screen.Clear()
+	v := ui.NewView("", 0, 0, screen.Width, screen.Height, true)
 	app.Write(dry, v)
 	err := v.Render()
 	if err != nil {
@@ -171,8 +246,6 @@ loop:
 					break loop
 				} else if event.Key == termbox.KeyArrowDown { //cursor up
 					v.CursorDown()
-					x, y := v.Origin()
-					cx, cy := v.Cursor()
 				} else if event.Key == termbox.KeyArrowUp { // cursor down
 					v.CursorUp()
 				} else if event.Ch == 'g' { //to the top of the view
@@ -186,13 +259,15 @@ loop:
 			}
 		}
 	}
+	termbox.HideCursor()
 	screen.Clear()
+	screen.Sync()
+
 	done <- true
 }
 
 //-----------------------------------------------------------------------------
 func main() {
-	log.Infof("Launching dry")
 	// parse flags
 	_, err := flags.Parse(&opts)
 	if err != nil {
@@ -207,21 +282,34 @@ func main() {
 		log.Errorf("Error parsing flags: %s\n", err)
 		return
 	}
+	if opts.Description {
+		fmt.Print(app.ShortHelp)
+		return
+	}
+	if opts.Version {
+		fmt.Printf("dry version %s, build %s", version.VERSION, version.GITCOMMIT)
+		return
+	}
+	log.Info("Launching dry")
+
 	if os.Getenv("DOCKER_HOST") == "" {
 		log.Error("No DOCKER_HOST environment variable found.")
 		return
 	}
+
 	// Start profiling (if required)
 	if opts.Profile {
 		go func() {
 			log.Info(http.ListenAndServe("localhost:6060", nil))
 		}()
 	}
-	_ = "breakpoint"
-
 	screen := ui.NewScreen()
-	app := app.NewDryApp(screen)
-	mainLoop(app, screen)
+	app, err := app.NewDryApp(screen)
+	if err == nil {
+		mainScreen(app, screen)
+	} else {
+		log.Error(err)
+	}
 	screen.Close()
 	log.Info("Bye")
 }

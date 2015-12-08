@@ -5,6 +5,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
 )
 
@@ -23,9 +24,11 @@ func Render(d *Dry, screen *ui.Screen) {
 	switch d.State.viewMode {
 	case Main:
 		{
+			//after a refresh, sorting is needed
 			d.dockerDaemon.Refresh(d.State.showingAllContainers)
-			d.dockerDaemonRenderer.SortMode(d.State.SortMode)
-			screen.Render(0, d.dockerDaemonRenderer.Render())
+			d.dockerDaemon.Sort(d.State.SortMode)
+			d.renderer.SortMode(d.State.SortMode)
+			screen.Render(0, d.renderer.Render())
 			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`3:04:05pm PST`)+`</></right>`)
 			screen.RenderLine(0, screen.Height-1, keyMappings)
 			d.State.changed = false
@@ -46,16 +49,16 @@ func Write(d *Dry, w io.Writer) {
 	case StatsMode:
 		{
 			if d.stats != nil {
-				fmt.Fprintf(w, ui.NewDockerStatsRenderer(d.stats).Render())
+				fmt.Fprintf(w, appui.NewDockerStatsRenderer(d.stats).Render())
 			}
 		}
 	case InspectMode:
 		{
-			fmt.Fprintf(w, ui.NewDockerInspectRenderer(d.containerToInspect).Render())
+			fmt.Fprintf(w, appui.NewDockerInspectRenderer(d.containerToInspect).Render())
 		}
 	default:
 		{
-			fmt.Fprintf(w, "nope")
+			fmt.Fprintf(w, "Dry is not ready yet for rendering, be patient...")
 		}
 	}
 }

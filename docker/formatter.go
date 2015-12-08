@@ -28,8 +28,6 @@ type FormattingContext struct {
 	Trunc bool
 	// The selected container
 	Selected int
-	// The sort mode
-	SortMode SortMode
 }
 
 // Format helps to format the output using the parameters set in the FormattingContext.
@@ -40,12 +38,9 @@ func Format(ctx FormattingContext, containers []docker.APIContainers) {
 func tableFormat(ctx FormattingContext, containers []docker.APIContainers) {
 
 	var (
-		buffer   = bytes.NewBufferString("")
-		sortMode = ctx.SortMode
-		tmpl     = ctx.Template
+		buffer = bytes.NewBufferString("")
+		tmpl   = ctx.Template
 	)
-
-	Sort(containers, sortMode)
 
 	for index, container := range containers {
 		containerCtx := &ContainerFormatter{

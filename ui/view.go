@@ -12,24 +12,23 @@ import (
 // A View is a window. It maintains its own internal buffer and cursor
 // position.
 type View struct {
-	name           string
-	x0, y0, x1, y1 int
-	ox, oy         int // origin
-	cx, cy         int //cursor position
-	lines          [][]rune
-	readOffset     int
-	readCache      string
+	name                                             string
+	x0, y0, x1, y1                                   int
+	ox, oy                                           int // origin
+	cursorPositionInScreenX, cursorPositionInScreenY int //cursor position
+	lines                                            [][]rune
+	readOffset                                       int
+	readCache                                        string
+	showCursor                                       bool
 
 	tainted   bool       // marks if the viewBuffer must be updated
 	viewLines []viewLine // internal representation of the view's buffer
 
+	markup *Markup
+
 	// BgColor and FgColor allow to configure the background and foreground
 	// colors of the View.
 	BgColor, FgColor termbox.Attribute
-
-	// SelBgColor and SelFgColor are used to configure the background and
-	// foreground colors of the selected line, when it is highlighted.
-	SelBgColor, SelFgColor termbox.Attribute
 
 	// If Editable is true, keystrokes will be added to the view's internal
 	// buffer at the cursor position.
@@ -37,10 +36,6 @@ type View struct {
 
 	// Overwrite enables or disables the overwrite mode of the view.
 	Overwrite bool
-
-	// If Highlight is true, Sel{Bg,Fg}Colors will be used
-	// for the line under the cursor position.
-	Highlight bool
 
 	// If Wrap is true, the content that is written to this View is
 	// automatically wrapped when it is longer than its width. If true the
@@ -57,19 +52,6 @@ type viewLine struct {
 	line           []rune
 }
 
-// NewView returns a new View
-func NewView(name string, x0, y0, x1, y1 int) *View {
-	v := &View{
-		name:    name,
-		x0:      x0,
-		y0:      y0,
-		x1:      x1,
-		y1:      y1,
-		tainted: true,
-	}
-	return v
-}
-
 // Size returns the number of visible columns and rows in the View.
 func (v *View) Size() (x, y int) {
 	return v.x1 - v.x0 - 1, v.y1 - v.y0 - 1
@@ -81,20 +63,12 @@ func (v *View) Name() string {
 }
 
 // setRune writes a rune at the given point, relative to the view.
-func (v *View) setRune(x, y int, ch rune) error {
+func (v *View) setRune(x, y int, ch rune, fgColor, bgColor termbox.Attribute) error {
 	maxX, maxY := v.Size()
 	if x < 0 || x >= maxX || y < 0 || y >= maxY {
 		return errors.New("invalid point")
 	}
 
-	var fgColor, bgColor termbox.Attribute
-	if v.Highlight && y == v.cy {
-		fgColor = v.SelFgColor
-		bgColor = v.SelBgColor
-	} else {
-		fgColor = v.FgColor
-		bgColor = v.BgColor
-	}
 	termbox.SetCell(v.x0+x+1, v.y0+y+1, ch,
 		termbox.Attribute(fgColor), termbox.Attribute(bgColor))
 	return nil
@@ -107,14 +81,14 @@ func (v *View) setCursor(x, y int) error {
 	if x < 0 || x >= maxX || y < 0 || y >= maxY {
 		return errors.New("invalid point")
 	}
-	v.cx = x
-	v.cy = y
+	v.cursorPositionInScreenX = x
+	v.cursorPositionInScreenY = y
 	return nil
 }
 
 // Cursor returns the cursor position of the view.
 func (v *View) Cursor() (x, y int) {
-	return v.cx, v.cy
+	return v.cursorPositionInScreenX, v.cursorPositionInScreenY
 }
 
 // setOrigin sets the origin position of the view's internal buffer,
@@ -241,33 +215,32 @@ func (v *View) Render() error {
 		if y >= maxY {
 			break
 		}
+
 		x := 0
-		for j, ch := range vline.line {
-			if j < v.ox {
-				continue
-			}
-			if x >= maxX {
-				break
-			}
-			if err := v.setRune(x, y, ch); err != nil {
-				return err
-			}
-			x++
-		}
+		v.renderLine(x, y, vline)
+
 		y++
 	}
-	cx, cy := calculateCursorPosition(v)
-
-	_, ry, _ := v.realPosition(cx, cy)
-
-	if ry <= len(v.viewLines) {
-		termbox.SetCursor(cx, cy)
+	if v.showCursor {
+		v.drawCursor()
 	}
 	return nil
 }
 
+//calculateCursorPosition gives the cursor position
+//from the beginning of the view
 func calculateCursorPosition(v *View) (int, int) {
-	return v.x0 + v.cx, v.y0 + v.cy
+	return v.x0 + v.cursorPositionInScreenX, v.y0 + v.cursorPositionInScreenY
+}
+
+func (v *View) drawCursor() {
+	cursorPositionInScreenX, cursorPositionInScreenY := calculateCursorPosition(v)
+
+	_, ry, _ := v.realPosition(cursorPositionInScreenX, cursorPositionInScreenY)
+
+	if ry <= len(v.viewLines) {
+		termbox.SetCursor(cursorPositionInScreenX, cursorPositionInScreenY)
+	}
 }
 
 // realPosition returns the position in the internal buffer corresponding to the
@@ -295,6 +268,46 @@ func (v *View) realPosition(vx, vy int) (x, y int, err error) {
 	}
 
 	return x, y, nil
+}
+
+func (v *View) renderLine(x int, y int, vline viewLine) error {
+	maxX, _ := v.Size()
+	start, column := 0, 0
+	if v.markup != nil {
+		for _, token := range v.markup.Tokenize(string(vline.line)) {
+			// First check if it's a tag. Tags are not displayed.
+			if v.markup.IsTag(token) {
+				continue
+			}
+
+			// Here comes the actual text: display it one character at a time.
+			for i, char := range token {
+				if !v.markup.RightAligned {
+					start = x + column
+					column++
+				} else {
+					start = maxX - len(token) + i
+				}
+				if err := v.setRune(start, y, char, v.markup.Foreground, v.markup.Background); err != nil {
+					return err
+				}
+			}
+		}
+	} else {
+		for j, ch := range vline.line {
+			if j < v.ox {
+				continue
+			}
+			if x >= maxX {
+				break
+			}
+			if err := v.setRune(x, y, ch, v.FgColor, v.BgColor); err != nil {
+				return err
+			}
+			x++
+		}
+	}
+	return nil
 }
 
 // Clear empties the view's internal buffer.
@@ -483,10 +496,10 @@ func (v *View) Word(x, y int) (string, error) {
 
 //CursorDown moves the cursor down
 func (v *View) CursorDown() {
-	cx, cy := v.Cursor()
+	cursorPositionInScreenX, cursorPositionInScreenY := v.Cursor()
 	ox, oy := v.Origin()
-	if oy <= len(v.viewLines) {
-		if err := v.setCursor(cx, cy+1); err != nil {
+	if oy+cursorPositionInScreenY <= len(v.viewLines) {
+		if err := v.setCursor(cursorPositionInScreenX, cursorPositionInScreenY+1); err != nil {
 			v.setOrigin(ox, oy+1)
 		}
 	}
@@ -495,24 +508,55 @@ func (v *View) CursorDown() {
 //CursorUp moves the cursor up
 func (v *View) CursorUp() {
 	ox, oy := v.Origin()
-	cx, cy := v.Cursor()
-	if err := v.setCursor(cx, cy-1); err != nil && oy > 0 {
+	cursorPositionInScreenX, cursorPositionInScreenY := v.Cursor()
+	if err := v.setCursor(cursorPositionInScreenX, cursorPositionInScreenY-1); err != nil && oy > 0 {
 		v.setOrigin(ox, oy-1)
 	}
 }
 
 func (v *View) MoveCursorToBottom() {
 	v.oy = len(v.viewLines) - v.y1
-	v.cy = v.y1
+	v.cursorPositionInScreenY = v.y1
 }
 
 func (v *View) MoveCursorToTop() {
 	v.oy = 0
-	v.cy = 0
+	v.cursorPositionInScreenY = 0
 }
 
 // indexFunc allows to split lines by words taking into account spaces
 // and 0.
 func indexFunc(r rune) bool {
 	return r == ' ' || r == 0
+}
+
+// NewView returns a new View
+func NewView(name string, x0, y0, x1, y1 int, showCursor bool) *View {
+	v := &View{
+		name:       name,
+		x0:         x0,
+		y0:         y0,
+		x1:         x1,
+		y1:         y1,
+		tainted:    true,
+		showCursor: showCursor,
+	}
+
+	return v
+}
+
+// NewMarkupView returns a new View with markup support
+func NewMarkupView(name string, x0, y0, x1, y1 int, showCursor bool) *View {
+	v := &View{
+		name:       name,
+		x0:         x0,
+		y0:         y0,
+		x1:         x1,
+		y1:         y1,
+		tainted:    true,
+		showCursor: showCursor,
+		markup:     NewMarkup(),
+	}
+
+	return v
 }

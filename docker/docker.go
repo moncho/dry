@@ -1,9 +1,10 @@
 package docker
 
 import (
-	"fmt"
+	"errors"
 	"io"
 	"os"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/fsouza/go-dockerclient"
@@ -11,11 +12,12 @@ import (
 
 //DockerDaemon knows how to talk to the Docker daemon
 type DockerDaemon struct {
-	client     *docker.Client         //client used to to connect to the Docker daemon
-	Containers []docker.APIContainers // Array of containers.
-	err        error                  // Error, if any.
-	connected  bool
-	DockerEnv  *DockerEnv
+	client        *docker.Client                  //client used to to connect to the Docker daemon
+	containerByID map[string]docker.APIContainers // Containers by their id
+	Containers    []docker.APIContainers
+	err           error // Errors, if any.
+	connected     bool
+	DockerEnv     *DockerEnv
 }
 
 //DockerEnv are the Docker-related environment variables defined
@@ -27,16 +29,21 @@ type DockerEnv struct {
 
 //ContainersCount returns the number of containers found.
 func (daemon *DockerDaemon) ContainersCount() int {
-	return len(daemon.Containers)
+	return len(daemon.containerByID)
 }
 
 //ContainerIDAt returns the container ID of the container found at the given
-//position from the list of containers.
-func (daemon *DockerDaemon) ContainerIDAt(position int) (string, error) {
-	if position >= len(daemon.Containers) {
-		return "", fmt.Errorf("Invalid position %d", position)
+//position.
+func (daemon *DockerDaemon) ContainerIDAt(pos int) (string, error) {
+	if pos >= len(daemon.Containers) {
+		return "", errors.New("Position is higher than number of containers")
 	}
-	return daemon.Containers[position].ID, nil
+	return daemon.Containers[pos].ID, nil
+}
+
+//ContainerByID returns the container with the given ID
+func (daemon *DockerDaemon) ContainerByID(cid string) docker.APIContainers {
+	return daemon.containerByID[cid]
 }
 
 //Inspect the container with the given id
@@ -53,7 +60,7 @@ func (daemon *DockerDaemon) Kill(id string) error {
 }
 
 //Logs shows the logs of the container with the given id
-func (daemon *DockerDaemon) Logs(id string) io.Reader {
+func (daemon *DockerDaemon) Logs(id string) io.ReadCloser {
 	r, w := io.Pipe()
 	options := docker.AttachToContainerOptions{
 		Container:    id,
@@ -89,35 +96,43 @@ func (daemon *DockerDaemon) Rm(id string) bool {
 }
 
 //Stats shows resource usage statistics of the container with the given id
-func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan bool) {
+func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- bool, error) {
 	statsFromDocker := make(chan *docker.Stats)
 	stats := make(chan *Stats)
+	dockerDone := make(chan bool, 1)
 	done := make(chan bool, 1)
-	options := docker.StatsOptions{
-		ID:      id,
-		Stream:  false,
-		Timeout: 0, //1 * time.Second,
-		Stats:   statsFromDocker,
-		Done:    done,
-	}
-	//log.Infof("Showing stats of container: %s", id)
 
 	go func(done chan bool) {
+		options := docker.StatsOptions{
+			ID:      id,
+			Stream:  true,
+			Timeout: 1 * time.Second,
+			Stats:   statsFromDocker,
+			Done:    done,
+		}
 		if err := daemon.client.Stats(options); err != nil {
-			//log.Errorf("Error gettings statistics for id %s, error: %s", id, err.Error())
 			done <- true
 		}
 	}(done)
 	go func(stats chan *Stats, done chan bool) {
-		select {
-		case s := <-statsFromDocker:
-			stats <- BuildStats(id, s)
-		case <-done:
-			close(stats)
-			close(done)
+	loop:
+		for {
+			select {
+			case s := <-statsFromDocker:
+				if s != nil {
+					stats <- BuildStats(daemon.containerByID[id], s)
+				}
+			case <-done:
+				close(dockerDone)
+				//closed by the Docker client
+				//close(statsFromDocker)
+				close(stats)
+				close(done)
+				break loop
+			}
 		}
 	}(stats, done)
-	return stats, done
+	return stats, done, nil
 }
 
 //StopContainer stops the container with the given id
@@ -128,28 +143,52 @@ func (daemon *DockerDaemon) StopContainer(id string) error {
 
 //Refresh the container list
 func (daemon *DockerDaemon) Refresh(allContainers bool) error {
-	containers, err :=
-		daemon.client.ListContainers(docker.ListContainersOptions{All: allContainers})
+
+	containers, containerByID, err := containers(daemon.client, allContainers)
+
 	if err == nil {
+		daemon.containerByID = containerByID
 		daemon.Containers = containers
 	}
 	return err
 }
 
+//Sort the list of containers by the given mode
+func (daemon *DockerDaemon) Sort(sortMode SortMode) {
+	_ = "breakpoint"
+	SortContainers(daemon.Containers, sortMode)
+}
+
+func containers(client *docker.Client, allContainers bool) ([]docker.APIContainers, map[string]docker.APIContainers, error) {
+	containers, err := client.ListContainers(docker.ListContainersOptions{All: allContainers})
+	if err == nil {
+		var cmap = make(map[string]docker.APIContainers)
+
+		for _, c := range containers {
+			cmap[c.ID] = c
+		}
+		return containers, cmap, nil
+	}
+	return nil, nil, err
+}
+
 //ConnectToDaemon connects with the Docker daemon.
 //if allContainers is true, then a list of both running and non-running containers
 //is retrieved.
-func ConnectToDaemon() *DockerDaemon {
-	client, error := docker.NewClientFromEnv()
-
-	containers, _ := client.ListContainers(docker.ListContainersOptions{All: false})
-	return &DockerDaemon{
-		client:     client,
-		err:        error,
-		Containers: containers,
-		DockerEnv: &DockerEnv{
-			os.Getenv("DOCKER_HOST"),
-			os.Getenv("DOCKER_TLS_VERIFY") != "",
-			os.Getenv("DOCKER_CERT_PATH"),
-		}}
+func ConnectToDaemon() (*DockerDaemon, error) {
+	client, err := docker.NewClientFromEnv()
+	if err == nil {
+		containers, containersByID, err := containers(client, false)
+		return &DockerDaemon{
+			client:        client,
+			err:           err,
+			containerByID: containersByID,
+			Containers:    containers,
+			DockerEnv: &DockerEnv{
+				os.Getenv("DOCKER_HOST"),
+				os.Getenv("DOCKER_TLS_VERIFY") != "",
+				os.Getenv("DOCKER_CERT_PATH"),
+			}}, nil
+	}
+	return nil, err
 }

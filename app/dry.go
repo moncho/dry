@@ -8,26 +8,28 @@ import (
 	"time"
 
 	godocker "github.com/fsouza/go-dockerclient"
-	mdocker "github.com/moncho/dry/docker"
+	"github.com/moncho/dry/appui"
+	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
-	tb "github.com/nsf/termbox-go"
 )
 
-//Dry is the application representation.
+//Dry represents the application.
 type Dry struct {
-	containerToInspect   *godocker.Container
-	dockerDaemon         *mdocker.DockerDaemon
-	dockerDaemonRenderer *ui.DockerPs
-	header               *header
-	State                *AppState
-	stats                *mdocker.Stats
-	keyboardHelpText     string
+	containerToInspect *godocker.Container
+	dockerDaemon       *drydocker.DockerDaemon
+	renderer           *appui.DockerPs
+	header             *header
+	State              *AppState
+	stats              *drydocker.Stats
+	orderedCids        []string
 }
 
+//Changed is true if the application state has changed
 func (d *Dry) Changed() bool {
 	return d.State.changed
 }
 
+//Inspect set dry for inspecting container at the given position
 func (d *Dry) Inspect(position int) {
 	if id, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
 		c, err := d.dockerDaemon.Inspect(id)
@@ -56,7 +58,7 @@ func (d *Dry) Kill(position int) {
 
 }
 
-func (d *Dry) Logs(position int) (io.Reader, error) {
+func (d *Dry) Logs(position int) (io.ReadCloser, error) {
 	id, err := d.dockerDaemon.ContainerIDAt(position)
 	if err == nil {
 		return d.dockerDaemon.Logs(id), nil
@@ -95,20 +97,22 @@ func (d *Dry) ShowHelp() {
 
 func (d *Dry) Sort() {
 	switch d.State.SortMode {
-	case mdocker.SortByContainerID:
-		d.State.SortMode = mdocker.SortByImage
-	case mdocker.SortByImage:
-		d.State.SortMode = mdocker.SortByStatus
-	case mdocker.SortByStatus:
-		d.State.SortMode = mdocker.SortByName
-	case mdocker.SortByName:
-		d.State.SortMode = mdocker.SortByContainerID
+	case drydocker.SortByContainerID:
+		d.State.SortMode = drydocker.SortByImage
+	case drydocker.SortByImage:
+		d.State.SortMode = drydocker.SortByStatus
+	case drydocker.SortByStatus:
+		d.State.SortMode = drydocker.SortByName
+	case drydocker.SortByName:
+		d.State.SortMode = drydocker.SortByContainerID
 	default:
 	}
+	d.dockerDaemon.Sort(d.State.SortMode)
+
 }
 
 func (d *Dry) StartContainer(position int) {
-
+	_ = "breakpoint"
 	if id, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
 		err := d.dockerDaemon.RestartContainer(id)
 		if err == nil {
@@ -120,18 +124,32 @@ func (d *Dry) StartContainer(position int) {
 	}
 }
 
-func (d *Dry) Stats(position int) {
+//Stats get stats of container in the given position until a
+//message is sent to the done channel
+func (d *Dry) Stats(position int) (chan<- bool, error) {
 	id, err := d.dockerDaemon.ContainerIDAt(position)
 	if err == nil {
-
-		statsC, doneChannel := d.dockerDaemon.Stats(id)
-		select {
-		case s := <-statsC:
-			d.stats = s
-			d.State.viewMode = StatsMode
-			doneChannel <- true
+		done := make(chan bool, 1)
+		statsC, dockerDoneChannel, err := d.dockerDaemon.Stats(id)
+		if err == nil {
+			go func() {
+			loop:
+				for {
+					select {
+					case s := <-statsC:
+						d.stats = s
+						d.State.viewMode = StatsMode
+					case <-done:
+						dockerDoneChannel <- true
+						close(done)
+						break loop
+					}
+				}
+			}()
+			return done, nil
 		}
 	}
+	return nil, err
 }
 
 func (d *Dry) StopContainer(position int) {
@@ -165,49 +183,32 @@ func (d *Dry) errormessage(cid string, action string, err error) {
 }
 
 //NewDryApp creates a new dry application
-func NewDryApp(screen *ui.Screen) *Dry {
-	state := &AppState{
-		changed:              true,
-		message:              "",
-		Paused:               false,
-		showingAllContainers: false,
-		ShowingHelp:          false,
-		SortMode:             mdocker.SortByContainerID,
-		viewMode:             Main,
+func NewDryApp(screen *ui.Screen) (*Dry, error) {
+	d, err := drydocker.ConnectToDaemon()
+	if err == nil {
+		state := &AppState{
+			changed:              true,
+			message:              "",
+			Paused:               false,
+			showingAllContainers: false,
+			ShowingHelp:          false,
+			SortMode:             drydocker.SortByContainerID,
+			viewMode:             Main,
+		}
+		d.Sort(state.SortMode)
+		app := &Dry{}
+		//newHeader(state)
+		app.State = state
+		app.header = newHeader(state)
+		app.dockerDaemon = d
+		app.renderer = appui.NewDockerRenderer(
+			app.dockerDaemon,
+			screen.Cursor,
+			state.SortMode,
+			app.header)
+		return app, nil
 	}
-	app := &Dry{}
-	newHeader(state)
-	app.State = state
-	app.header = newHeader(state)
-	app.dockerDaemon = mdocker.ConnectToDaemon()
-	app.dockerDaemonRenderer = ui.NewDockerRenderer(
-		app.dockerDaemon,
-		screen.Cursor,
-		state.SortMode,
-		app.header)
-	return app
-}
-
-//Not sure if this is the right approach, currently not being used
-func newKeyMapping(app *Dry) []KeyPressEvent {
-	mapping := []KeyPressEvent{
-		KeyPressEvent{
-			Key: ui.Key{
-				KeyCodes: []rune{'?', 'h', 'H'},
-				HelpText: "<b>H:</b><white>Help</>",
-			},
-			Action: func(app Dry) { app.ShowHelp() },
-		},
-		KeyPressEvent{
-			Key: ui.Key{
-				KeyCodes: []rune{'q', 'Q'},
-				Keys:     []tb.Key{tb.KeyEsc},
-				HelpText: "<b>Q:</b><white>Quit</>",
-			},
-			Action: func(app Dry) { app.ShowHelp() },
-		},
-	}
-	return mapping
+	return nil, err
 }
 
 //header
@@ -236,7 +237,6 @@ func (h *header) Render() string {
 		h.appState.Render(),
 	}
 
-	_ = "breakpoint"
 	buffer := new(bytes.Buffer)
 	h.template.Execute(buffer, vars)
 	return buffer.String()

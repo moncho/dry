@@ -49,7 +49,7 @@ func (a byName) Less(i, j int) bool {
 }
 
 //Sort the given containers slice using the given mode
-func Sort(containers []docker.APIContainers, mode SortMode) {
+func SortContainers(containers []docker.APIContainers, mode SortMode) {
 	switch mode {
 	case SortByContainerID:
 		sort.Sort(byContainerID(containers))
