@@ -23,15 +23,22 @@ The first release is near.
 
 ### Installation
 
-Implemented in Go, make sure that $GOPATH exists.
+#### Binaries
+
+- **darwin** [386](https://github.com/moncho/dry/releases/download/latest/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/0.5.0/dry-darwin-amd64)
+- **freebsd** [386](https://github.com/moncho/dry/releases/download/0.5.0/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/0.5.0/dry-freebsd-amd64)
+- **linux** [386](https://github.com/moncho/dry/releases/download/0.5.0/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/0.5.0/dry-linux-amd64)
+- **windows** [386](https://github.com/moncho/dry/releases/download/0.5.0/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/0.5.0/dry-windows-amd64)
+
+#### Go
+
+Make sure that $GOPATH exists.
 
 ```
 $ go get github.com/moncho/dry
 $ cd $GOPATH/src/github.com/moncho/dry
 $ make install
 ```
-
-A mechanism to install binaries will be provided in the future.
 
 ### Usage
 
