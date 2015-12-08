@@ -10,6 +10,7 @@
 
 It can be used as alternative to the following commands of the official Docker cli:
 
+* inspect
 * kill
 * logs
 * ps
@@ -18,9 +19,7 @@ It can be used as alternative to the following commands of the official Docker c
 * start
 * stop
 
-The application is still in alpha stage, but usable.
-
- ***stats*** and ***logs*** commands are not working properly.
+The first release is near.
 
 ### Installation
 
@@ -42,8 +41,15 @@ Open a console, type ```dry```. It will connect to whatever host defined in **$D
 
 ### Debug
 
+Debugging can be done using [godebug](https://github.com/mailgun/godebug).
+
+Install it, the insert breakpoint anywhere you want:
 ```
-godebug run -instrument github.com/moncho/dry,github.com/moncho/dry/app,github.com/moncho/dry/docker,github.com/moncho/dry/gui main.go
+_ = "breakpoint"
+```
+Then, run the debugger:
+```
+godebug run -instrument github.com/moncho/dry,github.com/moncho/dry/app,github.com/moncho/dry/docker,github.com/moncho/dry/ui,github.com/moncho/dry/appui main.go
 ```
 ### Contributing
 All contributions are welcome.
