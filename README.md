@@ -6,7 +6,7 @@
 
 **dry** is an interactive console application that connects to a Docker host, shows the list of containers and offers a few Docker commands to run on them.
 
-[![asciicast](https://asciinema.org/a/1cqxo1sy61ad6x5upnmwbhs5f.png)](https://asciinema.org/a/1cqxo1sy61ad6x5upnmwbhs5f)
+[![asciicast](https://asciinema.org/a/31436.png)](https://asciinema.org/a/31436)
 
 It can be used as alternative to the following commands of the official Docker cli:
 
@@ -19,16 +19,14 @@ It can be used as alternative to the following commands of the official Docker c
 * start
 * stop
 
-The first release is near.
-
 ### Installation
 
 #### Binaries
 
-- **darwin** [386](https://github.com/moncho/dry/releases/download/latest/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/0.5.0/dry-darwin-amd64)
-- **freebsd** [386](https://github.com/moncho/dry/releases/download/0.5.0/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/0.5.0/dry-freebsd-amd64)
-- **linux** [386](https://github.com/moncho/dry/releases/download/0.5.0/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/0.5.0/dry-linux-amd64)
-- **windows** [386](https://github.com/moncho/dry/releases/download/0.5.0/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/0.5.0/dry-windows-amd64)
+- **darwin** [386](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-darwin-amd64)
+- **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-freebsd-amd64)
+- **linux** [386](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-linux-amd64)
+- **windows** [386](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-windows-amd64)
 
 #### Go
 
