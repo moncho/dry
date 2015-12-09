@@ -48,7 +48,7 @@ Open a console, type ```dry```. It will connect to whatever host defined in **$D
 
 Debugging can be done using [godebug](https://github.com/mailgun/godebug).
 
-Install it, the insert breakpoint anywhere you want:
+Install it, then insert a breakpoint anywhere you want:
 ```
 _ = "breakpoint"
 ```
