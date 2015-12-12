@@ -143,7 +143,7 @@ func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.
 	go func() {
 		io.Copy(v, stream)
 	}()
-	screen.RenderLine(0, 0, "Use the arrow keys, 'g' or 'G' to move through the log.")
+	screen.RenderLine(0, 0, "Use the arrow keys, 'g' and 'G' to move through the log, escape key to go back.")
 	screen.Flush()
 loop:
 	for {

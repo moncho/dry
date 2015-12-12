@@ -21,7 +21,15 @@ It can be used as alternative to the following commands of the official Docker c
 
 ### Installation
 
+An easy way to install the latest binaries for Linux and Mac is to run this in your shell:
+
+```
+$ curl -sSf http://moncho.github.io/dry/dryup.sh | sh
+```
+
 #### Binaries
+
+If you dont like to **curl | sh**, binaries are provided.
 
 - **darwin** [386](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-darwin-amd64)
 - **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-freebsd-amd64)
@@ -29,6 +37,8 @@ It can be used as alternative to the following commands of the official Docker c
 - **windows** [386](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-windows-amd64)
 
 #### Go
+
+And if you just run what you compile, use the source.
 
 Make sure that $GOPATH exists.
 
