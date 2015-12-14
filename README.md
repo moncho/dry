@@ -24,7 +24,7 @@ It can be used as alternative to the following commands of the official Docker c
 An easy way to install the latest binaries for Linux and Mac is to run this in your shell:
 
 ```
-$ curl -sSf http://moncho.github.io/dry/dryup.sh | sh
+$ curl -sSf https://moncho.github.io/dry/dryup.sh | sh
 ```
 
 #### Binaries
