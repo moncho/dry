@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/docker/docker/pkg/stringutils"
 	"github.com/docker/docker/pkg/units"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/gosuri/uitable/util/strutil"
 )
 
 const (
@@ -72,9 +72,9 @@ func (c *ContainerFormatter) Command() string {
 	c.addHeader(commandHeader)
 	command := c.c.Command
 	if c.trunc {
-		command = stringutils.Truncate(command, 30)
+		command = strutil.Resize(command, 30)
 	}
-	return strconv.Quote(command)
+	return command
 }
 
 func (c *ContainerFormatter) CreatedAt() string {

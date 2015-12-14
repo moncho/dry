@@ -7,6 +7,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/docker/docker/pkg/units"
+	"github.com/gosuri/uitable/util/strutil"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 )
@@ -31,7 +32,7 @@ func (r *statsRenderer) Render() string {
 		w,
 		fmt.Sprintf("<white>%s\t%s\t%.2f\t%s / %s\t%.2f\t%s / %s\t%s / %s</>\n",
 			s.CID,
-			s.Command,
+			strutil.Resize(s.Command, 20),
 			s.CPUPercentage,
 			units.HumanSize(s.Memory), units.HumanSize(s.MemoryLimit),
 			s.MemoryPercentage,
