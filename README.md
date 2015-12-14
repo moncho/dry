@@ -85,3 +85,7 @@ Built on top of:
 * [go-dockerclient](https://github.com/fsouza/go-dockerclient)
 
 Also reused some code and ideas from the [Docker project](https://github.com/docker/docker) and [mop](https://github.com/michaeldv/mop).
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moncho/dry/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
