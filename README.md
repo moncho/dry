@@ -6,7 +6,7 @@
 
 **dry** is an interactive console application that connects to a Docker host, shows the list of containers and offers a few Docker commands to run on them.
 
-[![asciicast](https://asciinema.org/a/31436.png)](https://asciinema.org/a/31436)
+[![asciicast](https://asciinema.org/a/31436.png)](https://asciinema.org/a/31436?autoplay=1)
 
 It can be used as alternative to the following commands of the official Docker cli:
 
