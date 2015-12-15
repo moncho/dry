@@ -12,6 +12,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/moncho/dry/app"
+	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/version"
 	"github.com/nsf/termbox-go"
@@ -20,10 +21,14 @@ import _ "net/http/pprof"
 
 // command line flags variable
 var opts struct {
-	Description bool `short:"d" long:"description" description:"Dry description"`
+	Description bool `short:"a" long:"description" description:"Dry description"`
 	// enable profiling
 	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
 	Version bool `short:"v" long:"version" description:"Dry version"`
+	//Docker-related properties
+	DockerHost       string `short:"d" long:"docker_host" description:"Docker Host"`
+	DockerCertPath   string `short:"c" long:"docker_certpath" description:"Docker cert path"`
+	DockerTLSVerifiy bool   `short:"t" long:"docker_tls" description:"Docker TLS verify"`
 }
 
 //-----------------------------------------------------------------------------
@@ -267,6 +272,14 @@ loop:
 }
 
 //-----------------------------------------------------------------------------
+
+func newApp(screen *ui.Screen, dockerEnv *docker.DockerEnv) (*app.Dry, error) {
+	if dockerEnv == nil {
+		return app.NewDryApp(screen)
+	}
+	return app.NewDryAppWithDockerEnv(screen, dockerEnv)
+}
+
 func main() {
 	// parse flags
 	_, err := flags.Parse(&opts)
@@ -291,10 +304,18 @@ func main() {
 		return
 	}
 	log.Info("Launching dry")
-
-	if os.Getenv("DOCKER_HOST") == "" {
-		log.Error("No DOCKER_HOST environment variable found.")
-		return
+	var dockerEnv *docker.DockerEnv
+	if opts.DockerHost == "" {
+		if os.Getenv("DOCKER_HOST") == "" {
+			log.Error("No DOCKER_HOST environment variable found.")
+			return
+		}
+	} else {
+		dockerEnv = &docker.DockerEnv{
+			DockerHost:      opts.DockerHost,
+			DockerTLSVerify: opts.DockerTLSVerifiy,
+			DockerCertPath:  opts.DockerCertPath,
+		}
 	}
 
 	// Start profiling (if required)
@@ -304,7 +325,8 @@ func main() {
 		}()
 	}
 	screen := ui.NewScreen()
-	app, err := app.NewDryApp(screen)
+	newApp(screen, dockerEnv)
+	app, err := newApp(screen, dockerEnv)
 	if err == nil {
 		mainScreen(app, screen)
 	} else {

@@ -182,9 +182,7 @@ func (d *Dry) errormessage(cid string, action string, err error) {
 	d.State.message = err.Error()
 }
 
-//NewDryApp creates a new dry application
-func NewDryApp(screen *ui.Screen) (*Dry, error) {
-	d, err := drydocker.ConnectToDaemon()
+func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, error) {
 	if err == nil {
 		state := &AppState{
 			changed:              true,
@@ -209,6 +207,18 @@ func NewDryApp(screen *ui.Screen) (*Dry, error) {
 		return app, nil
 	}
 	return nil, err
+}
+
+//NewDryApp creates a new dry application
+func NewDryApp(screen *ui.Screen) (*Dry, error) {
+	d, err := drydocker.ConnectToDaemon()
+	return newDry(screen, d, err)
+}
+
+//NewDryAppWithDockerEnv creates a new dry application
+func NewDryAppWithDockerEnv(screen *ui.Screen, env *drydocker.DockerEnv) (*Dry, error) {
+	d, err := drydocker.ConnectToGivenDaemon(env)
+	return newDry(screen, d, err)
 }
 
 //header

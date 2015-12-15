@@ -2,8 +2,11 @@ package docker
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -172,11 +175,7 @@ func containers(client *docker.Client, allContainers bool) ([]docker.APIContaine
 	return nil, nil, err
 }
 
-//ConnectToDaemon connects with the Docker daemon.
-//if allContainers is true, then a list of both running and non-running containers
-//is retrieved.
-func ConnectToDaemon() (*DockerDaemon, error) {
-	client, err := docker.NewClientFromEnv()
+func connect(client *docker.Client, err error) (*DockerDaemon, error) {
 	if err == nil {
 		containers, containersByID, err := containers(client, false)
 		return &DockerDaemon{
@@ -191,4 +190,27 @@ func ConnectToDaemon() (*DockerDaemon, error) {
 			}}, nil
 	}
 	return nil, err
+}
+
+//ConnectToDaemon connects to a Docker daemon using environment properties.
+func ConnectToDaemon() (*DockerDaemon, error) {
+	return connect(docker.NewClientFromEnv())
+}
+
+//ConnectToGivenDaemon connects to a Docker daemon using the given properties.
+func ConnectToGivenDaemon(env *DockerEnv) (*DockerDaemon, error) {
+	dockerHost := env.DockerHost
+	if env.DockerTLSVerify {
+		parts := strings.SplitN(dockerHost, "://", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("could not split %s into two parts by ://", dockerHost)
+		}
+		cert := filepath.Join(env.DockerCertPath, "cert.pem")
+		key := filepath.Join(env.DockerCertPath, "key.pem")
+		ca := filepath.Join(env.DockerCertPath, "ca.pem")
+
+		return connect(docker.NewVersionedTLSClient(dockerHost, cert, key, ca, ""))
+	}
+	return connect(docker.NewVersionedClient(dockerHost, ""))
+
 }
