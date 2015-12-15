@@ -126,14 +126,13 @@ func (d *Dry) StartContainer(position int) {
 
 //Stats get stats of container in the given position until a
 //message is sent to the done channel
-func (d *Dry) Stats(position int) (chan<- bool, error) {
+func (d *Dry) Stats(position int) (chan<- bool, error, <-chan error) {
 	id, err := d.dockerDaemon.ContainerIDAt(position)
 	if err == nil {
 		done := make(chan bool, 1)
-		statsC, dockerDoneChannel, err := d.dockerDaemon.Stats(id)
+		statsC, dockerDoneChannel, errC := d.dockerDaemon.Stats(id)
 		if err == nil {
 			go func() {
-			loop:
 				for {
 					select {
 					case s := <-statsC:
@@ -142,14 +141,14 @@ func (d *Dry) Stats(position int) (chan<- bool, error) {
 					case <-done:
 						dockerDoneChannel <- true
 						close(done)
-						break loop
+						return
 					}
 				}
 			}()
-			return done, nil
+			return done, nil, errC
 		}
 	}
-	return nil, err
+	return nil, err, nil
 }
 
 func (d *Dry) StopContainer(position int) {

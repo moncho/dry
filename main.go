@@ -105,10 +105,10 @@ loop:
 					} else if event.Ch == 'r' || event.Ch == 'R' { //start
 						dry.StartContainer(screen.CursorPosition())
 					} else if event.Ch == 's' || event.Ch == 'S' { //stats
-						done, err := dry.Stats(screen.CursorPosition())
+						done, err, errC := dry.Stats(screen.CursorPosition())
 						if err == nil {
 							viewMode = true
-							go autorefresh(dry, screen, keyboardQueueForView, viewClosed, done)
+							go autorefresh(dry, screen, keyboardQueueForView, viewClosed, done, errC)
 						} else {
 							log.Warn(err)
 						}
@@ -181,7 +181,7 @@ loop:
 }
 
 //autorefresh view that autorefreshes its content every second
-func autorefresh(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan<- bool, doneStats chan<- bool) {
+func autorefresh(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan<- bool, doneStats chan<- bool, errC <-chan error) {
 	defer func() { doneStats <- true }()
 	defer func() { done <- true }()
 	screen.Clear()
@@ -201,6 +201,12 @@ func autorefresh(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Eve
 loop:
 	for {
 		select {
+		case <-errC:
+			{
+				mutex.Lock()
+				timestampQueue.Stop()
+				break loop
+			}
 		case event := <-keyboardQueue:
 			switch event.Type {
 			case termbox.EventKey:

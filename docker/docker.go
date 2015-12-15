@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/fsouza/go-dockerclient"
@@ -99,26 +98,26 @@ func (daemon *DockerDaemon) Rm(id string) bool {
 }
 
 //Stats shows resource usage statistics of the container with the given id
-func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- bool, error) {
+func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- bool, <-chan error) {
 	statsFromDocker := make(chan *docker.Stats)
 	stats := make(chan *Stats)
 	dockerDone := make(chan bool, 1)
 	done := make(chan bool, 1)
+	errorC := make(chan error)
 
-	go func(done chan bool) {
+	go func(done chan bool, errorC chan<- error) {
 		options := docker.StatsOptions{
-			ID:      id,
-			Stream:  true,
-			Timeout: 1 * time.Second,
-			Stats:   statsFromDocker,
-			Done:    done,
+			ID:     id,
+			Stream: true,
+			Stats:  statsFromDocker,
+			Done:   done,
 		}
 		if err := daemon.client.Stats(options); err != nil {
-			done <- true
+			log.Warn("there was an error retrieving stats %s", err.Error())
+			errorC <- err
 		}
-	}(done)
-	go func(stats chan *Stats, done chan bool) {
-	loop:
+	}(done, errorC)
+	go func(stats chan *Stats, done chan bool, errorC chan error) {
 		for {
 			select {
 			case s := <-statsFromDocker:
@@ -131,11 +130,12 @@ func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- bool, error)
 				//close(statsFromDocker)
 				close(stats)
 				close(done)
-				break loop
+				close(errorC)
+				return
 			}
 		}
-	}(stats, done)
-	return stats, done, nil
+	}(stats, done, errorC)
+	return stats, done, errorC
 }
 
 //StopContainer stops the container with the given id
