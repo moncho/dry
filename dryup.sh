@@ -20,7 +20,7 @@ set_globals() {
     dist_server="https://github.com/moncho/dry/releases/download"
 
     # Dry version
-    dry_version="v0.1.0-beta"
+    dry_version="v0.2.0-beta"
 
     #Install prefix
     default_prefix="${DRY_PREFIX-/usr/local/bin}"

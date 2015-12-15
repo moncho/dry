@@ -223,7 +223,7 @@ loop:
 			}
 		}
 	}
-	//A bit cleanup before exiting, the screen is clear and the lock released
+	//cleanup before exiting, the screen is cleared and the lock released
 	termbox.HideCursor()
 	screen.Clear()
 	screen.Sync()

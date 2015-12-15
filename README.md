@@ -31,10 +31,10 @@ $ curl -sSf https://moncho.github.io/dry/dryup.sh | sh
 
 If you dont like to **curl | sh**, binaries are provided.
 
-- **darwin** [386](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-darwin-amd64)
-- **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-freebsd-amd64)
-- **linux** [386](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-linux-amd64)
-- **windows** [386](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.1.0-beta/dry-windows-amd64)
+- **darwin** [386](https://github.com/moncho/dry/releases/download/v0.2.0-beta/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.2.0-beta/dry-darwin-amd64)
+- **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.2.0-beta/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.2.0-beta/dry-freebsd-amd64)
+- **linux** [386](https://github.com/moncho/dry/releases/download/v0.2.0-beta/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.2.0-beta/dry-linux-amd64)
+- **windows** [386](https://github.com/moncho/dry/releases/download/v0.2.0-beta/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.2.0-beta/dry-windows-amd64)
 
 #### Go
 
@@ -88,4 +88,3 @@ Also reused some code and ideas from the [Docker project](https://github.com/doc
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moncho/dry/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
