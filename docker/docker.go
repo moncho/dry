@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/fsouza/go-dockerclient"
 )
 
@@ -73,7 +72,6 @@ func (daemon *DockerDaemon) Logs(id string) io.ReadCloser {
 		Stderr:       true,
 		Logs:         true,
 	}
-	log.Infof("Attaching to container: %s", id)
 	go daemon.client.AttachToContainer(options)
 	return r
 }
@@ -101,11 +99,10 @@ func (daemon *DockerDaemon) Rm(id string) bool {
 func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- bool, <-chan error) {
 	statsFromDocker := make(chan *docker.Stats)
 	stats := make(chan *Stats)
-	dockerDone := make(chan bool, 1)
 	done := make(chan bool, 1)
 	errorC := make(chan error)
 
-	go func(done chan bool, errorC chan<- error) {
+	go func(done chan bool, errC chan<- error) {
 		options := docker.StatsOptions{
 			ID:     id,
 			Stream: true,
@@ -113,11 +110,12 @@ func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- bool, <-chan
 			Done:   done,
 		}
 		if err := daemon.client.Stats(options); err != nil {
-			log.Warn("there was an error retrieving stats %s", err.Error())
-			errorC <- err
+			errC <- err
+			close(errC)
 		}
 	}(done, errorC)
-	go func(stats chan *Stats, done chan bool, errorC chan error) {
+
+	go func(stats chan *Stats, done chan bool) {
 		for {
 			select {
 			case s := <-statsFromDocker:
@@ -125,16 +123,13 @@ func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- bool, <-chan
 					stats <- BuildStats(daemon.containerByID[id], s)
 				}
 			case <-done:
-				close(dockerDone)
-				//closed by the Docker client
-				//close(statsFromDocker)
+				//statsFromDocker is closed by the Docker client
 				close(stats)
 				close(done)
-				close(errorC)
 				return
 			}
 		}
-	}(stats, done, errorC)
+	}(stats, done)
 	return stats, done, errorC
 }
 
