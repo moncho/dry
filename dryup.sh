@@ -92,6 +92,8 @@ download_install_dry() {
     determine_binary || return 1
 
     local _dry_binary="$RETVAL"
+    local _errors=0
+
 
     determine_remote_dry "$_dry_binary" || return 1
 
@@ -107,13 +109,19 @@ download_install_dry() {
     assert_nz "$_dry_binary_file" "dry_binary_file"
     if [ $? != 0 ]; then
       verbose_say "failed to dowlonad binary"
-      return 1
+      _errors = 1
     fi
     install_dry "$_dry_binary_file" "$_prefix"
     if [ $? != 0 ]; then
       say_err "failed to install dry"
+      _errors = 1
+    fi
+
+    if [_errors != 0]; then
+      run rm "$_dry_binary_file"
       return 1
     fi
+    say "dry binary was copied to $_prefix, now you should 'sudo chmod 755 it'"
 }
 
 install_dry() {
