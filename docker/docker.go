@@ -170,7 +170,7 @@ func containers(client *docker.Client, allContainers bool) ([]docker.APIContaine
 	return nil, nil, err
 }
 
-func connect(client *docker.Client, err error) (*DockerDaemon, error) {
+func connect(client *docker.Client, err error, env *DockerEnv) (*DockerDaemon, error) {
 	if err == nil {
 		containers, containersByID, err := containers(client, false)
 		return &DockerDaemon{
@@ -178,18 +178,19 @@ func connect(client *docker.Client, err error) (*DockerDaemon, error) {
 			err:           err,
 			containerByID: containersByID,
 			Containers:    containers,
-			DockerEnv: &DockerEnv{
-				os.Getenv("DOCKER_HOST"),
-				os.Getenv("DOCKER_TLS_VERIFY") != "",
-				os.Getenv("DOCKER_CERT_PATH"),
-			}}, nil
+			DockerEnv:     env,
+		}, nil
 	}
 	return nil, err
 }
 
 //ConnectToDaemon connects to a Docker daemon using environment properties.
 func ConnectToDaemon() (*DockerDaemon, error) {
-	return connect(docker.NewClientFromEnv())
+	client, err := docker.NewClientFromEnv()
+	return connect(client, err, &DockerEnv{
+		os.Getenv("DOCKER_HOST"),
+		os.Getenv("DOCKER_TLS_VERIFY") != "",
+		os.Getenv("DOCKER_CERT_PATH")})
 }
 
 //ConnectToGivenDaemon connects to a Docker daemon using the given properties.
@@ -203,9 +204,10 @@ func ConnectToGivenDaemon(env *DockerEnv) (*DockerDaemon, error) {
 		cert := filepath.Join(env.DockerCertPath, "cert.pem")
 		key := filepath.Join(env.DockerCertPath, "key.pem")
 		ca := filepath.Join(env.DockerCertPath, "ca.pem")
-
-		return connect(docker.NewVersionedTLSClient(dockerHost, cert, key, ca, ""))
+		client, err := docker.NewVersionedTLSClient(dockerHost, cert, key, ca, "")
+		return connect(client, err, env)
 	}
-	return connect(docker.NewVersionedClient(dockerHost, ""))
+	client, err := docker.NewVersionedClient(dockerHost, "")
+	return connect(client, err, env)
 
 }
