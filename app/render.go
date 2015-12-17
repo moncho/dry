@@ -50,6 +50,8 @@ func Write(d *Dry, w io.Writer) {
 		{
 			if d.stats != nil {
 				fmt.Fprintf(w, appui.NewDockerStatsRenderer(d.stats).Render())
+			} else {
+				fmt.Fprintf(w, "Could not read stats")
 			}
 		}
 	case InspectMode:

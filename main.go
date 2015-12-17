@@ -182,8 +182,6 @@ loop:
 
 //autorefresh view that autorefreshes its content every second
 func autorefresh(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan<- bool, doneStats chan<- bool, errC <-chan error) {
-	defer func() { doneStats <- true }()
-	defer func() { done <- true }()
 	screen.Clear()
 	v := ui.NewMarkupView("", 0, 0, screen.Width, screen.Height, false)
 	//used to coordinate rendering betwen the ticker
@@ -234,6 +232,8 @@ loop:
 	screen.Clear()
 	screen.Sync()
 	mutex.Unlock()
+	doneStats <- true
+	done <- true
 }
 
 //less shows dry output in a "less" emulator

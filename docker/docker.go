@@ -99,10 +99,11 @@ func (daemon *DockerDaemon) Rm(id string) bool {
 func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- bool, <-chan error) {
 	statsFromDocker := make(chan *docker.Stats)
 	stats := make(chan *Stats)
+	dockerDone := make(chan bool, 1)
 	done := make(chan bool, 1)
-	errorC := make(chan error)
+	errorC := make(chan error, 1)
 
-	go func(done chan bool, errC chan<- error) {
+	go func() {
 		options := docker.StatsOptions{
 			ID:     id,
 			Stream: true,
@@ -110,12 +111,10 @@ func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- bool, <-chan
 			Done:   done,
 		}
 		if err := daemon.client.Stats(options); err != nil {
-			errC <- err
-			close(errC)
+			errorC <- err
 		}
-	}(done, errorC)
-
-	go func(stats chan *Stats, done chan bool) {
+	}()
+	go func() {
 		for {
 			select {
 			case s := <-statsFromDocker:
@@ -123,13 +122,14 @@ func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- bool, <-chan
 					stats <- BuildStats(daemon.containerByID[id], s)
 				}
 			case <-done:
+				dockerDone <- true
 				//statsFromDocker is closed by the Docker client
-				close(stats)
-				close(done)
+				//close(stats)
+				//close(done)
 				return
 			}
 		}
-	}(stats, done)
+	}()
 	return stats, done, errorC
 }
 

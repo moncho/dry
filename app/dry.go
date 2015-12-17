@@ -140,12 +140,13 @@ func (d *Dry) Stats(position int) (chan<- bool, error, <-chan error) {
 						d.State.viewMode = StatsMode
 					case <-done:
 						dockerDoneChannel <- true
-						close(done)
 						return
 					}
 				}
 			}()
 			return done, nil, errC
+		} else {
+			dockerDoneChannel <- true
 		}
 	}
 	return nil, err, nil
