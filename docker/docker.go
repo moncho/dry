@@ -108,7 +108,7 @@ func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- bool, <-chan
 			ID:     id,
 			Stream: true,
 			Stats:  statsFromDocker,
-			Done:   done,
+			Done:   dockerDone,
 		}
 		if err := daemon.client.Stats(options); err != nil {
 			errorC <- err
