@@ -12,14 +12,14 @@ import (
 // A View is a window. It maintains its own internal buffer and cursor
 // position.
 type View struct {
-	name                                             string
-	x0, y0, x1, y1                                   int
-	ox, oy                                           int // origin
-	cursorPositionInScreenX, cursorPositionInScreenY int //cursor position
-	lines                                            [][]rune
-	readOffset                                       int
-	readCache                                        string
-	showCursor                                       bool
+	name             string
+	x0, y0, x1, y1   int //screen dimensions
+	bufferX, bufferY int //current position in the view buffer
+	cursorX, cursorY int //cursor position in the screen, valid values between 0 and x1, y1
+	lines            [][]rune
+	readOffset       int
+	readCache        string
+	showCursor       bool
 
 	tainted   bool       // marks if the viewBuffer must be updated
 	viewLines []viewLine // internal representation of the view's buffer
@@ -52,8 +52,8 @@ type viewLine struct {
 	line           []rune
 }
 
-// Size returns the number of visible columns and rows in the View.
-func (v *View) Size() (x, y int) {
+// ViewSize returns the number of visible columns and rows in the View.
+func (v *View) ViewSize() (x, y int) {
 	return v.x1 - v.x0 - 1, v.y1 - v.y0 - 1
 }
 
@@ -64,7 +64,7 @@ func (v *View) Name() string {
 
 // setRune writes a rune at the given point, relative to the view.
 func (v *View) setRune(x, y int, ch rune, fgColor, bgColor termbox.Attribute) error {
-	maxX, maxY := v.Size()
+	maxX, maxY := v.ViewSize()
 	if x < 0 || x >= maxX || y < 0 || y >= maxY {
 		return errors.New("invalid point")
 	}
@@ -75,39 +75,40 @@ func (v *View) setRune(x, y int, ch rune, fgColor, bgColor termbox.Attribute) er
 }
 
 // SetCursor sets the cursor position of the view at the given point,
-// relative to the view. It checks if the position is valid.
+// relative to the screen. An error is returned if the position is outside
+// the screen limits.
 func (v *View) setCursor(x, y int) error {
-	maxX, maxY := v.Size()
+	maxX, maxY := v.ViewSize()
 	if x < 0 || x >= maxX || y < 0 || y >= maxY {
 		return errors.New("invalid point")
 	}
-	v.cursorPositionInScreenX = x
-	v.cursorPositionInScreenY = y
+	v.cursorX = x
+	v.cursorY = y
 	return nil
 }
 
 // Cursor returns the cursor position of the view.
 func (v *View) Cursor() (x, y int) {
-	return v.cursorPositionInScreenX, v.cursorPositionInScreenY
+	return v.cursorX, v.cursorY
 }
 
-// setOrigin sets the origin position of the view's internal buffer,
+// setPosition sets the origin position of the view's internal buffer,
 // so the buffer starts to be printed from this point, which means that
 // it is linked with the origin point of view. It can be used to
 // implement Horizontal and Vertical scrolling with just incrementing
-// or decrementing ox and oy.
-func (v *View) setOrigin(x, y int) error {
+// or decrementing x and y.
+func (v *View) setPosition(x, y int) error {
 	if x < 0 || y < 0 {
 		return errors.New("invalid point")
 	}
-	v.ox = x
-	v.oy = y
+	v.bufferX = x
+	v.bufferY = y
 	return nil
 }
 
-// Origin returns the origin position of the view.
-func (v *View) Origin() (x, y int) {
-	return v.ox, v.oy
+// Position returns the position in the view buffer.
+func (v *View) Position() (x, y int) {
+	return v.bufferX, v.bufferY
 }
 
 // Write appends a byte slice into the view's internal buffer. Because
@@ -162,9 +163,9 @@ func (v *View) Rewind() {
 	v.readOffset = 0
 }
 
-// Render renders the view's contents.
+// Render renders the view buffer contents.
 func (v *View) Render() error {
-	maxX, maxY := v.Size()
+	maxX, maxY := v.ViewSize()
 
 	_ = "breakpoint"
 
@@ -172,7 +173,7 @@ func (v *View) Render() error {
 		if maxX == 0 {
 			return errors.New("X size of the view cannot be 0")
 		}
-		v.ox = 0
+		v.bufferX = 0
 	}
 	if v.tainted {
 		v.viewLines = nil
@@ -205,11 +206,11 @@ func (v *View) Render() error {
 	}
 
 	if v.Autoscroll && len(v.viewLines) > maxY {
-		v.oy = len(v.viewLines) - maxY
+		v.bufferY = len(v.viewLines) - maxY
 	}
 	y := 0
 	for i, vline := range v.viewLines {
-		if i < v.oy {
+		if i < v.bufferY {
 			continue
 		}
 		if y >= maxY {
@@ -230,24 +231,24 @@ func (v *View) Render() error {
 //calculateCursorPosition gives the cursor position
 //from the beginning of the view
 func calculateCursorPosition(v *View) (int, int) {
-	return v.x0 + v.cursorPositionInScreenX, v.y0 + v.cursorPositionInScreenY
+	return v.x0 + v.cursorX, v.y0 + v.cursorY
 }
 
 func (v *View) drawCursor() {
-	cursorPositionInScreenX, cursorPositionInScreenY := calculateCursorPosition(v)
+	cursorX, cursorY := calculateCursorPosition(v)
 
-	_, ry, _ := v.realPosition(cursorPositionInScreenX, cursorPositionInScreenY)
+	_, ry, _ := v.realPosition(cursorX, cursorY)
 
 	if ry <= len(v.viewLines) {
-		termbox.SetCursor(cursorPositionInScreenX, cursorPositionInScreenY)
+		termbox.SetCursor(cursorX, cursorY)
 	}
 }
 
 // realPosition returns the position in the internal buffer corresponding to the
 // point (x, y) of the view.
 func (v *View) realPosition(vx, vy int) (x, y int, err error) {
-	vx = v.ox + vx
-	vy = v.oy + vy
+	vx = v.bufferX + vx
+	vy = v.bufferY + vy
 
 	if vx < 0 || vy < 0 {
 		return 0, 0, errors.New("invalid point")
@@ -271,7 +272,7 @@ func (v *View) realPosition(vx, vy int) (x, y int, err error) {
 }
 
 func (v *View) renderLine(x int, y int, vline viewLine) error {
-	maxX, _ := v.Size()
+	maxX, _ := v.ViewSize()
 	start, column := 0, 0
 	if v.markup != nil {
 		for _, token := range v.markup.Tokenize(string(vline.line)) {
@@ -295,7 +296,7 @@ func (v *View) renderLine(x int, y int, vline viewLine) error {
 		}
 	} else {
 		for j, ch := range vline.line {
-			if j < v.ox {
+			if j < v.bufferX {
 				continue
 			}
 			if x >= maxX {
@@ -319,7 +320,7 @@ func (v *View) Clear() {
 
 // clearRunes erases all the cells in the view.
 func (v *View) clearRunes() {
-	maxX, maxY := v.Size()
+	maxX, maxY := v.ViewSize()
 	for x := 0; x < maxX; x++ {
 		for y := 0; y < maxY; y++ {
 			termbox.SetCell(v.x0+x+1, v.y0+y+1, ' ',
@@ -494,34 +495,72 @@ func (v *View) Word(x, y int) (string, error) {
 	return string(l[nl:nr]), nil
 }
 
-//CursorDown moves the cursor down
+//CursorDown moves the cursor down one line
 func (v *View) CursorDown() {
-	cursorPositionInScreenX, cursorPositionInScreenY := v.Cursor()
-	ox, oy := v.Origin()
-	if oy+cursorPositionInScreenY <= len(v.viewLines) {
-		if err := v.setCursor(cursorPositionInScreenX, cursorPositionInScreenY+1); err != nil {
-			v.setOrigin(ox, oy+1)
+	cursorX, cursorY := v.Cursor()
+	ox, bufferY := v.Position()
+	if bufferY+cursorY <= len(v.viewLines) {
+		if err := v.setCursor(cursorX, cursorY+1); err != nil {
+			v.setPosition(ox, bufferY+1)
 		}
 	}
 }
 
-//CursorUp moves the cursor up
+//CursorUp moves the cursor up one line
 func (v *View) CursorUp() {
-	ox, oy := v.Origin()
-	cursorPositionInScreenX, cursorPositionInScreenY := v.Cursor()
-	if err := v.setCursor(cursorPositionInScreenX, cursorPositionInScreenY-1); err != nil && oy > 0 {
-		v.setOrigin(ox, oy-1)
+	ox, bufferY := v.Position()
+	cursorX, cursorY := v.Cursor()
+	if err := v.setCursor(cursorX, cursorY-1); err != nil && bufferY > 0 {
+		v.setPosition(ox, bufferY-1)
 	}
 }
 
+//CursorPageDown moves the cursor one page down
+func (v *View) CursorPageDown() {
+	_, cursorY := v.Cursor()
+	bufferX, bufferY := v.Position()
+	_, height := v.ViewSize()
+	viewLength := len(v.viewLines)
+	if bufferY+height+cursorY < viewLength {
+		newOy := bufferY + height
+		if newOy >= viewLength {
+			v.setPosition(bufferX, viewLength)
+		} else {
+			v.setPosition(bufferX, newOy)
+		}
+		_, bufferY := v.Position()
+		if bufferY >= viewLength-cursorY {
+			v.CursorDown()
+		}
+	} else {
+		v.MoveCursorToBottom()
+	}
+}
+
+//CursorPageUp moves the cursor one page up
+func (v *View) CursorPageUp() {
+	bufferX, bufferY := v.Position()
+	cursorX, cursorY := v.Cursor()
+	_, height := v.ViewSize()
+	if err := v.setCursor(cursorX, cursorY-height); err != nil && bufferY > 0 {
+		newOy := bufferY - height
+		if newOy < 0 {
+			v.setPosition(bufferX, 0)
+		} else {
+			v.setPosition(bufferX, newOy)
+		}
+	}
+}
+
+//MoveCursorToBottom moves the cursor to the bottom of the view buffer
 func (v *View) MoveCursorToBottom() {
-	v.oy = len(v.viewLines) - v.y1
-	v.cursorPositionInScreenY = v.y1
+	v.bufferY = len(v.viewLines) - v.y1
+	v.cursorY = v.y1
 }
 
 func (v *View) MoveCursorToTop() {
-	v.oy = 0
-	v.cursorPositionInScreenY = 0
+	v.bufferY = 0
+	v.cursorY = 0
 }
 
 // indexFunc allows to split lines by words taking into account spaces

@@ -159,10 +159,14 @@ loop:
 				screen.Clear()
 				if event.Key == termbox.KeyEsc {
 					break loop
-				} else if event.Key == termbox.KeyArrowDown { //cursor up
+				} else if event.Key == termbox.KeyArrowDown { //cursor down
 					v.CursorDown()
-				} else if event.Key == termbox.KeyArrowUp { // cursor down
+				} else if event.Key == termbox.KeyArrowUp { // cursor up
 					v.CursorUp()
+				} else if event.Key == termbox.KeyPgdn { //cursor one page down
+					v.CursorPageDown()
+				} else if event.Key == termbox.KeyPgup { // cursor one page up
+					v.CursorPageUp()
 				} else if event.Ch == 'g' { //to the top of the view
 					v.MoveCursorToTop()
 				} else if event.Ch == 'G' { //to the bottom of the view
@@ -255,10 +259,14 @@ loop:
 				screen.Clear()
 				if event.Key == termbox.KeyEsc {
 					break loop
-				} else if event.Key == termbox.KeyArrowDown { //cursor up
+				} else if event.Key == termbox.KeyArrowDown { //cursor down
 					v.CursorDown()
-				} else if event.Key == termbox.KeyArrowUp { // cursor down
+				} else if event.Key == termbox.KeyArrowUp { // cursor up
 					v.CursorUp()
+				} else if event.Key == termbox.KeyPgdn { //cursor one page down
+					v.CursorPageDown()
+				} else if event.Key == termbox.KeyPgup { // cursor one page up
+					v.CursorPageUp()
 				} else if event.Ch == 'g' { //to the top of the view
 					v.MoveCursorToTop()
 				} else if event.Ch == 'G' { //to the bottom of the view
