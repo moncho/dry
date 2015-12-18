@@ -26,7 +26,7 @@ var opts struct {
 	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
 	Version bool `short:"v" long:"version" description:"Dry version"`
 	//Docker-related properties
-	DockerHost       string `short:"d" long:"docker_host" description:"Docker Host"`
+	DockerHost       string `short:"H" long:"docker_host" description:"Docker Host"`
 	DockerCertPath   string `short:"c" long:"docker_certpath" description:"Docker cert path"`
 	DockerTLSVerifiy bool   `short:"t" long:"docker_tls" description:"Docker TLS verify"`
 }

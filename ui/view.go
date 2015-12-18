@@ -558,6 +558,7 @@ func (v *View) MoveCursorToBottom() {
 	v.cursorY = v.y1
 }
 
+//MoveCursorToTop moves the cursor to the top of the view buffer
 func (v *View) MoveCursorToTop() {
 	v.bufferY = 0
 	v.cursorY = 0
