@@ -20,7 +20,7 @@ set_globals() {
     dist_server="https://github.com/moncho/dry/releases/download"
 
     # Dry version
-    dry_version="v0.2.0-beta"
+    dry_version="v0.3.0-beta"
 
     #Install prefix
     default_prefix="${DRY_PREFIX-/usr/local/bin}"
@@ -93,6 +93,7 @@ download_install_dry() {
 
     local _dry_binary="$RETVAL"
     local _errors=0
+    local _dry_binary_file=""
 
 
     determine_remote_dry "$_dry_binary" || return 1
@@ -103,25 +104,31 @@ download_install_dry() {
 
     # Download and install dry
     say "downloading dry binary"
+
+
     download_and_check "$_remote_dry_binary" false
 
-    local _dry_binary_file="$RETVAL"
-    assert_nz "$_dry_binary_file" "dry_binary_file"
     if [ $? != 0 ]; then
-      verbose_say "failed to dowlonad binary"
-      _errors = 1
-    fi
-    install_dry "$_dry_binary_file" "$_prefix"
-    if [ $? != 0 ]; then
-      say_err "failed to install dry"
-      _errors = 1
+      say "failed to download binary"
+      _errors=1
+    else
+      local _dry_binary_file="$RETVAL"
+      assert_nz "$_dry_binary_file" "dry_binary_file"
+      install_dry "$_dry_binary_file" "$_prefix"
     fi
 
-    if [_errors != 0]; then
-      run rm "$_dry_binary_file"
+    if [ $? != 0 -o _errors != 0 ]; then
+      say_err "failed to install dry"
+      _errors=1
+    fi
+
+    if [ _errors != 0 ]; then
+      if [ -f "$_dry_binary_file" ]; then
+        run rm "$_dry_binary_file"
+      fi
       return 1
     fi
-    say "dry binary was copied to $_prefix, now you should 'sudo chmod 755 it'"
+    say "dry binary was copied to $_prefix, now you should 'sudo chmod 755 $_prefix/dry'"
 }
 
 install_dry() {
@@ -247,8 +254,14 @@ download_and_check() {
     local _quiet="$2"
 
     download_file "$_remote_name" "$dl_dir" "$_quiet"
+
+    if [ $? != 0 ]; then
+        return 1
+    fi
+
     #TODO Check download
     local _download_file="$RETVAL"
+
     assert_nz "$_download_file" "downloaded file"
     verbose_say "downloaded dry binary location: $_download_file"
 
