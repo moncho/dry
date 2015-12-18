@@ -115,14 +115,14 @@ download_install_dry() {
       local _dry_binary_file="$RETVAL"
       assert_nz "$_dry_binary_file" "dry_binary_file"
       install_dry "$_dry_binary_file" "$_prefix"
+      if [ $? != 0 ]; then
+        say_err "failed to install dry"
+        _errors=1
+      fi
     fi
 
-    if [ $? != 0 -o _errors != 0 ]; then
-      say_err "failed to install dry"
-      _errors=1
-    fi
-
-    if [ _errors != 0 ]; then
+    if [ "$_errors" -ne 0 ]; then
+      say_err "there were errors during the installation"
       if [ -f "$_dry_binary_file" ]; then
         run rm "$_dry_binary_file"
       fi
@@ -140,9 +140,11 @@ install_dry() {
     verbose_say "moving $_dry_file to $_prefix/dry"
     run mv "$_dry_file" "$_prefix/dry"
     if [ $? != 0 ]; then
-      verbose_say "failed to move binary"
+      say "Failed to move binary to $_prefix/dry"
       return 1
     fi
+    verbose_say "moved dry to its destination"
+    return 0
 }
 
 determine_remote_dry() {
