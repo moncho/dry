@@ -21,7 +21,7 @@ import _ "net/http/pprof"
 
 // command line flags variable
 var opts struct {
-	Description bool `short:"a" long:"description" description:"Dry description"`
+	Description bool `short:"d" long:"description" description:"Dry description"`
 	// enable profiling
 	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
 	Version bool `short:"v" long:"version" description:"Dry version"`
