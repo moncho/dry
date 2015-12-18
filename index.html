@@ -41,6 +41,14 @@
 </h3>
 <p>An easy way to install the latest binaries for Linux and Mac is to run this in your shell:</p>
 <pre><code>$ curl -sSf https://moncho.github.io/dry/dryup.sh | sh</code></pre>
+<p>The installer downloads the right binary for your architecture and will try to move it to <code>$/usr/local/bin</code>
+   (the destination can be changed, check the script parameters), so you probably will have to run the installer as sudo. If this is the case, run
+   this command instead:
+</p>
+<pre><code>$ curl -sSf https://moncho.github.io/dry/dryup.sh | sudo sh</code></pre>
+<p>If everything goes well, the binary should be present in your <b>/usr/local/bin</b> directory. Since the installer does not set the binary permissions, it has to be done manually.</p>
+<pre><code># chmod 755 /usr/local/bin/dry</code></pre>
+
 <p><a href="https://github.com/moncho/dry/releases/latest">Binaries</a> are provided as well.</p>
 
 
