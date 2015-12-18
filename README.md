@@ -31,10 +31,10 @@ $ curl -sSf https://moncho.github.io/dry/dryup.sh | sh
 
 If you dont like to **curl | sh**, binaries are provided.
 
-- **darwin** [386](https://github.com/moncho/dry/releases/download/v0.3.0-beta1/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3.0-beta1/dry-darwin-amd64)
-- **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.3.0-beta1/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3.0-beta1/dry-freebsd-amd64)
-- **linux** [386](https://github.com/moncho/dry/releases/download/v0.3.0-beta1/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3.0-beta1/dry-linux-amd64)
-- **windows** [386](https://github.com/moncho/dry/releases/download/v0.3.0-beta1/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3.0-beta1/dry-windows-amd64)
+- **darwin** [386](https://github.com/moncho/dry/releases/download/v0.3-beta.1/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3-beta.1/dry-darwin-amd64)
+- **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.3-beta.1/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3-beta.1/dry-freebsd-amd64)
+- **linux** [386](https://github.com/moncho/dry/releases/download/v0.3-beta.1/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3-beta.1/dry-linux-amd64)
+- **windows** [386](https://github.com/moncho/dry/releases/download/v0.3-beta.1/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3-beta.1/dry-windows-amd64)
 
 #### Go
 
