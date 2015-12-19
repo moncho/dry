@@ -183,6 +183,7 @@ func (d *Dry) errormessage(cid string, action string, err error) {
 }
 
 func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, error) {
+	_ = "breakpoint"
 	if err == nil {
 		state := &AppState{
 			changed:              true,
@@ -217,10 +218,11 @@ func NewDryApp(screen *ui.Screen) (*Dry, error) {
 
 //NewDryAppWithDockerEnv creates a new dry application
 func NewDryAppWithDockerEnv(screen *ui.Screen, env *drydocker.DockerEnv) (*Dry, error) {
-	d, err := drydocker.ConnectToGivenDaemon(env)
+	d, err := drydocker.ConnectToDaemonUsingEnv(env)
 	return newDry(screen, d, err)
 }
 
+// ------------------------
 //header
 type header struct {
 	template *template.Template

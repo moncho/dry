@@ -153,7 +153,6 @@ func (daemon *DockerDaemon) Refresh(allContainers bool) error {
 
 //Sort the list of containers by the given mode
 func (daemon *DockerDaemon) Sort(sortMode SortMode) {
-	_ = "breakpoint"
 	SortContainers(daemon.Containers, sortMode)
 }
 
@@ -170,9 +169,9 @@ func containers(client *docker.Client, allContainers bool) ([]docker.APIContaine
 	return nil, nil, err
 }
 
-func connect(client *docker.Client, err error, env *DockerEnv) (*DockerDaemon, error) {
+func connect(client *docker.Client, env *DockerEnv) (*DockerDaemon, error) {
+	containers, containersByID, err := containers(client, false)
 	if err == nil {
-		containers, containersByID, err := containers(client, false)
 		return &DockerDaemon{
 			client:        client,
 			err:           err,
@@ -187,14 +186,17 @@ func connect(client *docker.Client, err error, env *DockerEnv) (*DockerDaemon, e
 //ConnectToDaemon connects to a Docker daemon using environment properties.
 func ConnectToDaemon() (*DockerDaemon, error) {
 	client, err := docker.NewClientFromEnv()
-	return connect(client, err, &DockerEnv{
-		os.Getenv("DOCKER_HOST"),
-		os.Getenv("DOCKER_TLS_VERIFY") != "",
-		os.Getenv("DOCKER_CERT_PATH")})
+	if err == nil {
+		return connect(client, &DockerEnv{
+			os.Getenv("DOCKER_HOST"),
+			os.Getenv("DOCKER_TLS_VERIFY") != "",
+			os.Getenv("DOCKER_CERT_PATH")})
+	}
+	return nil, err
 }
 
-//ConnectToGivenDaemon connects to a Docker daemon using the given properties.
-func ConnectToGivenDaemon(env *DockerEnv) (*DockerDaemon, error) {
+//ConnectToDaemonUsingEnv connects to a Docker daemon using the given properties.
+func ConnectToDaemonUsingEnv(env *DockerEnv) (*DockerDaemon, error) {
 	dockerHost := env.DockerHost
 	if env.DockerTLSVerify {
 		parts := strings.SplitN(dockerHost, "://", 2)
@@ -205,9 +207,14 @@ func ConnectToGivenDaemon(env *DockerEnv) (*DockerDaemon, error) {
 		key := filepath.Join(env.DockerCertPath, "key.pem")
 		ca := filepath.Join(env.DockerCertPath, "ca.pem")
 		client, err := docker.NewVersionedTLSClient(dockerHost, cert, key, ca, "")
-		return connect(client, err, env)
+		if err == nil {
+			return connect(client, env)
+		}
+		return nil, err
 	}
 	client, err := docker.NewVersionedClient(dockerHost, "")
-	return connect(client, err, env)
-
+	if err == nil {
+		return connect(client, env)
+	}
+	return nil, err
 }

@@ -343,9 +343,10 @@ func main() {
 	app, err := newApp(screen, dockerEnv)
 	if err == nil {
 		mainScreen(app, screen)
+		screen.Close()
 	} else {
-		log.Error(err)
+		screen.Close()
+		log.Errorf("There was an error launching dry: %s", err)
 	}
-	screen.Close()
 	log.Info("Bye")
 }
