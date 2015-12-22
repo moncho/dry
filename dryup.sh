@@ -18,9 +18,7 @@ set_globals() {
 
     #location of the distribution server
     dist_server="https://github.com/moncho/dry/releases/download"
-
-    # Dry version
-    dry_version="v0.3-beta.1"
+    version_file_url="https://raw.githubusercontent.com/moncho/dry/master/APPVERSION"
 
     #Install prefix
     default_prefix="${DRY_PREFIX-/usr/local/bin}"
@@ -88,13 +86,18 @@ get_value_arg() {
 # Returns 0 on success, 1 on error
 download_install_dry() {
     local _prefix="$1"
+    local _errors=0
+
+    # Dry version
+    get_latest_dry_version
+    dry_version="$RETVAL"
+    #dry_version="v0.3-beta.1"
+    assert_nz "$dry_version" "dry_version from repository"
 
     determine_binary || return 1
 
     local _dry_binary="$RETVAL"
-    local _errors=0
     local _dry_binary_file=""
-
 
     determine_remote_dry "$_dry_binary" || return 1
 
@@ -104,7 +107,6 @@ download_install_dry() {
 
     # Download and install dry
     say "downloading dry binary"
-
 
     download_and_check "$_remote_dry_binary" false
 
@@ -249,6 +251,11 @@ get_architecture() {
     RETVAL="$_arch"
 }
 
+get_latest_dry_version() {
+  verbose_say "getting latest dry version from $version_file_url"
+  RETVAL="v$(curl $version_file_url)"
+}
+
 # Downloads a remote file, returns 0 on success.
 # Returns the path to the downloaded file in RETVAL.
 download_and_check() {
@@ -318,7 +325,7 @@ say_err() {
 
 verbose_say() {
     if [ "$flag_verbose" = true ]; then
-	say "$1"
+	     say "$1"
     fi
 }
 
