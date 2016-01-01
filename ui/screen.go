@@ -18,15 +18,16 @@ type Screen struct {
 	Cursor   *Cursor // Pointer to cursor (gets created by screen).
 }
 
+//Cursor
 type Cursor struct {
 	Line int
 	Fg   termbox.Attribute
 	Ch   rune
 }
 
-// Initializes Termbox, creates screen along with layout and markup, and
-// calculates current screen dimensions. Once initialized the screen is
-// ready for display.
+//NewScreen initializes Termbox, creates screen along with layout and markup, and
+//calculates current screen dimensions. Once initialized the screen is
+//ready for display.
 func NewScreen() *Screen {
 
 	if err := termbox.Init(); err != nil {
@@ -54,20 +55,7 @@ func (screen *Screen) Resize() *Screen {
 	return screen
 }
 
-// Pause is a toggle function that either creates a timestamp of the pause
-// request or resets it to nil.
-func (screen *Screen) Pause(pause bool) *Screen {
-	if pause {
-		screen.pausedAt = new(time.Time)
-		*screen.pausedAt = time.Now()
-	} else {
-		screen.pausedAt = nil
-	}
-
-	return screen
-}
-
-// Clear makes the entire screen blank using default background color.
+//Clear makes the entire screen blank using default background color.
 func (screen *Screen) Clear() *Screen {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	screen.cleared = true
@@ -132,11 +120,13 @@ func (screen *Screen) CursorPosition() int {
 	return screen.Cursor.Line
 }
 
-func (screen *Screen) Render(column int, str string) {
+//Render renders the given content starting from
+//the given row
+func (screen *Screen) Render(initialRow int, str string) {
 	if !screen.cleared {
 		screen.Clear()
 	}
 	for row, line := range strings.Split(str, "\n") {
-		screen.RenderLine(column, row, line)
+		screen.RenderLine(0, initialRow+row, line)
 	}
 }

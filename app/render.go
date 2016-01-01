@@ -28,7 +28,7 @@ func Render(d *Dry, screen *ui.Screen) {
 			d.dockerDaemon.Refresh(d.State.showingAllContainers)
 			d.dockerDaemon.Sort(d.State.SortMode)
 			d.renderer.SortMode(d.State.SortMode)
-			screen.Render(0, d.renderer.Render())
+			screen.Render(1, d.renderer.Render())
 			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`3:04:05pm PST`)+`</></right>`)
 			screen.RenderLine(0, screen.Height-1, keyMappings)
 			d.State.changed = false

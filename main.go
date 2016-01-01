@@ -43,6 +43,7 @@ func mainScreen(dry *app.Dry, screen *ui.Screen) {
 
 	viewClosed := make(chan bool, 1)
 	keyboardQueueForView := make(chan termbox.Event)
+	dryOutputChan := dry.OuputChannel()
 
 	defer timestampQueue.Stop()
 	defer close(keyboardQueueForView)
@@ -55,12 +56,20 @@ func mainScreen(dry *app.Dry, screen *ui.Screen) {
 		}
 	}()
 
+	go func() {
+		for {
+			dryMessage := <-dryOutputChan
+			screen.RenderLine(0, 0, dryMessage)
+		}
+	}()
+
 	app.Render(dry, screen)
 	//belongs outside the loop
 	var viewMode = false
+
 loop:
 	for {
-		//Used for refresh-forcing events outside dry
+		//Used for refresh-forcing events happening outside dry
 		var refresh = false
 		select {
 		case <-timestampQueue.C:
@@ -105,7 +114,7 @@ loop:
 					} else if event.Ch == 'r' || event.Ch == 'R' { //start
 						dry.StartContainer(screen.CursorPosition())
 					} else if event.Ch == 's' || event.Ch == 'S' { //stats
-						done, err, errC := dry.Stats(screen.CursorPosition())
+						done, errC, err := dry.Stats(screen.CursorPosition())
 						if err == nil {
 							viewMode = true
 							go autorefresh(dry, screen, keyboardQueueForView, viewClosed, done, errC)
@@ -118,7 +127,6 @@ loop:
 						dry.Inspect(screen.CursorPosition())
 						viewMode = true
 						go less(dry, screen, keyboardQueueForView, viewClosed)
-
 					}
 				} else if viewMode {
 					//The view handles the event
@@ -126,7 +134,6 @@ loop:
 				} else if dry.State.ShowingHelp {
 					dry.ShowDockerHostInfo()
 				}
-
 			case termbox.EventResize:
 				screen.Resize()
 				refresh = true
@@ -164,13 +171,13 @@ loop:
 				} else if event.Key == termbox.KeyArrowUp { // cursor up
 					v.CursorUp()
 				} else if event.Key == termbox.KeyPgdn { //cursor one page down
-					v.CursorPageDown()
+					v.PageDown()
 				} else if event.Key == termbox.KeyPgup { // cursor one page up
-					v.CursorPageUp()
+					v.PageUp()
 				} else if event.Ch == 'g' { //to the top of the view
-					v.MoveCursorToTop()
+					v.CursorToTop()
 				} else if event.Ch == 'G' { //to the bottom of the view
-					v.MoveCursorToBottom()
+					v.CursorToBottom()
 				}
 				v.Render()
 				screen.Flush()
@@ -264,13 +271,13 @@ loop:
 				} else if event.Key == termbox.KeyArrowUp { // cursor up
 					v.CursorUp()
 				} else if event.Key == termbox.KeyPgdn { //cursor one page down
-					v.CursorPageDown()
+					v.PageDown()
 				} else if event.Key == termbox.KeyPgup { // cursor one page up
-					v.CursorPageUp()
+					v.PageUp()
 				} else if event.Ch == 'g' { //to the top of the view
-					v.MoveCursorToTop()
+					v.CursorToTop()
 				} else if event.Ch == 'G' { //to the bottom of the view
-					v.MoveCursorToBottom()
+					v.CursorToBottom()
 				}
 
 				v.Render()
@@ -339,7 +346,6 @@ func main() {
 		}()
 	}
 	screen := ui.NewScreen()
-	newApp(screen, dockerEnv)
 	app, err := newApp(screen, dockerEnv)
 	if err == nil {
 		mainScreen(app, screen)

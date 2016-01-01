@@ -30,20 +30,25 @@ type Markup struct {
 // Creates markup to define tag to Termbox translation rules and store default
 // colors and column alignments.
 func NewMarkup() *Markup {
+	//Due to how markup is currently being used, the tag character lengh must be
+	//the same for all color tags (the magic number is 5, because white) to avoid,
+	//text alignment problems, hence the strange tag names.
+
 	markup := &Markup{}
 	markup.Foreground = termbox.ColorDefault
 	markup.Background = termbox.ColorDefault
 	markup.RightAligned = false
-
 	markup.tags = make(map[string]termbox.Attribute)
 	markup.tags[`/`] = termbox.ColorDefault
 	markup.tags[`black`] = termbox.ColorBlack
 	markup.tags[`red`] = termbox.ColorRed
+	markup.tags[`red00`] = termbox.ColorRed
 	markup.tags[`green`] = termbox.ColorGreen
 	markup.tags[`yellow`] = termbox.ColorYellow
 	markup.tags[`blue`] = termbox.ColorBlue
 	markup.tags[`magenta`] = termbox.ColorMagenta
 	markup.tags[`cyan`] = termbox.ColorCyan
+	markup.tags[`cyan0`] = termbox.ColorCyan
 	markup.tags[`white`] = termbox.ColorWhite
 	markup.tags[`grey`] = 0xE9
 	markup.tags[`grey2`] = 0xF4

@@ -22,6 +22,7 @@ type Dry struct {
 	State              *AppState
 	stats              *drydocker.Stats
 	orderedCids        []string
+	output             chan string
 }
 
 //Changed is true if the application state has changed
@@ -31,55 +32,71 @@ func (d *Dry) Changed() bool {
 
 //Inspect set dry for inspecting container at the given position
 func (d *Dry) Inspect(position int) {
-	if id, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
+	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
 		c, err := d.dockerDaemon.Inspect(id)
 		if err == nil {
 			d.State.viewMode = InspectMode
 			d.containerToInspect = c
 		} else {
-			d.errormessage(id, "inspecting", err)
+			d.errormessage(shortID, "inspecting", err)
 		}
 	} else {
-		d.errormessage(id, "inspecting", err)
+		d.errormessage(shortID, "inspecting", err)
 	}
 
 }
 
+//Kill the docker container at the given position
 func (d *Dry) Kill(position int) {
-	if id, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
+	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
+		d.actionmessage(shortID, "Killing")
 		err := d.dockerDaemon.Kill(id)
 		if err == nil {
-			d.appmessage(id, "killed")
+			d.actionmessage(shortID, "killed")
 		} else {
-			d.errormessage(id, "killing", err)
+			d.errormessage(shortID, "killing", err)
 		}
 		d.Refresh()
 	}
 
 }
 
+//Logs the docker container at the given position
 func (d *Dry) Logs(position int) (io.ReadCloser, error) {
-	id, err := d.dockerDaemon.ContainerIDAt(position)
+	id, _, err := d.dockerDaemon.ContainerIDAt(position)
 	if err == nil {
 		return d.dockerDaemon.Logs(id), nil
 	}
 	return nil, err
 }
 
+//OuputChannel returns the channel where dry messages are written
+func (d *Dry) OuputChannel() <-chan string {
+	return d.output
+}
+
+//Ok returns the state of dry
 func (d *Dry) Ok() (bool, error) {
 	return d.dockerDaemon.Ok()
 }
 
+//Refresh forces a dry refresh
 func (d *Dry) Refresh() {
 	d.State.changed = true
 }
 
+//Rm removes the container at the given position
 func (d *Dry) Rm(position int) {
-	if id, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		if removed := d.dockerDaemon.Rm(id); removed {
+	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
+		d.actionmessage(shortID, "Removing")
+		if err := d.dockerDaemon.Rm(id); err == nil {
 			d.Refresh()
-			d.appmessage(id, "removed")
+			d.actionmessage(shortID, "Removed")
+		} else {
+			d.errormessage(shortID, "removing", err)
 		}
+	} else {
+		d.errormessage(id, "removing", err)
 	}
 }
 
@@ -112,22 +129,27 @@ func (d *Dry) Sort() {
 }
 
 func (d *Dry) StartContainer(position int) {
-	_ = "breakpoint"
-	if id, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		err := d.dockerDaemon.RestartContainer(id)
-		if err == nil {
-			d.appmessage(id, "restarted")
-		} else {
-			d.errormessage(id, "restarting", err)
-		}
-		d.Refresh()
+	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
+		d.actionmessage(shortID, "Restarting")
+		go func() {
+			err := d.dockerDaemon.RestartContainer(id)
+			if err == nil {
+				//d.Refresh()
+				d.actionmessage(shortID, "Restarted")
+			} else {
+				d.errormessage(shortID, "restarting", err)
+			}
+		}()
+	} else {
+		d.errormessage(shortID, "restarting", err)
 	}
+
 }
 
 //Stats get stats of container in the given position until a
 //message is sent to the done channel
-func (d *Dry) Stats(position int) (chan<- bool, error, <-chan error) {
-	id, err := d.dockerDaemon.ContainerIDAt(position)
+func (d *Dry) Stats(position int) (chan<- bool, <-chan error, error) {
+	id, _, err := d.dockerDaemon.ContainerIDAt(position)
 	if err == nil {
 		done := make(chan bool, 1)
 		statsC, dockerDoneChannel, errC := d.dockerDaemon.Stats(id)
@@ -144,23 +166,22 @@ func (d *Dry) Stats(position int) (chan<- bool, error, <-chan error) {
 					}
 				}
 			}()
-			return done, nil, errC
-		} else {
-			dockerDoneChannel <- true
+			return done, errC, nil
 		}
+		dockerDoneChannel <- true
 	}
-	return nil, err, nil
+	return nil, nil, err
 }
 
 func (d *Dry) StopContainer(position int) {
-	if id, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		err := d.dockerDaemon.StopContainer(id)
-		if err == nil {
-			d.appmessage(id, "stopped")
+	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
+		d.actionmessage(shortID, "Stopping")
+		if err := d.dockerDaemon.StopContainer(id); err == nil {
+			d.actionmessage(shortID, "Stopped")
+			//d.Refresh()
 		} else {
-			d.errormessage(id, "stopping", err)
+			d.errormessage(shortID, "stopping", err)
 		}
-		d.Refresh()
 	}
 }
 
@@ -169,17 +190,28 @@ func (d *Dry) ToggleShowAllContainers() {
 	d.State.changed = true
 }
 
-func (d *Dry) appmessage(cid string, action string) {
-	d.State.message = fmt.Sprintf("<red>Container with id </><white>%s</> <red>%s</>",
-		cid,
-		action)
+func (d *Dry) appmessage(message string) {
+	go func() {
+		select {
+		case d.output <- message:
+		default:
+		}
+	}()
+}
+
+func (d *Dry) actionmessage(cid string, action string) {
+	d.appmessage(fmt.Sprintf("<red>%s container with id </><white>%s</>",
+		action, cid))
 }
 func (d *Dry) cleanStats() {
 	d.stats = nil
 }
 
 func (d *Dry) errormessage(cid string, action string, err error) {
-	d.State.message = err.Error()
+	d.appmessage(
+		fmt.Sprintf(
+			"<red>Error %s container </><white>%s. %s</>",
+			action, cid, err.Error()))
 }
 
 func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, error) {
@@ -187,7 +219,6 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, erro
 	if err == nil {
 		state := &AppState{
 			changed:              true,
-			message:              "",
 			Paused:               false,
 			showingAllContainers: false,
 			ShowingHelp:          false,
@@ -205,6 +236,7 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, erro
 			screen.Cursor,
 			state.SortMode,
 			app.header)
+		app.output = make(chan string)
 		return app, nil
 	}
 	return nil, err

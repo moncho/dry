@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/docker/docker/pkg/stringid"
 	"github.com/fsouza/go-dockerclient"
 )
 
@@ -35,11 +36,11 @@ func (daemon *DockerDaemon) ContainersCount() int {
 
 //ContainerIDAt returns the container ID of the container found at the given
 //position.
-func (daemon *DockerDaemon) ContainerIDAt(pos int) (string, error) {
+func (daemon *DockerDaemon) ContainerIDAt(pos int) (string, string, error) {
 	if pos >= len(daemon.Containers) {
-		return "", errors.New("Position is higher than number of containers")
+		return "", "", errors.New("Position is higher than number of containers")
 	}
-	return daemon.Containers[pos].ID, nil
+	return daemon.Containers[pos].ID, stringid.TruncateID(daemon.Containers[pos].ID), nil
 }
 
 //ContainerByID returns the container with the given ID
@@ -88,11 +89,11 @@ func (daemon *DockerDaemon) RestartContainer(id string) error {
 }
 
 //Rm removes the container with the given id
-func (daemon *DockerDaemon) Rm(id string) bool {
+func (daemon *DockerDaemon) Rm(id string) error {
 	opts := docker.RemoveContainerOptions{
 		ID: id,
 	}
-	return daemon.client.RemoveContainer(opts) == nil
+	return daemon.client.RemoveContainer(opts)
 }
 
 //Stats shows resource usage statistics of the container with the given id
@@ -217,4 +218,9 @@ func ConnectToDaemonUsingEnv(env *DockerEnv) (*DockerDaemon, error) {
 		return connect(client, env)
 	}
 	return nil, err
+}
+
+//IsContainerRunning returns true if the given container is running
+func IsContainerRunning(container docker.APIContainers) bool {
+	return strings.Contains(container.Status, "Up")
 }
