@@ -25,6 +25,9 @@ build:
 install:
 	go install $(PKG)
 
+test:
+	go test ./...
+
 define buildpretty
 mkdir -p ${PREFIX}/cross/$(1)/$(2);
 GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build -o ${PREFIX}/cross/$(1)/$(2)/dry -a -tags "static_build netgo" -installsuffix netgo ${GO_LDFLAGS_STATIC} .;
