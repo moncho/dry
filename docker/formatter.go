@@ -53,7 +53,11 @@ func tableFormat(ctx FormattingContext, containers []docker.APIContainers) {
 		if index == ctx.Selected {
 			buffer.WriteString("<white>")
 		} else {
-			buffer.WriteString("<grey2>")
+			if IsContainerRunning(container) {
+				buffer.WriteString("<cyan0>")
+			} else {
+				buffer.WriteString("<grey2>")
+			}
 		}
 		if err := tmpl.Execute(buffer, containerCtx); err != nil {
 			buffer = bytes.NewBufferString(fmt.Sprintf("Template parsing error: %v\n", err))
