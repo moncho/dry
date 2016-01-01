@@ -13,16 +13,16 @@ import (
 // position.
 type View struct {
 	name             string
-	x0, y0, x1, y1   int //screen dimensions
-	bufferX, bufferY int //current position in the view buffer
-	cursorX, cursorY int //cursor position in the screen, valid values between 0 and x1, y1
-	lines            [][]rune
+	x0, y0, x1, y1   int      //screen dimensions
+	bufferX, bufferY int      //current position in the view buffer
+	cursorX, cursorY int      //cursor position in the screen, valid values between 0 and x1, y1
+	lines            [][]rune //the content buffer
 	readOffset       int
 	readCache        string
 	showCursor       bool
 
 	tainted   bool       // marks if the viewBuffer must be updated
-	viewLines []viewLine // internal representation of the view's buffer
+	viewLines []viewLine // the view buffer
 
 	markup *Markup
 
@@ -111,10 +111,8 @@ func (v *View) Position() (x, y int) {
 	return v.bufferX, v.bufferY
 }
 
-// Write appends a byte slice into the view's internal buffer. Because
-// View implements the io.Writer interface, it can be passed as parameter
-// of functions like fmt.Fprintf, fmt.Fprintln, io.Copy, etc. Clear must
-// be called to clear the view's buffer.
+// Write appends a byte slice into the view's internal buffer, as defined
+// by the io.Writer interface.
 func (v *View) Write(p []byte) (n int, err error) {
 	v.tainted = true
 
@@ -175,35 +173,8 @@ func (v *View) Render() error {
 		}
 		v.bufferX = 0
 	}
-	if v.tainted {
-		v.viewLines = nil
-		for i, line := range v.lines {
-			if v.Wrap {
-				if len(line) <= maxX {
-					vline := viewLine{linesX: 0, linesY: i, line: line}
-					v.viewLines = append(v.viewLines, vline)
-					continue
-				} else {
-					vline := viewLine{linesX: 0, linesY: i, line: line[:maxX]}
-					v.viewLines = append(v.viewLines, vline)
-				}
-				// Append remaining lines
-				for n := maxX; n < len(line); n += maxX {
-					if len(line[n:]) <= maxX {
-						vline := viewLine{linesX: n, linesY: i, line: line[n:]}
-						v.viewLines = append(v.viewLines, vline)
-					} else {
-						vline := viewLine{linesX: n, linesY: i, line: line[n : n+maxX]}
-						v.viewLines = append(v.viewLines, vline)
-					}
-				}
-			} else {
-				vline := viewLine{linesX: 0, linesY: i, line: line}
-				v.viewLines = append(v.viewLines, vline)
-			}
-		}
-		v.tainted = false
-	}
+
+	v.prepareViewForRender()
 
 	if v.Autoscroll && len(v.viewLines) > maxY {
 		v.bufferY = len(v.viewLines) - maxY
@@ -241,6 +212,42 @@ func (v *View) drawCursor() {
 
 	if ry <= len(v.viewLines) {
 		termbox.SetCursor(cursorX, cursorY)
+	}
+}
+
+//prepareViewForRender sets the content of the view buffer from the
+//write buffer
+func (v *View) prepareViewForRender() {
+	maxX, _ := v.ViewSize()
+
+	if v.tainted {
+		v.viewLines = nil
+		for i, line := range v.lines {
+			if v.Wrap {
+				if len(line) <= maxX {
+					vline := viewLine{linesX: 0, linesY: i, line: line}
+					v.viewLines = append(v.viewLines, vline)
+					continue
+				} else {
+					vline := viewLine{linesX: 0, linesY: i, line: line[:maxX]}
+					v.viewLines = append(v.viewLines, vline)
+				}
+				// Append remaining lines
+				for n := maxX; n < len(line); n += maxX {
+					if len(line[n:]) <= maxX {
+						vline := viewLine{linesX: n, linesY: i, line: line[n:]}
+						v.viewLines = append(v.viewLines, vline)
+					} else {
+						vline := viewLine{linesX: n, linesY: i, line: line[n : n+maxX]}
+						v.viewLines = append(v.viewLines, vline)
+					}
+				}
+			} else {
+				vline := viewLine{linesX: 0, linesY: i, line: line}
+				v.viewLines = append(v.viewLines, vline)
+			}
+		}
+		v.tainted = false
 	}
 }
 
@@ -515,8 +522,10 @@ func (v *View) CursorUp() {
 	}
 }
 
-//CursorPageDown moves the cursor one page down
-func (v *View) CursorPageDown() {
+//PageDown moves the buffer position down by the length of the screen,
+//at the end of buffer it also moves the cursor position to the bottom
+//of the screen
+func (v *View) PageDown() {
 	_, cursorY := v.Cursor()
 	bufferX, bufferY := v.Position()
 	_, height := v.ViewSize()
@@ -533,12 +542,14 @@ func (v *View) CursorPageDown() {
 			v.CursorDown()
 		}
 	} else {
-		v.MoveCursorToBottom()
+		v.CursorToBottom()
 	}
 }
 
-//CursorPageUp moves the cursor one page up
-func (v *View) CursorPageUp() {
+//PageUp moves the buffer position up by the length of the screen,
+//at the beginning of buffer it also moves the cursor position to the beginning
+//of the screen
+func (v *View) PageUp() {
 	bufferX, bufferY := v.Position()
 	cursorX, cursorY := v.Cursor()
 	_, height := v.ViewSize()
@@ -552,14 +563,14 @@ func (v *View) CursorPageUp() {
 	}
 }
 
-//MoveCursorToBottom moves the cursor to the bottom of the view buffer
-func (v *View) MoveCursorToBottom() {
+//CursorToBottom moves the cursor to the bottom of the view buffer
+func (v *View) CursorToBottom() {
 	v.bufferY = len(v.viewLines) - v.y1
 	v.cursorY = v.y1
 }
 
-//MoveCursorToTop moves the cursor to the top of the view buffer
-func (v *View) MoveCursorToTop() {
+//CursorToTop moves the cursor to the top of the view buffer
+func (v *View) CursorToTop() {
 	v.bufferY = 0
 	v.cursorY = 0
 }
