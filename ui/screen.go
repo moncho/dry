@@ -18,7 +18,7 @@ type Screen struct {
 	Cursor   *Cursor // Pointer to cursor (gets created by screen).
 }
 
-//Cursor
+//Cursor represents the cursor position on the screen
 type Cursor struct {
 	Line int
 	Fg   termbox.Attribute
@@ -63,6 +63,7 @@ func (screen *Screen) Clear() *Screen {
 	return screen
 }
 
+// Sync forces a complete resync between the termbox and a terminal.
 func (screen *Screen) Sync() *Screen {
 	termbox.Sync()
 	return screen
@@ -79,6 +80,7 @@ func (screen *Screen) ClearLine(x int, y int) *Screen {
 	return screen
 }
 
+//Flush synchronizes the internal buffer with the terminal.
 func (screen *Screen) Flush() *Screen {
 	termbox.Flush()
 	return screen
@@ -108,14 +110,18 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 	}
 }
 
-func (screen *Screen) MoveCursorDown() {
+//ScrollCursorDown moves the cursor to the line below the current one
+func (screen *Screen) ScrollCursorDown() {
 	screen.Cursor.Line = screen.Cursor.Line + 1
 
 }
-func (screen *Screen) MoveCursorUp() {
+
+//ScrollCursorUp moves the cursor to the line above the current one
+func (screen *Screen) ScrollCursorUp() {
 	screen.Cursor.Line = screen.Cursor.Line - 1
 }
 
+//CursorPosition tells on which screen line the cursor is
 func (screen *Screen) CursorPosition() int {
 	return screen.Cursor.Line
 }

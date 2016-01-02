@@ -17,6 +17,7 @@ type column struct {
 	mode  docker.SortMode
 }
 
+//DockerPs knows how render a container list
 type DockerPs struct {
 	layout *ui.Layout
 
@@ -31,7 +32,7 @@ type DockerPs struct {
 }
 
 //NewDockerRenderer creates renderer for a container list
-func NewDockerRenderer(daemon *docker.DockerDaemon, cursor *ui.Cursor, sortMode docker.SortMode, appHeader ui.Renderer) *DockerPs {
+func NewDockerRenderer(daemon *docker.DockerDaemon, cursor *ui.Cursor, sortMode docker.SortMode) *DockerPs {
 	r := &DockerPs{}
 
 	r.columns = []column{
@@ -45,7 +46,7 @@ func NewDockerRenderer(daemon *docker.DockerDaemon, cursor *ui.Cursor, sortMode 
 	}
 	di := dockerInfo(daemon)
 	r.layout = ui.NewLayout()
-	r.layout.Header = appHeader
+	//r.layout.Header = appHeader
 	r.containerTableTemplate = buildContainerTableTemplate(di)
 	r.containerTemplate = buildContainerTemplate()
 	r.cursor = cursor
@@ -55,10 +56,12 @@ func NewDockerRenderer(daemon *docker.DockerDaemon, cursor *ui.Cursor, sortMode 
 	return r
 }
 
+//SortMode sets the sort mode to use when rendering the container list
 func (r *DockerPs) SortMode(sortMode docker.SortMode) {
 	r.sortMode = sortMode
 }
 
+//Render docker ps
 func (r *DockerPs) Render() string {
 	if ok, err := r.daemon.Ok(); !ok { // If there was an error connecting to the Docker host...
 		return err.Error() // then simply return the error string.

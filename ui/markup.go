@@ -27,7 +27,7 @@ type Markup struct {
 	regex        *regexp.Regexp               // Regex to identify the supported tag names.
 }
 
-// Creates markup to define tag to Termbox translation rules and store default
+// NewMarkup creates a markup to define tag to Termbox translation rules and store default
 // colors and column alignments.
 func NewMarkup() *Markup {
 	//Due to how markup is currently being used, the tag character lengh must be

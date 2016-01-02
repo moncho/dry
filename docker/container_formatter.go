@@ -26,12 +26,14 @@ const (
 	labelsHeader     = "LABELS"
 )
 
+//ContainerFormatter knows how to pretty-print the information of a container
 type ContainerFormatter struct {
 	trunc  bool
 	header []string
 	c      docker.APIContainers
 }
 
+//ID prettifies the id
 func (c *ContainerFormatter) ID() string {
 	c.addHeader(idHeader)
 	if c.trunc {
@@ -40,6 +42,7 @@ func (c *ContainerFormatter) ID() string {
 	return c.c.ID
 }
 
+//Names prettifies the container name(s)
 func (c *ContainerFormatter) Names() string {
 	c.addHeader(namesHeader)
 	names := stripNamePrefix(c.c.Names)
@@ -54,6 +57,7 @@ func (c *ContainerFormatter) Names() string {
 	return strings.Join(names, ",")
 }
 
+//Image prettifies the image used by the container
 func (c *ContainerFormatter) Image() string {
 	c.addHeader(imageHeader)
 	if c.c.Image == "" {
@@ -68,6 +72,7 @@ func (c *ContainerFormatter) Image() string {
 	return c.c.Image
 }
 
+//Command prettifies the command that starts the container
 func (c *ContainerFormatter) Command() string {
 	c.addHeader(commandHeader)
 	command := c.c.Command
@@ -77,27 +82,32 @@ func (c *ContainerFormatter) Command() string {
 	return command
 }
 
+//CreatedAt prettifies the command that starts the container
 func (c *ContainerFormatter) CreatedAt() string {
 	c.addHeader(createdAtHeader)
 	return time.Unix(int64(c.c.Created), 0).String()
 }
 
+//RunningFor prettifies the  that starts the container
 func (c *ContainerFormatter) RunningFor() string {
 	c.addHeader(runningForHeader)
 	createdAt := time.Unix(int64(c.c.Created), 0)
 	return units.HumanDuration(time.Now().UTC().Sub(createdAt))
 }
 
+//Ports prettifies the container port information
 func (c *ContainerFormatter) Ports() string {
 	c.addHeader(portsHeader)
 	return displayablePorts(c.c.Ports)
 }
 
+//Status prettifies the container status
 func (c *ContainerFormatter) Status() string {
 	c.addHeader(statusHeader)
 	return c.c.Status
 }
 
+//Size prettifies the container size
 func (c *ContainerFormatter) Size() string {
 	c.addHeader(sizeHeader)
 	srw := units.HumanSize(float64(c.c.SizeRw))
@@ -110,6 +120,7 @@ func (c *ContainerFormatter) Size() string {
 	return sf
 }
 
+//Labels prettifies the container labels
 func (c *ContainerFormatter) Labels() string {
 	c.addHeader(labelsHeader)
 	if c.c.Labels == nil {
@@ -121,19 +132,6 @@ func (c *ContainerFormatter) Labels() string {
 		joinLabels = append(joinLabels, fmt.Sprintf("%s=%s", k, v))
 	}
 	return strings.Join(joinLabels, ",")
-}
-
-func (c *ContainerFormatter) Label(name string) string {
-	//n := strings.Split(name, ".")
-	//r := strings.NewReplacer("-", " ", "_", " ")
-	//h := r.Replace(n[len(n)-1])
-
-	c.addHeader(labelsHeader)
-
-	if c.c.Labels == nil {
-		return ""
-	}
-	return c.c.Labels[name]
 }
 
 func (c *ContainerFormatter) fullHeader() string {

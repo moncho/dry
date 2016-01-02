@@ -74,7 +74,7 @@ loop:
 		select {
 		case <-timestampQueue.C:
 			if !viewMode {
-				timestamp := time.Now().Format(`3:04:05pm PST`)
+				timestamp := time.Now().Format(`15:04:05`)
 				screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
 				screen.Flush()
 			}
@@ -88,10 +88,10 @@ loop:
 					if event.Key == termbox.KeyEsc || event.Ch == 'q' || event.Ch == 'Q' {
 						break loop
 					} else if event.Key == termbox.KeyArrowUp { //cursor up
-						screen.MoveCursorUp()
+						screen.ScrollCursorUp()
 						refresh = true
 					} else if event.Key == termbox.KeyArrowDown { // cursor down
-						screen.MoveCursorDown()
+						screen.ScrollCursorDown()
 						refresh = true
 					} else if event.Key == termbox.KeyF1 { //sort
 						dry.Sort()

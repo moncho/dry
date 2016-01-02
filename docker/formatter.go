@@ -10,8 +10,9 @@ import (
 )
 
 const (
+	//DefaultTableFormat is the default table format to render a list of containers
 	DefaultTableFormat = "{{.ID}}\t{{.Image}}\t{{.Command}}\t{{.RunningFor}} ago\t{{.Status}}\t{{.Ports}}\t{{.Names}}"
-	DefaultQuietFormat = "{{.ID}}"
+	//DefaultQuietFormat = "{{.ID}}"
 )
 
 // FormattingContext contains information required by the formatter to print the output as desired.

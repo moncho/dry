@@ -6,13 +6,21 @@ dev:
           go build ./...
           ./source
         reload: true
-# Build definition
 build:
-  # The steps that will be executed on build
   steps:
 
     # golint step!
     - wercker/golint
+
+    - script:
+        name: install godep
+        code: |
+          go get github.com/tools/godep
+
+    - script:
+        name: godep restore
+        code: |
+           godep restore
 
     # Build the project
     - script:
