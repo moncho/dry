@@ -1,11 +1,10 @@
-box: golang
+box: golang:1.5.2
 dev:
   steps:
     - internal/watch:
         code: |
           go build ./...
           ./source
-        reload: true
 build:
   steps:
 

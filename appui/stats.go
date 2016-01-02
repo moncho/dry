@@ -23,6 +23,7 @@ func NewDockerStatsRenderer(stats *drydocker.Stats) ui.Renderer {
 	}
 }
 
+//Render container stats
 func (r *statsRenderer) Render() string {
 	s := r.stats
 	buf := bytes.NewBufferString("")
