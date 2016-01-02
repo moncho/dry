@@ -1,11 +1,8 @@
 package app
 
 import (
-	"bytes"
 	"fmt"
 	"io"
-	"text/template"
-	"time"
 
 	godocker "github.com/fsouza/go-dockerclient"
 	"github.com/moncho/dry/appui"
@@ -18,11 +15,11 @@ type Dry struct {
 	containerToInspect *godocker.Container
 	dockerDaemon       *drydocker.DockerDaemon
 	renderer           *appui.DockerPs
-	header             *header
-	State              *AppState
-	stats              *drydocker.Stats
-	orderedCids        []string
-	output             chan string
+	//	header             *header
+	State       *State
+	stats       *drydocker.Stats
+	orderedCids []string
+	output      chan string
 }
 
 //Changed is true if the application state has changed
@@ -100,18 +97,22 @@ func (d *Dry) Rm(position int) {
 	}
 }
 
+//ShowDockerHostInfo changes the state of dry to show the extended help
 func (d *Dry) ShowDockerHostInfo() {
 	d.State.ShowingHelp = false
 	d.State.changed = true
 	d.State.viewMode = Main
 }
 
+//ShowHelp changes the state of dry to show the extended help
 func (d *Dry) ShowHelp() {
 	d.State.ShowingHelp = true
 	d.State.changed = true
 	d.State.viewMode = HelpMode
 }
 
+//Sort rotates to the next sort mode.
+//SortByContainerID -> SortByImage -> SortByStatus -> SortByName -> SortByContainerID
 func (d *Dry) Sort() {
 	switch d.State.SortMode {
 	case drydocker.SortByContainerID:
@@ -128,6 +129,7 @@ func (d *Dry) Sort() {
 
 }
 
+//StartContainer (re)starts the container at the given position
 func (d *Dry) StartContainer(position int) {
 	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
 		d.actionmessage(shortID, "Restarting")
@@ -173,21 +175,31 @@ func (d *Dry) Stats(position int) (chan<- bool, <-chan error, error) {
 	return nil, nil, err
 }
 
+//StopContainer stops the container at the given position
 func (d *Dry) StopContainer(position int) {
 	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
 		d.actionmessage(shortID, "Stopping")
-		if err := d.dockerDaemon.StopContainer(id); err == nil {
-			d.actionmessage(shortID, "Stopped")
-			//d.Refresh()
-		} else {
-			d.errormessage(shortID, "stopping", err)
-		}
+		go func() {
+			if err := d.dockerDaemon.StopContainer(id); err == nil {
+				d.actionmessage(shortID, "Stopped")
+				//d.Refresh()
+			} else {
+				d.errormessage(shortID, "stopping", err)
+			}
+		}()
 	}
 }
 
+//ToggleShowAllContainers changes between showing running containers and
+//showing running and stopped containers.
 func (d *Dry) ToggleShowAllContainers() {
 	d.State.showingAllContainers = !d.State.showingAllContainers
 	d.State.changed = true
+	if d.State.showingAllContainers {
+		d.appmessage("<white>Showing all containers</>")
+	} else {
+		d.appmessage("<white>Showing running containers</>")
+	}
 }
 
 func (d *Dry) appmessage(message string) {
@@ -217,7 +229,7 @@ func (d *Dry) errormessage(cid string, action string, err error) {
 func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, error) {
 	_ = "breakpoint"
 	if err == nil {
-		state := &AppState{
+		state := &State{
 			changed:              true,
 			Paused:               false,
 			showingAllContainers: false,
@@ -227,15 +239,12 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, erro
 		}
 		d.Sort(state.SortMode)
 		app := &Dry{}
-		//newHeader(state)
 		app.State = state
-		app.header = newHeader(state)
 		app.dockerDaemon = d
 		app.renderer = appui.NewDockerRenderer(
 			app.dockerDaemon,
 			screen.Cursor,
-			state.SortMode,
-			app.header)
+			state.SortMode)
 		app.output = make(chan string)
 		return app, nil
 	}
@@ -256,6 +265,7 @@ func NewDryAppWithDockerEnv(screen *ui.Screen, env *drydocker.DockerEnv) (*Dry, 
 
 // ------------------------
 //header
+/*
 type header struct {
 	template *template.Template
 	appState *AppState
@@ -285,3 +295,4 @@ func (h *header) Render() string {
 	h.template.Execute(buffer, vars)
 	return buffer.String()
 }
+*/

@@ -19,6 +19,7 @@ func NewDockerInspectRenderer(container *godocker.Container) ui.Renderer {
 	}
 }
 
+//Render low-level information on a container
 func (r *inspectRenderer) Render() string {
 	c, _ := json.Marshal(r.container)
 	buf := new(bytes.Buffer)

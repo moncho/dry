@@ -2,8 +2,8 @@ package app
 
 import "github.com/moncho/dry/docker"
 
-// AppState is a naive attempt to represent application state
-type AppState struct {
+// State is a naive attempt to represent application state
+type State struct {
 	changed              bool
 	showingAllContainers bool
 	Paused               bool
@@ -12,7 +12,8 @@ type AppState struct {
 	SortMode             docker.SortMode
 }
 
-func (appState AppState) Render() string {
+//Render the state
+func (appState State) Render() string {
 	var state = "Help"
 	switch appState.viewMode {
 	case Main:

@@ -1,5 +1,6 @@
 package app
 
+//ShortHelp is a short description of dry
 const ShortHelp = `
 dry
 

@@ -5,6 +5,7 @@ import (
 	`text/template`
 )
 
+//Layout defines the way in which content of renderers is arranged.
 type Layout struct {
 	Header   Renderer
 	Content  Renderer
@@ -12,11 +13,14 @@ type Layout struct {
 	template *template.Template
 }
 
+//NewLayout creates a new layout
 func NewLayout() *Layout {
 	layout := &Layout{}
 	layout.template = buildTemplate()
 	return layout
 }
+
+//Render the layout
 func (l *Layout) Render() string {
 	var header = ""
 	if l.Header != nil {

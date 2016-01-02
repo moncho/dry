@@ -21,6 +21,7 @@ const (
 
 //Render knows how to render dry app in the given screen
 func Render(d *Dry, screen *ui.Screen) {
+	//v := ui.NewMarkupView("", 0, 1, screen.Width, screen.Height, false)
 	switch d.State.viewMode {
 	case Main:
 		{
@@ -29,8 +30,13 @@ func Render(d *Dry, screen *ui.Screen) {
 			d.dockerDaemon.Sort(d.State.SortMode)
 			d.renderer.SortMode(d.State.SortMode)
 			screen.Render(1, d.renderer.Render())
-			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`3:04:05pm PST`)+`</></right>`)
+			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
+			//fmt.Fprintf(v, d.renderer.Render())
 			screen.RenderLine(0, screen.Height-1, keyMappings)
+			/*err := v.Render()
+			if err != nil {
+				log.Panicf("Alarm!!! %s", err)
+			}*/
 			d.State.changed = false
 		}
 	case HelpMode:
