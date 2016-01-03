@@ -20,18 +20,26 @@ then shows the list of containers and allows some interaction with them.
 	<white>F2</>       Toggles showing all containers (default shows just running)
 	<white>F5</>       Refresh container list
 	<white>k</>        Kills the selected container
-	<white>l</>        Fetch the logs of the selected container
+	<white>l</>        Displays the logs of the selected container
 	<white>r</>        Restarts selected container (noop if it is already running)
 	<white>s</>        Displays a live stream of the selected container resource usage statistics
 	<white>t</>        Stops selected container (noop if it is not running)
 	<white>Enter</>    Returns low-level information on the selected container
-	<white>q</>        Quits mop.
-	<white>esc</>      Ditto.
+	<white>q</>        Quits <white>dry</>.
+	<white>esc</>      In the main view, quits <white>dry</>. In any other view, goes back to the main view
+
+
+## Moving around in logs/inspect
+	<white>g</>    		 Moves the cursor to the beggining
+	<white>G</>   		 Moves the cursor until the end
+	<white>pg up</>		 Moves the cursor "screen size" lines up
+	<white>pg down</>	 Moves the cursor "screen size" lines down
+
 <r> Press any key to continue </r>
 `
 
-const keyMappings = "H:<b><white>Help</></b> Q:<b><white>Quit</></b> <blue>|</> " +
-	"F1:<b><white>Sort</></b> F2:<b><white>Toggle Show Containers</></b> F5:<b><white>Refresh</></b> <blue>|</> " +
-	"E:<b><white>Remove</></b> K:<b><white>Kill</></b> L:<b><white>Logs</></b> R:<b><white>Restart</></b> " +
-	"S:<b><white>Stats</></b> T:<b><white>Stop</></b> <blue>|</>" +
-	"Intro:<b><white>Inspect</></b>"
+const keyMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> " +
+	"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
+	"<b>[E]:<darkgrey>Remove</> <b>[K]:<darkgrey>Kill</> <b>[L]:<darkgrey>Logs</> <b>[R]:<darkgrey>Restart</> " +
+	"<b>[S]:<darkgrey>Stats</> <b>[T]:<darkgrey>Stop</> <blue>|</>" +
+	"<b>[Intro]:<darkgrey>Inspect</>"

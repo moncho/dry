@@ -52,6 +52,7 @@ func NewMarkup() *Markup {
 	markup.tags[`white`] = termbox.ColorWhite
 	markup.tags[`grey`] = 0xE9
 	markup.tags[`grey2`] = 0xF4
+	markup.tags[`darkgrey`] = 0xE8
 	markup.tags[`right`] = termbox.ColorDefault // Termbox can combine attributes and a single color using bitwise OR.
 	markup.tags[`b`] = termbox.AttrBold
 	markup.tags[`u`] = termbox.AttrUnderline

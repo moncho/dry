@@ -18,8 +18,11 @@ const (
 	StatsMode
 	InspectMode
 )
+const (
+	menuBarBackgroundColor = 67
+)
 
-//Render knows how to render dry app in the given screen
+//Render renders dry in the given screen
 func Render(d *Dry, screen *ui.Screen) {
 	//v := ui.NewMarkupView("", 0, 1, screen.Width, screen.Height, false)
 	switch d.State.viewMode {
@@ -32,7 +35,8 @@ func Render(d *Dry, screen *ui.Screen) {
 			screen.Render(1, d.renderer.Render())
 			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
 			//fmt.Fprintf(v, d.renderer.Render())
-			screen.RenderLine(0, screen.Height-1, keyMappings)
+
+			screen.RenderLineWithBackGround(0, screen.Height-1, keyMappings, menuBarBackgroundColor)
 			/*err := v.Render()
 			if err != nil {
 				log.Panicf("Alarm!!! %s", err)
@@ -42,6 +46,7 @@ func Render(d *Dry, screen *ui.Screen) {
 	case HelpMode:
 		{
 			screen.Clear()
+
 			screen.Render(0, help)
 		}
 	}

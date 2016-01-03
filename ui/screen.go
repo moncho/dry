@@ -110,6 +110,30 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 	}
 }
 
+//RenderLineWithBackGround does what RenderLine does but rendering the line
+//with the given background color
+func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor uint16) {
+	start, column := 0, 0
+	for _, token := range screen.markup.Tokenize(str) {
+		// First check if it's a tag. Tags are eaten up and not displayed.
+		if screen.markup.IsTag(token) {
+			continue
+		}
+
+		// Here comes the actual text: display it one character at a time.
+		for i, char := range token {
+			if !screen.markup.RightAligned {
+				start = x + column
+				column++
+			} else {
+				start = screen.Width - len(token) + i
+			}
+			termbox.SetCell(start, y, char, screen.markup.Foreground, termbox.Attribute(bgColor))
+		}
+	}
+	fill(start+1, y, screen.Width, 1, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
+}
+
 //ScrollCursorDown moves the cursor to the line below the current one
 func (screen *Screen) ScrollCursorDown() {
 	screen.Cursor.Line = screen.Cursor.Line + 1
@@ -134,5 +158,13 @@ func (screen *Screen) Render(initialRow int, str string) {
 	}
 	for row, line := range strings.Split(str, "\n") {
 		screen.RenderLine(0, initialRow+row, line)
+	}
+}
+
+func fill(x, y, w, h int, cell termbox.Cell) {
+	for ly := 0; ly < h; ly++ {
+		for lx := 0; lx < w; lx++ {
+			termbox.SetCell(x+lx, y+ly, cell.Ch, cell.Fg, cell.Bg)
+		}
 	}
 }
