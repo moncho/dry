@@ -42,4 +42,4 @@ const keyMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</
 	"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
 	"<b>[E]:<darkgrey>Remove</> <b>[K]:<darkgrey>Kill</> <b>[L]:<darkgrey>Logs</> <b>[R]:<darkgrey>Restart</> " +
 	"<b>[S]:<darkgrey>Stats</> <b>[T]:<darkgrey>Stop</> <blue>|</>" +
-	"<b>[Intro]:<darkgrey>Inspect</>"
+	"<b>[Enter]:<darkgrey>Inspect</>"
