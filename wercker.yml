@@ -7,6 +7,8 @@ dev:
           ./source
 build:
   steps:
+    - wercker/setup-go-workspace:
+      package-dir: github.com/moncho/dry
 
     # golint step!
     - wercker/golint
