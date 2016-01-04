@@ -328,8 +328,13 @@ func main() {
 	var dockerEnv *docker.DockerEnv
 	if opts.DockerHost == "" {
 		if os.Getenv("DOCKER_HOST") == "" {
-			log.Error("No DOCKER_HOST environment variable found.")
-			return
+			log.Info(
+				fmt.Sprintf(
+					"No DOCKER_HOST environment variable found and no Host parameter was given, trying %s",
+					docker.DefaultDockerHost))
+			dockerEnv = &docker.DockerEnv{
+				DockerHost: docker.DefaultDockerHost,
+			}
 		}
 	} else {
 		dockerEnv = &docker.DockerEnv{

@@ -12,6 +12,12 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
+const (
+	//DefaultDockerHost is used as a default docker host to connect to
+	//if no other value is given.
+	DefaultDockerHost = "unix:///var/run/docker.sock"
+)
+
 //DockerDaemon knows how to talk to the Docker daemon
 type DockerDaemon struct {
 	client        *docker.Client                  //client used to to connect to the Docker daemon
