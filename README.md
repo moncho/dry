@@ -6,7 +6,7 @@
 
 **dry** is an interactive console application that connects to a Docker host, shows the list of containers and offers a few Docker commands to run on them.
 
-[![asciicast](https://asciinema.org/a/31436.png)](https://asciinema.org/a/31436?autoplay=1)
+[![asciicast](https://asciinema.org/a/32898.png)](https://asciinema.org/a/32898?autoplay=1)
 
 It can be used as alternative to the following commands of the official Docker cli:
 
@@ -21,26 +21,32 @@ It can be used as alternative to the following commands of the official Docker c
 
 ### Installation
 
-An easy way to install the latest binaries for Linux and Mac is to run this in your shell:
+The easiest way to install the latest binaries for Linux and Mac is to run this in your shell:
 
 ```
 $ curl -sSf https://moncho.github.io/dry/dryup.sh | sh
+```
+
+Most likely you will have to sudo it:
+
+```
+$ curl -sSf https://moncho.github.io/dry/dryup.sh | sudo sh
 ```
 
 #### Binaries
 
 If you dont like to **curl | sh**, binaries are provided.
 
-- **darwin** [386](https://github.com/moncho/dry/releases/download/v0.3-beta.2/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3-beta.2/dry-darwin-amd64)
-- **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.3-beta.2/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3-beta.2/dry-freebsd-amd64)
-- **linux** [386](https://github.com/moncho/dry/releases/download/v0.3-beta.2/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3-beta.2/dry-linux-amd64)
-- **windows** [386](https://github.com/moncho/dry/releases/download/v0.3-beta.2/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3-beta.2/dry-windows-amd64)
+- **darwin** [386](https://github.com/moncho/dry/releases/download/v0.3-beta.4/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3-beta.4/dry-darwin-amd64)
+- **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.3-beta.4/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3-beta.4/dry-freebsd-amd64)
+- **linux** [386](https://github.com/moncho/dry/releases/download/v0.3-beta.4/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3-beta.4/dry-linux-amd64)
+- **windows** [386](https://github.com/moncho/dry/releases/download/v0.3-beta.4/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.3-beta.4/dry-windows-amd64)
 
 #### Go
 
 And if you just run what you compile, use the source.
 
-Make sure that $GOPATH exists. Go get this project.
+Make sure that **$GOPATH** exists. Go get this project.
 ```
 $ go get github.com/moncho/dry
 $ cd $GOPATH/src/github.com/moncho/dry
@@ -57,7 +63,12 @@ $ make install
 
 ### Usage
 
-Open a console, type ```dry```. It will connect to whatever host defined in **$DOCKER_HOST** environment variable.
+Open a console, type ```dry```. It will try to connect to:
+* A Docker host given as a parameter (**-H**).
+* if none given, a Docker host defined in the **$DOCKER_HOST** environment variable.
+* if not define, to **unix:///var/run/docker.sock**.
+
+If no connection with a Docker host succeeds, **dry** will exit immediately.
 
 ```dry -p``` launches dry with [pprof](https://golang.org/pkg/net/http/pprof/) package active.
 
@@ -69,7 +80,7 @@ Install it, then insert a breakpoint anywhere you want:
 ```
 _ = "breakpoint"
 ```
-Then, run the debugger:
+And run the debugger:
 ```
 godebug run -instrument github.com/moncho/dry,github.com/moncho/dry/app,github.com/moncho/dry/docker,github.com/moncho/dry/ui,github.com/moncho/dry/appui main.go
 ```
