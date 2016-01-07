@@ -19,8 +19,8 @@ import (
 )
 import _ "net/http/pprof"
 
-// command line flags variable
-var opts struct {
+//dryOptions represents command line flags variables
+type dryOptions struct {
 	Description bool `short:"d" long:"description" description:"Dry description"`
 	// enable profiling
 	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
@@ -28,7 +28,7 @@ var opts struct {
 	//Docker-related properties
 	DockerHost       string `short:"H" long:"docker_host" description:"Docker Host"`
 	DockerCertPath   string `short:"c" long:"docker_certpath" description:"Docker cert path"`
-	DockerTLSVerifiy bool   `short:"t" long:"docker_tls" description:"Docker TLS verify"`
+	DockerTLSVerifiy string `short:"t" long:"docker_tls" description:"Docker TLS verify"`
 }
 
 //-----------------------------------------------------------------------------
@@ -301,9 +301,33 @@ func newApp(screen *ui.Screen, dockerEnv *docker.DockerEnv) (*app.Dry, error) {
 	return app.NewDryAppWithDockerEnv(screen, dockerEnv)
 }
 
+func newDockerEnv(opts dryOptions) *docker.DockerEnv {
+	var dockerEnv *docker.DockerEnv
+	if opts.DockerHost == "" {
+		if os.Getenv("DOCKER_HOST") == "" {
+			log.Info(
+				fmt.Sprintf(
+					"No DOCKER_HOST environment variable found and no Host parameter was given, trying %s",
+					docker.DefaultDockerHost))
+			dockerEnv = &docker.DockerEnv{
+				DockerHost: docker.DefaultDockerHost,
+			}
+		}
+	} else {
+		dockerEnv = &docker.DockerEnv{
+			DockerHost:      opts.DockerHost,
+			DockerTLSVerify: docker.GetBool(opts.DockerTLSVerifiy),
+			DockerCertPath:  opts.DockerCertPath,
+		}
+	}
+	return dockerEnv
+}
+
 func main() {
 	// parse flags
-	_, err := flags.Parse(&opts)
+	var opts dryOptions
+	var parser = flags.NewParser(&opts, flags.Default)
+	_, err := parser.Parse()
 	if err != nil {
 		flagError := err.(*flags.Error)
 		if flagError.Type == flags.ErrHelp {
@@ -325,24 +349,7 @@ func main() {
 		return
 	}
 	log.Info("Launching dry")
-	var dockerEnv *docker.DockerEnv
-	if opts.DockerHost == "" {
-		if os.Getenv("DOCKER_HOST") == "" {
-			log.Info(
-				fmt.Sprintf(
-					"No DOCKER_HOST environment variable found and no Host parameter was given, trying %s",
-					docker.DefaultDockerHost))
-			dockerEnv = &docker.DockerEnv{
-				DockerHost: docker.DefaultDockerHost,
-			}
-		}
-	} else {
-		dockerEnv = &docker.DockerEnv{
-			DockerHost:      opts.DockerHost,
-			DockerTLSVerify: opts.DockerTLSVerifiy,
-			DockerCertPath:  opts.DockerCertPath,
-		}
-	}
+	dockerEnv := newDockerEnv(opts)
 
 	// Start profiling (if required)
 	if opts.Profile {

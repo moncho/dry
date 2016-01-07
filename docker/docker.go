@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +32,7 @@ type DockerDaemon struct {
 //DockerEnv are the Docker-related environment variables defined
 type DockerEnv struct {
 	DockerHost      string
-	DockerTLSVerify bool
+	DockerTLSVerify bool //tls must be verified
 	DockerCertPath  string
 }
 
@@ -195,9 +196,9 @@ func ConnectToDaemon() (*DockerDaemon, error) {
 	client, err := docker.NewClientFromEnv()
 	if err == nil {
 		return connect(client, &DockerEnv{
-			os.Getenv("DOCKER_HOST"),
-			os.Getenv("DOCKER_TLS_VERIFY") != "",
-			os.Getenv("DOCKER_CERT_PATH")})
+			DockerHost:      os.Getenv("DOCKER_HOST"),
+			DockerTLSVerify: GetBool(os.Getenv("DOCKER_TLS_VERIFY")),
+			DockerCertPath:  os.Getenv("DOCKER_CERT_PATH")})
 	}
 	return nil, err
 }
@@ -205,15 +206,32 @@ func ConnectToDaemon() (*DockerDaemon, error) {
 //ConnectToDaemonUsingEnv connects to a Docker daemon using the given properties.
 func ConnectToDaemonUsingEnv(env *DockerEnv) (*DockerDaemon, error) {
 	dockerHost := env.DockerHost
-	if env.DockerTLSVerify {
+	//If a cert path is given it is implied that tls has to be used.
+	if env.DockerCertPath != "" {
 		parts := strings.SplitN(dockerHost, "://", 2)
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("could not split %s into two parts by ://", dockerHost)
 		}
-		cert := filepath.Join(env.DockerCertPath, "cert.pem")
-		key := filepath.Join(env.DockerCertPath, "key.pem")
-		ca := filepath.Join(env.DockerCertPath, "ca.pem")
-		client, err := docker.NewVersionedTLSClient(dockerHost, cert, key, ca, "")
+
+		var client *docker.Client
+		var err error
+		//fsouza docker client decides if tls has to be verified by checking if a CACert is given
+		//See https://github.com/fsouza/go-dockerclient/blob/master/client.go#L289
+		if env.DockerTLSVerify {
+			cert := filepath.Join(env.DockerCertPath, "cert.pem")
+			key := filepath.Join(env.DockerCertPath, "key.pem")
+			ca := filepath.Join(env.DockerCertPath, "ca.pem")
+			client, err = docker.NewVersionedTLSClient(dockerHost, cert, key, ca, "")
+		} else {
+			cert, key, _, err :=
+				readCertificateFiles(
+					filepath.Join(env.DockerCertPath, "cert.pem"),
+					filepath.Join(env.DockerCertPath, "key.pem"),
+					"")
+			if err == nil {
+				client, err = docker.NewVersionedTLSClientFromBytes(dockerHost, cert, key, nil, "")
+			}
+		}
 		if err == nil {
 			return connect(client, env)
 		}
@@ -226,7 +244,39 @@ func ConnectToDaemonUsingEnv(env *DockerEnv) (*DockerDaemon, error) {
 	return nil, err
 }
 
+//readCertificateContent reads the content of the given files. The CA file path is optional.
+func readCertificateFiles(certificateFile string, keyFile, caFile string) ([]byte, []byte, []byte, error) {
+	certPEMBlock, err := ioutil.ReadFile(certificateFile)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	keyPEMBlock, err := ioutil.ReadFile(keyFile)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	//caFile is optional
+	if caFile != "" {
+		caPEMCert, err := ioutil.ReadFile(caFile)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		return certPEMBlock, keyPEMBlock, caPEMCert, nil
+	}
+	return certPEMBlock, keyPEMBlock, nil, nil
+}
+
 //IsContainerRunning returns true if the given container is running
 func IsContainerRunning(container docker.APIContainers) bool {
 	return strings.Contains(container.Status, "Up")
+}
+
+//GetBool returns false if the given string looks like you mean
+//false. Func doesnt belong here.
+func GetBool(key string) (value bool) {
+	s := strings.ToLower(strings.Trim(key, " "))
+	if s == "" || s == "0" || s == "no" || s == "false" || s == "none" {
+		return false
+	}
+	return true
 }

@@ -262,37 +262,3 @@ func NewDryAppWithDockerEnv(screen *ui.Screen, env *drydocker.DockerEnv) (*Dry, 
 	d, err := drydocker.ConnectToDaemonUsingEnv(env)
 	return newDry(screen, d, err)
 }
-
-// ------------------------
-//header
-/*
-type header struct {
-	template *template.Template
-	appState *AppState
-}
-
-func newHeader(state *AppState) *header {
-	return &header{
-		buildHeaderTemplate(),
-		state,
-	}
-}
-func buildHeaderTemplate() *template.Template {
-	markup := `{{.AppMessage}}<right><white>{{.Now}}</></right>`
-	return template.Must(template.New(`header`).Parse(markup))
-}
-
-func (h *header) Render() string {
-	vars := struct {
-		Now        string // Current timestamp.
-		AppMessage string
-	}{
-		time.Now().Format(`3:04:05pm PST`),
-		h.appState.Render(),
-	}
-
-	buffer := new(bytes.Buffer)
-	h.template.Execute(buffer, vars)
-	return buffer.String()
-}
-*/

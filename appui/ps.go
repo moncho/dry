@@ -129,10 +129,10 @@ func buildContainerTemplate() *template.Template {
 }
 
 func dockerInfo(daemon *docker.DockerDaemon) string {
-	markup := `Docker Host: <white>{{.Env.DockerHost}}</>
-{{if .Env.DockerTLSVerify}}Cert Path: <white>{{.Env.DockerCertPath}}</>
-TLS:       <white>{{.Env.DockerTLSVerify}}</>
-{{end}}`
+	markup := `Docker Host:        <white>{{.Env.DockerHost}}</>
+Cert Path:          <white>{{.Env.DockerCertPath}}</>
+Verify Certificate: <white>{{.Env.DockerTLSVerify}}</>
+`
 	t := template.Must(template.New(`dockerinfo`).Parse(markup))
 	vars := struct {
 		Env *docker.DockerEnv
