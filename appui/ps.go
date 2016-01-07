@@ -31,8 +31,8 @@ type DockerPs struct {
 	sortMode               docker.SortMode
 }
 
-//NewDockerRenderer creates renderer for a container list
-func NewDockerRenderer(daemon *docker.DockerDaemon, cursor *ui.Cursor, sortMode docker.SortMode) *DockerPs {
+//NewDockerPsRenderer creates a renderer for a container list
+func NewDockerPsRenderer(daemon *docker.DockerDaemon, cursor *ui.Cursor, sortMode docker.SortMode) *DockerPs {
 	r := &DockerPs{}
 
 	r.columns = []column{

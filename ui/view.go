@@ -25,26 +25,6 @@ type View struct {
 	viewLines []viewLine // the view buffer
 
 	markup *Markup
-
-	// BgColor and FgColor allow to configure the background and foreground
-	// colors of the View.
-	BgColor, FgColor termbox.Attribute
-
-	// If Editable is true, keystrokes will be added to the view's internal
-	// buffer at the cursor position.
-	Editable bool
-
-	// Overwrite enables or disables the overwrite mode of the view.
-	Overwrite bool
-
-	// If Wrap is true, the content that is written to this View is
-	// automatically wrapped when it is longer than its width. If true the
-	// view's x-origin will be ignored.
-	Wrap bool
-
-	// If Autoscroll is true, the View will automatically scroll down when the
-	// text overflows. If true the view's y-origin will be ignored.
-	Autoscroll bool
 }
 
 type viewLine struct {
@@ -163,22 +143,10 @@ func (v *View) Rewind() {
 
 // Render renders the view buffer contents.
 func (v *View) Render() error {
-	maxX, maxY := v.ViewSize()
-
-	_ = "breakpoint"
-
-	if v.Wrap {
-		if maxX == 0 {
-			return errors.New("X size of the view cannot be 0")
-		}
-		v.bufferX = 0
-	}
+	_, maxY := v.ViewSize()
 
 	v.prepareViewForRender()
 
-	if v.Autoscroll && len(v.viewLines) > maxY {
-		v.bufferY = len(v.viewLines) - maxY
-	}
 	y := 0
 	for i, vline := range v.viewLines {
 		if i < v.bufferY {
@@ -218,34 +186,12 @@ func (v *View) drawCursor() {
 //prepareViewForRender sets the content of the view buffer from the
 //write buffer
 func (v *View) prepareViewForRender() {
-	maxX, _ := v.ViewSize()
 
 	if v.tainted {
 		v.viewLines = nil
 		for i, line := range v.lines {
-			if v.Wrap {
-				if len(line) <= maxX {
-					vline := viewLine{linesX: 0, linesY: i, line: line}
-					v.viewLines = append(v.viewLines, vline)
-					continue
-				} else {
-					vline := viewLine{linesX: 0, linesY: i, line: line[:maxX]}
-					v.viewLines = append(v.viewLines, vline)
-				}
-				// Append remaining lines
-				for n := maxX; n < len(line); n += maxX {
-					if len(line[n:]) <= maxX {
-						vline := viewLine{linesX: n, linesY: i, line: line[n:]}
-						v.viewLines = append(v.viewLines, vline)
-					} else {
-						vline := viewLine{linesX: n, linesY: i, line: line[n : n+maxX]}
-						v.viewLines = append(v.viewLines, vline)
-					}
-				}
-			} else {
-				vline := viewLine{linesX: 0, linesY: i, line: line}
-				v.viewLines = append(v.viewLines, vline)
-			}
+			vline := viewLine{linesX: 0, linesY: i, line: line}
+			v.viewLines = append(v.viewLines, vline)
 		}
 		v.tainted = false
 	}
@@ -309,7 +255,7 @@ func (v *View) renderLine(x int, y int, vline viewLine) error {
 			if x >= maxX {
 				break
 			}
-			if err := v.setRune(x, y, ch, v.FgColor, v.BgColor); err != nil {
+			if err := v.setRune(x, y, ch, termbox.ColorDefault, termbox.ColorDefault); err != nil {
 				return err
 			}
 			x++
@@ -331,7 +277,7 @@ func (v *View) clearRunes() {
 	for x := 0; x < maxX; x++ {
 		for y := 0; y < maxY; y++ {
 			termbox.SetCell(v.x0+x+1, v.y0+y+1, ' ',
-				termbox.Attribute(v.FgColor), termbox.Attribute(v.BgColor))
+				termbox.ColorDefault, termbox.ColorDefault)
 		}
 	}
 }
@@ -363,7 +309,7 @@ func (v *View) writeRune(x, y int, ch rune) error {
 		v.lines[y] = append(v.lines[y], s...)
 	}
 
-	if !v.Overwrite && x < olen {
+	if x < olen {
 		v.lines[y] = append(v.lines[y], '\x00')
 		copy(v.lines[y][x+1:], v.lines[y][x:])
 	}

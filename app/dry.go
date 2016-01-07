@@ -241,7 +241,7 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, erro
 		app := &Dry{}
 		app.State = state
 		app.dockerDaemon = d
-		app.renderer = appui.NewDockerRenderer(
+		app.renderer = appui.NewDockerPsRenderer(
 			app.dockerDaemon,
 			screen.Cursor,
 			state.SortMode)
