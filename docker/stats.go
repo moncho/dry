@@ -80,6 +80,12 @@ func calculateBlockIO(stats *godocker.Stats) (blkRead uint64, blkWrite uint64) {
 }
 
 func calculateNetwork(stats *godocker.Stats) (float64, float64) {
-	network := stats.Network
-	return float64(network.RxBytes), float64(network.TxBytes)
+	networks := stats.Networks
+	var rx, tx float64
+	for _, v := range networks {
+		rx += float64(v.RxBytes)
+		tx += float64(v.TxBytes)
+	}
+	return rx, tx
+
 }
