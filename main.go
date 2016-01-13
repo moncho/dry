@@ -155,7 +155,7 @@ func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.
 	go func() {
 		io.Copy(v, stream)
 	}()
-	if err := v.Activate(keyboardQueue); err != nil {
+	if err := v.Focus(keyboardQueue); err != nil {
 		ui.ShowErrorMessage(screen, keyboardQueue, err)
 	}
 
@@ -227,7 +227,7 @@ func less(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, don
 	screen.Clear()
 	v := ui.NewLess()
 	app.Write(dry, v)
-	if err := v.Activate(keyboardQueue); err != nil {
+	if err := v.Focus(keyboardQueue); err != nil {
 		ui.ShowErrorMessage(screen, keyboardQueue, err)
 	}
 	termbox.HideCursor()
