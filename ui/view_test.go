@@ -30,8 +30,9 @@ func TestCursorScrolling(t *testing.T) {
 
 func TestViewBufferPosition(t *testing.T) {
 	view := NewView("test", 0, 0, 10, 10, true)
+	numberOfLinesToWrite := 20
 
-	for i := 0; i < 20; i++ {
+	for i := 0; i < numberOfLinesToWrite; i++ {
 		fmt.Fprintf(view, "Line %d\n", i)
 	}
 	firstLine, _ := view.Line(0)
@@ -40,7 +41,7 @@ func TestViewBufferPosition(t *testing.T) {
 			"Line 0",
 			firstLine)
 	}
-	view.prepareViewForRender()
+	//view.prepareViewForRender()
 	view.PageDown()
 	testCursor(t, view, 0, 0)
 	testViewPosition(t, view, 0, 9)
@@ -49,7 +50,17 @@ func TestViewBufferPosition(t *testing.T) {
 	testViewPosition(t, view, 0, 18)
 	view.PageDown()
 	testCursor(t, view, 0, 10)
+	//The buffer
+	testViewBufferSize(t, view, numberOfLinesToWrite+1)
 
+}
+
+func testViewBufferSize(t *testing.T, view *View, expected int) {
+	if expected != len(view.lines) {
+		t.Errorf("View buffer has not the expected size, expected: %d got: %d",
+			expected,
+			len(view.lines))
+	}
 }
 
 func testCursor(t *testing.T, view *View, expectedX int, expectedY int) {
