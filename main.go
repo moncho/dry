@@ -41,7 +41,7 @@ func mainScreen(dry *app.Dry, screen *ui.Screen) {
 	keyboardQueue := make(chan termbox.Event)
 	timestampQueue := time.NewTicker(1 * time.Second)
 
-	viewClosed := make(chan bool, 1)
+	viewClosed := make(chan struct{}, 1)
 	keyboardQueueForView := make(chan termbox.Event)
 	dryOutputChan := dry.OuputChannel()
 
@@ -148,51 +148,26 @@ loop:
 	log.Info("something broke the loop")
 }
 
-func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.Event, done chan bool) {
+func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.Event, done chan<- struct{}) {
 	screen.Clear()
 	screen.Sync()
-	v := ui.NewView("", 0, 0, screen.Width, screen.Height, true)
+	v := ui.NewLess()
 	go func() {
 		io.Copy(v, stream)
 	}()
-	screen.RenderLine(0, 0, "Use the arrow keys, 'g' and 'G' to move through the log, escape key to go back.")
-	screen.Flush()
-loop:
-	for {
-		select {
-		case event := <-keyboardQueue:
-			switch event.Type {
-			case termbox.EventKey:
-				screen.Clear()
-				if event.Key == termbox.KeyEsc {
-					break loop
-				} else if event.Key == termbox.KeyArrowDown { //cursor down
-					v.CursorDown()
-				} else if event.Key == termbox.KeyArrowUp { // cursor up
-					v.CursorUp()
-				} else if event.Key == termbox.KeyPgdn { //cursor one page down
-					v.PageDown()
-				} else if event.Key == termbox.KeyPgup { // cursor one page up
-					v.PageUp()
-				} else if event.Ch == 'g' { //to the top of the view
-					v.CursorToTop()
-				} else if event.Ch == 'G' { //to the bottom of the view
-					v.CursorToBottom()
-				}
-				v.Render()
-				screen.Flush()
-			}
-		}
+	if err := v.Activate(keyboardQueue); err != nil {
+		ui.ShowErrorMessage(screen, keyboardQueue, err)
 	}
+
 	stream.Close()
 	termbox.HideCursor()
 	screen.Clear()
 	screen.Sync()
-	done <- true
+	done <- struct{}{}
 }
 
 //autorefresh view that autorefreshes its content every second
-func autorefresh(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan<- bool, doneStats chan<- bool, errC <-chan error) {
+func autorefresh(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan<- struct{}, doneStats chan<- bool, errC <-chan error) {
 	screen.Clear()
 	v := ui.NewMarkupView("", 0, 0, screen.Width, screen.Height, false)
 	//used to coordinate rendering betwen the ticker
@@ -201,7 +176,7 @@ func autorefresh(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Eve
 	app.Write(dry, v)
 	err := v.Render()
 	if err != nil {
-		log.Panicf("Alarm!!! %s", err)
+		ui.ShowErrorMessage(screen, keyboardQueue, err)
 	}
 	screen.Flush()
 	//the ticker is created after the first render
@@ -244,52 +219,22 @@ loop:
 	screen.Sync()
 	mutex.Unlock()
 	doneStats <- true
-	done <- true
+	done <- struct{}{}
 }
 
 //less shows dry output in a "less" emulator
-func less(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan bool) {
+func less(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan struct{}) {
 	screen.Clear()
-	v := ui.NewView("", 0, 0, screen.Width, screen.Height, true)
+	v := ui.NewLess()
 	app.Write(dry, v)
-	err := v.Render()
-	if err != nil {
-		log.Panicf("Alarm!!! %s", err)
-	}
-	screen.Flush()
-loop:
-	for {
-		select {
-		case event := <-keyboardQueue:
-			switch event.Type {
-			case termbox.EventKey:
-				screen.Clear()
-				if event.Key == termbox.KeyEsc {
-					break loop
-				} else if event.Key == termbox.KeyArrowDown { //cursor down
-					v.CursorDown()
-				} else if event.Key == termbox.KeyArrowUp { // cursor up
-					v.CursorUp()
-				} else if event.Key == termbox.KeyPgdn { //cursor one page down
-					v.PageDown()
-				} else if event.Key == termbox.KeyPgup { // cursor one page up
-					v.PageUp()
-				} else if event.Ch == 'g' { //to the top of the view
-					v.CursorToTop()
-				} else if event.Ch == 'G' { //to the bottom of the view
-					v.CursorToBottom()
-				}
-
-				v.Render()
-				screen.Flush()
-			}
-		}
+	if err := v.Activate(keyboardQueue); err != nil {
+		ui.ShowErrorMessage(screen, keyboardQueue, err)
 	}
 	termbox.HideCursor()
 	screen.Clear()
 	screen.Sync()
 
-	done <- true
+	done <- struct{}{}
 }
 
 //-----------------------------------------------------------------------------
