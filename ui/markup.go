@@ -61,41 +61,6 @@ func NewMarkup() *Markup {
 	return markup
 }
 
-// Tokenize works just like strings.Split() except the resulting array includes
-// the delimiters. For example, the "<green>Hello, <red>world!</>" string when
-// tokenized by tags produces the following:
-//
-//   [0] "<green>"
-//   [1] "Hello, "
-//   [2] "<red>"
-//   [3] "world!"
-//   [4] "</>"
-//
-func (markup *Markup) Tokenize(str string) []string {
-	matches := markup.regex.FindAllStringIndex(str, -1)
-	strings := make([]string, 0, len(matches))
-
-	head, tail := 0, 0
-	for _, match := range matches {
-		tail = match[0]
-		if match[1] != 0 {
-			if head != 0 || tail != 0 {
-				// Apend the text between tags.
-				strings = append(strings, str[head:tail])
-			}
-			// Append the tag itmarkup.
-			strings = append(strings, str[match[0]:match[1]])
-		}
-		head = match[1]
-	}
-
-	if head != len(str) && tail != len(str) {
-		strings = append(strings, str[head:])
-	}
-
-	return strings
-}
-
 // IsTag returns true when the given string looks like markup tag. When the
 // tag name matches one of the markup-supported tags it gets translated to
 // relevant Termbox attributes and colors.
@@ -167,4 +132,39 @@ func extractTagName(str string) string {
 	}
 
 	return `/`
+}
+
+// Tokenize works just like strings.Split() except the resulting array includes
+// the delimiters. For example, the "<green>Hello, <red>world!</>" string when
+// tokenized by tags produces the following:
+//
+//   [0] "<green>"
+//   [1] "Hello, "
+//   [2] "<red>"
+//   [3] "world!"
+//   [4] "</>"
+//
+func Tokenize(str string, regex *regexp.Regexp) []string {
+	matches := regex.FindAllStringIndex(str, -1)
+	strings := make([]string, 0, len(matches))
+
+	head, tail := 0, 0
+	for _, match := range matches {
+		tail = match[0]
+		if match[1] != 0 {
+			if head != 0 || tail != 0 {
+				// Apend the text between tags.
+				strings = append(strings, str[head:tail])
+			}
+			// Append the tag itmarkup.
+			strings = append(strings, str[match[0]:match[1]])
+		}
+		head = match[1]
+	}
+
+	if head != len(str) && tail != len(str) {
+		strings = append(strings, str[head:])
+	}
+
+	return strings
 }

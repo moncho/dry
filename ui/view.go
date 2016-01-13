@@ -3,7 +3,9 @@ package ui
 import (
 	"bytes"
 	"errors"
-	"io"
+	"fmt"
+	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/nsf/termbox-go"
@@ -17,14 +19,14 @@ type View struct {
 	bufferX, bufferY int      //current position in the view buffer
 	cursorX, cursorY int      //cursor position in the screen, valid values between 0 and x1, y1
 	lines            [][]rune //the content buffer
-	readOffset       int
-	readCache        string
+	readBuffer       []byte
 	showCursor       bool
 
-	tainted   bool       // marks if the viewBuffer must be updated
-	viewLines []viewLine // the view buffer
+	tainted bool // marks if the viewBuffer must be updated
+	//viewLines []viewLine // the view buffer
 
 	markup *Markup
+	regex  *regexp.Regexp
 }
 
 type viewLine struct {
@@ -32,8 +34,8 @@ type viewLine struct {
 	line           []rune
 }
 
-// ViewSize returns the number of visible columns and rows in the View.
-func (v *View) ViewSize() (x, y int) {
+// ViewSize returns the width and the height of the View.
+func (v *View) ViewSize() (width, height int) {
 	return v.x1 - v.x0 - 1, v.y1 - v.y0 - 1
 }
 
@@ -46,7 +48,7 @@ func (v *View) Name() string {
 func (v *View) setRune(x, y int, ch rune, fgColor, bgColor termbox.Attribute) error {
 	maxX, maxY := v.ViewSize()
 	if x < 0 || x >= maxX || y < 0 || y >= maxY {
-		return errors.New("invalid point")
+		return invalidPointError(x, y)
 	}
 
 	termbox.SetCell(v.x0+x+1, v.y0+y+1, ch,
@@ -60,7 +62,7 @@ func (v *View) setRune(x, y int, ch rune, fgColor, bgColor termbox.Attribute) er
 func (v *View) setCursor(x, y int) error {
 	maxX, maxY := v.ViewSize()
 	if x < 0 || x >= maxX || y < 0 || y >= maxY {
-		return errors.New("invalid point")
+		return invalidPointError(x, y)
 	}
 	v.cursorX = x
 	v.cursorY = y
@@ -119,36 +121,19 @@ func (v *View) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-// Read reads data into p. It returns the number of bytes read into p.
-// At EOF, err will be io.EOF. Calling Read() after Rewind() makes the
-// cache to be refreshed with the contents of the view.
-func (v *View) Read(p []byte) (n int, err error) {
-	if v.readOffset == 0 {
-		v.readCache = v.Buffer()
-	}
-	if v.readOffset < len(v.readCache) {
-		n = copy(p, v.readCache[v.readOffset:])
-		v.readOffset += n
-	} else {
-		err = io.EOF
-	}
-	return
-}
-
-// Rewind sets the offset for the next Read to 0, which also refresh the
-// read cache.
-func (v *View) Rewind() {
-	v.readOffset = 0
+// Read reads data into the internal buffer.
+func (v *View) Read(p []byte) {
+	v.readBuffer = byteSliceInsert(v.readBuffer, 0, p)
 }
 
 // Render renders the view buffer contents.
 func (v *View) Render() error {
 	_, maxY := v.ViewSize()
 
-	v.prepareViewForRender()
+	//v.prepareViewForRender()
 
 	y := 0
-	for i, vline := range v.viewLines {
+	for i, vline := range v.lines {
 		if i < v.bufferY {
 			continue
 		}
@@ -157,7 +142,7 @@ func (v *View) Render() error {
 		}
 
 		x := 0
-		v.renderLine(x, y, vline)
+		v.renderLine(x, y, string(vline))
 
 		y++
 	}
@@ -169,23 +154,23 @@ func (v *View) Render() error {
 
 //calculateCursorPosition gives the cursor position
 //from the beginning of the view
-func calculateCursorPosition(v *View) (int, int) {
+func (v *View) calculateCursorPosition() (int, int) {
 	return v.x0 + v.cursorX, v.y0 + v.cursorY
 }
 
 func (v *View) drawCursor() {
-	cursorX, cursorY := calculateCursorPosition(v)
+	cursorX, cursorY := v.calculateCursorPosition()
 
 	_, ry, _ := v.realPosition(cursorX, cursorY)
 
-	if ry <= len(v.viewLines) {
+	if ry <= len(v.lines) {
 		termbox.SetCursor(cursorX, cursorY)
 	}
 }
 
 //prepareViewForRender sets the content of the view buffer from the
 //write buffer
-func (v *View) prepareViewForRender() {
+/*func (v *View) prepareViewForRender() {
 
 	if v.tainted {
 		v.viewLines = nil
@@ -195,7 +180,7 @@ func (v *View) prepareViewForRender() {
 		}
 		v.tainted = false
 	}
-}
+}*/
 
 // realPosition returns the position in the internal buffer corresponding to the
 // point (x, y) of the view.
@@ -204,64 +189,51 @@ func (v *View) realPosition(vx, vy int) (x, y int, err error) {
 	vy = v.bufferY + vy
 
 	if vx < 0 || vy < 0 {
-		return 0, 0, errors.New("invalid point")
+		return 0, 0, invalidPointError(x, y)
 	}
 
-	if len(v.viewLines) == 0 {
+	if len(v.lines) == 0 {
 		return vx, vy, nil
 	}
-
-	if vy < len(v.viewLines) {
-		vline := v.viewLines[vy]
-		x = vline.linesX + vx
-		y = vline.linesY
+	x = vx
+	if vy < len(v.lines) {
+		y = vy
 	} else {
-		vline := v.viewLines[len(v.viewLines)-1]
-		x = vx
-		y = vline.linesY + vy - len(v.viewLines) + 1
+		y = vy - len(v.lines) + 1
 	}
 
 	return x, y, nil
 }
 
-func (v *View) renderLine(x int, y int, vline viewLine) error {
-	maxX, _ := v.ViewSize()
-	start, column := 0, 0
+func (v *View) renderLine(x int, y int, line string) error {
+
 	if v.markup != nil {
-		for _, token := range v.markup.Tokenize(string(vline.line)) {
+		for _, token := range Tokenize(line, v.markup.supportedTags()) {
 			// First check if it's a tag. Tags are not displayed.
 			if v.markup.IsTag(token) {
 				continue
 			}
-
-			// Here comes the actual text: display it one character at a time.
-			for i, char := range token {
-				if !v.markup.RightAligned {
-					start = x + column
-					column++
-				} else {
-					start = maxX - len(token) + i
-				}
-				if err := v.setRune(start, y, char, v.markup.Foreground, v.markup.Background); err != nil {
-					return err
-				}
-			}
+			v.renderWord(x, y, token)
 		}
 	} else {
-		for j, ch := range vline.line {
-			if j < v.bufferX {
-				continue
-			}
-			if x >= maxX {
-				break
-			}
-			if err := v.setRune(x, y, ch, termbox.ColorDefault, termbox.ColorDefault); err != nil {
-				return err
-			}
-			x++
-		}
+		renderString(x, y, line, termbox.ColorDefault, termbox.ColorDefault)
 	}
 	return nil
+}
+
+//renderWord displays the string, one character at a time.
+func (v *View) renderWord(x int, y int, word string) {
+	maxX, _ := v.ViewSize()
+	start := x
+	foreground, background := termbox.ColorDefault, termbox.ColorDefault
+	if v.markup != nil {
+		if v.markup.RightAligned {
+			start = maxX - len(word)
+		}
+		foreground = v.markup.Foreground
+		background = v.markup.Background
+	}
+	renderString(start, y, word, foreground, background)
 }
 
 // Clear empties the view's internal buffer.
@@ -295,7 +267,7 @@ func (v *View) writeRune(x, y int, ch rune) error {
 	}
 
 	if x < 0 || y < 0 {
-		return errors.New("invalid point")
+		return invalidPointError(x, y)
 	}
 
 	if y >= len(v.lines) {
@@ -328,7 +300,7 @@ func (v *View) deleteRune(x, y int) error {
 	}
 
 	if x < 0 || y < 0 || y >= len(v.lines) || x >= len(v.lines[y]) {
-		return errors.New("invalid point")
+		return invalidPointError(x, y)
 	}
 	v.lines[y] = append(v.lines[y][:x], v.lines[y][x+1:]...)
 	return nil
@@ -344,7 +316,7 @@ func (v *View) mergeLines(y int) error {
 	}
 
 	if y < 0 || y >= len(v.lines) {
-		return errors.New("invalid point")
+		return invalidPointError(0, y)
 	}
 
 	if y < len(v.lines)-1 { // otherwise we don't need to merge anything
@@ -365,7 +337,7 @@ func (v *View) breakLine(x, y int) error {
 	}
 
 	if y < 0 || y >= len(v.lines) {
-		return errors.New("invalid point")
+		return invalidPointError(x, y)
 	}
 
 	var left, right []rune
@@ -387,24 +359,16 @@ func (v *View) breakLine(x, y int) error {
 	return nil
 }
 
-// Buffer returns a string with the contents of the view's internal
-// buffer
-func (v *View) Buffer() string {
-	str := ""
-	for _, l := range v.lines {
-		str += string(l) + "\n"
-	}
-	return strings.Replace(str, "\x00", " ", -1)
-}
-
 // ViewBuffer returns a string with the contents of the view's buffer that is
 // showed to the user
 func (v *View) ViewBuffer() string {
-	str := ""
-	for _, l := range v.viewLines {
-		str += string(l.line) + "\n"
+	result := make([]string, 0, len(v.lines))
+	for _, l := range v.lines {
+		line := string(l)
+		strings.Replace(line, "\x00", " ", -1)
+		result = append(result, line)
 	}
-	return strings.Replace(str, "\x00", " ", -1)
+	return strings.Join(result, "\n")
 }
 
 // Line returns a string with the line of the view's internal buffer
@@ -416,7 +380,7 @@ func (v *View) Line(y int) (string, error) {
 	}
 
 	if y < 0 || y >= len(v.lines) {
-		return "", errors.New("invalid point")
+		return "", invalidPointError(0, y)
 	}
 	return string(v.lines[y]), nil
 }
@@ -430,7 +394,7 @@ func (v *View) Word(x, y int) (string, error) {
 	}
 
 	if x < 0 || y < 0 || y >= len(v.lines) || x >= len(v.lines[y]) {
-		return "", errors.New("invalid point")
+		return "", invalidPointError(x, y)
 	}
 	l := string(v.lines[y])
 	nl := strings.LastIndexFunc(l[:x], indexFunc)
@@ -452,7 +416,7 @@ func (v *View) Word(x, y int) (string, error) {
 func (v *View) CursorDown() {
 	cursorX, cursorY := v.Cursor()
 	ox, bufferY := v.Position()
-	if bufferY+cursorY <= len(v.viewLines) {
+	if bufferY+cursorY <= len(v.lines) {
 		if err := v.setCursor(cursorX, cursorY+1); err != nil {
 			v.setPosition(ox, bufferY+1)
 		}
@@ -475,7 +439,7 @@ func (v *View) PageDown() {
 	_, cursorY := v.Cursor()
 	bufferX, bufferY := v.Position()
 	_, height := v.ViewSize()
-	viewLength := len(v.viewLines)
+	viewLength := len(v.lines)
 	if bufferY+height+cursorY < viewLength {
 		newOy := bufferY + height
 		if newOy >= viewLength {
@@ -511,7 +475,7 @@ func (v *View) PageUp() {
 
 //CursorToBottom moves the cursor to the bottom of the view buffer
 func (v *View) CursorToBottom() {
-	v.bufferY = len(v.viewLines) - v.y1
+	v.bufferY = len(v.lines) - v.y1
 	v.cursorY = v.y1
 }
 
@@ -537,6 +501,7 @@ func NewView(name string, x0, y0, x1, y1 int, showCursor bool) *View {
 		y1:         y1,
 		tainted:    true,
 		showCursor: showCursor,
+		regex:      regexp.MustCompile(" "),
 	}
 
 	return v
@@ -553,7 +518,14 @@ func NewMarkupView(name string, x0, y0, x1, y1 int, showCursor bool) *View {
 		tainted:    true,
 		showCursor: showCursor,
 		markup:     NewMarkup(),
+		regex:      regexp.MustCompile(" "),
 	}
 
 	return v
+}
+
+func invalidPointError(x, y int) error {
+	_, file, line, _ := runtime.Caller(2)
+	return fmt.Errorf(
+		"Invalid point. x: %d, y: %d. Caller: %s, line: %d", x, y, file, line)
 }

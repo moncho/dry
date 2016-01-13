@@ -91,7 +91,7 @@ func (screen *Screen) Flush() *Screen {
 func (screen *Screen) RenderLine(x int, y int, str string) {
 	start, column := 0, 0
 
-	for _, token := range screen.markup.Tokenize(str) {
+	for _, token := range Tokenize(str, screen.markup.supportedTags()) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
 		if screen.markup.IsTag(token) {
 			continue
@@ -114,7 +114,7 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 //with the given background color
 func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor uint16) {
 	start, column := 0, 0
-	for _, token := range screen.markup.Tokenize(str) {
+	for _, token := range Tokenize(str, screen.markup.supportedTags()) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
 		if screen.markup.IsTag(token) {
 			continue
@@ -158,13 +158,5 @@ func (screen *Screen) Render(initialRow int, str string) {
 	}
 	for row, line := range strings.Split(str, "\n") {
 		screen.RenderLine(0, initialRow+row, line)
-	}
-}
-
-func fill(x, y, w, h int, cell termbox.Cell) {
-	for ly := 0; ly < h; ly++ {
-		for lx := 0; lx < w; lx++ {
-			termbox.SetCell(x+lx, y+ly, cell.Ch, cell.Fg, cell.Bg)
-		}
 	}
 }
