@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"strings"
+	"sync"
 
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/fsouza/go-dockerclient"
@@ -97,6 +98,39 @@ func (daemon *DockerDaemon) Rm(id string) error {
 		ID: id,
 	}
 	return daemon.client.RemoveContainer(opts)
+}
+
+//RemoveAllStoppedContainers removes all stopped containers
+func (daemon *DockerDaemon) RemoveAllStoppedContainers() error {
+	containers, _, err := containers(daemon.client, true)
+
+	errs := make(chan error, 1)
+	defer close(errs)
+	if err == nil {
+		var wg sync.WaitGroup
+		for _, container := range containers {
+			if !IsContainerRunning(container) {
+				wg.Add(1)
+				go func(id string) {
+					defer wg.Done()
+					err := daemon.Rm(id)
+					if err != nil {
+						select {
+						case errs <- err:
+						default:
+						}
+					}
+				}(container.ID)
+			}
+		}
+		wg.Wait()
+		select {
+		case e := <-errs:
+			return e
+		default:
+		}
+	}
+	return err
 }
 
 //Stats shows resource usage statistics of the container with the given id

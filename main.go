@@ -104,6 +104,8 @@ loop:
 						dry.ShowHelp()
 					} else if event.Ch == 'e' || event.Ch == 'E' { //remove
 						dry.Rm(screen.CursorPosition())
+					} else if event.Ch == ui.KeyAlte { //remove all stopped
+						dry.RemoveAllStoppedContainers()
 					} else if event.Ch == 'k' || event.Ch == 'K' { //kill
 						dry.Kill(screen.CursorPosition())
 					} else if event.Ch == 'l' || event.Ch == 'L' { //logs

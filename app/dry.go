@@ -82,6 +82,19 @@ func (d *Dry) Refresh() {
 	d.State.changed = true
 }
 
+//RemoveAllStoppedContainers removes all stopped containers
+func (d *Dry) RemoveAllStoppedContainers() {
+	d.appmessage(fmt.Sprintf("<red>Removing all stopped containers</>"))
+	if err := d.dockerDaemon.RemoveAllStoppedContainers(); err == nil {
+		d.Refresh()
+		d.appmessage(fmt.Sprintf("<red>Removed all stopped containers</>"))
+	} else {
+		d.appmessage(
+			fmt.Sprintf(
+				"<red>Error removing all stopped containers. %s</>", err))
+	}
+}
+
 //Rm removes the container at the given position
 func (d *Dry) Rm(position int) {
 	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
