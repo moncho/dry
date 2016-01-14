@@ -23,10 +23,10 @@ type Result struct {
 	Hits    int
 	Lines   []int
 	Pattern string
-	index   int //the current index i
+	index   int //the current index i to iterate Lines
 }
 
-//NewSearch searchs in a multiline string thos lines that match the given pattern,
+//NewSearch searchs in a multiline string for thoseslines that match the given pattern,
 //it returns:
 //* the number of hits (lines)
 //* the line index
@@ -42,23 +42,7 @@ func NewSearch(text [][]rune, pattern string) (*Result, error) {
 		}
 		return sr, nil
 	}
-	return nil, errors.New("Cannot search in an empty text.")
-
-	/*reader := strings.NewReader(s)
-	scanner := bufio.NewScanner(reader)
-	line := 0
-
-	for scanner.Scan() {
-		if strings.Contains(scanner.Text(), pattern) {
-			sr.Hits++
-			sr.Lines = append(sr.Lines, line)
-		}
-		line++
-	}
-	if scanner.Err() != nil {
-		return nil, scanner.Err()
-	}
-	return sr, nil*/
+	return nil, errors.New("Nothing to search in an empty text.")
 }
 
 func (result *Result) String() string {
