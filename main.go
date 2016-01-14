@@ -104,7 +104,7 @@ loop:
 						dry.ShowHelp()
 					} else if event.Ch == 'e' || event.Ch == 'E' { //remove
 						dry.Rm(screen.CursorPosition())
-					} else if event.Ch == ui.KeyAlte { //remove all stopped
+					} else if event.Key == termbox.KeyCtrlE { //remove all stopped
 						dry.RemoveAllStoppedContainers()
 					} else if event.Ch == 'k' || event.Ch == 'K' { //kill
 						dry.Kill(screen.CursorPosition())
@@ -308,7 +308,7 @@ func main() {
 	app, err := newApp(screen, dockerEnv)
 	if err == nil {
 		mainScreen(app, screen)
-		screen.Close()
+		//screen.Close()
 	} else {
 		screen.Close()
 		log.Errorf("There was an error launching dry: %s", err)

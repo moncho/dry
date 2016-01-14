@@ -242,7 +242,7 @@ func (less *Less) renderLine(x int, y int, line string) error {
 	var fg, bg = termbox.ColorDefault, termbox.ColorDefault
 	for _, token := range strings.Fields(line) {
 		if less.searchResult != nil && strings.Contains(token, less.searchResult.Pattern) {
-			fg = termbox.ColorWhite
+			fg = termbox.ColorYellow
 		}
 		renderString(x, y, line, fg, bg)
 	}
