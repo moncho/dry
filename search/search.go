@@ -80,31 +80,29 @@ func (result *Result) InitialLine(lineNumber int) error {
 // *NextLine() should give 1
 // *NextLine() should give 3
 // *NextLine() should give 5
-// *NextLine() should give 1
+// *NextLine() should give 5
 func (result *Result) NextLine() (int, error) {
 	if result.Lines == nil {
 		return -1, nohitsError()
 	}
-	result.index++
-	if result.index >= len(result.Lines) {
-		result.index = 0
+	if result.index < len(result.Lines)-1 {
+		result.index++
 	}
 	return result.Lines[result.index], nil
 }
 
 //PreviousLine returns the previous line while iterating the search results.
 //So, for a result that found that lines (1, 3, 5) were a hit:
-// * PreviousLine() should give 5
-// * PreviousLine() should give 3
+// * NextLine() should give 1
+// * NextLine() should give 3
 // * PreviousLine() should give 1
-// * PreviousLine() should give 5
+// * PreviousLine() should give 1
 func (result *Result) PreviousLine() (int, error) {
 	if result.Lines == nil {
 		return -1, nohitsError()
 	}
-	result.index--
-	if result.index < 0 {
-		result.index = len(result.Lines) - 1
+	if result.index > 0 {
+		result.index--
 	}
 	return result.Lines[result.index], nil
 }

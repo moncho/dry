@@ -35,29 +35,23 @@ func TestResultIteration(t *testing.T) {
 
 	line, _ = rs.PreviousLine()
 
-	if line != 9 {
-		t.Errorf("Expected line: %d, got: %d", 9, line)
-	}
-
-	line, _ = rs.NextLine()
-
 	if line != 2 {
 		t.Errorf("Expected line: %d, got: %d", 2, line)
 	}
 
 	line, _ = rs.NextLine()
+
 	if line != 3 {
 		t.Errorf("Expected line: %d, got: %d", 3, line)
-
 	}
 
-	line, _ = rs.PreviousLine()
-	if line != 2 {
+	line, _ = rs.NextLine()
+	if line != 4 {
 		t.Errorf("Expected line: %d, got: %d", 4, line)
 
 	}
 
-	line, _ = rs.NextLine()
+	line, _ = rs.PreviousLine()
 	if line != 3 {
 		t.Errorf("Expected line: %d, got: %d", 3, line)
 
@@ -69,6 +63,12 @@ func TestResultIteration(t *testing.T) {
 
 	}
 
+	line, _ = rs.NextLine()
+	if line != 8 {
+		t.Errorf("Expected line: %d, got: %d", 8, line)
+
+	}
+
 	rs.InitialLine(5)
 	line, _ = rs.NextLine()
 	if line != 8 {
@@ -77,6 +77,12 @@ func TestResultIteration(t *testing.T) {
 	}
 
 	rs.InitialLine(9)
+	line, _ = rs.NextLine()
+	if line != 9 {
+		t.Errorf("Expected line: %d, got: %d", 9, line)
+
+	}
+
 	line, _ = rs.NextLine()
 	if line != 9 {
 		t.Errorf("Expected line: %d, got: %d", 9, line)
