@@ -2,6 +2,7 @@ package ui
 
 import (
 	"strings"
+	"time"
 
 	"github.com/moncho/dry/search"
 	"github.com/nsf/termbox-go"
@@ -35,9 +36,9 @@ func NewLess() *Less {
 	}
 }
 
-//Focus sets the view as active, it starts handling terminal events
+//Focus sets the view as active, so it starts handling terminal events
 //and user actions
-func (less *Less) Focus(keyboardQueue <-chan termbox.Event) error {
+func (less *Less) Focus(events <-chan termbox.Event) error {
 	clear()
 	if err := less.Render(); err != nil {
 		return err
@@ -46,6 +47,17 @@ func (less *Less) Focus(keyboardQueue <-chan termbox.Event) error {
 	inputMode := false
 	inputBoxEventChan := make(chan termbox.Event)
 	inputBoxOuput := make(chan string, 1)
+	//the first render is done when some content is added to the buffer
+	go func() {
+		for {
+			if less.bufferSize() > 0 {
+				less.Render()
+				termbox.Flush()
+				return
+			}
+			time.Sleep(250 * time.Millisecond)
+		}
+	}()
 	defer close(inputBoxOuput)
 	defer close(inputBoxEventChan)
 loop:
@@ -59,7 +71,7 @@ loop:
 				return err
 			}
 			termbox.Flush()
-		case event := <-keyboardQueue:
+		case event := <-events:
 			switch event.Type {
 			case termbox.EventKey:
 				if !inputMode {
@@ -103,7 +115,7 @@ loop:
 	return nil
 }
 
-//Search searchs in the view buffer the given pattern
+//Search searchs in the view buffer for the given pattern
 func (less *Less) Search(pattern string) error {
 	if pattern != "" {
 		less.tainted = true
