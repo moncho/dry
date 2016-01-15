@@ -147,7 +147,7 @@ loop:
 		}
 	}
 
-	log.Info("something broke the loop")
+	log.Debug("something broke the loop")
 }
 
 func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.Event, done chan<- struct{}) {
@@ -308,7 +308,8 @@ func main() {
 	app, err := newApp(screen, dockerEnv)
 	if err == nil {
 		mainScreen(app, screen)
-		//screen.Close()
+		app.Close()
+		screen.Close()
 	} else {
 		screen.Close()
 		log.Errorf("There was an error launching dry: %s", err)

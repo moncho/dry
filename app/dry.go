@@ -27,6 +27,11 @@ func (d *Dry) Changed() bool {
 	return d.State.changed
 }
 
+//Close closes dry, releasing any resources held by it
+func (d *Dry) Close() {
+	close(d.output)
+}
+
 //Inspect set dry for inspecting container at the given position
 func (d *Dry) Inspect(position int) {
 	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
