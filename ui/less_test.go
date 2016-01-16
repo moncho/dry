@@ -138,6 +138,6 @@ func newLess(width int, height int) *Less {
 		showCursor: true,
 	}
 	return &Less{
-		view, nil,
+		view, nil, false,
 	}
 }
