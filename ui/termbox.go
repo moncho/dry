@@ -95,17 +95,22 @@ func byteSliceInsert(text []byte, offset int, what []byte) []byte {
 }
 
 // EventChannel returns a channel with termbox's events.
-func EventChannel() <-chan termbox.Event {
+func EventChannel() (<-chan termbox.Event, chan struct{}) {
 	// termbox.PollEvent() can get stuck on unexpected signal
 	// handling cases, so termbox polling is done is a separate goroutine
 	evCh := make(chan termbox.Event)
+	done := make(chan struct{})
 	go func() {
 		defer func() { recover() }()
 		defer func() { close(evCh) }()
 		for {
-			evCh <- termbox.PollEvent()
+			select {
+			case evCh <- termbox.PollEvent():
+			case <-done:
+				return
+			}
 		}
 	}()
-	return evCh
+	return evCh, done
 
 }

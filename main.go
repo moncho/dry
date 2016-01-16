@@ -38,7 +38,7 @@ func mainScreen(dry *app.Dry, screen *ui.Screen) {
 		return
 	}
 
-	keyboardQueue := ui.EventChannel() //make(chan termbox.Event)
+	keyboardQueue, done := ui.EventChannel()
 	timestampQueue := time.NewTicker(1 * time.Second)
 
 	viewClosed := make(chan struct{}, 1)
@@ -46,17 +46,10 @@ func mainScreen(dry *app.Dry, screen *ui.Screen) {
 	dryOutputChan := dry.OuputChannel()
 
 	defer timestampQueue.Stop()
+	defer close(done)
 	defer close(keyboardQueueForView)
 	defer close(viewClosed)
-	//defer close(keyboardQueue)
-	/*
-		go func() {
-			for {
-				keyboardQueue <- termbox.PollEvent()
-			}
-		}()
 
-	*/
 	go func() {
 		for {
 			dryMessage := <-dryOutputChan
@@ -101,7 +94,7 @@ loop:
 						dry.ToggleShowAllContainers()
 					} else if event.Key == termbox.KeyF5 { // refresh
 						dry.Refresh()
-					} else if event.Key == termbox.KeyF10 { // refresh
+					} else if event.Key == termbox.KeyF10 { // docker info
 						dry.ShowInfo()
 						viewMode = true
 						go less(dry, screen, keyboardQueueForView, viewClosed)
