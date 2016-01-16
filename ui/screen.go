@@ -97,7 +97,7 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 			continue
 		}
 
-		// Here comes the actual text: display it one character at a time.
+		// Here comes the actual text: displays it one character at a time.
 		for i, char := range token {
 			if !screen.markup.RightAligned {
 				start = x + column

@@ -13,11 +13,14 @@ const (
 	starttext = "(start)"
 )
 
-//Less is a View with less-like behaviour and characteristics, meaning:
-// * The cursor is always shown at the bottom of the screen
+//Less is a View specilization with less-like behaviour and characteristics, meaning:
+// * The cursor is always shown at the bottom of the screen.
+// * Navigation is done using less keybindings.
+// * Basic searching is supported.
 type Less struct {
 	*View
 	searchResult *search.Result
+	filtering    bool
 }
 
 //NewLess creates a view that partially simulates less.
@@ -32,18 +35,13 @@ func NewLess() *Less {
 		showCursor: true,
 	}
 	return &Less{
-		view, nil,
+		view, nil, false,
 	}
 }
 
 //Focus sets the view as active, so it starts handling terminal events
 //and user actions
 func (less *Less) Focus(events <-chan termbox.Event) error {
-	clear()
-	if err := less.Render(); err != nil {
-		return err
-	}
-	termbox.Flush()
 	inputMode := false
 	inputBoxEventChan := make(chan termbox.Event)
 	inputBoxOuput := make(chan string, 1)
@@ -51,11 +49,12 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 	go func() {
 		for {
 			if less.bufferSize() > 0 {
+				less.tainted = false
 				less.Render()
 				termbox.Flush()
 				return
 			}
-			time.Sleep(250 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 	defer close(inputBoxOuput)
@@ -96,6 +95,12 @@ loop:
 					} else if event.Ch == '/' {
 						inputMode = true
 						less.tainted = false
+						less.filtering = false
+						go less.readInput(inputBoxEventChan, inputBoxOuput)
+					} else if event.Ch == 'f' {
+						inputMode = true
+						less.tainted = false
+						less.filtering = true
 						go less.readInput(inputBoxEventChan, inputBoxOuput)
 					}
 
@@ -251,12 +256,34 @@ func (less *Less) renderSize() (int, int) {
 }
 
 func (less *Less) renderLine(x int, y int, line string) error {
-	var fg, bg = termbox.ColorDefault, termbox.ColorDefault
-	for _, token := range strings.Fields(line) {
-		if less.searchResult != nil && strings.Contains(token, less.searchResult.Pattern) {
-			fg = termbox.ColorYellow
+	if less.searchResult != nil {
+		//If markup support is active then it might happen that tags are present in the line
+		//but since we are searching, markups are ignored and coloring output is
+		//decided here.
+		if strings.Contains(line, less.searchResult.Pattern) {
+			if less.markup != nil {
+				start, column := 0, 0
+				for _, token := range Tokenize(line, less.markup.supportedTags()) {
+					if less.markup.IsTag(token) {
+
+						continue
+					}
+					// Here comes the actual text: display it one character at a time.
+					for _, char := range token {
+						start = x + column
+						column++
+						termbox.SetCell(start, y, char, termbox.ColorYellow, termbox.ColorDefault)
+					}
+				}
+			} else {
+				renderString(x, y, line, termbox.ColorYellow, termbox.ColorDefault)
+			}
+		} else if !less.filtering {
+			return less.View.renderLine(x, y, line)
 		}
-		renderString(x, y, line, fg, bg)
+
+	} else {
+		return less.View.renderLine(x, y, line)
 	}
 	return nil
 }

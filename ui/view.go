@@ -19,7 +19,6 @@ type View struct {
 	bufferX, bufferY int      //current position in the view buffer
 	cursorX, cursorY int      //cursor position in the screen, valid values between 0 and x1, y1
 	lines            [][]rune //the content buffer
-	readBuffer       []byte
 	showCursor       bool
 
 	tainted bool // marks if the viewBuffer must be updated
@@ -121,11 +120,6 @@ func (v *View) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-// Read reads data into the internal buffer.
-func (v *View) Read(p []byte) {
-	v.readBuffer = byteSliceInsert(v.readBuffer, 0, p)
-}
-
 // Render renders the view buffer contents.
 func (v *View) Render() error {
 	_, maxY := v.ViewSize()
@@ -168,20 +162,6 @@ func (v *View) drawCursor() {
 	}
 }
 
-//prepareViewForRender sets the content of the view buffer from the
-//write buffer
-/*func (v *View) prepareViewForRender() {
-
-	if v.tainted {
-		v.viewLines = nil
-		for i, line := range v.lines {
-			vline := viewLine{linesX: 0, linesY: i, line: line}
-			v.viewLines = append(v.viewLines, vline)
-		}
-		v.tainted = false
-	}
-}*/
-
 // realPosition returns the position in the internal buffer corresponding to the
 // point (x, y) of the view.
 func (v *View) realPosition(vx, vy int) (x, y int, err error) {
@@ -208,13 +188,7 @@ func (v *View) realPosition(vx, vy int) (x, y int, err error) {
 func (v *View) renderLine(x int, y int, line string) error {
 
 	if v.markup != nil {
-		for _, token := range Tokenize(line, v.markup.supportedTags()) {
-			// First check if it's a tag. Tags are not displayed.
-			if v.markup.IsTag(token) {
-				continue
-			}
-			v.renderWord(x, y, token)
-		}
+		renderLineWithMarkup(x, y, v.y1, line, v.markup)
 	} else {
 		renderString(x, y, line, termbox.ColorDefault, termbox.ColorDefault)
 	}
@@ -483,6 +457,11 @@ func (v *View) CursorToBottom() {
 func (v *View) CursorToTop() {
 	v.bufferY = 0
 	v.cursorY = 0
+}
+
+//MarkupSupport sets markup support in the view
+func (v *View) MarkupSupport() {
+	v.markup = NewMarkup()
 }
 
 // indexFunc allows to split lines by words taking into account spaces

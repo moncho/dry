@@ -7,6 +7,9 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+//This files adds functions that serve as building blocks for rendering structs
+//defined in the ui package.
+
 //fill fills the screen with the given cell starting at x,y until w,h.
 func fill(x, y, w, h int, cell termbox.Cell) {
 	for ly := 0; ly < h; ly++ {
@@ -21,6 +24,30 @@ func renderString(x, y int, word string, foreground, background termbox.Attribut
 	for _, char := range word {
 		termbox.SetCell(x, y, char, foreground, background)
 		x += runewidth.RuneWidth(char)
+	}
+}
+
+// renderLineWithMarkup takes the incoming string, uses the given markup to tokenize it and to extract markup
+// elements, and displays it all starting at (x,y) location.
+func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) {
+	start, column := 0, 0
+
+	for _, token := range Tokenize(str, markup.supportedTags()) {
+		// First check if it's a tag. Tags are eaten up and not displayed.
+		if markup.IsTag(token) {
+			continue
+		}
+
+		// Here comes the actual text: display it one character at a time.
+		for i, char := range token {
+			if !markup.RightAligned {
+				start = x + column
+				column++
+			} else {
+				start = maxWidth - len(token) + i
+			}
+			termbox.SetCell(start, y, char, markup.Foreground, markup.Background)
+		}
 	}
 }
 
@@ -65,4 +92,20 @@ func byteSliceInsert(text []byte, offset int, what []byte) []byte {
 	copy(text[offset+len(what):], text[offset:])
 	copy(text[offset:], what)
 	return text
+}
+
+// EventChannel returns a channel with termbox's events.
+func EventChannel() <-chan termbox.Event {
+	// termbox.PollEvent() can get stuck on unexpected signal
+	// handling cases, so termbox polling is done is a separate goroutine
+	evCh := make(chan termbox.Event)
+	go func() {
+		defer func() { recover() }()
+		defer func() { close(evCh) }()
+		for {
+			evCh <- termbox.PollEvent()
+		}
+	}()
+	return evCh
+
 }
