@@ -52,6 +52,11 @@ func (daemon *DockerDaemon) ContainerByID(cid string) docker.APIContainers {
 	return daemon.containerByID[cid]
 }
 
+//Info returns system-wide information about the Docker server.
+func (daemon *DockerDaemon) Info() (*docker.Env, error) {
+	return daemon.client.Info()
+}
+
 //Inspect the container with the given id
 func (daemon *DockerDaemon) Inspect(id string) (*docker.Container, error) {
 	return daemon.client.InspectContainer(id)

@@ -14,6 +14,7 @@ import (
 type Dry struct {
 	containerToInspect *godocker.Container
 	dockerDaemon       *drydocker.DockerDaemon
+	info               *godocker.Env
 	renderer           *appui.DockerPs
 	//	header             *header
 	State       *State
@@ -45,7 +46,6 @@ func (d *Dry) Inspect(position int) {
 	} else {
 		d.errormessage(shortID, "inspecting", err)
 	}
-
 }
 
 //Kill the docker container at the given position
@@ -115,18 +115,27 @@ func (d *Dry) Rm(position int) {
 	}
 }
 
-//ShowDockerHostInfo changes the state of dry to show the extended help
-func (d *Dry) ShowDockerHostInfo() {
-	d.State.ShowingHelp = false
+//ShowContainers changes the state of dry to show the container list
+func (d *Dry) ShowContainers() {
 	d.State.changed = true
 	d.State.viewMode = Main
 }
 
 //ShowHelp changes the state of dry to show the extended help
 func (d *Dry) ShowHelp() {
-	d.State.ShowingHelp = true
-	d.State.changed = true
 	d.State.viewMode = HelpMode
+}
+
+//ShowInfo retrieves Docker Host info.
+func (d *Dry) ShowInfo() error {
+	info, err := d.dockerDaemon.Info()
+	if err == nil {
+		d.State.viewMode = InfoMode
+		d.info = info
+		return nil
+	}
+	return err
+
 }
 
 //Sort rotates to the next sort mode.
@@ -251,7 +260,6 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, erro
 			changed:              true,
 			Paused:               false,
 			showingAllContainers: false,
-			ShowingHelp:          false,
 			SortMode:             drydocker.SortByContainerID,
 			viewMode:             Main,
 		}

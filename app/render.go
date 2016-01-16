@@ -17,6 +17,7 @@ const (
 	HelpMode
 	StatsMode
 	InspectMode
+	InfoMode
 )
 const (
 	menuBarBackgroundColor = 67
@@ -43,12 +44,6 @@ func Render(d *Dry, screen *ui.Screen) {
 			}*/
 			d.State.changed = false
 		}
-	case HelpMode:
-		{
-			screen.Clear()
-
-			screen.Render(0, help)
-		}
 	}
 
 	screen.Flush()
@@ -69,6 +64,13 @@ func Write(d *Dry, w io.Writer) {
 		{
 			fmt.Fprintf(w, appui.NewDockerInspectRenderer(d.containerToInspect).Render())
 		}
+	case HelpMode:
+		{
+			fmt.Fprintf(w, help)
+		}
+
+	case InfoMode:
+		fmt.Fprintf(w, appui.NewDockerInfoRenderer(d.info).Render())
 	default:
 		{
 			fmt.Fprintf(w, "Dry is not ready yet for rendering, be patient...")
