@@ -38,7 +38,7 @@ func mainScreen(dry *app.Dry, screen *ui.Screen) {
 		return
 	}
 
-	keyboardQueue := make(chan termbox.Event)
+	keyboardQueue := ui.EventChannel() //make(chan termbox.Event)
 	timestampQueue := time.NewTicker(1 * time.Second)
 
 	viewClosed := make(chan struct{}, 1)
@@ -48,14 +48,15 @@ func mainScreen(dry *app.Dry, screen *ui.Screen) {
 	defer timestampQueue.Stop()
 	defer close(keyboardQueueForView)
 	defer close(viewClosed)
-	defer close(keyboardQueue)
+	//defer close(keyboardQueue)
+	/*
+		go func() {
+			for {
+				keyboardQueue <- termbox.PollEvent()
+			}
+		}()
 
-	go func() {
-		for {
-			keyboardQueue <- termbox.PollEvent()
-		}
-	}()
-
+	*/
 	go func() {
 		for {
 			dryMessage := <-dryOutputChan
@@ -80,11 +81,11 @@ loop:
 			}
 		case <-viewClosed:
 			viewMode = false
-			dry.ShowDockerHostInfo()
+			dry.ShowContainers()
 		case event := <-keyboardQueue:
 			switch event.Type {
 			case termbox.EventKey:
-				if !dry.State.ShowingHelp && !viewMode {
+				if !viewMode {
 					if event.Key == termbox.KeyEsc || event.Ch == 'q' || event.Ch == 'Q' {
 						break loop
 					} else if event.Key == termbox.KeyArrowUp { //cursor up
@@ -100,8 +101,14 @@ loop:
 						dry.ToggleShowAllContainers()
 					} else if event.Key == termbox.KeyF5 { // refresh
 						dry.Refresh()
+					} else if event.Key == termbox.KeyF10 { // refresh
+						dry.ShowInfo()
+						viewMode = true
+						go less(dry, screen, keyboardQueueForView, viewClosed)
 					} else if event.Ch == '?' || event.Ch == 'h' || event.Ch == 'H' { //help
+						viewMode = true
 						dry.ShowHelp()
+						go less(dry, screen, keyboardQueueForView, viewClosed)
 					} else if event.Ch == 'e' || event.Ch == 'E' { //remove
 						dry.Rm(screen.CursorPosition())
 					} else if event.Key == termbox.KeyCtrlE { //remove all stopped
@@ -133,8 +140,6 @@ loop:
 				} else if viewMode {
 					//The view handles the event
 					keyboardQueueForView <- event
-				} else if dry.State.ShowingHelp {
-					dry.ShowDockerHostInfo()
 				}
 			case termbox.EventResize:
 				screen.Resize()
@@ -228,7 +233,8 @@ loop:
 func less(dry *app.Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan struct{}) {
 	screen.Clear()
 	v := ui.NewLess()
-	app.Write(dry, v)
+	v.MarkupSupport()
+	go app.Write(dry, v)
 	if err := v.Focus(keyboardQueue); err != nil {
 		ui.ShowErrorMessage(screen, keyboardQueue, err)
 	}
