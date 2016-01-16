@@ -73,16 +73,16 @@ func (daemon *DockerDaemon) Kill(id string) error {
 //Logs shows the logs of the container with the given id
 func (daemon *DockerDaemon) Logs(id string) io.ReadCloser {
 	r, w := io.Pipe()
-	options := docker.AttachToContainerOptions{
+	options := docker.LogsOptions{
 		Container:    id,
 		OutputStream: w,
 		ErrorStream:  w,
-		Stream:       true,
+		Follow:       true,
 		Stdout:       true,
 		Stderr:       true,
-		Logs:         true,
 	}
-	go daemon.client.AttachToContainer(options)
+
+	go daemon.client.Logs(options)
 	return r
 }
 
