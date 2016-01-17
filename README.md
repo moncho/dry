@@ -4,20 +4,30 @@
 [![Go Report Card](http://goreportcard.com/badge/moncho/dry)](http://goreportcard.com/report/moncho/dry)
 
 
-**dry** is an interactive console application that connects to a Docker host, shows the list of containers and offers a few Docker commands to run on them.
+**dry** is terminal application that connects to a **Docker** host, shows the list of containers and allows to interact with them.
 
 [![asciicast](https://asciinema.org/a/32898.png)](https://asciinema.org/a/32898?autoplay=1)
 
-It can be used as alternative to the following commands of the official Docker cli:
+Commands from the official [**Docker** cli](https://docs.docker.com/engine/reference/commandline/cli/) available:
 
-* inspect
-* kill
-* logs
-* ps
-* rm
-* stats
-* start
-* stop
+* ***info***      : **[F10]**
+* ***inspect***   : **[Enter]**
+* ***kill***      : **[k]**
+* ***logs***      : **[l]**
+* ***ps***
+* ***rm***        : **[e]**
+* ***stats***     : **[s]**
+* ***start***     : **[r]**
+* ***stop***      : **[F10]**
+
+Besides this, it:
+
+* Shows real-time information about containers.
+* Allows to sort the container list. **[F1]**
+* Is possible to search and navigate the output of ***info***, ***inspect***, ***logs*** commands.  
+* Allows to easily remove all stopped containers. **[ctrl + E]**
+
+Every command is linked
 
 ### Installation
 
@@ -66,7 +76,7 @@ $ make install
 Open a console, type ```dry```. It will try to connect to:
 * A Docker host given as a parameter (**-H**).
 * if none given, a Docker host defined in the **$DOCKER_HOST** environment variable.
-* if not define, to **unix:///var/run/docker.sock**.
+* if not defined, to **unix:///var/run/docker.sock**.
 
 If no connection with a Docker host succeeds, **dry** will exit immediately.
 
