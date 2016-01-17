@@ -10,15 +10,15 @@
 
 Commands from the official [**Docker** cli](https://docs.docker.com/engine/reference/commandline/cli/) available are:
 
-* ***info***      | : **[F10]**
-* ***inspect***   | : **[Enter]**
-* ***kill***      | : **[k]**
-* ***logs***      | : **[l]**
+* ***info***      : **[F10]**
+* ***inspect***   : **[Enter]**
+* ***kill***      : **[k]**
+* ***logs***      : **[l]**
 * ***ps***
-* ***rm***        | : **[e]**
-* ***start***     | : **[r]**
-* ***stats***     | : **[s]**
-* ***stop***      | : **[t]**
+* ***rm***        : **[e]**
+* ***start***     : **[r]**
+* ***stats***     : **[s]**
+* ***stop***      : **[t]**
 
 Besides this, it:
 
