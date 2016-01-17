@@ -272,13 +272,15 @@ func main() {
 		"version": version.VERSION,
 		"build":   version.GITCOMMIT,
 	})
+	running := false
 	defer func() {
 		if r := recover(); r != nil {
 			loggerWithVersion.Error(r)
 			log.Info("Bye")
 			os.Exit(1)
+		} else if running {
+			log.Info("Bye")
 		}
-		log.Info("Bye")
 	}()
 	// parse flags
 	var opts dryOptions
@@ -301,8 +303,7 @@ func main() {
 		return
 	}
 	if opts.Version {
-
-		fmt.Printf("dry version %s, build %s", version.VERSION, version.GITCOMMIT)
+		fmt.Printf("dry version %s, build %s\n", version.VERSION, version.GITCOMMIT)
 		return
 	}
 	log.Info("Launching dry")
@@ -318,6 +319,7 @@ func main() {
 			log.Info(http.ListenAndServe("localhost:6060", nil))
 		}()
 	}
+	running = true
 	screen := ui.NewScreen()
 	defer screen.Close()
 	app, err := newApp(screen, dockerEnv)
