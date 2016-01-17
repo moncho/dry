@@ -274,7 +274,8 @@ func main() {
 	})
 	defer func() {
 		if r := recover(); r != nil {
-			loggerWithVersion.Fatal(r)
+			loggerWithVersion.Error(r)
+			log.Info("Bye")
 			os.Exit(1)
 		}
 		log.Info("Bye")
