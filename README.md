@@ -8,26 +8,24 @@
 
 [![asciicast](https://asciinema.org/a/32898.png)](https://asciinema.org/a/32898?autoplay=1)
 
-Commands from the official [**Docker** cli](https://docs.docker.com/engine/reference/commandline/cli/) available:
+Commands from the official [**Docker** cli](https://docs.docker.com/engine/reference/commandline/cli/) available are:
 
-* ***info***      : **[F10]**
-* ***inspect***   : **[Enter]**
-* ***kill***      : **[k]**
-* ***logs***      : **[l]**
+* ***info***      | : **[F10]**
+* ***inspect***   | : **[Enter]**
+* ***kill***      | : **[k]**
+* ***logs***      | : **[l]**
 * ***ps***
-* ***rm***        : **[e]**
-* ***stats***     : **[s]**
-* ***start***     : **[r]**
-* ***stop***      : **[F10]**
+* ***rm***        | : **[e]**
+* ***start***     | : **[r]**
+* ***stats***     | : **[s]**
+* ***stop***      | : **[t]**
 
 Besides this, it:
 
 * Shows real-time information about containers.
 * Allows to sort the container list. **[F1]**
-* Is possible to search and navigate the output of ***info***, ***inspect***, ***logs*** commands.  
+* Can search and navigate the output of ***info***, ***inspect***, ***logs*** commands.  
 * Allows to easily remove all stopped containers. **[ctrl + E]**
-
-Every command is linked
 
 ### Installation
 
