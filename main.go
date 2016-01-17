@@ -120,8 +120,6 @@ loop:
 						if err == nil {
 							viewMode = true
 							go autorefresh(dry, screen, keyboardQueueForView, viewClosed, done, errC)
-						} else {
-							log.Warn(err)
 						}
 					} else if event.Ch == 't' || event.Ch == 'T' { //stop
 						dry.StopContainer(screen.CursorPosition())
@@ -270,6 +268,17 @@ func newDockerEnv(opts dryOptions) *docker.DockerEnv {
 }
 
 func main() {
+	loggerWithVersion := log.WithFields(log.Fields{
+		"version": version.VERSION,
+		"build":   version.GITCOMMIT,
+	})
+	defer func() {
+		if r := recover(); r != nil {
+			loggerWithVersion.Fatal(r)
+			os.Exit(1)
+		}
+		log.Info("Bye")
+	}()
 	// parse flags
 	var opts dryOptions
 	var parser = flags.NewParser(&opts, flags.Default)
@@ -291,11 +300,16 @@ func main() {
 		return
 	}
 	if opts.Version {
+
 		fmt.Printf("dry version %s, build %s", version.VERSION, version.GITCOMMIT)
 		return
 	}
 	log.Info("Launching dry")
 	dockerEnv := newDockerEnv(opts)
+
+	dockerContextLogger := loggerWithVersion.WithFields(log.Fields{
+		"env": dockerEnv,
+	})
 
 	// Start profiling (if required)
 	if opts.Profile {
@@ -304,14 +318,12 @@ func main() {
 		}()
 	}
 	screen := ui.NewScreen()
+	defer screen.Close()
 	app, err := newApp(screen, dockerEnv)
 	if err == nil {
 		mainScreen(app, screen)
 		app.Close()
-		screen.Close()
 	} else {
-		screen.Close()
-		log.Errorf("There was an error launching dry: %s", err)
+		dockerContextLogger.Errorf("There was an error launching dry. %s", err)
 	}
-	log.Info("Bye")
 }
