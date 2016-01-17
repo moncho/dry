@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -180,24 +181,29 @@ func (d *Dry) StartContainer(position int) {
 func (d *Dry) Stats(position int) (chan<- bool, <-chan error, error) {
 	id, _, err := d.dockerDaemon.ContainerIDAt(position)
 	if err == nil {
-		done := make(chan bool, 1)
-		statsC, dockerDoneChannel, errC := d.dockerDaemon.Stats(id)
-		if err == nil {
-			go func() {
-				for {
-					select {
-					case s := <-statsC:
-						d.stats = s
-						d.State.viewMode = StatsMode
-					case <-done:
-						dockerDoneChannel <- true
-						return
+		if d.dockerDaemon.IsContainerRunning(id) {
+			done := make(chan bool, 1)
+			statsC, dockerDoneChannel, errC := d.dockerDaemon.Stats(id)
+			if err == nil {
+				go func() {
+					for {
+						select {
+						case s := <-statsC:
+							d.stats = s
+							d.State.viewMode = StatsMode
+						case <-done:
+							dockerDoneChannel <- true
+							return
+						}
 					}
-				}
-			}()
-			return done, errC, nil
+				}()
+				return done, errC, nil
+			}
+			dockerDoneChannel <- true
 		}
-		dockerDoneChannel <- true
+		d.appmessage(
+			fmt.Sprintf("<red>Cannot run stats on stopped container. Id: </><white>%s</>", id))
+		err = errors.New("Cannot run stats on stopped container.")
 	}
 	return nil, nil, err
 }

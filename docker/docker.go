@@ -62,6 +62,11 @@ func (daemon *DockerDaemon) Inspect(id string) (*docker.Container, error) {
 	return daemon.client.InspectContainer(id)
 }
 
+//IsContainerRunning returns true if the container with the given  is running
+func (daemon *DockerDaemon) IsContainerRunning(id string) bool {
+	return IsContainerRunning(daemon.ContainerByID(id))
+}
+
 //Kill the container with the given id
 func (daemon *DockerDaemon) Kill(id string) error {
 	opts := docker.KillContainerOptions{
