@@ -8,17 +8,19 @@
 
 [![asciicast](https://asciinema.org/a/32898.png)](https://asciinema.org/a/32898?autoplay=1)
 
-Commands from the official [**Docker** cli](https://docs.docker.com/engine/reference/commandline/cli/) available are:
+Available commands (and their keybind in **dry**) from the official [**Docker** cli](https://docs.docker.com/engine/reference/commandline/cli/):
 
-* ***info***      : **[F10]**
-* ***inspect***   : **[Enter]**
-* ***kill***      : **[k]**
-* ***logs***      : **[l]**
-* ***ps***
-* ***rm***        : **[e]**
-* ***start***     : **[r]**
-* ***stats***     : **[s]**
-* ***stop***      : **[t]**
+|Command | Key|
+|---|---|
+|***info***     | **[F10]**|
+|***inspect***  | **[Enter]**|
+|***kill***     | **[k]**|
+|***logs***     | **[l]**|
+|***ps***       ||
+|***rm***       | **[e]**|
+|***start***    | **[r]**|
+|***stats***    | **[s]**|
+|***stop***     | **[t]**|
 
 Besides this, it:
 
