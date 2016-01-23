@@ -2,6 +2,7 @@ package ui
 
 import (
 	`strings`
+	"sync"
 	`time`
 
 	"github.com/nsf/termbox-go"
@@ -10,12 +11,13 @@ import (
 // Screen is thin wrapper aroung Termbox library to provide basic display
 // capabilities as required by dry.
 type Screen struct {
-	Width    int     // Current number of columns.
-	Height   int     // Current number of rows.
-	cleared  bool    // True after the screens gets cleared.
-	markup   *Markup // Pointer to markup processor (gets created by screen).
-	pausedAt *time.Time
-	Cursor   *Cursor // Pointer to cursor (gets created by screen).
+	Width        int     // Current number of columns.
+	Height       int     // Current number of rows.
+	cleared      bool    // True after the screens gets cleared.
+	markup       *Markup // Pointer to markup processor (gets created by screen).
+	pausedAt     *time.Time
+	Cursor       *Cursor // Pointer to cursor (gets created by screen).
+	termboxMutex sync.Locker
 }
 
 //Cursor represents the cursor position on the screen
@@ -38,7 +40,7 @@ func NewScreen() *Screen {
 	screen := &Screen{}
 	screen.markup = NewMarkup()
 	screen.Cursor = &Cursor{Line: 0, Fg: termbox.ColorRed, Ch: '옷', Bg: termbox.Attribute(0x18)}
-
+	screen.termboxMutex = &sync.Mutex{}
 	return screen.Resize()
 }
 
@@ -60,7 +62,7 @@ func (screen *Screen) Resize() *Screen {
 func (screen *Screen) Clear() *Screen {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	screen.cleared = true
-	termbox.Flush()
+	screen.Flush()
 	return screen
 }
 
@@ -76,13 +78,15 @@ func (screen *Screen) ClearLine(x int, y int) *Screen {
 	for i := x; i < screen.Width; i++ {
 		termbox.SetCell(i, y, ' ', termbox.ColorDefault, termbox.ColorDefault)
 	}
-	termbox.Flush()
+	screen.Flush()
 
 	return screen
 }
 
 //Flush synchronizes the internal buffer with the terminal.
 func (screen *Screen) Flush() *Screen {
+	screen.termboxMutex.Lock()
+	defer screen.termboxMutex.Unlock()
 	termbox.Flush()
 	return screen
 }
