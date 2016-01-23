@@ -28,9 +28,19 @@ func (a byContainerID) Len() int           { return len(a) }
 func (a byContainerID) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a byContainerID) Less(i, j int) bool { return a[i].ID < a[j].ID }
 
-func (a byImage) Len() int           { return len(a) }
-func (a byImage) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a byImage) Less(i, j int) bool { return a[i].Image < a[j].Image }
+func (a byImage) Len() int      { return len(a) }
+func (a byImage) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a byImage) Less(i, j int) bool {
+	//If the image is the same, sorting is done by name
+	if a[i].Image == a[j].Image {
+		if len(a[i].Names) > 0 {
+			if len(a[j].Names) > 0 {
+				return a[i].Names[0] < a[j].Names[0]
+			}
+		}
+	}
+	return a[i].Image < a[j].Image
+}
 
 func (a byStatus) Len() int           { return len(a) }
 func (a byStatus) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }

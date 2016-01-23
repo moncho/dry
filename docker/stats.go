@@ -7,21 +7,6 @@ import (
 	godocker "github.com/fsouza/go-dockerclient"
 )
 
-//Stats holds runtime stats for a container
-type Stats struct {
-	CID              string
-	Command          string
-	CPUPercentage    float64
-	Memory           float64
-	MemoryLimit      float64
-	MemoryPercentage float64
-	NetworkRx        float64
-	NetworkTx        float64
-	BlockRead        float64
-	BlockWrite       float64
-	Stats            *godocker.Stats
-}
-
 //BuildStats builds Stats with the given information
 func BuildStats(container godocker.APIContainers, stats *godocker.Stats) *Stats {
 	s := &Stats{

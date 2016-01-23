@@ -20,10 +20,11 @@ const (
 type DockerDaemon struct {
 	client        *docker.Client                  //client used to to connect to the Docker daemon
 	containerByID map[string]docker.APIContainers // Containers by their id
-	Containers    []docker.APIContainers
+	containers    []docker.APIContainers
 	err           error // Errors, if any.
 	connected     bool
-	DockerEnv     *DockerEnv
+	dockerEnv     *DockerEnv
+	version       *Version
 }
 
 //DockerEnv are the Docker-related environment variables defined
@@ -31,6 +32,11 @@ type DockerEnv struct {
 	DockerHost      string
 	DockerTLSVerify bool //tls must be verified
 	DockerCertPath  string
+}
+
+//Containers returns the containers known by the daemon
+func (daemon *DockerDaemon) Containers() []docker.APIContainers {
+	return daemon.containers
 }
 
 //ContainersCount returns the number of containers found.
@@ -41,15 +47,32 @@ func (daemon *DockerDaemon) ContainersCount() int {
 //ContainerIDAt returns the container ID of the container found at the given
 //position.
 func (daemon *DockerDaemon) ContainerIDAt(pos int) (string, string, error) {
-	if pos >= len(daemon.Containers) {
+	if pos >= len(daemon.containers) {
 		return "", "", errors.New("Position is higher than number of containers")
 	}
-	return daemon.Containers[pos].ID, stringid.TruncateID(daemon.Containers[pos].ID), nil
+	return daemon.containers[pos].ID, stringid.TruncateID(daemon.containers[pos].ID), nil
 }
 
 //ContainerByID returns the container with the given ID
 func (daemon *DockerDaemon) ContainerByID(cid string) docker.APIContainers {
 	return daemon.containerByID[cid]
+}
+
+//DockerEnv returns Docker-related environment variables
+func (daemon *DockerDaemon) DockerEnv() *DockerEnv {
+	return daemon.dockerEnv
+}
+
+// Events returns a channel to receive Docker events.
+func (daemon *DockerDaemon) Events() (chan *docker.APIEvents, error) {
+	listener := make(chan *docker.APIEvents)
+	err := daemon.client.AddEventListener(listener)
+
+	if err != nil {
+		close(listener)
+		return nil, err
+	}
+	return listener, nil
 }
 
 //Info returns system-wide information about the Docker server.
@@ -108,6 +131,18 @@ func (daemon *DockerDaemon) Rm(id string) error {
 		ID: id,
 	}
 	return daemon.client.RemoveContainer(opts)
+}
+
+//Refresh the container list
+func (daemon *DockerDaemon) Refresh(allContainers bool) error {
+
+	containers, containerByID, err := containers(daemon.client, allContainers)
+
+	if err == nil {
+		daemon.containerByID = containerByID
+		daemon.containers = containers
+	}
+	return err
 }
 
 //RemoveAllStoppedContainers removes all stopped containers
@@ -187,21 +222,42 @@ func (daemon *DockerDaemon) StopContainer(id string) error {
 	return daemon.client.StopContainer(id, 10)
 }
 
-//Refresh the container list
-func (daemon *DockerDaemon) Refresh(allContainers bool) error {
+//Sort the list of containers by the given mode
+func (daemon *DockerDaemon) Sort(sortMode SortMode) {
+	SortContainers(daemon.containers, sortMode)
+}
 
-	containers, containerByID, err := containers(daemon.client, allContainers)
-
-	if err == nil {
-		daemon.containerByID = containerByID
-		daemon.Containers = containers
-	}
+//StopReceivingEvents docker events are not sent to the given channel
+func (daemon *DockerDaemon) StopReceivingEvents(eventChan chan *docker.APIEvents) error {
+	err := daemon.client.RemoveEventListener(eventChan)
 	return err
 }
 
-//Sort the list of containers by the given mode
-func (daemon *DockerDaemon) Sort(sortMode SortMode) {
-	SortContainers(daemon.Containers, sortMode)
+//Version returns  version information about the Docker Engine
+func (daemon *DockerDaemon) Version() (*Version, error) {
+	var mutex = &sync.Mutex{}
+	mutex.Lock()
+	defer mutex.Unlock()
+	if daemon.version == nil {
+		v, err := daemon.client.Version()
+		if err == nil {
+			version := &Version{
+				Version:       v.Get("Version"),
+				APIVersion:    v.Get("ApiVersion"),
+				GitCommit:     v.Get("GitCommit"),
+				GoVersion:     v.Get("GoVersion"),
+				Os:            v.Get("Os"),
+				Arch:          v.Get("Arch"),
+				KernelVersion: v.Get("KernelVersion"),
+				Experimental:  v.GetBool("Experimental"),
+				BuildTime:     v.Get("BuildTime"),
+			}
+			daemon.version = version
+			return version, nil
+		}
+		return nil, err
+	}
+	return daemon.version, nil
 }
 
 func containers(client *docker.Client, allContainers bool) ([]docker.APIContainers, map[string]docker.APIContainers, error) {

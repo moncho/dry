@@ -22,6 +22,7 @@ type Screen struct {
 type Cursor struct {
 	Line int
 	Fg   termbox.Attribute
+	Bg   termbox.Attribute
 	Ch   rune
 }
 
@@ -36,7 +37,7 @@ func NewScreen() *Screen {
 	termbox.SetOutputMode(termbox.Output256)
 	screen := &Screen{}
 	screen.markup = NewMarkup()
-	screen.Cursor = &Cursor{Line: 0, Fg: termbox.ColorRed, Ch: '옷'}
+	screen.Cursor = &Cursor{Line: 0, Fg: termbox.ColorRed, Ch: '옷', Bg: termbox.Attribute(0x18)}
 
 	return screen.Resize()
 }

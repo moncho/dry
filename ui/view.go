@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"regexp"
 	"runtime"
 	"strings"
 
@@ -25,7 +24,6 @@ type View struct {
 	//viewLines []viewLine // the view buffer
 
 	markup *Markup
-	regex  *regexp.Regexp
 }
 
 type viewLine struct {
@@ -480,7 +478,6 @@ func NewView(name string, x0, y0, x1, y1 int, showCursor bool) *View {
 		y1:         y1,
 		tainted:    true,
 		showCursor: showCursor,
-		regex:      regexp.MustCompile(" "),
 	}
 
 	return v
@@ -497,7 +494,6 @@ func NewMarkupView(name string, x0, y0, x1, y1 int, showCursor bool) *View {
 		tainted:    true,
 		showCursor: showCursor,
 		markup:     NewMarkup(),
-		regex:      regexp.MustCompile(" "),
 	}
 
 	return v

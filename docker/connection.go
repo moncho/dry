@@ -13,13 +13,15 @@ import (
 func connect(client *docker.Client, env *DockerEnv) (*DockerDaemon, error) {
 	containers, containersByID, err := containers(client, false)
 	if err == nil {
-		return &DockerDaemon{
+		d := &DockerDaemon{
 			client:        client,
 			err:           err,
 			containerByID: containersByID,
-			Containers:    containers,
-			DockerEnv:     env,
-		}, nil
+			containers:    containers,
+			dockerEnv:     env,
+		}
+		d.Version()
+		return d, nil
 	}
 	return nil, err
 }
