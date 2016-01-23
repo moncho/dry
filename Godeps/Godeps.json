@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/moncho/dry",
-	"GoVersion": "go1.5.2",
+	"GoVersion": "go1.5",
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -43,6 +43,10 @@
 		{
 			"ImportPath": "github.com/nsf/termbox-go",
 			"Rev": "4f9984b1541648f3a03da24e0f5987fd1c64247d"
+		},
+		{
+			"ImportPath": "github.com/olekukonko/tablewriter",
+			"Rev": "cca8bbc0798408af109aaaa239cbd2634846b340"
 		}
 	]
 }
