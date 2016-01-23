@@ -47,6 +47,10 @@
 		{
 			"ImportPath": "github.com/olekukonko/tablewriter",
 			"Rev": "cca8bbc0798408af109aaaa239cbd2634846b340"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify",
+			"Rev": "f390dcf405f7b83c997eac1b06768bb9f44dec18"
 		}
 	]
 }
