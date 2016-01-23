@@ -277,15 +277,13 @@ func newDockerEnv(opts dryOptions) *docker.DockerEnv {
 func main() {
 	running := false
 	defer func() {
-		/*	if r := recover(); r != nil {
-				termbox.Close()
-				loggerWithVersion.Error(r)
-				log.Info("Bye")
-				os.Exit(1)
-			} else if running {
-				log.Info("Bye")
-			}*/
-		if running {
+		if r := recover(); r != nil {
+			termbox.Close()
+			log.WithField("error", r).Error(
+				"Dry panicked")
+			log.Info("Bye")
+			os.Exit(1)
+		} else if running {
 			log.Info("Bye")
 		}
 	}()
