@@ -7,12 +7,7 @@ import (
 
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/mocks"
-	"github.com/stretchr/testify/mock"
 )
-
-type MockedDockerDaemon struct {
-	mock.Mock
-}
 
 func TestDryRefresh(t *testing.T) {
 	dry := newDryForTest()

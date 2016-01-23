@@ -47,15 +47,6 @@
 		{
 			"ImportPath": "github.com/olekukonko/tablewriter",
 			"Rev": "cca8bbc0798408af109aaaa239cbd2634846b340"
-		},
-		{
-			"ImportPath": "github.com/stretchr/testify",
-			"Rev": "f390dcf405f7b83c997eac1b06768bb9f44dec18"
-		},
-		{
-			"ImportPath": "github.com/davecgh/go-spew",
-			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
 		}
-
 	]
 }
