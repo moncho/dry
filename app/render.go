@@ -20,28 +20,22 @@ const (
 	InfoMode
 )
 const (
-	menuBarBackgroundColor = 67
+	menuBarBackgroundColor = 0x19
 )
 
 //Render renders dry in the given screen
-func Render(d *Dry, screen *ui.Screen) {
-	//v := ui.NewMarkupView("", 0, 1, screen.Width, screen.Height, false)
+func Render(d *Dry, screen *ui.Screen, status *ui.StatusBar) {
 	switch d.State.viewMode {
 	case Main:
 		{
 			//after a refresh, sorting is needed
-			d.dockerDaemon.Refresh(d.State.showingAllContainers)
 			d.dockerDaemon.Sort(d.State.SortMode)
 			d.renderer.SortMode(d.State.SortMode)
-			screen.Render(1, d.renderer.Render())
+			status.Render()
 			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
-			//fmt.Fprintf(v, d.renderer.Render())
+			screen.Render(1, d.renderer.Render())
 
 			screen.RenderLineWithBackGround(0, screen.Height-1, keyMappings, menuBarBackgroundColor)
-			/*err := v.Render()
-			if err != nil {
-				log.Panicf("Alarm!!! %s", err)
-			}*/
 			d.State.changed = false
 		}
 	}

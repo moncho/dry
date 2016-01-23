@@ -44,6 +44,7 @@ func mainScreen(dry *app.Dry, screen *ui.Screen) {
 	viewClosed := make(chan struct{}, 1)
 	keyboardQueueForView := make(chan termbox.Event)
 	dryOutputChan := dry.OuputChannel()
+	statusBar := ui.NewStatusBar(0)
 
 	defer timestampQueue.Stop()
 	defer close(done)
@@ -53,11 +54,18 @@ func mainScreen(dry *app.Dry, screen *ui.Screen) {
 	go func() {
 		for {
 			dryMessage := <-dryOutputChan
-			screen.RenderLine(0, 0, dryMessage)
+			statusBar.StatusMessage(dryMessage, 10*time.Second)
+			if dry.Changed() {
+				screen.Clear()
+				app.Render(dry, screen, statusBar)
+			} else {
+				statusBar.Render()
+			}
+			screen.Flush()
 		}
 	}()
 
-	app.Render(dry, screen)
+	app.Render(dry, screen, statusBar)
 	//belongs outside the loop
 	var viewMode = false
 
@@ -89,7 +97,6 @@ loop:
 						refresh = true
 					} else if event.Key == termbox.KeyF1 { //sort
 						dry.Sort()
-						dry.Refresh()
 					} else if event.Key == termbox.KeyF2 { //show all containers
 						dry.ToggleShowAllContainers()
 					} else if event.Key == termbox.KeyF5 { // refresh
@@ -139,7 +146,7 @@ loop:
 		}
 		if refresh || dry.Changed() {
 			screen.Clear()
-			app.Render(dry, screen)
+			app.Render(dry, screen, statusBar)
 		}
 	}
 
@@ -268,17 +275,17 @@ func newDockerEnv(opts dryOptions) *docker.DockerEnv {
 }
 
 func main() {
-	loggerWithVersion := log.WithFields(log.Fields{
-		"version": version.VERSION,
-		"build":   version.GITCOMMIT,
-	})
 	running := false
 	defer func() {
-		if r := recover(); r != nil {
-			loggerWithVersion.Error(r)
-			log.Info("Bye")
-			os.Exit(1)
-		} else if running {
+		/*	if r := recover(); r != nil {
+				termbox.Close()
+				loggerWithVersion.Error(r)
+				log.Info("Bye")
+				os.Exit(1)
+			} else if running {
+				log.Info("Bye")
+			}*/
+		if running {
 			log.Info("Bye")
 		}
 	}()
@@ -309,24 +316,22 @@ func main() {
 	log.Info("Launching dry")
 	dockerEnv := newDockerEnv(opts)
 
-	dockerContextLogger := loggerWithVersion.WithFields(log.Fields{
-		"env": dockerEnv,
-	})
-
 	// Start profiling (if required)
 	if opts.Profile {
 		go func() {
 			log.Info(http.ListenAndServe("localhost:6060", nil))
 		}()
 	}
-	running = true
 	screen := ui.NewScreen()
-	defer screen.Close()
+	running = true
 	app, err := newApp(screen, dockerEnv)
 	if err == nil {
 		mainScreen(app, screen)
 		app.Close()
+		screen.Close()
 	} else {
-		dockerContextLogger.Errorf("There was an error launching dry. %s", err)
+		screen.Close()
+		log.WithField("error", err).Error(
+			"There was an error launching dry")
 	}
 }

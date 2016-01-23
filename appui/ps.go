@@ -3,12 +3,14 @@ package appui
 import (
 	`bytes`
 	"fmt"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 	`text/template`
 
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
+	"github.com/olekukonko/tablewriter"
 )
 
 type column struct {
@@ -25,14 +27,14 @@ type DockerPs struct {
 	containerTableTemplate *template.Template
 	containerTemplate      *template.Template
 	cursor                 *ui.Cursor
-	daemon                 *docker.DockerDaemon
+	daemon                 docker.ContainerDaemon
 	dockerInfo             string // Docker environment information
 	appHeadear             *ui.Renderer
 	sortMode               docker.SortMode
 }
 
 //NewDockerPsRenderer creates a renderer for a container list
-func NewDockerPsRenderer(daemon *docker.DockerDaemon, cursor *ui.Cursor, sortMode docker.SortMode) *DockerPs {
+func NewDockerPsRenderer(daemon docker.ContainerDaemon, cursor *ui.Cursor, sortMode docker.SortMode) *DockerPs {
 	r := &DockerPs{}
 
 	r.columns = []column{
@@ -100,7 +102,7 @@ func (r *DockerPs) tableHeader() string {
 	return "<green>" + strings.Join(columns, "\t") + "</>"
 }
 
-func (r *DockerPs) containerInformation(daemon *docker.DockerDaemon, cursor *ui.Cursor) string {
+func (r *DockerPs) containerInformation(daemon docker.ContainerDaemon, cursor *ui.Cursor) string {
 	buf := bytes.NewBufferString("")
 	context := docker.FormattingContext{
 		Output:   buf,
@@ -110,13 +112,14 @@ func (r *DockerPs) containerInformation(daemon *docker.DockerDaemon, cursor *ui.
 	}
 	docker.Format(
 		context,
-		daemon.Containers)
+		daemon.Containers())
 
 	return buf.String()
 }
 
 func buildContainerTableTemplate(dockerInfo string) *template.Template {
-	markup := dockerInfo + `
+	markup := dockerInfo +
+		`
 
 {{.ContainerTable}}
 `
@@ -128,19 +131,26 @@ func buildContainerTemplate() *template.Template {
 	return template.Must(template.New(`container`).Parse(docker.DefaultTableFormat))
 }
 
-func dockerInfo(daemon *docker.DockerDaemon) string {
-	markup := `Docker Host:        <white>{{.Env.DockerHost}}</>
-Cert Path:          <white>{{.Env.DockerCertPath}}</>
-Verify Certificate: <white>{{.Env.DockerTLSVerify}}</>
-`
-	t := template.Must(template.New(`dockerinfo`).Parse(markup))
-	vars := struct {
-		Env *docker.DockerEnv
-	}{
-		daemon.DockerEnv,
-	}
+func dockerInfo(daemon docker.ContainerDaemon) string {
+	version, _ := daemon.Version()
+
 	buffer := new(bytes.Buffer)
-	t.Execute(buffer, vars)
+
+	data := [][]string{
+		[]string{"Docker Host:", whiteText(daemon.DockerEnv().DockerHost), "", "Docker Version:", whiteText(version.Version)},
+		[]string{"Cert Path:", whiteText(daemon.DockerEnv().DockerCertPath), "", "APIVersion:", whiteText(version.APIVersion)},
+		[]string{"Verify Certificate:", whiteText(strconv.FormatBool(daemon.DockerEnv().DockerTLSVerify)),
+			"",
+			"OS/Arch/Kernel:",
+			whiteText(version.Os + "/" + version.Arch + "/" + version.KernelVersion)},
+	}
+
+	table := tablewriter.NewWriter(buffer)
+	table.SetBorder(false)
+	table.SetColumnSeparator("")
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table.AppendBulk(data)
+	table.Render()
 	return buffer.String()
 }
 
@@ -156,4 +166,8 @@ func updateCursorPosition(cursor *ui.Cursor, noOfContainers int) {
 	} else if cursor.Line < 0 {
 		cursor.Line = 0
 	}
+}
+
+func whiteText(text string) string {
+	return fmt.Sprintf("<yellow>%s</yellow>", text)
 }
