@@ -19,9 +19,6 @@ const (
 	InspectMode
 	InfoMode
 )
-const (
-	menuBarBackgroundColor = 0x19
-)
 
 //Render renders dry in the given screen
 func Render(d *Dry, screen *ui.Screen, status *ui.StatusBar) {
@@ -35,7 +32,7 @@ func Render(d *Dry, screen *ui.Screen, status *ui.StatusBar) {
 			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
 			screen.Render(1, d.renderer.Render())
 
-			screen.RenderLineWithBackGround(0, screen.Height-1, keyMappings, menuBarBackgroundColor)
+			screen.RenderLineWithBackGround(0, screen.Height-1, keyMappings, ui.MenuBarBackgroundColor)
 			d.State.changed = false
 		}
 	}
