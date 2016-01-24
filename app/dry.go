@@ -261,12 +261,12 @@ func (d *Dry) StopContainer(position int) {
 //showing running and stopped containers.
 func (d *Dry) ToggleShowAllContainers() {
 	d.State.showingAllContainers = !d.State.showingAllContainers
+	d.Refresh()
 	if d.State.showingAllContainers {
 		d.appmessage("<white>Showing all containers</>")
 	} else {
 		d.appmessage("<white>Showing running containers</>")
 	}
-	d.Refresh()
 }
 
 //tryRefresh refreshes dry if dry has not been refreshed in the last
