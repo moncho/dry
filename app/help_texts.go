@@ -5,14 +5,14 @@ const ShortHelp = `
 dry
 
 Connects to a Docker daemon if environment variable DOCKER_HOST is present
-then shows the list of containers and allows some interaction with them.
+then shows the list of containers and allows to execute Docker commands on them.
 
 `
 
 const help = `
 <white>dry</>
 
-Connects to a Docker daemon, then shows the list of containers and allows some interaction with them.
+Connects to a Docker daemon, shows the list of containers and allows to execute Docker commands on them.
 
 Visit <blue>http://moncho.github.io/dry/</> for more information.
 
