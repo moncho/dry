@@ -7,7 +7,7 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-//This files adds functions that serve as building blocks for rendering structs
+//Functions that serve as building blocks for rendering structs
 //defined in the ui package.
 
 //fill fills the screen with the given cell starting at x,y until w,h.

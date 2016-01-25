@@ -119,6 +119,9 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 //with the given background color
 func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor uint16) {
 	start, column := 0, 0
+	if x > 0 {
+		fill(0, y, x, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
+	}
 	for _, token := range Tokenize(str, screen.markup.supportedTags()) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
 		if screen.markup.IsTag(token) {
@@ -136,7 +139,7 @@ func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor
 			termbox.SetCell(start, y, char, screen.markup.Foreground, termbox.Attribute(bgColor))
 		}
 	}
-	fill(start+1, y, screen.Width, 1, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
+	fill(start+1, y, screen.Width, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
 }
 
 //ScrollCursorDown moves the cursor to the line below the current one

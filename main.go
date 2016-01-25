@@ -51,23 +51,25 @@ func mainScreen(dry *app.Dry, screen *ui.Screen) {
 	defer close(keyboardQueueForView)
 	defer close(viewClosed)
 
-	go func() {
-		for {
-			dryMessage := <-dryOutputChan
-			statusBar.StatusMessage(dryMessage, 10*time.Second)
-			if dry.Changed() {
-				screen.Clear()
-				app.Render(dry, screen, statusBar)
-			} else {
-				statusBar.Render()
-			}
-			screen.Flush()
-		}
-	}()
-
 	app.Render(dry, screen, statusBar)
 	//belongs outside the loop
 	var viewMode = false
+
+	go func(viewMode *bool) {
+		for {
+			dryMessage := <-dryOutputChan
+			if !*viewMode {
+				statusBar.StatusMessage(dryMessage, 10*time.Second)
+				if dry.Changed() {
+					screen.Clear()
+					app.Render(dry, screen, statusBar)
+				} else {
+					statusBar.Render()
+				}
+				screen.Flush()
+			}
+		}
+	}(&viewMode)
 
 loop:
 	for {
@@ -144,7 +146,7 @@ loop:
 				refresh = true
 			}
 		}
-		if refresh || dry.Changed() {
+		if !viewMode && (refresh || dry.Changed()) {
 			screen.Clear()
 			app.Render(dry, screen, statusBar)
 		}

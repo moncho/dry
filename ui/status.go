@@ -13,23 +13,25 @@ type StatusBar struct {
 	screenPos   int
 	lastMessage string
 	clearTimer  *time.Timer
-	timerMutex  sync.Locker
+	barMutex    sync.Locker
 	markup      *Markup
 }
 
 // NewStatusBar creates a new StatusBar struct
 func NewStatusBar(screenPos int) *StatusBar {
+	markup := NewMarkup()
 	return &StatusBar{
 		screenPos:  screenPos,
 		clearTimer: nil,
-		timerMutex: &sync.Mutex{},
-		markup:     NewMarkup(),
+		barMutex:   &sync.Mutex{},
+		markup:     markup,
 	}
+
 }
 
 func (s *StatusBar) stopTimer() {
-	s.timerMutex.Lock()
-	defer s.timerMutex.Unlock()
+	s.barMutex.Lock()
+	defer s.barMutex.Unlock()
 	if t := s.clearTimer; t != nil {
 		t.Stop()
 		s.clearTimer = nil
@@ -37,8 +39,8 @@ func (s *StatusBar) stopTimer() {
 }
 
 func (s *StatusBar) setClearTimer(t *time.Timer) {
-	s.timerMutex.Lock()
-	defer s.timerMutex.Unlock()
+	s.barMutex.Lock()
+	defer s.barMutex.Unlock()
 	s.clearTimer = t
 }
 
@@ -46,11 +48,10 @@ func (s *StatusBar) setClearTimer(t *time.Timer) {
 func (s *StatusBar) StatusMessage(msg string, clearDelay time.Duration) {
 	s.stopTimer()
 	s.lastMessage = msg
-	// if everything is successful AND the clearDelay timer is specified,
-	// then set a timer to clear the status
+	//set a timer to clear the status
 	if clearDelay != 0 {
 		s.setClearTimer(time.AfterFunc(clearDelay, func() {
-			clearMessage := strings.Repeat(" ", len(s.lastMessage))
+			clearMessage := strings.Repeat(" ", len(msg))
 			s.lastMessage = ""
 			renderString(0, s.screenPos, string(clearMessage), termbox.ColorDefault, termbox.ColorDefault)
 			termbox.Flush()
@@ -60,6 +61,8 @@ func (s *StatusBar) StatusMessage(msg string, clearDelay time.Duration) {
 
 //Render renders the status message
 func (s *StatusBar) Render() {
+	s.barMutex.Lock()
+	defer s.barMutex.Unlock()
 	if s.lastMessage != "" {
 		w, _ := termbox.Size()
 		renderLineWithMarkup(0, s.screenPos, w, s.lastMessage, s.markup)
