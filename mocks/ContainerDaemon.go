@@ -111,10 +111,16 @@ func (_m *ContainerDaemonMock) Sort(sortMode drydocker.SortMode) {
 
 }
 
-// StopReceivingEvents provides a mock function with given fields: eventChan
-func (_m *ContainerDaemonMock) StopReceivingEvents(eventChan chan *docker.APIEvents) error {
+// StopEventChannel provides a mock function with given fields: eventChan
+func (_m *ContainerDaemonMock) StopEventChannel(eventChan chan *docker.APIEvents) error {
 
 	return nil
+}
+
+//Top function mock
+func (_m *ContainerDaemonMock) Top(id string) (docker.TopResult, error) {
+
+	return docker.TopResult{}, nil
 }
 
 // Version provides a mock function with given fields:

@@ -28,7 +28,8 @@ type ContainerDaemon interface {
 	Stats(id string) (<-chan *Stats, chan<- bool, <-chan error)
 	StopContainer(id string) error
 	Sort(sortMode SortMode)
-	StopReceivingEvents(eventChan chan *docker.APIEvents) error
+	StopEventChannel(eventChan chan *docker.APIEvents) error
+	Top(id string) (docker.TopResult, error)
 	Version() (*Version, error)
 }
 

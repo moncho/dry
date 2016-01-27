@@ -227,10 +227,15 @@ func (daemon *DockerDaemon) Sort(sortMode SortMode) {
 	SortContainers(daemon.containers, sortMode)
 }
 
-//StopReceivingEvents docker events are not sent to the given channel
-func (daemon *DockerDaemon) StopReceivingEvents(eventChan chan *docker.APIEvents) error {
+//StopEventChannel docker events are not sent to the given channel
+func (daemon *DockerDaemon) StopEventChannel(eventChan chan *docker.APIEvents) error {
 	err := daemon.client.RemoveEventListener(eventChan)
 	return err
+}
+
+//Top returns Top information for the given container
+func (daemon *DockerDaemon) Top(id string) (docker.TopResult, error) {
+	return daemon.client.TopContainer(id, "")
 }
 
 //Version returns  version information about the Docker Engine
