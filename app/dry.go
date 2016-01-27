@@ -40,7 +40,7 @@ func (d *Dry) Changed() bool {
 
 //Close closes dry, releasing any resources held by it
 func (d *Dry) Close() {
-	d.dockerDaemon.StopReceivingEvents(d.dockerEvents)
+	d.dockerDaemon.StopEventChannel(d.dockerEvents)
 	close(d.output)
 	close(d.dockerEvents)
 }
@@ -187,7 +187,7 @@ func (d *Dry) startDry() {
 	}()
 
 	go func() {
-		for range time.Tick(60 * time.Second) {
+		for range time.Tick(15 * time.Second) {
 			d.tryRefresh()
 		}
 	}()
