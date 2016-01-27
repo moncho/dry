@@ -2,6 +2,7 @@
 [![License MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/moncho/dry#license-mit)
 [![wercker status](https://app.wercker.com/status/66c3ab71a46c0c8841f34a526fc23189/s/master "wercker status")](https://app.wercker.com/project/bykey/66c3ab71a46c0c8841f34a526fc23189)
 [![Go Report Card](http://goreportcard.com/badge/moncho/dry)](http://goreportcard.com/report/moncho/dry)
+[![Github All Releases](https://img.shields.io/github/downloads/atom/atom/total.svg)]()
 
 
 **dry** is terminal application that connects to a **Docker** host, shows the list of containers and allows to interact with them.
