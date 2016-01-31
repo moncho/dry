@@ -36,7 +36,7 @@ $(if $(and $(filter-out darwin_arm,$(1)_$(2)), $(filter-out windows_arm,$(1)_$(2
 endef
 
 cross: *.go VERSION
-	$(foreach GOARCH,$(GOARCHS),$(foreach GOOS,$(GOOSES), $(call buildpretty,$(GOOS),$(GOARCH))))
+	$(foreach GOARCH,$(GOARCHS),$(foreach GOOS,$(GOOSES),$(call buildpretty,$(GOOS),$(GOARCH))))
 
 define buildrelease
 $(if $(and $(filter-out darwin_arm,$(1)_$(2)), $(filter-out windows_arm,$(1)_$(2))), \
