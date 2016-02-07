@@ -14,10 +14,21 @@ type viewMode uint16
 //known view modes
 const (
 	Main viewMode = iota
+	Images
+
 	HelpMode
 	StatsMode
-	InspectMode
+	ImageHistoryMode
+
 	InfoMode
+	InspectImageMode
+	InspectMode
+)
+
+const (
+	//The position from the top (0) where a line describing what is
+	//being shown is placed. Kind of a magic number.
+	screenDescriptionIndex = 5
 )
 
 //Render renders dry in the given screen
@@ -31,10 +42,28 @@ func Render(d *Dry, screen *ui.Screen, status *ui.StatusBar) {
 			status.Render()
 			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
 			screen.Render(1, d.renderer.Render())
+			screen.RenderLine(0, screenDescriptionIndex,
+				fmt.Sprintf(
+					"<b><blue>Containers: </><yellow>%d</></>", d.dockerDaemon.ContainersCount()))
 
 			screen.RenderLineWithBackGround(0, screen.Height-1, keyMappings, ui.MenuBarBackgroundColor)
 			d.State.changed = false
 		}
+	case Images:
+		{
+			status.Render()
+			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
+			d.dockerDaemon.SortImages(d.State.SortImagesMode)
+
+			screen.Render(1,
+				appui.NewDockerImagesRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.State.SortImagesMode).Render())
+			screen.RenderLine(0, screenDescriptionIndex,
+				fmt.Sprintf(
+					"<b><blue>Images: </><yellow>%d</></>", d.dockerDaemon.ImagesCount()))
+			screen.RenderLineWithBackGround(0, screen.Height-1, imagesKeyMappings, ui.MenuBarBackgroundColor)
+			d.State.changed = false
+		}
+
 	}
 
 	screen.Flush()
@@ -46,25 +75,24 @@ func Write(d *Dry, w io.Writer) {
 	case StatsMode:
 		{
 			if d.stats != nil {
-				fmt.Fprintf(w, appui.NewDockerStatsRenderer(d.stats).Render())
+				io.WriteString(w, appui.NewDockerStatsRenderer(d.stats).Render())
 			} else {
-				fmt.Fprintf(w, "Could not read stats")
+				io.WriteString(w, "Could not read stats")
 			}
 		}
+	case ImageHistoryMode:
+		io.WriteString(w, appui.NewDockerImageHistoryRenderer(d.imageHistory).Render())
 	case InspectMode:
-		{
-			fmt.Fprintf(w, appui.NewDockerInspectRenderer(d.containerToInspect).Render())
-		}
+		io.WriteString(w, appui.NewDockerInspectRenderer(d.inspectedContainer).Render())
+	case InspectImageMode:
+		io.WriteString(w, appui.NewDockerInspectImageRenderer(d.inspectedImage).Render())
 	case HelpMode:
-		{
-			fmt.Fprintf(w, help)
-		}
-
+		io.WriteString(w, help)
 	case InfoMode:
-		fmt.Fprintf(w, appui.NewDockerInfoRenderer(d.info).Render())
+		io.WriteString(w, appui.NewDockerInfoRenderer(d.info).Render())
 	default:
 		{
-			fmt.Fprintf(w, "Dry is not ready yet for rendering, be patient...")
+			io.WriteString(w, "Dry is not ready yet for rendering, be patient...")
 		}
 	}
 }

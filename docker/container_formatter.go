@@ -5,7 +5,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/docker/pkg/units"
@@ -85,14 +84,13 @@ func (c *ContainerFormatter) Command() string {
 //CreatedAt prettifies the command that starts the container
 func (c *ContainerFormatter) CreatedAt() string {
 	c.addHeader(createdAtHeader)
-	return time.Unix(int64(c.c.Created), 0).String()
+	return DurationForHumans(c.c.Created)
 }
 
 //RunningFor prettifies the  that starts the container
 func (c *ContainerFormatter) RunningFor() string {
 	c.addHeader(runningForHeader)
-	createdAt := time.Unix(int64(c.c.Created), 0)
-	return units.HumanDuration(time.Now().UTC().Sub(createdAt))
+	return DurationForHumans(c.c.Created)
 }
 
 //Ports prettifies the container port information
@@ -111,10 +109,10 @@ func (c *ContainerFormatter) Status() string {
 func (c *ContainerFormatter) Size() string {
 	c.addHeader(sizeHeader)
 	srw := units.HumanSize(float64(c.c.SizeRw))
-	sv := units.HumanSize(float64(c.c.SizeRootFs))
-
 	sf := srw
+
 	if c.c.SizeRootFs > 0 {
+		sv := units.HumanSize(float64(c.c.SizeRootFs))
 		sf = fmt.Sprintf("%s (virtual %s)", srw, sv)
 	}
 	return sf

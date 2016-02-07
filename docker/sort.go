@@ -18,40 +18,41 @@ const (
 //SortMode represents allowed modes to sort a container slice
 type SortMode uint16
 
-//TODO figure out how to avoid so much duplicated code
-type byContainerID []docker.APIContainers
-type byImage []docker.APIContainers
-type byStatus []docker.APIContainers
-type byName []docker.APIContainers
+type apiContainers []docker.APIContainers
 
-func (a byContainerID) Len() int           { return len(a) }
-func (a byContainerID) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a byContainerID) Less(i, j int) bool { return a[i].ID < a[j].ID }
+func (a apiContainers) Len() int      { return len(a) }
+func (a apiContainers) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 
-func (a byImage) Len() int      { return len(a) }
-func (a byImage) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+type byContainerID struct{ apiContainers }
+
+func (a byContainerID) Less(i, j int) bool { return a.apiContainers[i].ID < a.apiContainers[j].ID }
+
+type byImage struct{ apiContainers }
+
 func (a byImage) Less(i, j int) bool {
 	//If the image is the same, sorting is done by name
-	if a[i].Image == a[j].Image {
-		if len(a[i].Names) > 0 {
-			if len(a[j].Names) > 0 {
-				return a[i].Names[0] < a[j].Names[0]
-			}
-		}
+	if a.apiContainers[i].Image == a.apiContainers[j].Image {
+		return byName{a.apiContainers}.Less(i, j)
 	}
-	return a[i].Image < a[j].Image
+	return a.apiContainers[i].Image < a.apiContainers[j].Image
 }
 
-func (a byStatus) Len() int           { return len(a) }
-func (a byStatus) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a byStatus) Less(i, j int) bool { return a[i].Status < a[j].Status }
+type byStatus struct{ apiContainers }
 
-func (a byName) Len() int      { return len(a) }
-func (a byName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a byStatus) Less(i, j int) bool {
+	//If the image is the same, sorting is done by name
+	if a.apiContainers[i].Status == a.apiContainers[j].Status {
+		return byName{a.apiContainers}.Less(i, j)
+	}
+	return a.apiContainers[i].Status < a.apiContainers[j].Status
+}
+
+type byName struct{ apiContainers }
+
 func (a byName) Less(i, j int) bool {
-	if len(a[i].Names) > 0 {
-		if len(a[j].Names) > 0 {
-			return a[i].Names[0] < a[j].Names[0]
+	if len(a.apiContainers[i].Names) > 0 {
+		if len(a.apiContainers[j].Names) > 0 {
+			return a.apiContainers[i].Names[0] < a.apiContainers[j].Names[0]
 		}
 		return true
 	}
@@ -62,12 +63,12 @@ func (a byName) Less(i, j int) bool {
 func SortContainers(containers []docker.APIContainers, mode SortMode) {
 	switch mode {
 	case SortByContainerID:
-		sort.Sort(byContainerID(containers))
+		sort.Sort(byContainerID{containers})
 	case SortByImage:
-		sort.Sort(byImage(containers))
+		sort.Sort(byImage{containers})
 	case SortByStatus:
-		sort.Sort(byStatus(containers))
+		sort.Sort(byStatus{containers})
 	case SortByName:
-		sort.Sort(byName(containers))
+		sort.Sort(byName{containers})
 	}
 }

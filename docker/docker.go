@@ -21,17 +21,11 @@ type DockerDaemon struct {
 	client        *docker.Client                  //client used to to connect to the Docker daemon
 	containerByID map[string]docker.APIContainers // Containers by their id
 	containers    []docker.APIContainers
+	images        []docker.APIImages
 	err           error // Errors, if any.
 	connected     bool
 	dockerEnv     *DockerEnv
 	version       *Version
-}
-
-//DockerEnv are the Docker-related environment variables defined
-type DockerEnv struct {
-	DockerHost      string
-	DockerTLSVerify bool //tls must be verified
-	DockerCertPath  string
 }
 
 //Containers returns the containers known by the daemon
@@ -75,6 +69,30 @@ func (daemon *DockerDaemon) Events() (chan *docker.APIEvents, error) {
 	return listener, nil
 }
 
+//History returns image history
+func (daemon *DockerDaemon) History(id string) ([]docker.ImageHistory, error) {
+	return daemon.client.ImageHistory(id)
+}
+
+//ImageAt returns the Image found at the given
+//position.
+func (daemon *DockerDaemon) ImageAt(pos int) (*docker.APIImages, error) {
+	if pos >= len(daemon.images) {
+		return nil, errors.New("Position is higher than number of images")
+	}
+	return &daemon.images[pos], nil
+}
+
+//Images returns the list of Docker images
+func (daemon *DockerDaemon) Images() ([]docker.APIImages, error) {
+	return daemon.images, nil
+}
+
+//ImagesCount returns the number of images
+func (daemon *DockerDaemon) ImagesCount() int {
+	return len(daemon.images)
+}
+
 //Info returns system-wide information about the Docker server.
 func (daemon *DockerDaemon) Info() (*docker.Env, error) {
 	return daemon.client.Info()
@@ -83,6 +101,11 @@ func (daemon *DockerDaemon) Info() (*docker.Env, error) {
 //Inspect the container with the given id
 func (daemon *DockerDaemon) Inspect(id string) (*docker.Container, error) {
 	return daemon.client.InspectContainer(id)
+}
+
+//InspectImage the image with the name
+func (daemon *DockerDaemon) InspectImage(name string) (*docker.Image, error) {
+	return daemon.client.InspectImage(name)
 }
 
 //IsContainerRunning returns true if the container with the given  is running
@@ -133,6 +156,11 @@ func (daemon *DockerDaemon) Rm(id string) error {
 	return daemon.client.RemoveContainer(opts)
 }
 
+//Rmi removes the image with the given name
+func (daemon *DockerDaemon) Rmi(name string) error {
+	return daemon.client.RemoveImage(name)
+}
+
 //Refresh the container list
 func (daemon *DockerDaemon) Refresh(allContainers bool) error {
 
@@ -141,6 +169,17 @@ func (daemon *DockerDaemon) Refresh(allContainers bool) error {
 	if err == nil {
 		daemon.containerByID = containerByID
 		daemon.containers = containers
+	}
+	return err
+}
+
+//RefreshImages the image list
+func (daemon *DockerDaemon) RefreshImages() error {
+
+	images, err := images(daemon.client)
+
+	if err == nil {
+		daemon.images = images
 	}
 	return err
 }
@@ -227,6 +266,11 @@ func (daemon *DockerDaemon) Sort(sortMode SortMode) {
 	SortContainers(daemon.containers, sortMode)
 }
 
+//SortImages the list of images by the given mode
+func (daemon *DockerDaemon) SortImages(sortMode SortImagesMode) {
+	SortImages(daemon.images, sortMode)
+}
+
 //StopEventChannel docker events are not sent to the given channel
 func (daemon *DockerDaemon) StopEventChannel(eventChan chan *docker.APIEvents) error {
 	err := daemon.client.RemoveEventListener(eventChan)
@@ -278,8 +322,15 @@ func containers(client *docker.Client, allContainers bool) ([]docker.APIContaine
 	return nil, nil, err
 }
 
+func images(client *docker.Client) ([]docker.APIImages, error) {
+	opts := docker.ListImagesOptions{
+		All:     false,
+		Digests: true}
+	return client.ListImages(opts)
+}
+
 //GetBool returns false if the given string looks like you mean
-//false. Func doesnt belong here.
+//false. Func does not belong here.
 func GetBool(key string) (value bool) {
 	s := strings.ToLower(strings.Trim(key, " "))
 	if s == "" || s == "0" || s == "no" || s == "false" || s == "none" {

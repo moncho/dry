@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/docker/docker/pkg/stringid"
 	godocker "github.com/fsouza/go-dockerclient"
 	"github.com/moncho/dry/appui"
 	drydocker "github.com/moncho/dry/docker"
@@ -18,24 +19,44 @@ const (
 	TimeBetweenRefresh = 10 * time.Second
 )
 
+// State tracks dry state
+type State struct {
+	changed              bool
+	showingAllContainers bool
+	viewMode             viewMode
+	previousViewMode     viewMode
+	SortMode             drydocker.SortMode
+	SortImagesMode       drydocker.SortImagesMode
+}
+
 //Dry represents the application.
 type Dry struct {
-	containerToInspect *godocker.Container
 	dockerDaemon       drydocker.ContainerDaemon
+	dockerEvents       chan *godocker.APIEvents
+	imageHistory       []godocker.ImageHistory
+	images             []godocker.APIImages
 	info               *godocker.Env
+	inspectedContainer *godocker.Container
+	inspectedImage     *godocker.Image
+	lastRefresh        time.Time
+	orderedCids        []string
+	output             chan string
+	refreshTimeMutex   sync.Locker
 	renderer           *appui.DockerPs
 	State              *State
 	stats              *drydocker.Stats
-	orderedCids        []string
-	output             chan string
-	dockerEvents       chan *godocker.APIEvents
-	lastRefresh        time.Time
-	refreshTimeMutex   sync.Locker
 }
 
 //Changed is true if the application state has changed
 func (d *Dry) Changed() bool {
 	return d.State.changed
+}
+
+//changeViewMode changes the view mode of dry
+func (d *Dry) changeViewMode(newViewMode viewMode) {
+	d.State.previousViewMode = d.State.viewMode
+	d.State.viewMode = newViewMode
+	d.State.changed = true
 }
 
 //Close closes dry, releasing any resources held by it
@@ -45,19 +66,52 @@ func (d *Dry) Close() {
 	close(d.dockerEvents)
 }
 
-//Inspect set dry for inspecting container at the given position
+//History  prepares dry to show image history
+func (d *Dry) History(position int) {
+	if apiImage, err := d.dockerDaemon.ImageAt(position); err == nil {
+		history, err := d.dockerDaemon.History(apiImage.ID)
+		if err == nil {
+			d.changeViewMode(ImageHistoryMode)
+			d.imageHistory = history
+		} else {
+			d.appmessage(fmt.Sprintf("<red>Error getting history of image </><white>%s: %s</>", apiImage.ID, err.Error()))
+		}
+	} else {
+		d.appmessage(fmt.Sprintf("<red>Error getting history of image </><white>: %s</>", err.Error()))
+	}
+
+}
+
+//Inspect prepares dry to inspect container at the given position
 func (d *Dry) Inspect(position int) {
 	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
 		c, err := d.dockerDaemon.Inspect(id)
 		if err == nil {
-			d.State.viewMode = InspectMode
-			d.containerToInspect = c
+			d.changeViewMode(InspectMode)
+			d.inspectedContainer = c
 		} else {
 			d.errormessage(shortID, "inspecting", err)
 		}
 	} else {
 		d.errormessage(shortID, "inspecting", err)
 	}
+}
+
+//InspectImage prepares dry to show image information for the image at the given position
+func (d *Dry) InspectImage(position int) {
+
+	if apiImage, err := d.dockerDaemon.ImageAt(position); err == nil {
+		image, err := d.dockerDaemon.InspectImage(apiImage.ID)
+		if err == nil {
+			d.changeViewMode(InspectImageMode)
+			d.inspectedImage = image
+		} else {
+			d.errormessage(apiImage.ID, "inspecting image", err)
+		}
+	} else {
+		d.errormessage(apiImage.ID, "inspecting image", err)
+	}
+
 }
 
 //Kill the docker container at the given position
@@ -71,7 +125,6 @@ func (d *Dry) Kill(position int) {
 			d.errormessage(shortID, "killing", err)
 		}
 	}
-
 }
 
 //Logs retrieves the log of the docker container at the given position
@@ -103,7 +156,15 @@ func (d *Dry) Refresh() {
 
 func (d *Dry) doRefresh() {
 	d.State.changed = true
-	d.dockerDaemon.Refresh(d.State.showingAllContainers)
+	err := d.dockerDaemon.Refresh(d.State.showingAllContainers)
+	if err != nil {
+		d.appmessage("There was an error refreshing: " + err.Error())
+	}
+	err = d.dockerDaemon.RefreshImages()
+	if err != nil {
+		d.appmessage("There was an error refreshing: " + err.Error())
+	}
+
 }
 
 //RemoveAllStoppedContainers removes all stopped containers
@@ -115,6 +176,22 @@ func (d *Dry) RemoveAllStoppedContainers() {
 		d.appmessage(
 			fmt.Sprintf(
 				"<red>Error removing all stopped containers. %s</>", err))
+	}
+}
+
+//RemoveImage removes the Docker image at the given position
+func (d *Dry) RemoveImage(position int) {
+	if image, err := d.dockerDaemon.ImageAt(position); err == nil {
+		id := drydocker.ImageID(image.ID)
+		shortID := stringid.TruncateID(id)
+		d.appmessage(fmt.Sprintf("<red>Removing image:</> <white>%s</>", shortID))
+		if err := d.dockerDaemon.Rmi(id); err == nil {
+			d.appmessage(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
+		} else {
+			d.appmessage(fmt.Sprintf("<red>Error removing image </><white>%s: %s</>", shortID, err.Error()))
+		}
+	} else {
+		d.appmessage(fmt.Sprintf("<red>Error removing image</>: %s", err.Error()))
 	}
 }
 
@@ -136,22 +213,39 @@ func (d *Dry) Rm(position int) {
 	}
 }
 
+//ShowMainView changes the state of dry to show the main view, main views are
+//either the container list or the image list
+func (d *Dry) ShowMainView() {
+	d.changeViewMode(d.State.previousViewMode)
+}
+
 //ShowContainers changes the state of dry to show the container list
 func (d *Dry) ShowContainers() {
-	d.State.changed = true
-	d.State.viewMode = Main
+	d.changeViewMode(Main)
 }
 
 //ShowHelp changes the state of dry to show the extended help
 func (d *Dry) ShowHelp() {
-	d.State.viewMode = HelpMode
+	d.changeViewMode(HelpMode)
+}
+
+//ShowImages changes the state of dry to show the list of Docker images
+func (d *Dry) ShowImages() {
+	if images, err := d.dockerDaemon.Images(); err == nil {
+		d.changeViewMode(Images)
+		d.images = images
+	} else {
+		d.appmessage(
+			fmt.Sprintf(
+				"Could not retrieve image list: %s ", err.Error()))
+	}
 }
 
 //ShowInfo retrieves Docker Host info.
 func (d *Dry) ShowInfo() error {
 	info, err := d.dockerDaemon.Info()
 	if err == nil {
-		d.State.viewMode = InfoMode
+		d.changeViewMode(InfoMode)
 		d.info = info
 		return nil
 	}
@@ -174,6 +268,25 @@ func (d *Dry) Sort() {
 	default:
 	}
 	d.dockerDaemon.Sort(d.State.SortMode)
+	d.State.changed = true
+}
+
+//SortImages rotates to the next sort mode.
+//SortImagesByRepo -> SortImagesByID -> SortImagesByCreationDate -> SortImagesBySize -> SortImagesByRepo
+func (d *Dry) SortImages() {
+	switch d.State.SortImagesMode {
+	case drydocker.SortImagesByRepo:
+		d.State.SortImagesMode = drydocker.SortImagesByID
+	case drydocker.SortImagesByID:
+		d.State.SortImagesMode = drydocker.SortImagesByCreationDate
+	case drydocker.SortImagesByCreationDate:
+		d.State.SortImagesMode = drydocker.SortImagesBySize
+	case drydocker.SortImagesBySize:
+		d.State.SortImagesMode = drydocker.SortImagesByRepo
+
+	default:
+	}
+	d.dockerDaemon.SortImages(d.State.SortImagesMode)
 	d.State.changed = true
 
 }
@@ -225,13 +338,13 @@ func (d *Dry) Stats(position int) (chan<- bool, <-chan error, error) {
 						select {
 						case s := <-statsC:
 							d.stats = s
-							d.State.viewMode = StatsMode
 						case <-done:
 							dockerDoneChannel <- true
 							return
 						}
 					}
 				}()
+				d.changeViewMode(StatsMode)
 				return done, errC, nil
 			}
 			dockerDoneChannel <- true
@@ -311,10 +424,11 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, erro
 
 			state := &State{
 				changed:              true,
-				Paused:               false,
 				showingAllContainers: false,
 				SortMode:             drydocker.SortByContainerID,
+				SortImagesMode:       drydocker.SortImagesByRepo,
 				viewMode:             Main,
+				previousViewMode:     Main,
 			}
 			d.Sort(state.SortMode)
 			app := &Dry{}

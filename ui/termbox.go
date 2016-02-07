@@ -12,10 +12,8 @@ import (
 
 //fill fills the screen with the given cell starting at x,y until w,h.
 func fill(x, y, w, h int, cell termbox.Cell) {
-	for ly := 0; ly < h; ly++ {
-		for lx := 0; lx < w; lx++ {
-			termbox.SetCell(x+lx, y+ly, cell.Ch, cell.Fg, cell.Bg)
-		}
+	for lx := 0; lx < w; lx++ {
+		termbox.SetCell(x+lx, y, cell.Ch, cell.Fg, cell.Bg)
 	}
 }
 

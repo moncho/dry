@@ -7,6 +7,13 @@ import (
 	godocker "github.com/fsouza/go-dockerclient"
 )
 
+//DockerEnv are the Docker-related environment variables defined
+type DockerEnv struct {
+	DockerHost      string
+	DockerTLSVerify bool //tls must be verified
+	DockerCertPath  string
+}
+
 //ContainerDaemon describes what is expected from the container daemon
 type ContainerDaemon interface {
 	Containers() []docker.APIContainers
@@ -15,19 +22,27 @@ type ContainerDaemon interface {
 	ContainerByID(cid string) docker.APIContainers
 	DockerEnv() *DockerEnv
 	Events() (chan *docker.APIEvents, error)
+	History(id string) ([]docker.ImageHistory, error)
+	ImageAt(pos int) (*docker.APIImages, error)
+	Images() ([]docker.APIImages, error)
+	ImagesCount() int
 	Info() (*docker.Env, error)
 	Inspect(id string) (*docker.Container, error)
+	InspectImage(id string) (*docker.Image, error)
 	IsContainerRunning(id string) bool
 	Kill(id string) error
 	Logs(id string) io.ReadCloser
 	Ok() (bool, error)
 	RestartContainer(id string) error
 	Rm(id string) error
+	Rmi(id string) error
 	Refresh(allContainers bool) error
+	RefreshImages() error
 	RemoveAllStoppedContainers() error
 	Stats(id string) (<-chan *Stats, chan<- bool, <-chan error)
 	StopContainer(id string) error
 	Sort(sortMode SortMode)
+	SortImages(sortMode SortImagesMode)
 	StopEventChannel(eventChan chan *docker.APIEvents) error
 	Top(id string) (docker.TopResult, error)
 	Version() (*Version, error)

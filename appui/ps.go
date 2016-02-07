@@ -3,14 +3,12 @@ package appui
 import (
 	`bytes`
 	"fmt"
-	"strconv"
 	"strings"
 	"text/tabwriter"
 	`text/template`
 
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
-	"github.com/olekukonko/tablewriter"
 )
 
 type column struct {
@@ -121,6 +119,7 @@ func buildContainerTableTemplate(dockerInfo string) *template.Template {
 	markup := dockerInfo +
 		`
 
+
 {{.ContainerTable}}
 `
 	return template.Must(template.New(`containers`).Parse(markup))
@@ -129,29 +128,6 @@ func buildContainerTableTemplate(dockerInfo string) *template.Template {
 func buildContainerTemplate() *template.Template {
 
 	return template.Must(template.New(`container`).Parse(docker.DefaultTableFormat))
-}
-
-func dockerInfo(daemon docker.ContainerDaemon) string {
-	version, _ := daemon.Version()
-
-	buffer := new(bytes.Buffer)
-
-	data := [][]string{
-		[]string{"Docker Host:", whiteText(daemon.DockerEnv().DockerHost), "", "Docker Version:", whiteText(version.Version)},
-		[]string{"Cert Path:", whiteText(daemon.DockerEnv().DockerCertPath), "", "APIVersion:", whiteText(version.APIVersion)},
-		[]string{"Verify Certificate:", whiteText(strconv.FormatBool(daemon.DockerEnv().DockerTLSVerify)),
-			"",
-			"OS/Arch/Kernel:",
-			whiteText(version.Os + "/" + version.Arch + "/" + version.KernelVersion)},
-	}
-
-	table := tablewriter.NewWriter(buffer)
-	table.SetBorder(false)
-	table.SetColumnSeparator("")
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	table.AppendBulk(data)
-	table.Render()
-	return buffer.String()
 }
 
 //-----------------------------------------------------------------------------
@@ -166,8 +142,4 @@ func updateCursorPosition(cursor *ui.Cursor, noOfContainers int) {
 	} else if cursor.Line < 0 {
 		cursor.Line = 0
 	}
-}
-
-func whiteText(text string) string {
-	return fmt.Sprintf("<yellow>%s</yellow>", text)
 }

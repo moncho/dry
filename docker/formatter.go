@@ -12,7 +12,8 @@ import (
 const (
 	//DefaultTableFormat is the default table format to render a list of containers
 	DefaultTableFormat = "{{.ID}}\t{{.Image}}\t{{.Command}}\t{{.RunningFor}} ago\t{{.Status}}\t{{.Ports}}\t{{.Names}}"
-	//DefaultQuietFormat = "{{.ID}}"
+	//DefaultImageTableFormat is the default table format to render a list of images
+	DefaultImageTableFormat = "{{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}} ago\t{{.Size}}"
 )
 
 // FormattingContext contains information required by the formatter to print the output as desired.
@@ -61,6 +62,38 @@ func tableFormat(ctx FormattingContext, containers []docker.APIContainers) {
 			}
 		}
 		if err := tmpl.Execute(buffer, containerCtx); err != nil {
+			buffer = bytes.NewBufferString(fmt.Sprintf("Template parsing error: %v\n", err))
+			buffer.WriteTo(ctx.Output)
+			return
+		}
+
+		buffer.WriteString("</>")
+		buffer.WriteString("\n")
+	}
+	buffer.WriteTo(ctx.Output)
+}
+
+// FormatImages formats the given images.
+func FormatImages(ctx FormattingContext, images []docker.APIImages) {
+	var (
+		buffer = bytes.NewBufferString("")
+		tmpl   = ctx.Template
+	)
+
+	for index, image := range images {
+		imagerFormatter := &ImageFormatter{
+			trunc: ctx.Trunc,
+			image: image,
+		}
+		//Ugly!!
+		//The lengh of both tags must be the same or the column will be displaced
+		//because template execution happens before markup interpretation.
+		if index == ctx.Selected {
+			buffer.WriteString("<white>")
+		} else {
+			buffer.WriteString("<cyan0>")
+		}
+		if err := tmpl.Execute(buffer, imagerFormatter); err != nil {
 			buffer = bytes.NewBufferString(fmt.Sprintf("Template parsing error: %v\n", err))
 			buffer.WriteTo(ctx.Output)
 			return
