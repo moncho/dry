@@ -34,10 +34,22 @@
 <a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span class="octicon octicon-link"></span></a>Description
 </h3>
 
-<p><b>dry</b> is an interactive console application that connects to a Docker host, shows the list of containers and offers a few Docker commands to run on them.</p>
-<script type="text/javascript" src="https://asciinema.org/a/32898.js" id="asciicast-32898" async data-autoplay="true" data-size="small" data-theme="solarized-dark"></script>
+<p><b>dry</b> is terminal application to manage <b>Docker</b> containers and images. It aims to be used as an alternative to the official <b>Docker CLI</b> when a lot of interactions with containers and images need to be done and to continuously monitor <b>Docker</b> containers from a terminal.</p>
+<p>
+Upon connecting to a <b>Docker</b> host (local or remote), the main screen will show the list of containers and version information reported by the <b>Docker Engine</b> At all times, information about containers and images shown by <b>dry</b> is up-to-date, even if commands are executed from outside the tool.
+</p>
+<p>
+From the main screen, commands to start, stop, remove and several others (all functioning like the equivalent command from the official <b>Docker CLI</b>). There is a detailed list of available commands below, command information can also be read while running <b>dry</b> by showing the help screen <b>[H]</b>.
+</p>
+<p>
+Switching to the image screen can be done by clicking <b>[1]</b>. Once there, <b>Docker</b> images are shown and again a few commands are available. Clicking <b>[1]</b> will show again the main screen (the container list).
+</p>
+<p>
+Take a look the demo below too see what can be done with **dry**.
+</p>
+<script type="text/javascript" src="https://asciinema.org/a/35825.js" id="asciicast-35825" async data-autoplay="true" data-size="small" data-theme="solarized-dark"></script>
 <h3>
-  
+
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation
 </h3>
 <p>An easy way to install the latest binaries for Linux and Mac is to run this in your shell:</p>
