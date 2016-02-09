@@ -4,7 +4,7 @@
 [![Go Report Card](http://goreportcard.com/badge/moncho/dry)](http://goreportcard.com/report/moncho/dry)
 
 
-**dry** is terminal application to manage **Docker** containers and images. It aims to be used as an alternative to the official **Docker CLI** when a lot of interactions with containers and images need to be done and to continuously monitor **Docker** containers from a terminal.
+**dry** is a terminal application to manage **Docker** containers and images. It aims to be an alternative to the official **Docker CLI** when it is needed to repeatedly execute commands on existing containers and images, and also as a tool to monitor **Docker** containers from a terminal.
 
 Upon connecting to a **Docker** host (local or remote), the main screen will show the list of containers and version information as reported by the **Docker Engine**. At all times, information about containers and images shown by **dry** is up-to-date, even if commands are executed from outside the tool.
 
