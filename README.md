@@ -6,9 +6,9 @@
 
 **dry** is terminal application to manage **Docker** containers and images. It aims to be used as an alternative to the official **Docker CLI** when a lot of interactions with containers and images need to be done and to continuously monitor **Docker** containers from a terminal.
 
-Upon connecting to a **Docker** host (local or remote), the main screen will show the list of containers and version information reported by the **Docker Engine**. At all times, information about containers and images shown by **dry** is up-to-date, even if commands are executed from outside the tool.
+Upon connecting to a **Docker** host (local or remote), the main screen will show the list of containers and version information as reported by the **Docker Engine**. At all times, information about containers and images shown by **dry** is up-to-date, even if commands are executed from outside the tool.
 
-From the main screen, commands to start, stop, remove and several others (all functioning like the equivalent command from the official **Docker CLI**). A detailed list of available commands can be found in this file, command information can also be read while running **dry** by showing help [H].
+From the main screen, commands to start, stop, remove and several others can be executed, all of them behaving like the equivalent command from the official **Docker CLI**. A detailed list of available commands can be found in this README, command information can also be read while running **dry** by showing help [H].
 
 Switching to the image screen can be done by clicking [1]. Once there, **Docker** images are shown and again a few commands are available. Clicking [1] will show again the main screen (the container list).
 
