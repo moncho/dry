@@ -8,11 +8,11 @@
 
 Upon connecting to a **Docker** host (local or remote), the main screen will show the list of containers and version information reported by the **Docker Engine**. At all times, information about containers and images shown by **dry** is up-to-date, even if commands are executed from outside the tool.
 
-From the main screen, commands to start, stop, remove and several others (all functioning like the equivalent command from the official **Docker CLI**). There is a detailed list of available commands below, command information can also be read while running **dry** by showing help [H].
+From the main screen, commands to start, stop, remove and several others (all functioning like the equivalent command from the official **Docker CLI**). A detailed list of available commands can be found in this file, command information can also be read while running **dry** by showing help [H].
 
 Switching to the image screen can be done by clicking [1]. Once there, **Docker** images are shown and again a few commands are available. Clicking [1] will show again the main screen (the container list).
 
-Take a look the demo below too see what can be done with **dry**.
+Take a look at the demo below too see what can be done with **dry**.
 
 [![asciicast](https://asciinema.org/a/35825.png)](https://asciinema.org/a/35825?autoplay=1)
 
