@@ -74,7 +74,6 @@ func (d *Dry) changeViewMode(newViewMode viewMode) {
 func (d *Dry) Close() {
 	d.dockerDaemon.StopEventChannel(d.dockerEvents)
 	close(d.output)
-	close(d.dockerEvents)
 }
 
 //History  prepares dry to show image history
