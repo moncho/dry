@@ -50,3 +50,6 @@ release: *.go VERSION
 
 clean:
 	rm -rf ${PREFIX}/cross
+
+
+#.PHONY run build install test cross release clean
