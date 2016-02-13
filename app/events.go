@@ -112,13 +112,13 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 	} else if event.Ch == '2' {
 		screen.Cursor.Line = 0
 		dry.ShowNetworks()
-	} else if event.Ch == 'e' || event.Ch == 'E' { //remove
+	} else if event.Key == termbox.KeyCtrlE { //remove image
 		dry.RemoveImage(screen.CursorPosition())
-	} else if event.Ch == 'i' || event.Ch == 'I' { //remove
+	} else if event.Ch == 'i' || event.Ch == 'I' { //image history
 		dry.History(screen.CursorPosition())
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
-	} else if event.Key == termbox.KeyEnter { //inspect
+	} else if event.Key == termbox.KeyEnter { //inspect image
 		dry.InspectImage(screen.CursorPosition())
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
