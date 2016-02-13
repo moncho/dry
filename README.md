@@ -22,13 +22,13 @@ Available commands (and their keybind in **dry**) from the official [**Docker** 
 |---|---|
 |***info***     | **[F10]**|
 |***inspect***  | **[Enter]**|
-|***kill***     | **[k]**|
+|***kill***     | **[ctrl+k]**|
 |***logs***     | **[l]**|
 |***ps***       ||
 |***rm***       | **[e]**|
-|***start***    | **[r]**|
+|***start***    | **[ctrl+r]**|
 |***stats***    | **[s]**|
-|***stop***     | **[t]**|
+|***stop***     | **[ctrl+t]**|
 
 Besides this, it:
 
