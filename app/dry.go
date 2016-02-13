@@ -19,14 +19,16 @@ const (
 	TimeBetweenRefresh = 10 * time.Second
 )
 
-// State tracks dry state
-type State struct {
+// state tracks dry state
+type state struct {
 	changed              bool
 	showingAllContainers bool
 	viewMode             viewMode
 	previousViewMode     viewMode
 	SortMode             drydocker.SortMode
 	SortImagesMode       drydocker.SortImagesMode
+	SortNetworksMode     drydocker.SortNetworksMode
+	viewMutex            sync.Locker
 }
 
 //Dry represents the application.
@@ -38,25 +40,34 @@ type Dry struct {
 	info               *godocker.Env
 	inspectedContainer *godocker.Container
 	inspectedImage     *godocker.Image
+	inspectedNetwork   *godocker.Network
 	lastRefresh        time.Time
+	networks           []godocker.Network
 	orderedCids        []string
 	output             chan string
 	refreshTimeMutex   sync.Locker
 	renderer           *appui.DockerPs
-	State              *State
+	state              *state
 	stats              *drydocker.Stats
 }
 
 //Changed is true if the application state has changed
 func (d *Dry) Changed() bool {
-	return d.State.changed
+	return d.state.changed
 }
 
 //changeViewMode changes the view mode of dry
 func (d *Dry) changeViewMode(newViewMode viewMode) {
-	d.State.previousViewMode = d.State.viewMode
-	d.State.viewMode = newViewMode
-	d.State.changed = true
+	d.state.viewMutex.Lock()
+	defer d.state.viewMutex.Unlock()
+	if newViewMode == Main || newViewMode == Networks || newViewMode == Images {
+		d.state.previousViewMode = newViewMode
+	} else {
+		d.state.previousViewMode = d.state.viewMode
+	}
+	d.state.previousViewMode = d.state.viewMode
+	d.state.viewMode = newViewMode
+	d.state.changed = true
 }
 
 //Close closes dry, releasing any resources held by it
@@ -111,7 +122,22 @@ func (d *Dry) InspectImage(position int) {
 	} else {
 		d.errormessage(apiImage.ID, "inspecting image", err)
 	}
+}
 
+//InspectNetwork prepares dry to show network information for the network at the given position
+func (d *Dry) InspectNetwork(position int) {
+
+	if network, err := d.dockerDaemon.NetworkAt(position); err == nil {
+		network, err := d.dockerDaemon.NetworkInspect(network.ID)
+		if err == nil {
+			d.changeViewMode(InspectNetworkMode)
+			d.inspectedNetwork = network
+		} else {
+			d.errormessage(network.ID, "inspecting network", err)
+		}
+	} else {
+		d.errormessage(network.ID, "inspecting network", err)
+	}
 }
 
 //Kill the docker container at the given position
@@ -155,8 +181,8 @@ func (d *Dry) Refresh() {
 }
 
 func (d *Dry) doRefresh() {
-	d.State.changed = true
-	err := d.dockerDaemon.Refresh(d.State.showingAllContainers)
+	d.state.changed = true
+	err := d.dockerDaemon.Refresh(d.state.showingAllContainers)
 	if err != nil {
 		d.appmessage("There was an error refreshing: " + err.Error())
 	}
@@ -216,7 +242,7 @@ func (d *Dry) Rm(position int) {
 //ShowMainView changes the state of dry to show the main view, main views are
 //either the container list or the image list
 func (d *Dry) ShowMainView() {
-	d.changeViewMode(d.State.previousViewMode)
+	d.changeViewMode(d.state.previousViewMode)
 }
 
 //ShowContainers changes the state of dry to show the container list
@@ -229,7 +255,8 @@ func (d *Dry) ShowHelp() {
 	d.changeViewMode(HelpMode)
 }
 
-//ShowImages changes the state of dry to show the list of Docker images
+//ShowImages changes the state of dry to show the list of Docker images reported
+//by the daemon
 func (d *Dry) ShowImages() {
 	if images, err := d.dockerDaemon.Images(); err == nil {
 		d.changeViewMode(Images)
@@ -238,6 +265,19 @@ func (d *Dry) ShowImages() {
 		d.appmessage(
 			fmt.Sprintf(
 				"Could not retrieve image list: %s ", err.Error()))
+	}
+}
+
+//ShowNetworks changes the state of dry to show the list of Docker networks reported
+//by the daemon
+func (d *Dry) ShowNetworks() {
+	if networks, err := d.dockerDaemon.Networks(); err == nil {
+		d.changeViewMode(Networks)
+		d.networks = networks
+	} else {
+		d.appmessage(
+			fmt.Sprintf(
+				"Could not retrieve network list: %s ", err.Error()))
 	}
 }
 
@@ -256,39 +296,55 @@ func (d *Dry) ShowInfo() error {
 //Sort rotates to the next sort mode.
 //SortByContainerID -> SortByImage -> SortByStatus -> SortByName -> SortByContainerID
 func (d *Dry) Sort() {
-	switch d.State.SortMode {
+	switch d.state.SortMode {
 	case drydocker.SortByContainerID:
-		d.State.SortMode = drydocker.SortByImage
+		d.state.SortMode = drydocker.SortByImage
 	case drydocker.SortByImage:
-		d.State.SortMode = drydocker.SortByStatus
+		d.state.SortMode = drydocker.SortByStatus
 	case drydocker.SortByStatus:
-		d.State.SortMode = drydocker.SortByName
+		d.state.SortMode = drydocker.SortByName
 	case drydocker.SortByName:
-		d.State.SortMode = drydocker.SortByContainerID
+		d.state.SortMode = drydocker.SortByContainerID
 	default:
 	}
-	d.dockerDaemon.Sort(d.State.SortMode)
-	d.State.changed = true
+	d.dockerDaemon.Sort(d.state.SortMode)
+	d.state.changed = true
 }
 
 //SortImages rotates to the next sort mode.
 //SortImagesByRepo -> SortImagesByID -> SortImagesByCreationDate -> SortImagesBySize -> SortImagesByRepo
 func (d *Dry) SortImages() {
-	switch d.State.SortImagesMode {
+	switch d.state.SortImagesMode {
 	case drydocker.SortImagesByRepo:
-		d.State.SortImagesMode = drydocker.SortImagesByID
+		d.state.SortImagesMode = drydocker.SortImagesByID
 	case drydocker.SortImagesByID:
-		d.State.SortImagesMode = drydocker.SortImagesByCreationDate
+		d.state.SortImagesMode = drydocker.SortImagesByCreationDate
 	case drydocker.SortImagesByCreationDate:
-		d.State.SortImagesMode = drydocker.SortImagesBySize
+		d.state.SortImagesMode = drydocker.SortImagesBySize
 	case drydocker.SortImagesBySize:
-		d.State.SortImagesMode = drydocker.SortImagesByRepo
+		d.state.SortImagesMode = drydocker.SortImagesByRepo
 
 	default:
 	}
-	d.dockerDaemon.SortImages(d.State.SortImagesMode)
-	d.State.changed = true
+	d.dockerDaemon.SortImages(d.state.SortImagesMode)
+	d.state.changed = true
 
+}
+
+//SortNetworks rotates to the next sort mode.
+//SortNetworksByID -> SortNetworksByName -> SortNetworksByDriver
+func (d *Dry) SortNetworks() {
+	switch d.state.SortNetworksMode {
+	case drydocker.SortNetworksByID:
+		d.state.SortNetworksMode = drydocker.SortNetworksByName
+	case drydocker.SortNetworksByName:
+		d.state.SortNetworksMode = drydocker.SortNetworksByDriver
+	case drydocker.SortNetworksByDriver:
+		d.state.SortNetworksMode = drydocker.SortNetworksByID
+	default:
+	}
+	d.dockerDaemon.SortNetworks(d.state.SortNetworksMode)
+	d.state.changed = true
 }
 
 func (d *Dry) startDry() {
@@ -373,9 +429,9 @@ func (d *Dry) StopContainer(position int) {
 //ToggleShowAllContainers changes between showing running containers and
 //showing running and stopped containers.
 func (d *Dry) ToggleShowAllContainers() {
-	d.State.showingAllContainers = !d.State.showingAllContainers
+	d.state.showingAllContainers = !d.state.showingAllContainers
 	d.Refresh()
-	if d.State.showingAllContainers {
+	if d.state.showingAllContainers {
 		d.appmessage("<white>Showing all containers</>")
 	} else {
 		d.appmessage("<white>Showing running containers</>")
@@ -417,22 +473,29 @@ func (d *Dry) errormessage(cid string, action string, err error) {
 			action, cid, err.Error()))
 }
 
+func (d *Dry) viewMode() viewMode {
+	d.state.viewMutex.Lock()
+	defer d.state.viewMutex.Unlock()
+	return d.state.viewMode
+}
 func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, error) {
 	if err == nil {
 		dockerEvents, err := d.Events()
 		if err == nil {
 
-			state := &State{
+			state := &state{
 				changed:              true,
 				showingAllContainers: false,
 				SortMode:             drydocker.SortByContainerID,
 				SortImagesMode:       drydocker.SortImagesByRepo,
+				SortNetworksMode:     drydocker.SortNetworksByID,
 				viewMode:             Main,
 				previousViewMode:     Main,
+				viewMutex:            &sync.Mutex{},
 			}
 			d.Sort(state.SortMode)
 			app := &Dry{}
-			app.State = state
+			app.state = state
 			app.dockerDaemon = d
 			app.renderer = appui.NewDockerPsRenderer(
 				app.dockerDaemon,

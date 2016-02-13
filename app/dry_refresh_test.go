@@ -35,7 +35,7 @@ func TestDryRefresh(t *testing.T) {
 
 func newDryForTest() *Dry {
 	dry := &Dry{}
-	dry.State = &State{
+	dry.state = &state{
 		changed:              true,
 		showingAllContainers: false,
 		SortMode:             docker.SortByContainerID,

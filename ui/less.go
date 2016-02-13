@@ -45,20 +45,29 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 	inputMode := false
 	inputBoxEventChan := make(chan termbox.Event)
 	inputBoxOuput := make(chan string, 1)
+	refreshTimer := time.NewTicker(500 * time.Millisecond)
+	stop := make(chan struct{})
+
 	//the first render is done when some content is added to the buffer
 	go func() {
 		for {
-			if less.bufferSize() > 0 {
-				less.tainted = false
-				less.Render()
-				termbox.Flush()
+			select {
+			case <-refreshTimer.C:
+				if less.bufferSize() > 0 {
+					less.tainted = false
+					less.Render()
+					termbox.Flush()
+					return
+				}
+			case <-stop:
 				return
 			}
-			time.Sleep(100 * time.Millisecond)
 		}
 	}()
+
 	defer close(inputBoxOuput)
 	defer close(inputBoxEventChan)
+	defer close(stop)
 loop:
 	for {
 		select {

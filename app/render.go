@@ -15,13 +15,13 @@ type viewMode uint16
 const (
 	Main viewMode = iota
 	Images
-
+	Networks
 	HelpMode
 	StatsMode
 	ImageHistoryMode
-
 	InfoMode
 	InspectImageMode
+	InspectNetworkMode
 	InspectMode
 )
 
@@ -33,12 +33,12 @@ const (
 
 //Render renders dry in the given screen
 func Render(d *Dry, screen *ui.Screen, status *ui.StatusBar) {
-	switch d.State.viewMode {
+	switch d.state.viewMode {
 	case Main:
 		{
 			//after a refresh, sorting is needed
-			d.dockerDaemon.Sort(d.State.SortMode)
-			d.renderer.SortMode(d.State.SortMode)
+			d.dockerDaemon.Sort(d.state.SortMode)
+			d.renderer.SortMode(d.state.SortMode)
 			status.Render()
 			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
 			screen.Render(1, d.renderer.Render())
@@ -47,21 +47,34 @@ func Render(d *Dry, screen *ui.Screen, status *ui.StatusBar) {
 					"<b><blue>Containers: </><yellow>%d</></>", d.dockerDaemon.ContainersCount()))
 
 			screen.RenderLineWithBackGround(0, screen.Height-1, keyMappings, ui.MenuBarBackgroundColor)
-			d.State.changed = false
+			d.state.changed = false
 		}
 	case Images:
 		{
 			status.Render()
 			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
-			d.dockerDaemon.SortImages(d.State.SortImagesMode)
+			d.dockerDaemon.SortImages(d.state.SortImagesMode)
 
 			screen.Render(1,
-				appui.NewDockerImagesRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.State.SortImagesMode).Render())
+				appui.NewDockerImagesRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.state.SortImagesMode).Render())
 			screen.RenderLine(0, screenDescriptionIndex,
 				fmt.Sprintf(
 					"<b><blue>Images: </><yellow>%d</></>", d.dockerDaemon.ImagesCount()))
 			screen.RenderLineWithBackGround(0, screen.Height-1, imagesKeyMappings, ui.MenuBarBackgroundColor)
-			d.State.changed = false
+			d.state.changed = false
+		}
+	case Networks:
+		{
+			status.Render()
+			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
+
+			screen.Render(1,
+				appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.state.SortNetworksMode).Render())
+			screen.RenderLine(0, screenDescriptionIndex,
+				fmt.Sprintf(
+					"<b><blue>Networks: </><yellow>%d</></>", d.dockerDaemon.NetworksCount()))
+			screen.RenderLineWithBackGround(0, screen.Height-1, networkKeyMappings, ui.MenuBarBackgroundColor)
+			d.state.changed = false
 		}
 
 	}
@@ -71,7 +84,7 @@ func Render(d *Dry, screen *ui.Screen, status *ui.StatusBar) {
 
 //Write sends dry output to the given writer
 func Write(d *Dry, w io.Writer) {
-	switch d.State.viewMode {
+	switch d.viewMode() {
 	case StatsMode:
 		{
 			if d.stats != nil {
@@ -86,6 +99,8 @@ func Write(d *Dry, w io.Writer) {
 		io.WriteString(w, appui.NewDockerInspectRenderer(d.inspectedContainer).Render())
 	case InspectImageMode:
 		io.WriteString(w, appui.NewDockerInspectImageRenderer(d.inspectedImage).Render())
+	case InspectNetworkMode:
+		io.WriteString(w, appui.NewDockerInspectNetworkRenderer(d.inspectedNetwork).Render())
 	case HelpMode:
 		io.WriteString(w, help)
 	case InfoMode:

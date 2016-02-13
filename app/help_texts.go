@@ -26,11 +26,11 @@ Container commands:
 	<white>1</>         To image list
 	<white>e</>         Removes the selected container
 	<white>Crtl+e</>    Removes all stopped containers
-	<white>k</>         Kills the selected container
+	<white>Crtl+k</>    Kills the selected container
 	<white>l</>         Displays the logs of the selected container
-	<white>r</>         Restarts selected container (noop if it is already running)
+	<white>r</>         Restarts selected container
 	<white>s</>         Displays a live stream of the selected container resource usage statistics
-	<white>t</>         Stops selected container (noop if it is not running)
+	<white>Crtl+t</>    Stops selected container (noop if it is not running)
 	<white>Enter</>     Returns low-level information on the selected container
 	<white>q</>         Quits <white>dry</>.
 	<white>esc</>       In the main view, quits <white>dry</>. In any other view, goes back to the main view
@@ -42,7 +42,7 @@ Image commands:
 	<white>F5</>        Refresh the image list
 	<white>F10</>       Inspects Docker
 	<white>1</>         To container list
-	<white>e</>         Removes the selected image
+	<white>Crtl+e</>    Removes the selected image
 	<white>i</>         Shows image history
 	<white>Enter</>     Returns low-level information on the selected image
 	<white>q</>         Quits <white>dry</>.
@@ -63,16 +63,24 @@ Image commands:
 
 <r> Press ESC to exit help. </r>
 `
+const (
+	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "
+	inspectMapping = "<b>[Enter]:<darkgrey>Inspect</>"
+	keyMappings    = commonMappings +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
+		"<b>[1]:<darkgrey>Images</> <b>[2]:<darkgrey>Networks</><blue>|</>" +
+		"<b>[E]:<darkgrey>Remove</> <b>[Crtl+K]:<darkgrey>Kill</> <b>[L]:<darkgrey>Logs</> <b>[R]:<darkgrey>Restart</> " +
+		"<b>[S]:<darkgrey>Stats</> <b>[Crtl+T]:<darkgrey>Stop</> <blue>|</>" +
+		inspectMapping
 
-const keyMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> " +
-	"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
-	"<b>[1]:<darkgrey>Images</> <blue>|</>" +
-	"<b>[E]:<darkgrey>Remove</> <b>[K]:<darkgrey>Kill</> <b>[L]:<darkgrey>Logs</> <b>[R]:<darkgrey>Restart</> " +
-	"<b>[S]:<darkgrey>Stats</> <b>[T]:<darkgrey>Stop</> <blue>|</>" +
-	"<b>[Enter]:<darkgrey>Inspect</>"
+	imagesKeyMappings = commonMappings +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
+		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Networks</><blue> <blue>|</>" +
+		"<b>[Crtl+E]:<darkgrey>Remove</> <b>[I]:<darkgrey>History</> <blue>|</>" +
+		inspectMapping
 
-const imagesKeyMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> " +
-	"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
-	"<b>[1]:<darkgrey>Containers</> <blue>|</>" +
-	"<b>[E]:<darkgrey>Remove</> <b>[I]:<darkgrey>History</> <blue>|</>" +
-	"<b>[Enter]:<darkgrey>Inspect</>"
+	networkKeyMappings = commonMappings +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
+		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</>" +
+		inspectMapping
+)

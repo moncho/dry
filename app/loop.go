@@ -10,6 +10,23 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+type focusTracker struct {
+	mutex sync.Locker
+	focus bool
+}
+
+func (f *focusTracker) set(b bool) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+	f.focus = b
+}
+
+func (f *focusTracker) hasFocus() bool {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+	return f.focus
+}
+
 //RenderLoop renders dry until it quits
 func RenderLoop(dry *Dry, screen *ui.Screen) {
 	if ok, _ := dry.Ok(); !ok {
@@ -30,14 +47,14 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	defer close(viewClosed)
 
 	Render(dry, screen, statusBar)
-	//belongs outside the loop
-	var focus = true
+	//focus creation belongs outside the loop
+	focus := &focusTracker{&sync.Mutex{}, true}
 
-	go func(focus *bool) {
+	go func(focus *focusTracker) {
 		for {
 			dryMessage, ok := <-dryOutputChan
 			if ok {
-				if *focus {
+				if focus.hasFocus() {
 					statusBar.StatusMessage(dryMessage, 10*time.Second)
 					if dry.Changed() {
 						screen.Clear()
@@ -51,7 +68,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 				return
 			}
 		}
-	}(&focus)
+	}(focus)
 
 loop:
 	for {
@@ -59,25 +76,27 @@ loop:
 		var refresh = false
 		select {
 		case <-timestampQueue.C:
-			if focus {
+			if focus.hasFocus() {
 				timestamp := time.Now().Format(`15:04:05`)
 				screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
 				screen.Flush()
 			}
 		case <-viewClosed:
-			focus = true
-			refresh = true
+			focus.set(true)
 			dry.ShowMainView()
+			refresh = true
 		case event := <-keyboardQueue:
 			switch event.Type {
 			case termbox.EventKey:
-				if focus {
+				if focus.hasFocus() {
 					if event.Key == termbox.KeyEsc || event.Ch == 'q' || event.Ch == 'Q' {
 						break loop
 					} else {
 						handler := eventHandlerFactory(dry, screen, keyboardQueueForView, viewClosed)
 						if handler != nil {
-							refresh, focus = handler.handle(event)
+							r, f := handler.handle(event)
+							refresh = r
+							focus.set(f)
 						} else {
 							log.Panic("There is no event handler")
 						}
@@ -91,7 +110,7 @@ loop:
 				refresh = true
 			}
 		}
-		if focus && refresh {
+		if focus.hasFocus() && refresh {
 			screen.Clear()
 			Render(dry, screen, statusBar)
 		}
@@ -110,7 +129,6 @@ func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.
 	if err := v.Focus(keyboardQueue); err != nil {
 		ui.ShowErrorMessage(screen, keyboardQueue, err)
 	}
-
 	stream.Close()
 	termbox.HideCursor()
 	screen.Clear()
@@ -180,6 +198,7 @@ func less(dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done ch
 	v := ui.NewLess()
 	v.MarkupSupport()
 	go Write(dry, v)
+	//Focus blocks until v decides that it does not want focus any more
 	if err := v.Focus(keyboardQueue); err != nil {
 		ui.ShowErrorMessage(screen, keyboardQueue, err)
 	}

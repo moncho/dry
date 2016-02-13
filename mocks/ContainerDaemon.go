@@ -146,6 +146,26 @@ func (_m *ContainerDaemonMock) Logs(id string) io.ReadCloser {
 	return nil
 }
 
+//Networks mock
+func (_m *ContainerDaemonMock) Networks() ([]docker.Network, error) {
+	return nil, nil
+}
+
+//NetworkAt mock
+func (_m *ContainerDaemonMock) NetworkAt(position int) (*docker.Network, error) {
+	return nil, nil
+}
+
+//NetworksCount mock
+func (_m *ContainerDaemonMock) NetworksCount() int {
+	return 0
+}
+
+//NetworkInspect mock
+func (_m *ContainerDaemonMock) NetworkInspect(id string) (*docker.Network, error) {
+	return nil, nil
+}
+
 // Ok provides a mock function with given fields:
 func (_m *ContainerDaemonMock) Ok() (bool, error) {
 
@@ -202,6 +222,10 @@ func (_m *ContainerDaemonMock) Sort(sortMode drydocker.SortMode) {
 
 //SortImages mock
 func (_m *ContainerDaemonMock) SortImages(sortMode drydocker.SortImagesMode) {
+}
+
+//SortNetworks mock
+func (_m *ContainerDaemonMock) SortNetworks(sortMode drydocker.SortNetworksMode) {
 }
 
 // StopEventChannel provides a mock function with given fields: eventChan

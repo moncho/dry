@@ -14,6 +14,8 @@ const (
 	DefaultTableFormat = "{{.ID}}\t{{.Image}}\t{{.Command}}\t{{.RunningFor}} ago\t{{.Status}}\t{{.Ports}}\t{{.Names}}"
 	//DefaultImageTableFormat is the default table format to render a list of images
 	DefaultImageTableFormat = "{{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}} ago\t{{.Size}}"
+	//DefaultNetworkTableFormat is the default table format to render a list of networks
+	DefaultNetworkTableFormat = "{{.ID}}\t{{.Name}}\t{{.Driver}}\t{{.Containers}}"
 )
 
 // FormattingContext contains information required by the formatter to print the output as desired.
@@ -94,6 +96,38 @@ func FormatImages(ctx FormattingContext, images []docker.APIImages) {
 			buffer.WriteString("<cyan0>")
 		}
 		if err := tmpl.Execute(buffer, imagerFormatter); err != nil {
+			buffer = bytes.NewBufferString(fmt.Sprintf("Template parsing error: %v\n", err))
+			buffer.WriteTo(ctx.Output)
+			return
+		}
+
+		buffer.WriteString("</>")
+		buffer.WriteString("\n")
+	}
+	buffer.WriteTo(ctx.Output)
+}
+
+// FormatNetworks formats the given slice of networks.
+func FormatNetworks(ctx FormattingContext, networks []docker.Network) {
+	var (
+		buffer = bytes.NewBufferString("")
+		tmpl   = ctx.Template
+	)
+
+	for index, network := range networks {
+		networkFormatter := &NetworkFormatter{
+			trunc:   ctx.Trunc,
+			network: network,
+		}
+		//Ugly!!
+		//The lengh of both tags must be the same or the column will be displaced
+		//because template execution happens before markup interpretation.
+		if index == ctx.Selected {
+			buffer.WriteString("<white>")
+		} else {
+			buffer.WriteString("<cyan0>")
+		}
+		if err := tmpl.Execute(buffer, networkFormatter); err != nil {
 			buffer = bytes.NewBufferString(fmt.Sprintf("Template parsing error: %v\n", err))
 			buffer.WriteTo(ctx.Output)
 			return

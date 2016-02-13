@@ -32,6 +32,10 @@ type ContainerDaemon interface {
 	IsContainerRunning(id string) bool
 	Kill(id string) error
 	Logs(id string) io.ReadCloser
+	Networks() ([]docker.Network, error)
+	NetworkAt(pos int) (*docker.Network, error)
+	NetworksCount() int
+	NetworkInspect(id string) (*docker.Network, error)
 	Ok() (bool, error)
 	RestartContainer(id string) error
 	Rm(id string) error
@@ -43,6 +47,7 @@ type ContainerDaemon interface {
 	StopContainer(id string) error
 	Sort(sortMode SortMode)
 	SortImages(sortMode SortImagesMode)
+	SortNetworks(sortMode SortNetworksMode)
 	StopEventChannel(eventChan chan *docker.APIEvents) error
 	Top(id string) (docker.TopResult, error)
 	Version() (*Version, error)

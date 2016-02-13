@@ -15,16 +15,20 @@ func connect(client *docker.Client, env *DockerEnv) (*DockerDaemon, error) {
 	if err == nil {
 		images, err := images(client)
 		if err == nil {
-			d := &DockerDaemon{
-				client:        client,
-				err:           err,
-				containerByID: containersByID,
-				containers:    containers,
-				images:        images,
-				dockerEnv:     env,
+			networks, err := networks(client)
+			if err == nil {
+				d := &DockerDaemon{
+					client:        client,
+					err:           err,
+					containerByID: containersByID,
+					containers:    containers,
+					images:        images,
+					networks:      networks,
+					dockerEnv:     env,
+				}
+				d.Version()
+				return d, nil
 			}
-			d.Version()
-			return d, nil
 		}
 		return nil, err
 

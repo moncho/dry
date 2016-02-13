@@ -67,3 +67,33 @@ func (r *inspectImageRenderer) Render() string {
 
 	return buf.String()
 }
+
+type inspectNetworkRenderer struct {
+	network *godocker.Network
+}
+
+//NewDockerInspectNetworkRenderer creates renderer for network inspect information
+func NewDockerInspectNetworkRenderer(network *godocker.Network) ui.Renderer {
+	return &inspectNetworkRenderer{
+		network: network,
+	}
+}
+
+//Render low-level information on a network
+func (r *inspectNetworkRenderer) Render() string {
+	c, _ := json.Marshal(r.network)
+
+	buf := new(bytes.Buffer)
+	buf.WriteString("[\n")
+	if err := json.Indent(buf, c, "", "    "); err == nil {
+		if buf.Len() > 1 {
+			// Remove trailing ','
+			buf.Truncate(buf.Len() - 1)
+		}
+	} else {
+		buf.WriteString("There was an error inspecting image information")
+	}
+	buf.WriteString("]\n")
+
+	return buf.String()
+}

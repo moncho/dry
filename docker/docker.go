@@ -22,6 +22,7 @@ type DockerDaemon struct {
 	containerByID map[string]docker.APIContainers // Containers by their id
 	containers    []docker.APIContainers
 	images        []docker.APIImages
+	networks      []docker.Network
 	err           error // Errors, if any.
 	connected     bool
 	dockerEnv     *DockerEnv
@@ -137,6 +138,29 @@ func (daemon *DockerDaemon) Logs(id string) io.ReadCloser {
 	return r
 }
 
+//Networks returns the list of Docker networks
+func (daemon *DockerDaemon) Networks() ([]docker.Network, error) {
+	return daemon.networks, nil
+}
+
+//NetworkAt returns the network found at the given position.
+func (daemon *DockerDaemon) NetworkAt(pos int) (*docker.Network, error) {
+	if pos >= len(daemon.networks) {
+		return nil, errors.New("Position is higher than number of networks")
+	}
+	return &daemon.networks[pos], nil
+}
+
+//NetworksCount returns the number of networks reported by Docker
+func (daemon *DockerDaemon) NetworksCount() int {
+	return len(daemon.networks)
+}
+
+//NetworkInspect returns network detailed information
+func (daemon *DockerDaemon) NetworkInspect(id string) (*docker.Network, error) {
+	return daemon.client.NetworkInfo(id)
+}
+
 //Ok is true if connecting to the Docker daemon went fine
 func (daemon *DockerDaemon) Ok() (bool, error) {
 	return daemon.err == nil, daemon.err
@@ -173,13 +197,24 @@ func (daemon *DockerDaemon) Refresh(allContainers bool) error {
 	return err
 }
 
-//RefreshImages the image list
+//RefreshImages refreshes the image list
 func (daemon *DockerDaemon) RefreshImages() error {
 
 	images, err := images(daemon.client)
 
 	if err == nil {
 		daemon.images = images
+	}
+	return err
+}
+
+//RefreshNetworks refreshes the network list
+func (daemon *DockerDaemon) RefreshNetworks() error {
+
+	networks, err := networks(daemon.client)
+
+	if err == nil {
+		daemon.networks = networks
 	}
 	return err
 }
@@ -266,9 +301,14 @@ func (daemon *DockerDaemon) Sort(sortMode SortMode) {
 	SortContainers(daemon.containers, sortMode)
 }
 
-//SortImages the list of images by the given mode
+//SortImages sorts the list of images by the given mode
 func (daemon *DockerDaemon) SortImages(sortMode SortImagesMode) {
 	SortImages(daemon.images, sortMode)
+}
+
+//SortNetworks sortes the list of networks by the given mode
+func (daemon *DockerDaemon) SortNetworks(sortMode SortNetworksMode) {
+	SortNetworks(daemon.networks, sortMode)
 }
 
 //StopEventChannel docker events are not sent to the given channel
@@ -327,6 +367,10 @@ func images(client *docker.Client) ([]docker.APIImages, error) {
 		All:     false,
 		Digests: true}
 	return client.ListImages(opts)
+}
+
+func networks(client *docker.Client) ([]docker.Network, error) {
+	return client.ListNetworks()
 }
 
 //GetBool returns false if the given string looks like you mean
