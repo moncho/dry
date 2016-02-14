@@ -190,6 +190,11 @@ func (d *Dry) doRefresh() {
 		d.appmessage("There was an error refreshing: " + err.Error())
 	}
 
+	err = d.dockerDaemon.RefreshNetworks()
+	if err != nil {
+		d.appmessage("There was an error refreshing: " + err.Error())
+	}
+
 }
 
 //RemoveAllStoppedContainers removes all stopped containers

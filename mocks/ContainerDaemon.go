@@ -198,6 +198,11 @@ func (_m *ContainerDaemonMock) RefreshImages() error {
 	return nil
 }
 
+//RefreshNetworks mock
+func (_m *ContainerDaemonMock) RefreshNetworks() error {
+	return nil
+}
+
 // RemoveAllStoppedContainers provides a mock function with given fields:
 func (_m *ContainerDaemonMock) RemoveAllStoppedContainers() error {
 	return nil

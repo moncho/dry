@@ -39,7 +39,7 @@ func NewDockerNetworksRenderer(daemon docker.ContainerDaemon, screenHeight int, 
 		{`NetworkID`, `NETWORK ID`, docker.SortNetworksByID},
 		{`Name`, `NAME`, docker.SortNetworksByName},
 		{`Driver`, `DRIVER`, docker.SortNetworksByDriver},
-		{`Driver`, `CONTAINERS`, docker.NoSortNetworks},
+		{`Containers`, `CONTAINERS`, docker.NoSortNetworks},
 	}
 
 	di := dockerInfo(daemon)

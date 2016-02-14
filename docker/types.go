@@ -42,6 +42,7 @@ type ContainerDaemon interface {
 	Rmi(id string) error
 	Refresh(allContainers bool) error
 	RefreshImages() error
+	RefreshNetworks() error
 	RemoveAllStoppedContainers() error
 	Stats(id string) (<-chan *Stats, chan<- bool, <-chan error)
 	StopContainer(id string) error
