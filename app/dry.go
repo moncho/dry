@@ -366,8 +366,8 @@ func (d *Dry) startDry() {
 	}()
 }
 
-//StartContainer (re)starts the container at the given position
-func (d *Dry) StartContainer(position int) {
+//RestartContainer (re)starts the container at the given position
+func (d *Dry) RestartContainer(position int) {
 	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
 		d.actionmessage(shortID, "Restarting")
 		go func() {
