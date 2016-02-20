@@ -89,7 +89,7 @@ loop:
 			switch event.Type {
 			case termbox.EventKey:
 				if focus.hasFocus() {
-					if event.Key == termbox.KeyEsc || event.Ch == 'q' || event.Ch == 'Q' {
+					if event.Ch == 'q' || event.Ch == 'Q' {
 						break loop
 					} else {
 						handler := eventHandlerFactory(dry, screen, keyboardQueueForView, viewClosed)
