@@ -109,8 +109,8 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
 
 	case termbox.KeyCtrlE: //remove image
-		screen.Cursor.Line = 0
 		go dry.RemoveImage(screen.CursorPosition())
+		screen.Cursor.Line = 0
 	case termbox.KeyEnter: //inspect image
 		dry.InspectImage(screen.CursorPosition())
 		focus = false
