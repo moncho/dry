@@ -33,51 +33,46 @@ const (
 
 //Render renders dry in the given screen
 func Render(d *Dry, screen *ui.Screen, status *ui.StatusBar) {
+	var what string
+	var count int
+	var keymap string
+	status.Render()
+	screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
 	switch d.state.viewMode {
 	case Main:
 		{
 			//after a refresh, sorting is needed
 			d.dockerDaemon.Sort(d.state.SortMode)
 			d.renderer.SortMode(d.state.SortMode)
-			status.Render()
-			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
 			screen.Render(1, d.renderer.Render())
-			screen.RenderLine(0, screenDescriptionIndex,
-				fmt.Sprintf(
-					"<b><blue>Containers: </><yellow>%d</></>", d.dockerDaemon.ContainersCount()))
 
-			screen.RenderLineWithBackGround(0, screen.Height-1, keyMappings, ui.MenuBarBackgroundColor)
-			d.state.changed = false
+			what = "Containers"
+			count = d.dockerDaemon.ContainersCount()
+			keymap = keyMappings
 		}
 	case Images:
 		{
-			status.Render()
-			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
 			d.dockerDaemon.SortImages(d.state.SortImagesMode)
 
 			screen.Render(1,
 				appui.NewDockerImagesRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.state.SortImagesMode).Render())
-			screen.RenderLine(0, screenDescriptionIndex,
-				fmt.Sprintf(
-					"<b><blue>Images: </><yellow>%d</></>", d.dockerDaemon.ImagesCount()))
-			screen.RenderLineWithBackGround(0, screen.Height-1, imagesKeyMappings, ui.MenuBarBackgroundColor)
-			d.state.changed = false
+			what = "Images"
+			count = d.dockerDaemon.ImagesCount()
+			keymap = imagesKeyMappings
 		}
 	case Networks:
 		{
-			status.Render()
-			screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
-
 			screen.Render(1,
 				appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.state.SortNetworksMode).Render())
-			screen.RenderLine(0, screenDescriptionIndex,
-				fmt.Sprintf(
-					"<b><blue>Networks: </><yellow>%d</></>", d.dockerDaemon.NetworksCount()))
-			screen.RenderLineWithBackGround(0, screen.Height-1, networkKeyMappings, ui.MenuBarBackgroundColor)
-			d.state.changed = false
+			what = "Networks"
+			count = d.dockerDaemon.NetworksCount()
+			keymap = networkKeyMappings
 		}
 
 	}
+	renderViewTitle(screen, what, count)
+	screen.RenderLineWithBackGround(0, screen.Height-1, keymap, ui.MenuBarBackgroundColor)
+	d.state.changed = false
 
 	screen.Flush()
 }
@@ -110,4 +105,10 @@ func Write(d *Dry, w io.Writer) {
 			io.WriteString(w, "Dry is not ready yet for rendering, be patient...")
 		}
 	}
+}
+
+func renderViewTitle(screen *ui.Screen, what string, howMany int) {
+	screen.RenderLine(0, screenDescriptionIndex,
+		fmt.Sprintf(
+			"<b><blue>%s: </><yellow>%d</></>", what, howMany))
 }
