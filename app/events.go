@@ -5,7 +5,7 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-//KeyPressEvent maps a key to an app action
+//eventHandler maps a key to an app action
 type eventHandler interface {
 	handle(event termbox.Event) (refresh bool, focus bool)
 }
@@ -21,58 +21,62 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 	focus = true
 	dry := h.dry
 	screen := h.screen
-	if event.Key == termbox.KeyArrowUp { //cursor up
+	switch event.Key {
+	case termbox.KeyArrowUp: //cursor up
 		screen.ScrollCursorUp()
 		refresh = true
-	} else if event.Key == termbox.KeyArrowDown { // cursor down
+	case termbox.KeyArrowDown: // cursor down
 		screen.ScrollCursorDown()
 		refresh = true
-	} else if event.Key == termbox.KeyF1 { //sort
+	case termbox.KeyF1: //sort
 		dry.Sort()
-	} else if event.Key == termbox.KeyF2 { //show all containers
+	case termbox.KeyF2: //show all containers
+		screen.Cursor.Line = 0
 		dry.ToggleShowAllContainers()
-	} else if event.Key == termbox.KeyF5 { // refresh
+	case termbox.KeyF5: // refresh
 		dry.Refresh()
-	} else if event.Key == termbox.KeyF10 { // docker info
+	case termbox.KeyF10: // docker info
 		dry.ShowInfo()
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
-	} else if event.Ch == '?' || event.Ch == 'h' || event.Ch == 'H' { //help
-		focus = false
-		dry.ShowHelp()
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
-	} else if event.Ch == '1' {
-		screen.Cursor.Line = 0
-		dry.ShowImages()
-	} else if event.Ch == '2' {
-		screen.Cursor.Line = 0
-		dry.ShowNetworks()
-	} else if event.Ch == 'e' || event.Ch == 'E' { //remove
-		dry.Rm(screen.CursorPosition())
-	} else if event.Key == termbox.KeyCtrlE { //remove all stopped
+	case termbox.KeyCtrlE: //remove all stopped
 		dry.RemoveAllStoppedContainers()
-	} else if event.Key == termbox.KeyCtrlK { //kill
+	case termbox.KeyCtrlK: //kill
 		dry.Kill(screen.CursorPosition())
-	} else if event.Ch == 'l' || event.Ch == 'L' { //logs
-		if logs, err := dry.Logs(screen.CursorPosition()); err == nil {
-			focus = false
-			dry.ShowContainers()
-			go stream(screen, logs, h.keyboardQueueForView, h.viewClosed)
-		}
-	} else if event.Ch == 'r' || event.Ch == 'R' { //start
-		dry.StartContainer(screen.CursorPosition())
-	} else if event.Ch == 's' || event.Ch == 'S' { //stats
+	case termbox.KeyCtrlR: //start
+		dry.RestartContainer(screen.CursorPosition())
+	case termbox.KeyCtrlT: //stop
+		dry.StopContainer(screen.CursorPosition())
+	case termbox.KeyEnter: //inspect
+		dry.Inspect(screen.CursorPosition())
+		focus = false
+		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+	}
+	switch event.Ch {
+	case 's', 'S': //stats
 		done, errC, err := dry.Stats(screen.CursorPosition())
 		if err == nil {
 			focus = false
 			go autorefresh(dry, screen, h.keyboardQueueForView, h.viewClosed, done, errC)
 		}
-	} else if event.Key == termbox.KeyCtrlT { //stop
-		dry.StopContainer(screen.CursorPosition())
-	} else if event.Key == termbox.KeyEnter { //inspect
-		dry.Inspect(screen.CursorPosition())
+	case 'l', 'L': //logs
+		if logs, err := dry.Logs(screen.CursorPosition()); err == nil {
+			focus = false
+			dry.ShowContainers()
+			go stream(screen, logs, h.keyboardQueueForView, h.viewClosed)
+		}
+	case '?', 'h', 'H': //help
 		focus = false
+		dry.ShowHelp()
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+	case '1':
+		screen.Cursor.Line = 0
+		dry.ShowImages()
+	case '2':
+		screen.Cursor.Line = 0
+		dry.ShowNetworks()
+	case 'e', 'E': //remove
+		dry.Rm(screen.CursorPosition())
 	}
 	return (refresh || dry.Changed()), focus
 }
@@ -88,41 +92,48 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 	focus = true
 	dry := h.dry
 	screen := h.screen
-	if event.Key == termbox.KeyArrowUp { //cursor up
+	switch event.Key {
+	case termbox.KeyArrowUp: //cursor up
 		screen.ScrollCursorUp()
 		refresh = true
-	} else if event.Key == termbox.KeyArrowDown { // cursor down
+	case termbox.KeyArrowDown: // cursor down
 		screen.ScrollCursorDown()
 		refresh = true
-	} else if event.Key == termbox.KeyF1 { //sort
+	case termbox.KeyF1: //sort
 		dry.SortImages()
-	} else if event.Key == termbox.KeyF5 { // refresh
+	case termbox.KeyF5: // refresh
 		dry.Refresh()
-	} else if event.Key == termbox.KeyF10 { // docker info
+	case termbox.KeyF10: // docker info
 		dry.ShowInfo()
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
-	} else if event.Ch == '?' || event.Ch == 'h' || event.Ch == 'H' { //help
-		focus = false
-		dry.ShowHelp()
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
-	} else if event.Ch == '1' {
+
+	case termbox.KeyCtrlE: //remove image
 		screen.Cursor.Line = 0
-		dry.ShowContainers()
-	} else if event.Ch == '2' {
-		screen.Cursor.Line = 0
-		dry.ShowNetworks()
-	} else if event.Key == termbox.KeyCtrlE { //remove image
-		dry.RemoveImage(screen.CursorPosition())
-	} else if event.Ch == 'i' || event.Ch == 'I' { //image history
-		dry.History(screen.CursorPosition())
-		focus = false
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
-	} else if event.Key == termbox.KeyEnter { //inspect image
+		go dry.RemoveImage(screen.CursorPosition())
+	case termbox.KeyEnter: //inspect image
 		dry.InspectImage(screen.CursorPosition())
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+
 	}
+	switch event.Ch {
+	case '?', 'h', 'H': //help
+		focus = false
+		dry.ShowHelp()
+		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+	case '1':
+		screen.Cursor.Line = 0
+		dry.ShowContainers()
+	case '2':
+		screen.Cursor.Line = 0
+		dry.ShowNetworks()
+	case 'i', 'I': //image history
+		dry.History(screen.CursorPosition())
+		focus = false
+		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+	}
+
 	return (refresh || dry.Changed()), focus
 }
 
@@ -137,34 +148,39 @@ func (h networksScreenEventHandler) handle(event termbox.Event) (refresh bool, f
 	focus = true
 	dry := h.dry
 	screen := h.screen
-	if event.Key == termbox.KeyArrowUp { //cursor up
+	switch event.Key {
+	case termbox.KeyArrowUp: //cursor up
 		screen.ScrollCursorUp()
 		refresh = true
-	} else if event.Key == termbox.KeyArrowDown { // cursor down
+	case termbox.KeyArrowDown: // cursor down
 		screen.ScrollCursorDown()
 		refresh = true
-	} else if event.Key == termbox.KeyF1 { //sort
+	case termbox.KeyF1: //sort
 		dry.SortNetworks()
-	} else if event.Key == termbox.KeyF5 { // refresh
+	case termbox.KeyF5: // refresh
+		screen.Cursor.Line = 0
 		dry.Refresh()
-	} else if event.Key == termbox.KeyF10 { // docker info
+	case termbox.KeyF10: // docker info
 		dry.ShowInfo()
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
-	} else if event.Ch == '?' || event.Ch == 'h' || event.Ch == 'H' { //help
-		focus = false
-		dry.ShowHelp()
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
-	} else if event.Ch == '1' {
-		screen.Cursor.Line = 0
-		dry.ShowContainers()
-	} else if event.Ch == '2' {
-		screen.Cursor.Line = 0
-		dry.ShowImages()
-	} else if event.Key == termbox.KeyEnter { //inspect
+	case termbox.KeyEnter: //inspect
 		dry.InspectNetwork(screen.CursorPosition())
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+	}
+
+	switch event.Ch {
+	case '?', 'h', 'H': //help
+		focus = false
+		dry.ShowHelp()
+		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+	case '1':
+		screen.Cursor.Line = 0
+		dry.ShowContainers()
+	case '2':
+		screen.Cursor.Line = 0
+		dry.ShowImages()
 	}
 	return (refresh || dry.Changed()), focus
 }

@@ -28,7 +28,7 @@ Container commands:
 	<white>Crtl+e</>    Removes all stopped containers
 	<white>Crtl+k</>    Kills the selected container
 	<white>l</>         Displays the logs of the selected container
-	<white>r</>         Restarts selected container
+	<white>Ctrl+r</>         Restarts selected container
 	<white>s</>         Displays a live stream of the selected container resource usage statistics
 	<white>Crtl+t</>    Stops selected container (noop if it is not running)
 	<white>Enter</>     Returns low-level information on the selected container
@@ -69,7 +69,7 @@ const (
 	keyMappings    = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
 		"<b>[1]:<darkgrey>Images</> <b>[2]:<darkgrey>Networks</><blue>|</>" +
-		"<b>[E]:<darkgrey>Remove</> <b>[Crtl+K]:<darkgrey>Kill</> <b>[L]:<darkgrey>Logs</> <b>[R]:<darkgrey>Restart</> " +
+		"<b>[E]:<darkgrey>Remove</> <b>[Crtl+K]:<darkgrey>Kill</> <b>[L]:<darkgrey>Logs</> <b>[Ctrl+R]:<darkgrey>Restart</> " +
 		"<b>[S]:<darkgrey>Stats</> <b>[Crtl+T]:<darkgrey>Stop</> <blue>|</>" +
 		inspectMapping
 
