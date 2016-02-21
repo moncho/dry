@@ -29,7 +29,7 @@
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Rev": "bda1048b6ed884fb71fd8da7828f4f80ed328652"
+			"Rev": "d92e9b886690a7daa42daa3807d1829c6e6a9d0a"
 		},
 		{
 			"ImportPath": "github.com/gosuri/uitable/util/strutil",
