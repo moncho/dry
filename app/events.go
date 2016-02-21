@@ -21,6 +21,7 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 	focus = true
 	dry := h.dry
 	screen := h.screen
+	cursorPos := screen.CursorPosition()
 	switch event.Key {
 	case termbox.KeyArrowUp: //cursor up
 		screen.ScrollCursorUp()
@@ -42,25 +43,25 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 	case termbox.KeyCtrlE: //remove all stopped
 		dry.RemoveAllStoppedContainers()
 	case termbox.KeyCtrlK: //kill
-		dry.Kill(screen.CursorPosition())
+		dry.Kill(cursorPos)
 	case termbox.KeyCtrlR: //start
-		dry.RestartContainer(screen.CursorPosition())
+		dry.RestartContainer(cursorPos)
 	case termbox.KeyCtrlT: //stop
-		dry.StopContainer(screen.CursorPosition())
+		dry.StopContainer(cursorPos)
 	case termbox.KeyEnter: //inspect
-		dry.Inspect(screen.CursorPosition())
+		dry.Inspect(cursorPos)
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
 	}
 	switch event.Ch {
 	case 's', 'S': //stats
-		done, errC, err := dry.Stats(screen.CursorPosition())
+		done, errC, err := dry.Stats(cursorPos)
 		if err == nil {
 			focus = false
 			go autorefresh(dry, screen, h.keyboardQueueForView, h.viewClosed, done, errC)
 		}
 	case 'l', 'L': //logs
-		if logs, err := dry.Logs(screen.CursorPosition()); err == nil {
+		if logs, err := dry.Logs(cursorPos); err == nil {
 			focus = false
 			dry.ShowContainers()
 			go stream(screen, logs, h.keyboardQueueForView, h.viewClosed)
@@ -76,7 +77,8 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 		screen.Cursor.Line = 0
 		dry.ShowNetworks()
 	case 'e', 'E': //remove
-		dry.Rm(screen.CursorPosition())
+		dry.Rm(cursorPos)
+		screen.ScrollCursorUp()
 	}
 	return (refresh || dry.Changed()), focus
 }
@@ -92,6 +94,7 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 	focus = true
 	dry := h.dry
 	screen := h.screen
+	cursorPos := screen.CursorPosition()
 	switch event.Key {
 	case termbox.KeyArrowUp: //cursor up
 		screen.ScrollCursorUp()
@@ -109,10 +112,10 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
 
 	case termbox.KeyCtrlE: //remove image
-		go dry.RemoveImage(screen.CursorPosition())
-		screen.Cursor.Line = 0
+		go dry.RemoveImage(cursorPos)
+		screen.ScrollCursorUp()
 	case termbox.KeyEnter: //inspect image
-		dry.InspectImage(screen.CursorPosition())
+		dry.InspectImage(cursorPos)
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
 
@@ -129,7 +132,7 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 		screen.Cursor.Line = 0
 		dry.ShowNetworks()
 	case 'i', 'I': //image history
-		dry.History(screen.CursorPosition())
+		dry.History(cursorPos)
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
 	}
@@ -148,6 +151,7 @@ func (h networksScreenEventHandler) handle(event termbox.Event) (refresh bool, f
 	focus = true
 	dry := h.dry
 	screen := h.screen
+	cursorPos := screen.CursorPosition()
 	switch event.Key {
 	case termbox.KeyArrowUp: //cursor up
 		screen.ScrollCursorUp()
@@ -165,7 +169,7 @@ func (h networksScreenEventHandler) handle(event termbox.Event) (refresh bool, f
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
 	case termbox.KeyEnter: //inspect
-		dry.InspectNetwork(screen.CursorPosition())
+		dry.InspectNetwork(cursorPos)
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
 	}

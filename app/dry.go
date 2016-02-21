@@ -181,20 +181,18 @@ func (d *Dry) Refresh() {
 
 func (d *Dry) doRefresh() {
 	d.state.changed = true
-	err := d.dockerDaemon.Refresh(d.state.showingAllContainers)
+	var err error
+	switch d.state.viewMode {
+	case Main:
+		err = d.dockerDaemon.Refresh(d.state.showingAllContainers)
+	case Images:
+		err = d.dockerDaemon.RefreshImages()
+	case Networks:
+		err = d.dockerDaemon.RefreshNetworks()
+	}
 	if err != nil {
 		d.appmessage("There was an error refreshing: " + err.Error())
 	}
-	err = d.dockerDaemon.RefreshImages()
-	if err != nil {
-		d.appmessage("There was an error refreshing: " + err.Error())
-	}
-
-	err = d.dockerDaemon.RefreshNetworks()
-	if err != nil {
-		d.appmessage("There was an error refreshing: " + err.Error())
-	}
-
 }
 
 //RemoveAllStoppedContainers removes all stopped containers
@@ -216,6 +214,7 @@ func (d *Dry) RemoveImage(position int) {
 		shortID := stringid.TruncateID(id)
 		d.appmessage(fmt.Sprintf("<red>Removing image:</> <white>%s</>", shortID))
 		if err := d.dockerDaemon.Rmi(id); err == nil {
+			d.doRefresh()
 			d.appmessage(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
 		} else {
 			d.appmessage(fmt.Sprintf("<red>Error removing image </><white>%s: %s</>", shortID, err.Error()))
@@ -360,7 +359,7 @@ func (d *Dry) startDry() {
 	}()
 
 	go func() {
-		for range time.Tick(15 * time.Second) {
+		for range time.Tick(TimeBetweenRefresh) {
 			d.tryRefresh()
 		}
 	}()
