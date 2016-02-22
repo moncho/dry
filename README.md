@@ -14,7 +14,7 @@ From the main screen, commands to start, stop, remove and several others can be 
 
 Switching to the image screen can be done by clicking [1]. Once there, **Docker** images are shown and again a few commands are available. Clicking [1] will show again the main screen (the container list).
 
-Take a look at the demo below too see what can be done with **dry**.
+The demo below shows a **dry** session.
 
 [![asciicast](https://asciinema.org/a/35825.png)](https://asciinema.org/a/35825?autoplay=1)
 
