@@ -47,7 +47,9 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	defer close(viewClosed)
 
 	Render(dry, screen, statusBar)
-	//focus creation belongs outside the loop
+	//tracks if the main loop has the focus (and responds to events),
+	//or if events have to be delegated.
+	//creation belongs outside the loop
 	focus := &focusTracker{&sync.Mutex{}, true}
 
 	go func(focus *focusTracker) {
@@ -88,6 +90,9 @@ loop:
 		case event := <-keyboardQueue:
 			switch event.Type {
 			case termbox.EventKey:
+				if event.Key == termbox.KeyCtrlC { //Ctrl+C breaks the loop (and exit dry) no matter what
+					break loop
+				}
 				if focus.hasFocus() {
 					if event.Ch == 'q' || event.Ch == 'Q' {
 						break loop
