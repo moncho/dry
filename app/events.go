@@ -22,6 +22,8 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 	dry := h.dry
 	screen := h.screen
 	cursorPos := screen.CursorPosition()
+	//Controls if the event has been handled by the first switch statement
+	handled := true
 	switch event.Key {
 	case termbox.KeyArrowUp: //cursor up
 		screen.ScrollCursorUp()
@@ -52,33 +54,37 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 		dry.Inspect(cursorPos)
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+	default: //Not handled
+		handled = false
 	}
-	switch event.Ch {
-	case 's', 'S': //stats
-		done, errC, err := dry.Stats(cursorPos)
-		if err == nil {
+	if !handled {
+		switch event.Ch {
+		case 's', 'S': //stats
+			done, errC, err := dry.Stats(cursorPos)
+			if err == nil {
+				focus = false
+				go autorefresh(dry, screen, h.keyboardQueueForView, h.viewClosed, done, errC)
+			}
+		case 'l', 'L': //logs
+			if logs, err := dry.Logs(cursorPos); err == nil {
+				focus = false
+				dry.ShowContainers()
+				go stream(screen, logs, h.keyboardQueueForView, h.viewClosed)
+			}
+		case '?', 'h', 'H': //help
 			focus = false
-			go autorefresh(dry, screen, h.keyboardQueueForView, h.viewClosed, done, errC)
+			dry.ShowHelp()
+			go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+		case '1':
+			screen.Cursor.Line = 0
+			dry.ShowImages()
+		case '2':
+			screen.Cursor.Line = 0
+			dry.ShowNetworks()
+		case 'e', 'E': //remove
+			dry.Rm(cursorPos)
+			screen.ScrollCursorUp()
 		}
-	case 'l', 'L': //logs
-		if logs, err := dry.Logs(cursorPos); err == nil {
-			focus = false
-			dry.ShowContainers()
-			go stream(screen, logs, h.keyboardQueueForView, h.viewClosed)
-		}
-	case '?', 'h', 'H': //help
-		focus = false
-		dry.ShowHelp()
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
-	case '1':
-		screen.Cursor.Line = 0
-		dry.ShowImages()
-	case '2':
-		screen.Cursor.Line = 0
-		dry.ShowNetworks()
-	case 'e', 'E': //remove
-		dry.Rm(cursorPos)
-		screen.ScrollCursorUp()
 	}
 	return (refresh || dry.Changed()), focus
 }
@@ -95,6 +101,9 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 	dry := h.dry
 	screen := h.screen
 	cursorPos := screen.CursorPosition()
+	//Controls if the event has been handled by the first switch statement
+	handled := true
+
 	switch event.Key {
 	case termbox.KeyArrowUp: //cursor up
 		screen.ScrollCursorUp()
@@ -112,29 +121,37 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
 
 	case termbox.KeyCtrlE: //remove image
-		go dry.RemoveImage(cursorPos)
+		go dry.RemoveImage(cursorPos, false)
+		screen.ScrollCursorUp()
+	case termbox.KeyCtrlF: //force remove image
+		go dry.RemoveImage(cursorPos, true)
 		screen.ScrollCursorUp()
 	case termbox.KeyEnter: //inspect image
 		dry.InspectImage(cursorPos)
 		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
-
+	default:
+		handled = false
 	}
-	switch event.Ch {
-	case '?', 'h', 'H': //help
-		focus = false
-		dry.ShowHelp()
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
-	case '1':
-		screen.Cursor.Line = 0
-		dry.ShowContainers()
-	case '2':
-		screen.Cursor.Line = 0
-		dry.ShowNetworks()
-	case 'i', 'I': //image history
-		dry.History(cursorPos)
-		focus = false
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+
+	if !handled {
+		switch event.Ch {
+		case '?', 'h', 'H': //help
+			focus = false
+			dry.ShowHelp()
+			go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+		case '1':
+			screen.Cursor.Line = 0
+			dry.ShowContainers()
+		case '2':
+			screen.Cursor.Line = 0
+			dry.ShowNetworks()
+		case 'i', 'I': //image history
+			dry.History(cursorPos)
+			focus = false
+			go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+		}
+
 	}
 
 	return (refresh || dry.Changed()), focus
