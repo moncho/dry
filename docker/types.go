@@ -39,7 +39,7 @@ type ContainerDaemon interface {
 	Ok() (bool, error)
 	RestartContainer(id string) error
 	Rm(id string) error
-	Rmi(id string) error
+	Rmi(id string, force bool) error
 	Refresh(allContainers bool) error
 	RefreshImages() error
 	RefreshNetworks() error

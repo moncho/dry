@@ -181,8 +181,9 @@ func (daemon *DockerDaemon) Rm(id string) error {
 }
 
 //Rmi removes the image with the given name
-func (daemon *DockerDaemon) Rmi(name string) error {
-	return daemon.client.RemoveImage(name)
+func (daemon *DockerDaemon) Rmi(name string, force bool) error {
+	options := docker.RemoveImageOptions{Force: force}
+	return daemon.client.RemoveImageExtended(name, options)
 }
 
 //Refresh the container list

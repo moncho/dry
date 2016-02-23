@@ -184,7 +184,7 @@ func (_m *ContainerDaemonMock) Rm(id string) error {
 }
 
 // Rmi mock
-func (_m *ContainerDaemonMock) Rmi(id string) error {
+func (_m *ContainerDaemonMock) Rmi(id string, force bool) error {
 	return nil
 }
 

@@ -208,12 +208,12 @@ func (d *Dry) RemoveAllStoppedContainers() {
 }
 
 //RemoveImage removes the Docker image at the given position
-func (d *Dry) RemoveImage(position int) {
+func (d *Dry) RemoveImage(position int, force bool) {
 	if image, err := d.dockerDaemon.ImageAt(position); err == nil {
 		id := drydocker.ImageID(image.ID)
 		shortID := stringid.TruncateID(id)
 		d.appmessage(fmt.Sprintf("<red>Removing image:</> <white>%s</>", shortID))
-		if err := d.dockerDaemon.Rmi(id); err == nil {
+		if err := d.dockerDaemon.Rmi(id, force); err == nil {
 			d.doRefresh()
 			d.appmessage(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
 		} else {
@@ -243,7 +243,7 @@ func (d *Dry) Rm(position int) {
 }
 
 //ShowMainView changes the state of dry to show the main view, main views are
-//either the container list or the image list
+//the container list, the image list or the network list
 func (d *Dry) ShowMainView() {
 	d.changeViewMode(d.state.previousViewMode)
 }
