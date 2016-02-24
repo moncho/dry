@@ -27,10 +27,13 @@ type DockerDaemon struct {
 	connected     bool
 	dockerEnv     *DockerEnv
 	version       *Version
+	refreshLock   sync.Mutex
 }
 
 //Containers returns the containers known by the daemon
 func (daemon *DockerDaemon) Containers() []docker.APIContainers {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 	return daemon.containers
 }
 
@@ -42,6 +45,8 @@ func (daemon *DockerDaemon) ContainersCount() int {
 //ContainerIDAt returns the container ID of the container found at the given
 //position.
 func (daemon *DockerDaemon) ContainerIDAt(pos int) (string, string, error) {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 	if pos >= len(daemon.containers) {
 		return "", "", errors.New("Position is higher than number of containers")
 	}
@@ -50,6 +55,8 @@ func (daemon *DockerDaemon) ContainerIDAt(pos int) (string, string, error) {
 
 //ContainerByID returns the container with the given ID
 func (daemon *DockerDaemon) ContainerByID(cid string) docker.APIContainers {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 	return daemon.containerByID[cid]
 }
 
@@ -78,6 +85,8 @@ func (daemon *DockerDaemon) History(id string) ([]docker.ImageHistory, error) {
 //ImageAt returns the Image found at the given
 //position.
 func (daemon *DockerDaemon) ImageAt(pos int) (*docker.APIImages, error) {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 	if pos >= len(daemon.images) {
 		return nil, errors.New("Position is higher than number of images")
 	}
@@ -86,11 +95,15 @@ func (daemon *DockerDaemon) ImageAt(pos int) (*docker.APIImages, error) {
 
 //Images returns the list of Docker images
 func (daemon *DockerDaemon) Images() ([]docker.APIImages, error) {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 	return daemon.images, nil
 }
 
 //ImagesCount returns the number of images
 func (daemon *DockerDaemon) ImagesCount() int {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 	return len(daemon.images)
 }
 
@@ -140,11 +153,15 @@ func (daemon *DockerDaemon) Logs(id string) io.ReadCloser {
 
 //Networks returns the list of Docker networks
 func (daemon *DockerDaemon) Networks() ([]docker.Network, error) {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 	return daemon.networks, nil
 }
 
 //NetworkAt returns the network found at the given position.
 func (daemon *DockerDaemon) NetworkAt(pos int) (*docker.Network, error) {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 	if pos >= len(daemon.networks) {
 		return nil, errors.New("Position is higher than number of networks")
 	}
@@ -153,6 +170,8 @@ func (daemon *DockerDaemon) NetworkAt(pos int) (*docker.Network, error) {
 
 //NetworksCount returns the number of networks reported by Docker
 func (daemon *DockerDaemon) NetworksCount() int {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 	return len(daemon.networks)
 }
 
@@ -188,6 +207,8 @@ func (daemon *DockerDaemon) Rmi(name string, force bool) error {
 
 //Refresh the container list
 func (daemon *DockerDaemon) Refresh(allContainers bool) error {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 
 	containers, containerByID, err := containers(daemon.client, allContainers)
 
@@ -200,6 +221,8 @@ func (daemon *DockerDaemon) Refresh(allContainers bool) error {
 
 //RefreshImages refreshes the image list
 func (daemon *DockerDaemon) RefreshImages() error {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 
 	images, err := images(daemon.client)
 
@@ -211,6 +234,8 @@ func (daemon *DockerDaemon) RefreshImages() error {
 
 //RefreshNetworks refreshes the network list
 func (daemon *DockerDaemon) RefreshNetworks() error {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 
 	networks, err := networks(daemon.client)
 
@@ -299,16 +324,22 @@ func (daemon *DockerDaemon) StopContainer(id string) error {
 
 //Sort the list of containers by the given mode
 func (daemon *DockerDaemon) Sort(sortMode SortMode) {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 	SortContainers(daemon.containers, sortMode)
 }
 
 //SortImages sorts the list of images by the given mode
 func (daemon *DockerDaemon) SortImages(sortMode SortImagesMode) {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 	SortImages(daemon.images, sortMode)
 }
 
 //SortNetworks sortes the list of networks by the given mode
 func (daemon *DockerDaemon) SortNetworks(sortMode SortNetworksMode) {
+	daemon.refreshLock.Lock()
+	defer daemon.refreshLock.Unlock()
 	SortNetworks(daemon.networks, sortMode)
 }
 
@@ -325,9 +356,6 @@ func (daemon *DockerDaemon) Top(id string) (docker.TopResult, error) {
 
 //Version returns  version information about the Docker Engine
 func (daemon *DockerDaemon) Version() (*Version, error) {
-	var mutex = &sync.Mutex{}
-	mutex.Lock()
-	defer mutex.Unlock()
 	if daemon.version == nil {
 		v, err := daemon.client.Version()
 		if err == nil {
