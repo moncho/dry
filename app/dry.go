@@ -45,7 +45,7 @@ type Dry struct {
 	networks           []godocker.Network
 	orderedCids        []string
 	output             chan string
-	refreshTimeMutex   sync.Locker
+	refreshTimerMutex  sync.Locker
 	renderer           *appui.DockerPs
 	state              *state
 	stats              *drydocker.Stats
@@ -173,13 +173,15 @@ func (d *Dry) Ok() (bool, error) {
 
 //Refresh forces a dry refresh
 func (d *Dry) Refresh() {
-	d.refreshTimeMutex.Lock()
-	defer d.refreshTimeMutex.Unlock()
+	d.refreshTimerMutex.Lock()
+	defer d.refreshTimerMutex.Unlock()
 	d.doRefresh()
 	d.resetTimer()
 }
 
 func (d *Dry) doRefresh() {
+	d.state.viewMutex.Lock()
+	defer d.state.viewMutex.Unlock()
 	d.state.changed = true
 	var err error
 	switch d.state.viewMode {
@@ -442,10 +444,10 @@ func (d *Dry) ToggleShowAllContainers() {
 }
 
 //tryRefresh refreshes dry if dry has not been refreshed in the last
-//TimeBetweenRefresh
+//TimeBetweenRefresho
 func (d *Dry) tryRefresh() {
-	d.refreshTimeMutex.Lock()
-	defer d.refreshTimeMutex.Unlock()
+	d.refreshTimerMutex.Lock()
+	defer d.refreshTimerMutex.Unlock()
 	if time.Since(d.lastRefresh) > TimeBetweenRefresh {
 		d.resetTimer()
 		d.doRefresh()
@@ -506,8 +508,10 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, erro
 				state.SortMode)
 			app.output = make(chan string)
 			app.dockerEvents = dockerEvents
-			app.refreshTimeMutex = &sync.Mutex{}
-			app.resetTimer()
+			app.refreshTimerMutex = &sync.Mutex{}
+			//first refresh should not happen inmediately after dry creation
+			app.lastRefresh = time.Now().Add(TimeBetweenRefresh)
+			//app.resetTimer()
 			app.startDry()
 			return app, nil
 		}
