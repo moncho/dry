@@ -1,6 +1,7 @@
 package app
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -39,8 +40,11 @@ func newDryForTest() *Dry {
 		showingAllContainers: false,
 		SortMode:             docker.SortByContainerID,
 		viewMode:             Main,
+		viewMutex:            &sync.Mutex{},
 	}
 	dry.dockerDaemon = new(mocks.ContainerDaemonMock)
+	dry.refreshTimerMutex = &sync.Mutex{}
+
 	dry.resetTimer()
 	return dry
 }
