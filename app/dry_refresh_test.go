@@ -1,7 +1,6 @@
 package app
 
 import (
-	"sync"
 	"testing"
 	"time"
 
