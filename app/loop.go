@@ -37,6 +37,8 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	timestampQueue := time.NewTicker(1 * time.Second)
 
 	viewClosed := make(chan struct{}, 1)
+	renderChan := make(chan struct{})
+
 	keyboardQueueForView := make(chan termbox.Event)
 	dryOutputChan := dry.OuputChannel()
 	statusBar := ui.NewStatusBar(0)
@@ -45,8 +47,23 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	defer close(done)
 	defer close(keyboardQueueForView)
 	defer close(viewClosed)
+	defer close(renderChan)
 
-	Render(dry, screen, statusBar)
+	//rendes dry on message
+	go func() {
+		for {
+			_, stillOpen := <-renderChan
+			if stillOpen {
+				screen.Clear()
+				Render(dry, screen, statusBar)
+			} else {
+				return
+			}
+		}
+	}()
+
+	renderChan <- struct{}{}
+
 	//tracks if the main loop has the focus (and responds to events),
 	//or if events have to be delegated.
 	//creation belongs outside the loop
@@ -59,8 +76,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 				if focus.hasFocus() {
 					statusBar.StatusMessage(dryMessage, 10*time.Second)
 					if dry.Changed() {
-						screen.Clear()
-						Render(dry, screen, statusBar)
+						renderChan <- struct{}{}
 					} else {
 						statusBar.Render()
 					}
@@ -72,6 +88,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 		}
 	}(focus)
 
+	//loop handles input and timer events until a closing event happens
 loop:
 	for {
 		//Used for refresh-forcing events happening outside dry
@@ -90,7 +107,7 @@ loop:
 		case event := <-keyboardQueue:
 			switch event.Type {
 			case termbox.EventKey:
-				if event.Key == termbox.KeyCtrlC { //Ctrl+C breaks the loop (and exit dry) no matter what
+				if event.Key == termbox.KeyCtrlC { //Ctrl+C breaks the loop (and exits dry) no matter what
 					break loop
 				}
 				if focus.hasFocus() {
@@ -116,8 +133,7 @@ loop:
 			}
 		}
 		if focus.hasFocus() && refresh {
-			screen.Clear()
-			Render(dry, screen, statusBar)
+			renderChan <- struct{}{}
 		}
 	}
 
