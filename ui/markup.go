@@ -8,12 +8,12 @@ import (
 )
 
 var supportedTags = supportedTagsRegexp()
-var tagsToAttribute = tags()
+var tagsToAttributeMap = tags()
 
 func supportedTagsRegexp() *regexp.Regexp {
 	arr := []string{}
 
-	for tag := range tagsToAttribute {
+	for tag := range tagsToAttributeMap {
 		arr = append(arr, `</?`+tag+`>`)
 	}
 
@@ -58,11 +58,9 @@ func tags() map[string]termbox.Attribute {
 //
 // The <right>...</right> tag is used to right align the enclosed string
 type Markup struct {
-	Foreground   termbox.Attribute            // Foreground color.
-	Background   termbox.Attribute            // Background color (so far always termbox.ColorDefault).
-	RightAligned bool                         // True when the string is right aligned.
-	tags         map[string]termbox.Attribute // Tags to Termbox translation hash.
-	regex        *regexp.Regexp               // Regex to identify the supported tag names.
+	Foreground   termbox.Attribute // Foreground color.
+	Background   termbox.Attribute // Background color (so far always termbox.ColorDefault).
+	RightAligned bool              // True when the string is right aligned.
 }
 
 // NewMarkup creates a markup to define tag to Termbox translation rules and store default
@@ -76,8 +74,6 @@ func NewMarkup() *Markup {
 	markup.Foreground = termbox.ColorDefault
 	markup.Background = termbox.ColorDefault
 	markup.RightAligned = false
-	markup.tags = tagsToAttribute
-	markup.regex = supportedTags
 	return markup
 }
 
@@ -96,7 +92,7 @@ func (markup *Markup) IsTag(str string) bool {
 
 //-----------------------------------------------------------------------------
 func (markup *Markup) process(tag string, open bool) bool {
-	if attribute, ok := markup.tags[tag]; ok {
+	if attribute, ok := tagsToAttributeMap[tag]; ok {
 		switch tag {
 		case `right`:
 			markup.RightAligned = open // On for <right>, off for </right>.
