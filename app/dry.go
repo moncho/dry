@@ -28,7 +28,7 @@ type state struct {
 	SortMode             drydocker.SortMode
 	SortImagesMode       drydocker.SortImagesMode
 	SortNetworksMode     drydocker.SortNetworksMode
-	viewMutex            sync.Locker
+	mutex                sync.Locker
 }
 
 //Dry represents the application.
@@ -53,13 +53,15 @@ type Dry struct {
 
 //Changed is true if the application state has changed
 func (d *Dry) Changed() bool {
+	d.state.mutex.Lock()
+	defer d.state.mutex.Unlock()
 	return d.state.changed
 }
 
 //changeViewMode changes the view mode of dry
 func (d *Dry) changeViewMode(newViewMode viewMode) {
-	d.state.viewMutex.Lock()
-	defer d.state.viewMutex.Unlock()
+	d.state.mutex.Lock()
+	defer d.state.mutex.Unlock()
 	if newViewMode == Main || newViewMode == Networks || newViewMode == Images {
 		d.state.previousViewMode = newViewMode
 	} else {
@@ -180,8 +182,8 @@ func (d *Dry) Refresh() {
 }
 
 func (d *Dry) doRefresh() {
-	d.state.viewMutex.Lock()
-	defer d.state.viewMutex.Unlock()
+	d.state.mutex.Lock()
+	defer d.state.mutex.Unlock()
 	d.state.changed = true
 	var err error
 	switch d.state.viewMode {
@@ -306,6 +308,8 @@ func (d *Dry) ShowInfo() error {
 //Sort rotates to the next sort mode.
 //SortByContainerID -> SortByImage -> SortByStatus -> SortByName -> SortByContainerID
 func (d *Dry) Sort() {
+	d.state.mutex.Lock()
+	defer d.state.mutex.Unlock()
 	switch d.state.SortMode {
 	case drydocker.SortByContainerID:
 		d.state.SortMode = drydocker.SortByImage
@@ -324,6 +328,8 @@ func (d *Dry) Sort() {
 //SortImages rotates to the next sort mode.
 //SortImagesByRepo -> SortImagesByID -> SortImagesByCreationDate -> SortImagesBySize -> SortImagesByRepo
 func (d *Dry) SortImages() {
+	d.state.mutex.Lock()
+	defer d.state.mutex.Unlock()
 	switch d.state.SortImagesMode {
 	case drydocker.SortImagesByRepo:
 		d.state.SortImagesMode = drydocker.SortImagesByID
@@ -344,6 +350,8 @@ func (d *Dry) SortImages() {
 //SortNetworks rotates to the next sort mode.
 //SortNetworksByID -> SortNetworksByName -> SortNetworksByDriver
 func (d *Dry) SortNetworks() {
+	d.state.mutex.Lock()
+	defer d.state.mutex.Unlock()
 	switch d.state.SortNetworksMode {
 	case drydocker.SortNetworksByID:
 		d.state.SortNetworksMode = drydocker.SortNetworksByName
@@ -484,9 +492,15 @@ func (d *Dry) errormessage(cid string, action string, err error) {
 }
 
 func (d *Dry) viewMode() viewMode {
-	d.state.viewMutex.Lock()
-	defer d.state.viewMutex.Unlock()
+	d.state.mutex.Lock()
+	defer d.state.mutex.Unlock()
 	return d.state.viewMode
+}
+
+func (d *Dry) setChanged(changed bool) {
+	d.state.mutex.Lock()
+	defer d.state.mutex.Unlock()
+	d.state.changed = changed
 }
 func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, error) {
 	if err == nil {
@@ -501,7 +515,7 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, erro
 				SortNetworksMode:     drydocker.SortNetworksByID,
 				viewMode:             Main,
 				previousViewMode:     Main,
-				viewMutex:            &sync.Mutex{},
+				mutex:                &sync.Mutex{},
 			}
 			d.Sort(state.SortMode)
 			d.SortImages(state.SortImagesMode)

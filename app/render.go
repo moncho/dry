@@ -32,11 +32,11 @@ const (
 )
 
 //Render renders dry in the given screen
-func Render(d *Dry, screen *ui.Screen, status *ui.StatusBar) {
+func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	var what string
 	var count int
 	var keymap string
-	status.Render()
+	statusBar.Render()
 	screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
 	switch d.state.viewMode {
 	case Main:
@@ -96,7 +96,7 @@ func Render(d *Dry, screen *ui.Screen, status *ui.StatusBar) {
 	}
 	renderViewTitle(screen, what, count)
 	screen.RenderLineWithBackGround(0, screen.Height-1, keymap, ui.MenuBarBackgroundColor)
-	d.state.changed = false
+	d.setChanged(false)
 
 	screen.Flush()
 }
