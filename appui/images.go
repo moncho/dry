@@ -4,12 +4,19 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"sync"
 	"text/tabwriter"
 	"text/template"
 
 	godocker "github.com/fsouza/go-dockerclient"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
+)
+
+const (
+
+	//Safe guess about how many lines from the start of screen (including image table header) before
+	//images are actually written to screen
+	imageTableStart = 10
 )
 
 type imagesColumn struct {
@@ -18,21 +25,36 @@ type imagesColumn struct {
 	mode  docker.SortImagesMode
 }
 
+//DockerImageRenderData holds information that might be
+//used during image list rendering
+type DockerImageRenderData struct {
+	images        []godocker.APIImages
+	selectedImage int
+	sortMode      docker.SortImagesMode
+}
+
+//NewDockerImageRenderData creates render data structs
+func NewDockerImageRenderData(images []godocker.APIImages, selectedImage int, sortMode docker.SortImagesMode) *DockerImageRenderData {
+	return &DockerImageRenderData{
+		images:        images,
+		selectedImage: selectedImage,
+		sortMode:      sortMode,
+	}
+}
+
 //DockerImagesRenderer knows how render a container list
 type DockerImagesRenderer struct {
 	columns             []imagesColumn // List of columns.
 	imagesTableTemplate *template.Template
 	imagesTemplate      *template.Template
-	cursor              *ui.Cursor
-	daemon              docker.ContainerDaemon
 	dockerInfo          string // Docker environment information
-	sortMode            docker.SortImagesMode
-	imageTableStart     int
 	height              int
+	data                *DockerImageRenderData
+	renderLock          sync.Mutex
 }
 
 //NewDockerImagesRenderer creates a renderer for a container list
-func NewDockerImagesRenderer(daemon docker.ContainerDaemon, screenHeight int, cursor *ui.Cursor, sortMode docker.SortImagesMode) *DockerImagesRenderer {
+func NewDockerImagesRenderer(daemon docker.ContainerDaemon, screenHeight int) *DockerImagesRenderer {
 	r := &DockerImagesRenderer{}
 
 	r.columns = []imagesColumn{
@@ -47,27 +69,21 @@ func NewDockerImagesRenderer(daemon docker.ContainerDaemon, screenHeight int, cu
 
 	r.imagesTableTemplate = buildImageTableTemplate(di)
 	r.imagesTemplate = buildImagesTemplate()
-	r.cursor = cursor
-	r.daemon = daemon
-	r.sortMode = sortMode
-	//Safe guess about how many lines from the start of screen (including image table header) before
-	//images are actually written to screen
-	r.imageTableStart = 10
 	r.height = screenHeight
 	return r
 }
 
-//SortMode sets the sort mode to use when rendering the container list
-func (r *DockerImagesRenderer) SortMode(sortMode docker.SortImagesMode) {
-	r.sortMode = sortMode
+//PrepareForRender received information that might be used during the render phase
+func (r *DockerImagesRenderer) PrepareForRender(data *DockerImageRenderData) {
+	r.renderLock.Lock()
+	r.data = data
+	r.renderLock.Unlock()
 }
 
-//Render docker ps
+//Render docker images
 func (r *DockerImagesRenderer) Render() string {
-	if ok, err := r.daemon.Ok(); !ok { // If there was an error connecting to the Docker host...
-		return err.Error() // then simply return the error string.
-	}
-	updateCursorPosition(r.cursor, r.daemon.ImagesCount())
+	r.renderLock.Lock()
+	defer r.renderLock.Unlock()
 
 	vars := struct {
 		ImageTable string
@@ -92,7 +108,7 @@ func (r *DockerImagesRenderer) imagesTable() string {
 func (r *DockerImagesRenderer) tableHeader() string {
 	columns := make([]string, len(r.columns))
 	for i, col := range r.columns {
-		if r.sortMode != col.mode {
+		if r.data.sortMode != col.mode {
 			columns[i] = col.title
 		} else {
 			columns[i] = arrow() + col.title
@@ -105,8 +121,8 @@ func (r *DockerImagesRenderer) imageInformation() string {
 	buf := bytes.NewBufferString("")
 	images := r.imagesToShow()
 	selected := len(images) - 1
-	if r.cursor.Line < selected {
-		selected = r.cursor.Line
+	if r.data.selectedImage < selected {
+		selected = r.data.selectedImage
 	}
 	context := docker.FormattingContext{
 		Output:   buf,
@@ -122,9 +138,9 @@ func (r *DockerImagesRenderer) imageInformation() string {
 }
 
 func (r *DockerImagesRenderer) imagesToShow() []godocker.APIImages {
-	images, _ := r.daemon.Images()
-	cursorPos := r.cursor.Line
-	linesForImages := r.height - r.imageTableStart - 1
+	images := r.data.images
+	cursorPos := r.data.selectedImage
+	linesForImages := r.height - imageTableStart - 1
 
 	if len(images) < linesForImages {
 		return images

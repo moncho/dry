@@ -42,22 +42,46 @@ func Render(d *Dry, screen *ui.Screen, status *ui.StatusBar) {
 	case Main:
 		{
 			//after a refresh, sorting is needed
-			d.dockerDaemon.Sort(d.state.SortMode)
-			d.renderer.SortMode(d.state.SortMode)
+			sortMode := d.state.SortMode
+			//d.dockerDaemon.Sort(sortMode)
+			containers := d.dockerDaemon.Containers()
+			count = len(containers)
+			updateCursorPosition(screen.Cursor, count)
+			data := appui.NewDockerPsRenderData(
+				containers,
+				screen.Cursor.Position(),
+				sortMode)
+			d.renderer.PrepareToRender(data)
 			screen.Render(1, d.renderer.Render())
 
 			what = "Containers"
-			count = d.dockerDaemon.ContainersCount()
 			keymap = keyMappings
+
 		}
 	case Images:
 		{
-			d.dockerDaemon.SortImages(d.state.SortImagesMode)
+			//after a refresh, sorting is needed
+			sortMode := d.state.SortImagesMode
+			//d.dockerDaemon.SortImages(sortMode)
+			renderer := appui.NewDockerImagesRenderer(d.dockerDaemon, screen.Height)
 
-			screen.Render(1,
-				appui.NewDockerImagesRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.state.SortImagesMode).Render())
+			images, err := d.dockerDaemon.Images()
+			if err == nil {
+				count = len(images)
+				updateCursorPosition(screen.Cursor, count)
+				data := appui.NewDockerImageRenderData(
+					images,
+					screen.Cursor.Position(),
+					sortMode)
+
+				renderer.PrepareForRender(data)
+				screen.Render(1,
+					renderer.Render())
+			} else {
+				screen.Render(1, err.Error())
+			}
+
 			what = "Images"
-			count = d.dockerDaemon.ImagesCount()
 			keymap = imagesKeyMappings
 		}
 	case Networks:
@@ -111,4 +135,13 @@ func renderViewTitle(screen *ui.Screen, what string, howMany int) {
 	screen.RenderLine(0, screenDescriptionIndex,
 		fmt.Sprintf(
 			"<b><blue>%s: </><yellow>%d</></>", what, howMany))
+}
+
+//Updates the cursor position in case it is out of bounds
+func updateCursorPosition(cursor *ui.Cursor, noOfElements int) {
+	if cursor.Position() >= noOfElements {
+		cursor.ScrollTo(noOfElements - 1)
+	} else if cursor.Position() < 0 {
+		cursor.Reset()
+	}
 }

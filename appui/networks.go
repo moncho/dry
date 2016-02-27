@@ -66,7 +66,6 @@ func (r *DockerNetworksRenderer) Render() string {
 	if ok, err := r.daemon.Ok(); !ok { // If there was an error connecting to the Docker host...
 		return err.Error() // then simply return the error string.
 	}
-	updateCursorPosition(r.cursor, r.daemon.NetworksCount())
 
 	vars := struct {
 		NetworkTable string
@@ -104,8 +103,8 @@ func (r *DockerNetworksRenderer) networkInformation() string {
 	buf := bytes.NewBufferString("")
 	networks := r.networksToShow()
 	selected := len(networks) - 1
-	if r.cursor.Line < selected {
-		selected = r.cursor.Line
+	if r.cursor.Position() < selected {
+		selected = r.cursor.Position()
 	}
 	context := docker.FormattingContext{
 		Output:   buf,
@@ -122,7 +121,7 @@ func (r *DockerNetworksRenderer) networkInformation() string {
 
 func (r *DockerNetworksRenderer) networksToShow() []godocker.Network {
 	networks, _ := r.daemon.Networks()
-	cursorPos := r.cursor.Line
+	cursorPos := r.cursor.Position()
 	linesForNetworks := r.height - r.networkTableStart - 1
 
 	if len(networks) < linesForNetworks {

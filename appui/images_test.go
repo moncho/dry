@@ -17,24 +17,36 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 		t.Errorf("Daemon has %d images, expected %d", imagesLen, 3)
 	}
 
-	cursor := &ui.Cursor{Line: 0, Fg: termbox.ColorDefault, Ch: ' ', Bg: termbox.ColorDefault}
-	renderer := NewDockerImagesRenderer(daemon, 14, cursor, docker.NoSortImages)
+	cursor := &ui.Cursor{Fg: termbox.ColorDefault, Ch: ' ', Bg: termbox.ColorDefault}
+	renderer := NewDockerImagesRenderer(daemon, 14)
+	imagesFromDaemon, _ := daemon.Images()
+	renderer.PrepareForRender(NewDockerImageRenderData(
+		imagesFromDaemon, cursor.Position(), docker.NoSortImages))
 
 	images := renderer.imagesToShow()
 	if len(images) != 3 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 3)
 	}
-	cursor.Line = 3
+	if images[0].ID != "8dfafdbc3a40" {
+		t.Errorf("First image rendered is %s, expected %s. Cursor: %d", images[0].ID, "8dfafdbc3a40", cursor.Position())
+	}
+
+	if images[2].ID != "26380e1ca356" {
+		t.Errorf("Last image rendered is %s, expected %s. Cursor: %d", images[2].ID, "26380e1ca356", cursor.Position())
+	}
+	cursor.ScrollTo(3)
+	renderer.PrepareForRender(NewDockerImageRenderData(
+		imagesFromDaemon, cursor.Position(), docker.NoSortImages))
 	images = renderer.imagesToShow()
 	if len(images) != 3 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 3)
 	}
 	if images[0].ID != "541a0f4efc6f" {
-		t.Errorf("First image rendered is %s, expected %s. Cursor: %d", images[0].ID, "541a0f4efc6f", cursor.Line)
+		t.Errorf("First image rendered is %s, expected %s. Cursor: %d", images[0].ID, "541a0f4efc6f", cursor.Position())
 	}
 
 	if images[2].ID != "a3d6e836e86a" {
-		t.Errorf("Last image rendered is %s, expected %s. Cursor: %d", images[2].ID, "a3d6e836e86a", cursor.Line)
+		t.Errorf("Last image rendered is %s, expected %s. Cursor: %d", images[2].ID, "a3d6e836e86a", cursor.Position())
 	}
 }
 
@@ -46,14 +58,18 @@ func TestImagesToShow(t *testing.T) {
 		t.Errorf("Daemon has %d images, expected %d", imagesLen, 3)
 	}
 
-	cursor := &ui.Cursor{Line: 0, Fg: termbox.ColorDefault, Ch: ' ', Bg: termbox.ColorDefault}
-	renderer := NewDockerImagesRenderer(daemon, 20, cursor, docker.NoSortImages)
+	cursor := &ui.Cursor{Fg: termbox.ColorDefault, Ch: ' ', Bg: termbox.ColorDefault}
+	renderer := NewDockerImagesRenderer(daemon, 20)
+
+	imagesFromDaemon, _ := daemon.Images()
+	renderer.PrepareForRender(NewDockerImageRenderData(
+		imagesFromDaemon, cursor.Position(), docker.NoSortImages))
 
 	images := renderer.imagesToShow()
 	if len(images) != 5 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 5)
 	}
-	cursor.Line = 3
+	cursor.ScrollTo(3)
 	images = renderer.imagesToShow()
 	if len(images) != 5 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 5)
