@@ -76,6 +76,8 @@ func (screen *Screen) Sync() *Screen {
 // ClearLine erases the contents of the line starting from (x,y) coordinate
 // till the end of the line.
 func (screen *Screen) ClearLine(x int, y int) *Screen {
+	screen.termboxMutex.Lock()
+	defer screen.termboxMutex.Unlock()
 	for i := x; i < screen.Width; i++ {
 		termbox.SetCell(i, y, ' ', termbox.ColorDefault, termbox.ColorDefault)
 	}
@@ -95,6 +97,8 @@ func (screen *Screen) Flush() *Screen {
 // RenderLine takes the incoming string, tokenizes it to extract markup
 // elements, and displays it all starting at (x,y) location.
 func (screen *Screen) RenderLine(x int, y int, str string) {
+	screen.termboxMutex.Lock()
+	defer screen.termboxMutex.Unlock()
 	start, column := 0, 0
 
 	for _, token := range Tokenize(str, supportedTags) {
@@ -119,6 +123,8 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 //RenderLineWithBackGround does what RenderLine does but rendering the line
 //with the given background color
 func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor uint16) {
+	screen.termboxMutex.Lock()
+	defer screen.termboxMutex.Unlock()
 	start, column := 0, 0
 	if x > 0 {
 		fill(0, y, x, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
@@ -152,8 +158,8 @@ func (cursor *Cursor) Position() int {
 
 //Reset sets the cursor in the initial position
 func (cursor *Cursor) Reset() {
-	cursor.mutex.RLock()
-	defer cursor.mutex.RUnlock()
+	cursor.mutex.Lock()
+	defer cursor.mutex.Unlock()
 	cursor.line = 0
 }
 
@@ -177,8 +183,8 @@ func (cursor *Cursor) ScrollCursorUp() {
 
 //ScrollTo moves the cursor to the given line
 func (cursor *Cursor) ScrollTo(pos int) {
-	cursor.mutex.RLock()
-	defer cursor.mutex.RUnlock()
+	cursor.mutex.Lock()
+	defer cursor.mutex.Unlock()
 	cursor.line = pos
 
 }
