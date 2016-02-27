@@ -30,7 +30,7 @@ func renderString(x, y int, word string, foreground, background termbox.Attribut
 func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) {
 	start, column := 0, 0
 
-	for _, token := range Tokenize(str, markup.supportedTags()) {
+	for _, token := range Tokenize(str, supportedTags) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
 		if markup.IsTag(token) {
 			continue

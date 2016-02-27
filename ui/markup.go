@@ -7,6 +7,44 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+var supportedTags = supportedTagsRegexp()
+var tagsToAttribute = tags()
+
+func supportedTagsRegexp() *regexp.Regexp {
+	arr := []string{}
+
+	for tag := range tagsToAttribute {
+		arr = append(arr, `</?`+tag+`>`)
+	}
+
+	return regexp.MustCompile(strings.Join(arr, `|`))
+}
+
+// tags returns regular expression that matches all possible tags
+// supported by the markup, i.e. </?black>|</?red>| ... |<?b>| ... |</?right>
+func tags() map[string]termbox.Attribute {
+	tags := make(map[string]termbox.Attribute)
+	tags[`/`] = termbox.ColorDefault
+	tags[`black`] = termbox.ColorBlack
+	tags[`red`] = termbox.ColorRed
+	tags[`red00`] = termbox.ColorRed
+	tags[`green`] = termbox.ColorGreen
+	tags[`yellow`] = termbox.ColorYellow
+	tags[`blue`] = termbox.ColorBlue
+	tags[`magenta`] = termbox.ColorMagenta
+	tags[`cyan`] = termbox.ColorCyan
+	tags[`cyan0`] = termbox.ColorCyan
+	tags[`white`] = termbox.ColorWhite
+	tags[`grey`] = 0xE9
+	tags[`grey2`] = 0xF4
+	tags[`darkgrey`] = 0xE8
+	tags[`right`] = termbox.ColorDefault // Termbox can combine attributes and a single color using bitwise OR.
+	tags[`b`] = termbox.AttrBold
+	tags[`u`] = termbox.AttrUnderline
+	tags[`r`] = termbox.AttrReverse
+	return tags
+}
+
 // Markup implements some minimalistic text formatting conventions that
 // get translated to Termbox colors and attributes. To colorize a string
 // wrap it in <color-name>...</> tags. Unlike HTML each tag sets a new
@@ -38,26 +76,8 @@ func NewMarkup() *Markup {
 	markup.Foreground = termbox.ColorDefault
 	markup.Background = termbox.ColorDefault
 	markup.RightAligned = false
-	markup.tags = make(map[string]termbox.Attribute)
-	markup.tags[`/`] = termbox.ColorDefault
-	markup.tags[`black`] = termbox.ColorBlack
-	markup.tags[`red`] = termbox.ColorRed
-	markup.tags[`red00`] = termbox.ColorRed
-	markup.tags[`green`] = termbox.ColorGreen
-	markup.tags[`yellow`] = termbox.ColorYellow
-	markup.tags[`blue`] = termbox.ColorBlue
-	markup.tags[`magenta`] = termbox.ColorMagenta
-	markup.tags[`cyan`] = termbox.ColorCyan
-	markup.tags[`cyan0`] = termbox.ColorCyan
-	markup.tags[`white`] = termbox.ColorWhite
-	markup.tags[`grey`] = 0xE9
-	markup.tags[`grey2`] = 0xF4
-	markup.tags[`darkgrey`] = 0xE8
-	markup.tags[`right`] = termbox.ColorDefault // Termbox can combine attributes and a single color using bitwise OR.
-	markup.tags[`b`] = termbox.AttrBold
-	markup.tags[`u`] = termbox.AttrUnderline
-	markup.tags[`r`] = termbox.AttrReverse
-	markup.regex = markup.supportedTags()
+	markup.tags = tagsToAttribute
+	markup.regex = supportedTags
 	return markup
 }
 
@@ -98,18 +118,6 @@ func (markup *Markup) process(tag string, open bool) bool {
 	}
 
 	return true
-}
-
-// supportedTags returns regular expression that matches all possible tags
-// supported by the markup, i.e. </?black>|</?red>| ... |<?b>| ... |</?right>
-func (markup *Markup) supportedTags() *regexp.Regexp {
-	arr := []string{}
-
-	for tag := range markup.tags {
-		arr = append(arr, `</?`+tag+`>`)
-	}
-
-	return regexp.MustCompile(strings.Join(arr, `|`))
 }
 
 //-----------------------------------------------------------------------------

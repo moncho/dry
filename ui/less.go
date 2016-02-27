@@ -272,7 +272,7 @@ func (less *Less) renderLine(x int, y int, line string) error {
 		if strings.Contains(line, less.searchResult.Pattern) {
 			if less.markup != nil {
 				start, column := 0, 0
-				for _, token := range Tokenize(line, less.markup.supportedTags()) {
+				for _, token := range Tokenize(line, supportedTags) {
 					if less.markup.IsTag(token) {
 
 						continue
