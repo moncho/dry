@@ -187,10 +187,15 @@ func (d *Dry) doRefresh() {
 	switch d.state.viewMode {
 	case Main:
 		err = d.dockerDaemon.Refresh(d.state.showingAllContainers)
+		d.dockerDaemon.Sort(d.state.SortMode)
 	case Images:
 		err = d.dockerDaemon.RefreshImages()
+		d.dockerDaemon.SortImages(d.state.SortImagesMode)
+
 	case Networks:
 		err = d.dockerDaemon.RefreshNetworks()
+		d.dockerDaemon.SortNetworks(d.state.SortNetworksMode)
+
 	}
 	if err != nil {
 		d.appmessage("There was an error refreshing: " + err.Error())
@@ -499,19 +504,19 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, erro
 				viewMutex:            &sync.Mutex{},
 			}
 			d.Sort(state.SortMode)
+			d.SortImages(state.SortImagesMode)
+			d.SortNetworks(state.SortNetworksMode)
 			app := &Dry{}
 			app.state = state
 			app.dockerDaemon = d
 			app.renderer = appui.NewDockerPsRenderer(
 				app.dockerDaemon,
-				screen.Cursor,
-				state.SortMode)
+				screen.Height)
 			app.output = make(chan string)
 			app.dockerEvents = dockerEvents
 			app.refreshTimerMutex = &sync.Mutex{}
 			//first refresh should not happen inmediately after dry creation
 			app.lastRefresh = time.Now().Add(TimeBetweenRefresh)
-			//app.resetTimer()
 			app.startDry()
 			return app, nil
 		}
