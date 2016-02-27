@@ -22,10 +22,11 @@ type Screen struct {
 
 //Cursor represents the cursor position on the screen
 type Cursor struct {
-	Line int
-	Fg   termbox.Attribute
-	Bg   termbox.Attribute
-	Ch   rune
+	line  int
+	Fg    termbox.Attribute
+	Bg    termbox.Attribute
+	Ch    rune
+	mutex sync.RWMutex
 }
 
 //NewScreen initializes Termbox, creates screen along with layout and markup, and
@@ -39,7 +40,7 @@ func NewScreen() *Screen {
 	termbox.SetOutputMode(termbox.Output256)
 	screen := &Screen{}
 	screen.markup = NewMarkup()
-	screen.Cursor = &Cursor{Line: 0, Fg: termbox.ColorRed, Ch: '옷', Bg: termbox.Attribute(0x18)}
+	screen.Cursor = &Cursor{line: 0, Fg: termbox.ColorRed, Ch: '옷', Bg: termbox.Attribute(0x18)}
 	screen.termboxMutex = &sync.Mutex{}
 	return screen.Resize()
 }
@@ -96,7 +97,7 @@ func (screen *Screen) Flush() *Screen {
 func (screen *Screen) RenderLine(x int, y int, str string) {
 	start, column := 0, 0
 
-	for _, token := range Tokenize(str, screen.markup.supportedTags()) {
+	for _, token := range Tokenize(str, supportedTags) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
 		if screen.markup.IsTag(token) {
 			continue
@@ -122,7 +123,7 @@ func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor
 	if x > 0 {
 		fill(0, y, x, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
 	}
-	for _, token := range Tokenize(str, screen.markup.supportedTags()) {
+	for _, token := range Tokenize(str, supportedTags) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
 		if screen.markup.IsTag(token) {
 			continue
@@ -142,20 +143,44 @@ func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor
 	fill(start+1, y, screen.Width, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
 }
 
-//ScrollCursorDown moves the cursor to the line below the current one
-func (screen *Screen) ScrollCursorDown() {
-	screen.Cursor.Line = screen.Cursor.Line + 1
+//Position tells on which screen line the cursor is
+func (cursor *Cursor) Position() int {
+	cursor.mutex.RLock()
+	defer cursor.mutex.RUnlock()
+	return cursor.line
+}
 
+//Reset sets the cursor in the initial position
+func (cursor *Cursor) Reset() {
+	cursor.mutex.RLock()
+	defer cursor.mutex.RUnlock()
+	cursor.line = 0
+}
+
+//ScrollCursorDown moves the cursor to the line below the current one
+func (cursor *Cursor) ScrollCursorDown() {
+	cursor.mutex.Lock()
+	defer cursor.mutex.Unlock()
+	cursor.line = cursor.line + 1
 }
 
 //ScrollCursorUp moves the cursor to the line above the current one
-func (screen *Screen) ScrollCursorUp() {
-	screen.Cursor.Line = screen.Cursor.Line - 1
+func (cursor *Cursor) ScrollCursorUp() {
+	cursor.mutex.Lock()
+	defer cursor.mutex.Unlock()
+	if cursor.line > 0 {
+		cursor.line = cursor.line - 1
+	} else {
+		cursor.line = 0
+	}
 }
 
-//CursorPosition tells on which screen line the cursor is
-func (screen *Screen) CursorPosition() int {
-	return screen.Cursor.Line
+//ScrollTo moves the cursor to the given line
+func (cursor *Cursor) ScrollTo(pos int) {
+	cursor.mutex.RLock()
+	defer cursor.mutex.RUnlock()
+	cursor.line = pos
+
 }
 
 //Render renders the given content starting from
