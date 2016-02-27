@@ -39,7 +39,7 @@ func (daemon *DockerDaemon) Containers() []docker.APIContainers {
 
 //ContainersCount returns the number of containers found.
 func (daemon *DockerDaemon) ContainersCount() int {
-	return len(daemon.containerByID)
+	return len(daemon.containers)
 }
 
 //ContainerIDAt returns the container ID of the container found at the given
@@ -55,8 +55,6 @@ func (daemon *DockerDaemon) ContainerIDAt(pos int) (string, string, error) {
 
 //ContainerByID returns the container with the given ID
 func (daemon *DockerDaemon) ContainerByID(cid string) docker.APIContainers {
-	daemon.refreshLock.Lock()
-	defer daemon.refreshLock.Unlock()
 	return daemon.containerByID[cid]
 }
 
@@ -403,7 +401,7 @@ func networks(client *docker.Client) ([]docker.Network, error) {
 }
 
 //GetBool returns false if the given string looks like you mean
-//false. Func does not belong here.
+//false, true otherwise. Func does not belong here.
 func GetBool(key string) (value bool) {
 	s := strings.ToLower(strings.Trim(key, " "))
 	if s == "" || s == "0" || s == "no" || s == "false" || s == "none" {
