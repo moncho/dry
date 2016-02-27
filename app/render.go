@@ -38,7 +38,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	var keymap string
 	statusBar.Render()
 	screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
-	switch d.state.viewMode {
+	switch d.viewMode() {
 	case Main:
 		{
 			//after a refresh, sorting is needed
