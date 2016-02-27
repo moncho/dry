@@ -61,14 +61,18 @@ func (screen *Screen) Resize() *Screen {
 
 //Clear makes the entire screen blank using default background color.
 func (screen *Screen) Clear() *Screen {
+	screen.termboxMutex.Lock()
+	defer screen.termboxMutex.Unlock()
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	screen.cleared = true
-	screen.Flush()
+	termbox.Flush()
 	return screen
 }
 
 // Sync forces a complete resync between the termbox and a terminal.
 func (screen *Screen) Sync() *Screen {
+	screen.termboxMutex.Lock()
+	defer screen.termboxMutex.Unlock()
 	termbox.Sync()
 	return screen
 }
