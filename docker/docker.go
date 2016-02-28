@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/fsouza/go-dockerclient"
@@ -244,9 +245,9 @@ func (daemon *DockerDaemon) RefreshNetworks() error {
 }
 
 //RemoveAllStoppedContainers removes all stopped containers
-func (daemon *DockerDaemon) RemoveAllStoppedContainers() error {
+func (daemon *DockerDaemon) RemoveAllStoppedContainers() (int, error) {
 	containers, _, err := containers(daemon.client, true)
-
+	var count uint32
 	errs := make(chan error, 1)
 	defer close(errs)
 	if err == nil {
@@ -255,6 +256,7 @@ func (daemon *DockerDaemon) RemoveAllStoppedContainers() error {
 			if !IsContainerRunning(container) {
 				wg.Add(1)
 				go func(id string) {
+					defer atomic.AddUint32(&count, 1)
 					defer wg.Done()
 					err := daemon.Rm(id)
 					if err != nil {
@@ -269,11 +271,11 @@ func (daemon *DockerDaemon) RemoveAllStoppedContainers() error {
 		wg.Wait()
 		select {
 		case e := <-errs:
-			return e
+			return 0, e
 		default:
 		}
 	}
-	return err
+	return int(atomic.LoadUint32(&count)), err
 }
 
 //Stats shows resource usage statistics of the container with the given id

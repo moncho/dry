@@ -207,8 +207,8 @@ func (d *Dry) doRefresh() {
 //RemoveAllStoppedContainers removes all stopped containers
 func (d *Dry) RemoveAllStoppedContainers() {
 	d.appmessage(fmt.Sprintf("<red>Removing all stopped containers</>"))
-	if err := d.dockerDaemon.RemoveAllStoppedContainers(); err == nil {
-		d.appmessage(fmt.Sprintf("<red>Removed all stopped containers</>"))
+	if count, err := d.dockerDaemon.RemoveAllStoppedContainers(); err == nil {
+		d.appmessage(fmt.Sprintf("<red>Removed %d stopped containers</>", count))
 	} else {
 		d.appmessage(
 			fmt.Sprintf(

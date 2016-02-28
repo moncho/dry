@@ -204,8 +204,8 @@ func (_m *ContainerDaemonMock) RefreshNetworks() error {
 }
 
 // RemoveAllStoppedContainers provides a mock function with given fields:
-func (_m *ContainerDaemonMock) RemoveAllStoppedContainers() error {
-	return nil
+func (_m *ContainerDaemonMock) RemoveAllStoppedContainers() (int, error) {
+	return 0, nil
 
 }
 

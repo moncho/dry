@@ -43,7 +43,7 @@ type ContainerDaemon interface {
 	Refresh(allContainers bool) error
 	RefreshImages() error
 	RefreshNetworks() error
-	RemoveAllStoppedContainers() error
+	RemoveAllStoppedContainers() (int, error)
 	Stats(id string) (<-chan *Stats, chan<- bool, <-chan error)
 	StopContainer(id string) error
 	Sort(sortMode SortMode)
