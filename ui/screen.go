@@ -203,3 +203,14 @@ func (screen *Screen) Render(initialRow int, str string) {
 		screen.RenderLine(0, initialRow+row, line)
 	}
 }
+
+//RenderAtColumn renders the given content starting from
+//the given row at the given column
+func (screen *Screen) RenderAtColumn(column, initialRow int, str string) {
+	if !screen.cleared {
+		screen.Clear()
+	}
+	for row, line := range strings.Split(str, "\n") {
+		screen.RenderLine(column, initialRow+row, line)
+	}
+}
