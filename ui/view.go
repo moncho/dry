@@ -41,18 +41,6 @@ func (v *View) Name() string {
 	return v.name
 }
 
-// setRune writes a rune at the given point, relative to the view.
-func (v *View) setRune(x, y int, ch rune, fgColor, bgColor termbox.Attribute) error {
-	maxX, maxY := v.ViewSize()
-	if x < 0 || x >= maxX || y < 0 || y >= maxY {
-		return invalidPointError(x, y)
-	}
-
-	termbox.SetCell(v.x0+x+1, v.y0+y+1, ch,
-		termbox.Attribute(fgColor), termbox.Attribute(bgColor))
-	return nil
-}
-
 // SetCursor sets the cursor position of the view at the given point,
 // relative to the screen. An error is returned if the position is outside
 // the screen limits.
