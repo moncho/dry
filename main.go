@@ -89,22 +89,22 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.DockerEnv, stop <-ch
 	}
 	go func() {
 		var loadingMessage = loader1
-		var rotator = 1
+		var rotorPos = 1
 		loaderTimer := time.NewTicker(1 * time.Second)
 		for {
 			select {
 			case <-loaderTimer.C:
 				screen.RenderLine(screen.Width/2-12, 14, ui.White(loadingMessage))
 				screen.Flush()
-				if rotator == 1 {
+				if rotorPos == 1 {
 					loadingMessage = loader2
-					rotator = 2
-				} else if rotator == 2 {
+					rotorPos = 2
+				} else if rotorPos == 2 {
 					loadingMessage = loader3
-					rotator = 3
+					rotorPos = 3
 				} else {
 					loadingMessage = loader1
-					rotator = 1
+					rotorPos = 1
 				}
 			case <-stop:
 				return

@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/moncho/dry/terminal"
 	"github.com/nsf/termbox-go"
 )
 
@@ -21,14 +22,8 @@ type View struct {
 	showCursor       bool
 
 	tainted bool // marks if the viewBuffer must be updated
-	//viewLines []viewLine // the view buffer
 
 	markup *Markup
-}
-
-type viewLine struct {
-	linesX, linesY int // coordinates relative to v.lines
-	line           []rune
 }
 
 // ViewSize returns the width and the height of the View.
@@ -110,8 +105,6 @@ func (v *View) Write(p []byte) (n int, err error) {
 func (v *View) Render() error {
 	_, maxY := v.ViewSize()
 
-	//v.prepareViewForRender()
-
 	y := 0
 	for i, vline := range v.lines {
 		if i < v.bufferY {
@@ -176,7 +169,12 @@ func (v *View) renderLine(x int, y int, line string) error {
 	if v.markup != nil {
 		renderLineWithMarkup(x, y, v.y1, line, v.markup)
 	} else {
-		renderString(x, y, line, termbox.ColorDefault, termbox.ColorDefault)
+		ansiClean := terminal.RemoveANSIEscapeCharacters(line)
+		// Methods receives a single line, so just the first element
+		// returned by the cleaner is considered
+		if len(ansiClean) > 0 {
+			renderString(x, y, string(ansiClean[0]), termbox.ColorDefault, termbox.ColorDefault)
+		}
 	}
 	return nil
 }
