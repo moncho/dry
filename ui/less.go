@@ -158,8 +158,6 @@ func (less *Less) readInput(inputBoxEventChan chan termbox.Event, inputBoxOuput 
 func (less *Less) Render() error {
 	_, maxY := less.renderSize()
 
-	//less.prepareViewForRender()
-
 	y := 0
 	for i, vline := range less.lines {
 		if i < less.bufferY {
