@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"strings"
 	"unicode/utf8"
 
 	"github.com/mattn/go-runewidth"
@@ -17,11 +18,26 @@ func fill(x, y, w, h int, cell termbox.Cell) {
 	}
 }
 
-//renderString renders the given string starting at x, y in the screen
-func renderString(x, y int, word string, foreground, background termbox.Attribute) {
-	for _, char := range word {
+//renderString renders the given string starting at x, y in the screen, returns the
+//rune-width of the given string
+func renderString(x, y int, s string, foreground, background termbox.Attribute) int {
+	wordWidth := 0
+	for _, char := range s {
+		runewidth := runewidth.RuneWidth(char)
 		termbox.SetCell(x, y, char, foreground, background)
-		x += runewidth.RuneWidth(char)
+		x += runewidth
+		wordWidth += runewidth
+	}
+	return wordWidth
+}
+
+//renderLine renders the given line starting at x, y in the screen
+func renderLine(x, y int, line string, foreground, background termbox.Attribute) {
+	words := strings.Split(line, " ")
+	for _, word := range words {
+		x += renderString(x, y, word, foreground, background)
+		termbox.SetCell(x, y, ' ', foreground, background)
+		x++
 	}
 }
 
@@ -92,7 +108,7 @@ func byteSliceInsert(text []byte, offset int, what []byte) []byte {
 	return text
 }
 
-// EventChannel returns a channel with termbox's events.
+// EventChannel returns a channel with termbox's events and a done channel.
 func EventChannel() (<-chan termbox.Event, chan struct{}) {
 	// termbox.PollEvent() can get stuck on unexpected signal
 	// handling cases, so termbox polling is done is a separate goroutine
