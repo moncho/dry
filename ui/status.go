@@ -29,7 +29,9 @@ func NewStatusBar(screenPos int) *StatusBar {
 
 }
 
-func (s *StatusBar) stopTimer() {
+//Stop stops the status bar from showing any output, setting a new status
+//message will activate it again
+func (s *StatusBar) Stop() {
 	s.barMutex.Lock()
 	defer s.barMutex.Unlock()
 	if t := s.clearTimer; t != nil {
@@ -46,7 +48,7 @@ func (s *StatusBar) setClearTimer(t *time.Timer) {
 
 // StatusMessage sets a new status message for the given duration
 func (s *StatusBar) StatusMessage(msg string, clearDelay time.Duration) {
-	s.stopTimer()
+	s.Stop()
 	s.lastMessage = msg
 	//set a timer to clear the status
 	if clearDelay != 0 {

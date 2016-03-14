@@ -49,7 +49,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	defer close(viewClosed)
 	defer close(renderChan)
 
-	//rendes dry on message
+	//renders dry on message
 	go func() {
 		for {
 			_, stillOpen := <-renderChan
@@ -81,6 +81,9 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 						statusBar.Render()
 					}
 					screen.Flush()
+				} else {
+					//stop the status bar until the focus is retrieved
+					statusBar.Stop()
 				}
 			} else {
 				return
