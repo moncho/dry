@@ -12,8 +12,6 @@ Upon connecting to a **Docker** host (local or remote), the main screen will sho
 
 From the main screen, commands to start, stop, remove and several others can be executed, all of them behaving like the equivalent command from the official **Docker CLI**. A detailed list of available commands can be found in this README, command information can also be read while running **dry** by showing help [H].
 
-Switching to the image screen can be done by clicking [1]. Once there, **Docker** images are shown and again a few commands are available. Clicking [1] will show again the main screen (the container list).
-
 The demo below shows a **dry** session.
 
 [![asciicast](https://asciinema.org/a/35825.png)](https://asciinema.org/a/35825?autoplay=1)
@@ -57,10 +55,10 @@ $ curl -sSf https://moncho.github.io/dry/dryup.sh | sudo sh
 
 If you dont like to **curl | sh**, binaries are provided.
 
-- **darwin** [386](https://github.com/moncho/dry/releases/download/v0.4-beta.7/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.4-beta.7/dry-darwin-amd64)
-- **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.4-beta.7/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.4-beta.7/dry-freebsd-amd64)
-- **linux** [386](https://github.com/moncho/dry/releases/download/v0.4-beta.7/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.4-beta.7/dry-linux-amd64)
-- **windows** [386](https://github.com/moncho/dry/releases/download/v0.4-beta.7/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.4-beta.7/dry-windows-amd64)
+- **darwin** [386](https://github.com/moncho/dry/releases/download/v0.4-beta.8/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.4-beta.8/dry-darwin-amd64)
+- **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.4-beta.8/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.4-beta.8/dry-freebsd-amd64)
+- **linux** [386](https://github.com/moncho/dry/releases/download/v0.4-beta.8/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.4-beta.8/dry-linux-amd64)
+- **windows** [386](https://github.com/moncho/dry/releases/download/v0.4-beta.8/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.4-beta.8/dry-windows-amd64)
 
 #### Go
 
