@@ -22,18 +22,21 @@ Connects to a Docker daemon, shows the list of containers and allows to execute 
 
 Visit <blue>http://moncho.github.io/dry/</> for more information.
 
-<yellow>Basic commands</>
-<u>Command</u>     <u>Description                                </u>
+<yellow>Global keybinds</>
+	<white>F10</>       Inspects Docker
+	<white>1</>         To container list
+	<white>2</>         To image list
+	<white>3</>         To network list
 	<white>h</>         Shows this help screen
 	<white>Crtl+c</>    Quits dry inmediately
+	<white>q</>         Quits <white>dry</>.
+	<white>esc</>       Goes back to the main screen
 
-<yellow>Container commands</>
-<u>Command</u>     <u>Description                                </u>
+
+<yellow>Container list keybinds</>
 	<white>F1</>        Cycles through containers sort modes (by Id | by Image | by Status | by Name)
 	<white>F2</>        Toggles showing all containers (default shows just running)
 	<white>F5</>        Refresh container list
-	<white>F10</>       Inspects Docker
-	<white>1</>         To image list
 	<white>e</>         Removes the selected container
 	<white>Crtl+e</>    Removes all stopped containers
 	<white>Crtl+k</>    Kills the selected container
@@ -41,28 +44,25 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Ctrl+r</>    Restarts selected container
 	<white>s</>         Displays a live stream of the selected container resource usage statistics
 	<white>Crtl+t</>    Stops selected container (noop if it is not running)
-	<white>Enter</>     Returns low-level information on the selected container
-	<white>q</>         Quits <white>dry</>.
-	<white>esc</>       In the main view, quits <white>dry</>. In any other view, goes back to the main view
+	<white>Enter</>     Returns low-level information of the selected container
 
-<yellow>Image commands</>
-<u>Command</u>     <u>Description                                </u>
+<yellow>Image list keybinds</>
 	<white>F1</>        Cycles through images sort modes (by Repo | by Id | by Creation date | by Size)
 	<white>F5</>        Refresh the image list
-	<white>F10</>       Inspects Docker
-	<white>1</>         To container list
 	<white>Crtl+e</>    Removes the selected image
 	<white>Crtl+f</>    Forces removal of the selected image
 	<white>i</>         Shows image history
-	<white>Enter</>     Returns low-level information on the selected image
-	<white>q</>         Quits <white>dry</>.
-	<white>esc</>       Goes back to the main view
+	<white>Enter</>     Returns low-level information of the selected image
 
-<yellow>Move around in container/image list</>
+	<yellow>Network list keybinds</>
+	<white>Enter</>     Returns low-level information of the selected network
+
+
+<yellow>Move around in container/image/network lists</>
 	<white>ArrowUp</>   Moves the cursor one line up
 	<white>ArrowDown</> Moves the cursor one line down
 
-<yellow>Move around in logs/inspect</>
+<yellow>Move around in logs/inspect buffers</>
 	<white>g</>         Moves the cursor to the beginning
 	<white>G</>         Moves the cursor until the end
 	<white>n</>         After a search, it moves forwards to the next search hit
@@ -79,14 +79,14 @@ const (
 	inspectMapping = "<b>[Enter]:<darkgrey>Inspect</></>"
 	keyMappings    = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
-		"<b>[1]:<darkgrey>Images</> <b>[2]:<darkgrey>Networks</><blue>|</>" +
+		"<b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</><blue>|</>" +
 		"<b>[E]:<darkgrey>Remove</> <b>[Crtl+K]:<darkgrey>Kill</> <b>[L]:<darkgrey>Logs</> <b>[Ctrl+R]:<darkgrey>Restart</> " +
 		"<b>[S]:<darkgrey>Stats</> <b>[Crtl+T]:<darkgrey>Stop</> <blue>|</>" +
 		inspectMapping
 
 	imagesKeyMappings = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
-		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Networks</> <blue>|</>" +
+		"<b>[1]:<darkgrey>Containers</> <b>[3]:<darkgrey>Networks</> <blue>|</>" +
 		"<b>[Crtl+E]:<darkgrey>Remove</> <b>[Crtl+F]:<darkgrey>Force Remove</> <b>[I]:<darkgrey>History</> <blue>|</>" +
 		inspectMapping
 
