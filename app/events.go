@@ -76,10 +76,10 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 			focus = false
 			dry.ShowHelp()
 			go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
-		case '1':
+		case '2':
 			cursor.Reset()
 			dry.ShowImages()
-		case '2':
+		case '3':
 			cursor.Reset()
 			dry.ShowNetworks()
 		case 'e', 'E': //remove
@@ -145,7 +145,7 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 		case '1':
 			cursor.Reset()
 			dry.ShowContainers()
-		case '2':
+		case '3':
 			cursor.Reset()
 			dry.ShowNetworks()
 		case 'i', 'I': //image history
