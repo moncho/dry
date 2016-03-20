@@ -38,7 +38,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Crtl+e</>    Removes all stopped containers
 	<white>Crtl+k</>    Kills the selected container
 	<white>l</>         Displays the logs of the selected container
-	<white>Ctrl+r</>         Restarts selected container
+	<white>Ctrl+r</>    Restarts selected container
 	<white>s</>         Displays a live stream of the selected container resource usage statistics
 	<white>Crtl+t</>    Stops selected container (noop if it is not running)
 	<white>Enter</>     Returns low-level information on the selected container
@@ -56,17 +56,17 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>i</>         Shows image history
 	<white>Enter</>     Returns low-level information on the selected image
 	<white>q</>         Quits <white>dry</>.
-	<white>esc</>       In the main view, quits <white>dry</>. In any other view, goes back to the main view
+	<white>esc</>       Goes back to the main view
 
 <yellow>Move around in container/image list</>
 	<white>ArrowUp</>   Moves the cursor one line up
-	<white>ArrowDown</> Moves the cursor uone line down
+	<white>ArrowDown</> Moves the cursor one line down
 
-<yellow>Move around in logs/inspect></>
-	<white>g</>         Moves the cursor to the beggining
+<yellow>Move around in logs/inspect</>
+	<white>g</>         Moves the cursor to the beginning
 	<white>G</>         Moves the cursor until the end
-	<white>n</>         After a search, it moves forwards until the next search hit
-	<white>N</>         After a search, it moves backwards until the next search hit
+	<white>n</>         After a search, it moves forwards to the next search hit
+	<white>N</>         After a search, it moves backwards to the previous search hit
 	<white>s</>         Searchs in the text being shown
 	<white>pg up</>     Moves the cursor "screen size" lines up
 	<white>pg down</>   Moves the cursor "screen size" lines down
