@@ -8,36 +8,74 @@
 
 **dry** is a terminal application to manage **Docker** containers and images. It aims to be an alternative to the official **Docker CLI** when it is needed to repeatedly execute commands on existing containers and images, and also as a tool to monitor **Docker** containers from a terminal.
 
-Upon connecting to a **Docker** host (local or remote), the main screen will show the list of containers and version information as reported by the **Docker Engine**. At all times, information about containers and images shown by **dry** is up-to-date, even if commands are executed from outside the tool.
-
-From the main screen, commands to start, stop, remove and several others can be executed, all of them behaving like the equivalent command from the official **Docker CLI**. A detailed list of available commands can be found in this README, command information can also be read while running **dry** by showing help [H].
-
 The demo below shows a **dry** session.
 
 [![asciicast](https://asciinema.org/a/35825.png)](https://asciinema.org/a/35825?autoplay=1)
 
-Available commands (and their keybind in **dry**) from the official [**Docker** cli](https://docs.docker.com/engine/reference/commandline/cli/):
+Upon connecting to a **Docker** host (local or remote), the main screen will show the list of containers and version information as reported by the **Docker Engine**. At all times, information about containers, images and networks shown by **dry** is up-to-date.
 
-|Command | Key|
-|---|---|
-|***info***     | **[F10]**|
-|***inspect***  | **[Enter]**|
-|***kill***     | **[ctrl+k]**|
-|***logs***     | **[l]**|
-|***ps***       ||
-|***rm***       | **[e]**|
-|***start***    | **[ctrl+r]**|
-|***stats***    | **[s]**|
-|***stop***     | **[ctrl+t]**|
+Most of the commands that can be executed with the official **Docker CLI** on containers, images and networks are available in **dry**, with the exact same behaviour. A list of available commands and their keybinds can be found in **dry** help screen.
 
 Besides this, it:
 
 * Shows real-time information about containers.
-* Allows to sort the container list. **[F1]**
-* Can search and navigate the output of ***info***, ***inspect***, ***logs*** commands.  
-* Allows to easily remove all stopped containers. **[ctrl + E]**
+* Can sort the container, image and network lists.
+* Can navigate and search the output of ***info***, ***inspect*** and ***logs*** commands.  
+* Makes easier to cleanup old images and containers.
 
-### Installation
+### **dry** keybinds
+
+#### Global
+```
+[F1]        sort list
+[F5]        refresh list
+[F10]       show docker info
+[1]         show container list
+[2]         show image list
+[3]         show network list
+[ArrowUp]   move the cursor one line up
+[ArrowDown] move the cursor one line down
+[q]         quit dry
+```
+
+#### Container commands
+```
+[Enter]     inspect
+[ctrl+k]    kill
+[l]         logs
+[e]         remove
+[ctrl+e]    remove all stopped containers
+[ctrl+r]    start/restart
+[s]         stats
+[ctrl+t]    stop
+```
+
+#### Image commands
+```
+[i]         history
+[ctrl+e]    remove image
+[ctrl+f]    remove image (force)
+[Enter]     inspect
+```
+#### Network commands
+```
+[Enter]     inspect
+```
+
+#### Moving around buffers
+```
+[ArrowUp]   move the cursor one line up
+[ArrowDown] move the cursor one line down
+[g]         move the cursor to the beginning of the buffer
+[G]         move the cursor to the end of the buffer
+[n]         after search, move forwards to the next search hit
+[N]         after search, move backwards to the previous search hit
+[s]         search
+[pg up]     move the cursor "screen size" lines up
+[pg down]   move the cursor "screen size" lines down
+ ```
+
+## Installation
 
 The easiest way to install the latest binaries for Linux and Mac is to run this in your shell:
 
