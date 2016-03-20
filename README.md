@@ -40,6 +40,7 @@ Besides this, it:
 
 #### Container commands
 ```
+[F1]        toggle on/off showing stopped containers
 [Enter]     inspect
 [ctrl+k]    kill
 [l]         logs
