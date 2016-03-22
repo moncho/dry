@@ -42,20 +42,20 @@ Besides this, it:
 ```
 [F2]        toggle on/off showing stopped containers
 [Enter]     inspect
-[ctrl+k]    kill
+[Ctrl]+[k]    kill
 [l]         logs
 [e]         remove
-[ctrl+e]    remove all stopped containers
-[ctrl+r]    start/restart
+[Ctrl]+[e]    remove all stopped containers
+[Ctrl]+[r]    start/restart
 [s]         stats
-[ctrl+t]    stop
+[Ctrl]+[t]    stop
 ```
 
 #### Image commands
 ```
 [i]         history
-[ctrl+e]    remove image
-[ctrl+f]    remove image (force)
+[Ctrl]+[e]    remove image
+[Ctrl]+[f]    remove image (force)
 [Enter]     inspect
 ```
 #### Network commands

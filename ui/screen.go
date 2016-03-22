@@ -1,9 +1,9 @@
 package ui
 
 import (
-	`strings`
+	"strings"
 	"sync"
-	`time`
+	"time"
 
 	"github.com/nsf/termbox-go"
 )
