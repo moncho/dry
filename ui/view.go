@@ -11,11 +11,12 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-// A View is a window. It maintains its own internal buffer and cursor
-// position.
+// A View is a region of the screen where text can be rendered. It maintains
+//its own internal buffer and cursor position.
 type View struct {
 	name             string
-	x0, y0, x1, y1   int      //screen dimensions
+	x0, y0, x1, y1   int      //view position in the screen
+	width, height    int      //view width,height
 	bufferX, bufferY int      //current position in the view buffer
 	cursorX, cursorY int      //cursor position in the screen, valid values between 0 and x1, y1
 	lines            [][]rune //the content buffer
@@ -28,7 +29,7 @@ type View struct {
 
 // ViewSize returns the width and the height of the View.
 func (v *View) ViewSize() (width, height int) {
-	return v.x1 - v.x0 - 1, v.y1 - v.y0 - 1
+	return v.width, v.height
 }
 
 // Name returns the name of the view.
@@ -93,6 +94,11 @@ func (v *View) Write(p []byte) (n int, err error) {
 			nl := len(v.lines)
 			if nl > 0 {
 				v.lines[nl-1] = append(v.lines[nl-1], ch)
+				//If the length of the line is higher than then view size
+				//content goes to a new line
+				if len(v.lines[nl-1]) >= v.width {
+					v.lines = append(v.lines, nil)
+				}
 			} else {
 				v.lines = append(v.lines, []rune{ch})
 			}
@@ -104,19 +110,12 @@ func (v *View) Write(p []byte) (n int, err error) {
 // Render renders the view buffer contents.
 func (v *View) Render() error {
 	_, maxY := v.ViewSize()
-
-	y := 0
-	for i, vline := range v.lines {
-		if i < v.bufferY {
-			continue
-		}
-		if y >= maxY {
+	x, y := 0, 0
+	for _, vline := range v.lines[v.bufferY:] {
+		if y > maxY {
 			break
 		}
-
-		x := 0
 		v.renderLine(x, y, string(vline))
-
 		y++
 	}
 	if v.showCursor {
@@ -164,34 +163,21 @@ func (v *View) realPosition(vx, vy int) (x, y int, err error) {
 	return x, y, nil
 }
 
-func (v *View) renderLine(x int, y int, line string) error {
-
+//renderLine renders the given line, returns the number of screen lines used
+func (v *View) renderLine(x int, y int, line string) (int, error) {
+	lines := 1
+	maxWidth, _ := v.ViewSize()
 	if v.markup != nil {
-		renderLineWithMarkup(x, y, v.y1, line, v.markup)
+		lines = renderLineWithMarkup(x, y, maxWidth, line, v.markup)
 	} else {
 		ansiClean := terminal.RemoveANSIEscapeCharacters(line)
 		// Methods receives a single line, so just the first element
 		// returned by the cleaner is considered
 		if len(ansiClean) > 0 {
-			renderString(x, y, string(ansiClean[0]), termbox.ColorDefault, termbox.ColorDefault)
+			_, lines = renderString(x, y, maxWidth, string(ansiClean[0]), termbox.ColorDefault, termbox.ColorDefault)
 		}
 	}
-	return nil
-}
-
-//renderWord displays the string, one character at a time.
-func (v *View) renderWord(x int, y int, word string) {
-	maxX, _ := v.ViewSize()
-	start := x
-	foreground, background := termbox.ColorDefault, termbox.ColorDefault
-	if v.markup != nil {
-		if v.markup.RightAligned {
-			start = maxX - len(word)
-		}
-		foreground = v.markup.Foreground
-		background = v.markup.Background
-	}
-	renderString(start, y, word, foreground, background)
+	return lines, nil
 }
 
 // Clear empties the view's internal buffer.
@@ -457,11 +443,15 @@ func indexFunc(r rune) bool {
 // NewView returns a new View
 func NewView(name string, x0, y0, x1, y1 int, showCursor bool) *View {
 	v := &View{
-		name:       name,
-		x0:         x0,
-		y0:         y0,
-		x1:         x1,
-		y1:         y1,
+		name:  name,
+		x0:    x0,
+		y0:    y0,
+		x1:    x1,
+		y1:    y1,
+		width: x1 - x0,
+		//last line is used by the cursor and for reading input, it is not used to
+		//render view buffer
+		height:     y1 - y0 - 1,
 		tainted:    true,
 		showCursor: showCursor,
 	}
@@ -471,16 +461,8 @@ func NewView(name string, x0, y0, x1, y1 int, showCursor bool) *View {
 
 // NewMarkupView returns a new View with markup support
 func NewMarkupView(name string, x0, y0, x1, y1 int, showCursor bool) *View {
-	v := &View{
-		name:       name,
-		x0:         x0,
-		y0:         y0,
-		x1:         x1,
-		y1:         y1,
-		tainted:    true,
-		showCursor: showCursor,
-		markup:     NewMarkup(),
-	}
+	v := NewView(name, x0, y0, x1, y1, showCursor)
+	v.markup = NewMarkup()
 
 	return v
 }

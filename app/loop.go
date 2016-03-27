@@ -41,7 +41,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 
 	keyboardQueueForView := make(chan termbox.Event)
 	dryOutputChan := dry.OuputChannel()
-	statusBar := ui.NewStatusBar(0)
+	statusBar := ui.NewStatusBar(0, screen.Width)
 
 	defer timestampQueue.Stop()
 	defer close(done)

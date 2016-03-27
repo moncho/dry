@@ -129,14 +129,8 @@ func testEndOfBufferReached(t *testing.T, less *Less, expected bool) {
 }
 
 func newLess(width int, height int) *Less {
-	view := &View{
-		name:       "",
-		x1:         width,
-		y1:         height - 1,
-		cursorX:    0,
-		cursorY:    height - 1,
-		showCursor: true,
-	}
+	view := NewView("", 0, 0, width, height-1, true)
+	view.cursorY = height - 1 //Last line i
 	return &Less{
 		view, nil, false,
 	}

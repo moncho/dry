@@ -16,7 +16,7 @@ const (
 //Less is a View specilization with less-like behaviour and characteristics, meaning:
 // * The cursor is always shown at the bottom of the screen.
 // * Navigation is done using less keybindings.
-// * Basic searching is supported.
+// * Basic search is supported.
 type Less struct {
 	*View
 	searchResult *search.Result
@@ -26,14 +26,9 @@ type Less struct {
 //NewLess creates a view that partially simulates less.
 func NewLess() *Less {
 	width, height := termbox.Size()
-	view := &View{
-		name:       "",
-		x1:         width,
-		y1:         height,
-		cursorX:    0,
-		cursorY:    height - 1, //Last line is at height -1
-		showCursor: true,
-	}
+	view := NewView("", 0, 0, width, height, true)
+	view.cursorY = height - 1 //Last line is at height -1
+
 	return &Less{
 		view, nil, false,
 	}
@@ -157,12 +152,10 @@ func (less *Less) readInput(inputBoxEventChan chan termbox.Event, inputBoxOuput 
 // Render renders the view buffer contents.
 func (less *Less) Render() error {
 	_, maxY := less.renderSize()
-
 	y := 0
-	for i, vline := range less.lines {
-		if i < less.bufferY {
-			continue
-		}
+
+	for _, vline := range less.lines[less.bufferY:] {
+
 		if y > maxY {
 			break
 		}
@@ -262,7 +255,9 @@ func (less *Less) renderSize() (int, int) {
 	return maxX, maxY - 1
 }
 
-func (less *Less) renderLine(x int, y int, line string) error {
+func (less *Less) renderLine(x int, y int, line string) (int, error) {
+	var lines = 1
+	maxWidth, _ := less.renderSize()
 	if less.searchResult != nil {
 		//If markup support is active then it might happen that tags are present in the line
 		//but since we are searching, markups are ignored and coloring output is
@@ -283,7 +278,7 @@ func (less *Less) renderLine(x int, y int, line string) error {
 					}
 				}
 			} else {
-				renderString(x, y, line, termbox.ColorYellow, termbox.ColorDefault)
+				_, lines = renderString(x, y, maxWidth, line, termbox.ColorYellow, termbox.ColorDefault)
 			}
 		} else if !less.filtering {
 			return less.View.renderLine(x, y, line)
@@ -292,7 +287,7 @@ func (less *Less) renderLine(x int, y int, line string) error {
 	} else {
 		return less.View.renderLine(x, y, line)
 	}
-	return nil
+	return lines, nil
 }
 
 //scrollDown moves the buffer position down by the given number of lines
@@ -301,7 +296,7 @@ func (less *Less) scrollDown(lines int) {
 	viewLength := less.bufferSize()
 
 	posX, posY := less.Position()
-	//This is a down as scrolling can go
+	//This is as down as scrolling can go
 	maxY := viewLength - height
 	if posY+lines < maxY {
 		newOy := posY + lines
@@ -311,7 +306,6 @@ func (less *Less) scrollDown(lines int) {
 			less.setPosition(posX, newOy)
 		}
 	} else {
-
 		less.ScrollToBottom()
 	}
 	less.tainted = true
@@ -329,22 +323,22 @@ func (less *Less) scrollUp(lines int) {
 }
 
 func (less *Less) renderMessage() {
-	_, maxY := less.ViewSize()
+	maxWidth, maxLength := less.ViewSize()
 	var cursorX = 1
 	switch {
 	case less.searchResult != nil:
 		{
-			renderString(0, maxY, less.searchResult.String(), termbox.ColorWhite, termbox.ColorDefault)
+			renderString(0, maxLength, maxWidth, less.searchResult.String(), termbox.ColorWhite, termbox.ColorDefault)
 			cursorX = len(less.searchResult.String())
 		}
 	case !less.atTheEndOfBuffer() && !less.atTheStartOfBuffer():
-		termbox.SetCell(0, maxY, ':', termbox.ColorDefault, termbox.ColorDefault)
+		termbox.SetCell(0, maxLength, ':', termbox.ColorDefault, termbox.ColorDefault)
 	case less.atTheStartOfBuffer():
-		renderString(0, maxY, starttext, termbox.ColorWhite, termbox.ColorDefault)
+		renderString(0, maxLength, maxWidth, starttext, termbox.ColorWhite, termbox.ColorDefault)
 		cursorX = len(starttext)
 	default:
 		{
-			renderString(0, maxY, endtext, termbox.ColorWhite, termbox.ColorDefault)
+			renderString(0, maxLength, maxWidth, endtext, termbox.ColorWhite, termbox.ColorDefault)
 			cursorX = len(endtext)
 		}
 	}

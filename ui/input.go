@@ -261,7 +261,8 @@ mainloop:
 
 //NewInputBox creates an input box, located at position x,y in the screen.
 func NewInputBox(x, y int, prompt string, output chan<- string, keyboardQueue chan termbox.Event) *InputBox {
-	renderString(x, y, prompt, termbox.ColorWhite, termbox.ColorDefault)
+	width, _ := termbox.Size()
+	renderString(x, y, width, prompt, termbox.ColorWhite, termbox.ColorDefault)
 	termbox.Flush()
 	return &InputBox{x: x + len(prompt), y: y, output: output, eventQueue: keyboardQueue}
 }

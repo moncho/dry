@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"strings"
 	"unicode/utf8"
 
 	"github.com/mattn/go-runewidth"
@@ -19,32 +18,43 @@ func fill(x, y, w, h int, cell termbox.Cell) {
 }
 
 //renderString renders the given string starting at x, y in the screen, returns the
-//rune-width of the given string
-func renderString(x, y int, s string, foreground, background termbox.Attribute) int {
-	wordWidth := 0
+//rune-width of the given string and the number of screen lines used to render
+func renderString(x, y, maxWidth int, s string, foreground, background termbox.Attribute) (int, int) {
+	stringWidth := 0
+	virtualScreenWidth := maxWidth
+	//tracks the number of screen lines used to render
+	additionalLines := 0
+	startCol := x
 	for _, char := range s {
 		runewidth := runewidth.RuneWidth(char)
-		termbox.SetCell(x, y, char, foreground, background)
-		x += runewidth
-		wordWidth += runewidth
-	}
-	return wordWidth
-}
+		stringWidth += runewidth
+		//Check if a new line is going to be needed
+		if stringWidth > virtualScreenWidth {
+			//A new line is going to be used, the virtual screen width has to be
+			//extended
+			virtualScreenWidth += virtualScreenWidth + maxWidth
+			additionalLines++
+			y += additionalLines
+			startCol = x
+		}
+		termbox.SetCell(startCol, y, char, foreground, background)
+		startCol += runewidth
 
-//renderLine renders the given line starting at x, y in the screen
-func renderLine(x, y int, line string, foreground, background termbox.Attribute) {
-	words := strings.Split(line, " ")
-	for _, word := range words {
-		x += renderString(x, y, word, foreground, background)
-		termbox.SetCell(x, y, ' ', foreground, background)
-		x++
 	}
+	return stringWidth, additionalLines + 1
 }
 
 // renderLineWithMarkup takes the incoming string, uses the given markup to tokenize it and to extract markup
 // elements, and displays it all starting at (x,y) location.
-func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) {
+// returns the number of screen lines used to render the line
+func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) int {
 	start, column := 0, 0
+
+	stringWidth := 0
+	//tracks the number of screen lines used to render
+	additionalLines := 0
+
+	availableWidth := maxWidth
 
 	for _, token := range Tokenize(str, supportedTags) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
@@ -54,6 +64,17 @@ func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) {
 
 		// Here comes the actual text: display it one character at a time.
 		for i, char := range token {
+			runewidth := runewidth.RuneWidth(char)
+			stringWidth += runewidth
+			//Check if a new line is going to be needed
+			if stringWidth > availableWidth {
+				//A new line is going to be used, the screen width has doubled
+				availableWidth = availableWidth * 2
+				additionalLines++
+				y += additionalLines
+				start = 0
+
+			}
 			if !markup.RightAligned {
 				start = x + column
 				column++
@@ -63,6 +84,8 @@ func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) {
 			termbox.SetCell(start, y, char, markup.Foreground, markup.Background)
 		}
 	}
+	//At least one screen line has been used
+	return additionalLines + 1
 }
 
 func runeAdvanceLen(r rune, pos int) int {
