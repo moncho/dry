@@ -154,7 +154,11 @@ func (less *Less) Render() error {
 	_, maxY := less.renderSize()
 	y := 0
 
-	for _, vline := range less.lines[less.bufferY:] {
+	bufferStart := 0
+	if less.bufferY < less.bufferSize() && less.bufferY > 0 {
+		bufferStart = less.bufferY
+	}
+	for _, vline := range less.lines[bufferStart:] {
 
 		if y > maxY {
 			break
@@ -353,5 +357,5 @@ func (less *Less) drawCursor() {
 
 func clear() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	termbox.Flush()
+	//termbox.Flush()
 }
