@@ -46,31 +46,41 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 	case termbox.KeyCtrlE: //remove all stopped
 		dry.RemoveAllStoppedContainers()
 	case termbox.KeyCtrlK: //kill
-		dry.Kill(cursorPos)
+		if cursorPos >= 0 {
+			dry.Kill(cursorPos)
+		}
 	case termbox.KeyCtrlR: //start
 		dry.RestartContainer(cursorPos)
 	case termbox.KeyCtrlT: //stop
 		dry.StopContainer(cursorPos)
 	case termbox.KeyEnter: //inspect
-		dry.Inspect(cursorPos)
-		focus = false
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+		if cursorPos >= 0 {
+			dry.Inspect(cursorPos)
+			focus = false
+			go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+		}
 	default: //Not handled
 		handled = false
 	}
 	if !handled {
 		switch event.Ch {
 		case 's', 'S': //stats
-			done, errC, err := dry.Stats(cursorPos)
-			if err == nil {
-				focus = false
-				go autorefresh(dry, screen, h.keyboardQueueForView, h.viewClosed, done, errC)
+			if cursorPos >= 0 {
+
+				done, errC, err := dry.Stats(cursorPos)
+				if err == nil {
+					focus = false
+					go autorefresh(dry, screen, h.keyboardQueueForView, h.viewClosed, done, errC)
+				}
 			}
 		case 'l', 'L': //logs
-			if logs, err := dry.Logs(cursorPos); err == nil {
-				focus = false
-				dry.ShowContainers()
-				go stream(screen, logs, h.keyboardQueueForView, h.viewClosed)
+			if cursorPos >= 0 {
+
+				if logs, err := dry.Logs(cursorPos); err == nil {
+					focus = false
+					dry.ShowContainers()
+					go stream(screen, logs, h.keyboardQueueForView, h.viewClosed)
+				}
 			}
 		case '?', 'h', 'H': //help
 			focus = false
@@ -83,8 +93,11 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 			cursor.Reset()
 			dry.ShowNetworks()
 		case 'e', 'E': //remove
-			dry.Rm(cursorPos)
-			cursor.ScrollCursorUp()
+			if cursorPos >= 0 {
+
+				dry.Rm(cursorPos)
+				cursor.ScrollCursorUp()
+			}
 		}
 	}
 	return (refresh || dry.Changed()), focus

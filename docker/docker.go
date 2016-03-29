@@ -2,6 +2,7 @@ package docker
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"sync"
@@ -48,8 +49,8 @@ func (daemon *DockerDaemon) ContainersCount() int {
 func (daemon *DockerDaemon) ContainerIDAt(pos int) (string, string, error) {
 	daemon.refreshLock.Lock()
 	defer daemon.refreshLock.Unlock()
-	if pos >= len(daemon.containers) {
-		return "", "", errors.New("Position is higher than number of containers")
+	if pos < 0 || pos >= len(daemon.containers) {
+		return "", "", fmt.Errorf("Invalid container position: %d", pos)
 	}
 	return daemon.containers[pos].ID, stringid.TruncateID(daemon.containers[pos].ID), nil
 }
@@ -258,7 +259,7 @@ func (daemon *DockerDaemon) RemoveAllStoppedContainers() (int, error) {
 				go func(id string) {
 					defer atomic.AddUint32(&count, 1)
 					defer wg.Done()
-					err := daemon.Rm(id)
+					err = daemon.Rm(id)
 					if err != nil {
 						select {
 						case errs <- err:
