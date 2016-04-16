@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/docker/docker/pkg/stringid"
+	"github.com/docker/engine-api/types"
 	"github.com/docker/go-units"
-	"github.com/fsouza/go-dockerclient"
 )
 
 const (
@@ -21,7 +21,7 @@ const (
 type ImageFormatter struct {
 	trunc  bool
 	header []string
-	image  docker.APIImages
+	image  types.Image
 }
 
 func (formatter *ImageFormatter) addHeader(header string) {

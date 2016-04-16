@@ -17,7 +17,6 @@ const (
 	Images
 	Networks
 	HelpMode
-	StatsMode
 	ImageHistoryMode
 	InfoMode
 	InspectImageMode
@@ -104,14 +103,6 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 //Write sends dry output to the given writer
 func Write(d *Dry, w io.Writer) {
 	switch d.viewMode() {
-	case StatsMode:
-		{
-			if d.stats != nil {
-				io.WriteString(w, appui.NewDockerStatsRenderer(d.stats).Render())
-			} else {
-				io.WriteString(w, "Could not read stats")
-			}
-		}
 	case ImageHistoryMode:
 		io.WriteString(w, appui.NewDockerImageHistoryRenderer(d.imageHistory).Render())
 	case InspectMode:

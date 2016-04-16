@@ -9,34 +9,49 @@ import (
 	"sync/atomic"
 
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/fsouza/go-dockerclient"
+	dockerAPI "github.com/docker/engine-api/client"
+	dockerTypes "github.com/docker/engine-api/types"
+	"github.com/docker/engine-api/types/events"
+	"golang.org/x/net/context"
 )
 
 const (
 	//DefaultDockerHost is used as a default docker host to connect to
 	//if no other value is given.
 	DefaultDockerHost = "unix:///var/run/docker.sock"
+
+	//timeout in seconds for docker operations
+	defaultTimeout = 10
 )
 
 //DockerDaemon knows how to talk to the Docker daemon
 type DockerDaemon struct {
-	client        *docker.Client                  //client used to to connect to the Docker daemon
-	containerByID map[string]docker.APIContainers // Containers by their id
-	containers    []docker.APIContainers
-	images        []docker.APIImages
-	networks      []docker.Network
+	client        dockerAPI.APIClient              //client used to to connect to the Docker daemon
+	containerByID map[string]dockerTypes.Container // Containers by their id
+	containers    []dockerTypes.Container
+	images        []dockerTypes.Image
+	networks      []dockerTypes.NetworkResource
 	err           error // Errors, if any.
 	connected     bool
 	dockerEnv     *DockerEnv
-	version       *Version
+	version       *dockerTypes.Version
 	refreshLock   sync.Mutex
 }
 
 //Containers returns the containers known by the daemon
-func (daemon *DockerDaemon) Containers() []docker.APIContainers {
+func (daemon *DockerDaemon) Containers() []dockerTypes.Container {
 	daemon.refreshLock.Lock()
 	defer daemon.refreshLock.Unlock()
 	return daemon.containers
+}
+
+//ContainerAt returns the container at the given position
+func (daemon *DockerDaemon) ContainerAt(pos int) (dockerTypes.Container, error) {
+	id, _, err := daemon.ContainerIDAt(pos)
+	if err == nil {
+		return daemon.ContainerByID(id), nil
+	}
+	return dockerTypes.Container{}, err
 }
 
 //ContainersCount returns the number of containers found.
@@ -56,7 +71,7 @@ func (daemon *DockerDaemon) ContainerIDAt(pos int) (string, string, error) {
 }
 
 //ContainerByID returns the container with the given ID
-func (daemon *DockerDaemon) ContainerByID(cid string) docker.APIContainers {
+func (daemon *DockerDaemon) ContainerByID(cid string) dockerTypes.Container {
 	return daemon.containerByID[cid]
 }
 
@@ -66,25 +81,30 @@ func (daemon *DockerDaemon) DockerEnv() *DockerEnv {
 }
 
 // Events returns a channel to receive Docker events.
-func (daemon *DockerDaemon) Events() (chan *docker.APIEvents, error) {
-	listener := make(chan *docker.APIEvents)
-	err := daemon.client.AddEventListener(listener)
+func (daemon *DockerDaemon) Events() (chan *events.Message, error) {
+	listener := make(chan *events.Message)
+	// TODO: Listen to Docker events
+	/*
+		cli.client.Events(context.Background(), options)
+		err := daemon.client.Events(listener)
 
-	if err != nil {
-		close(listener)
-		return nil, err
-	}
+
+		if err != nil {
+			close(listener)
+			return nil, err
+		}
+	*/
 	return listener, nil
 }
 
 //History returns image history
-func (daemon *DockerDaemon) History(id string) ([]docker.ImageHistory, error) {
-	return daemon.client.ImageHistory(id)
+func (daemon *DockerDaemon) History(id string) ([]dockerTypes.ImageHistory, error) {
+	return daemon.client.ImageHistory(context.Background(), id)
 }
 
 //ImageAt returns the Image found at the given
 //position.
-func (daemon *DockerDaemon) ImageAt(pos int) (*docker.APIImages, error) {
+func (daemon *DockerDaemon) ImageAt(pos int) (*dockerTypes.Image, error) {
 	daemon.refreshLock.Lock()
 	defer daemon.refreshLock.Unlock()
 	if pos >= len(daemon.images) {
@@ -94,7 +114,7 @@ func (daemon *DockerDaemon) ImageAt(pos int) (*docker.APIImages, error) {
 }
 
 //Images returns the list of Docker images
-func (daemon *DockerDaemon) Images() ([]docker.APIImages, error) {
+func (daemon *DockerDaemon) Images() ([]dockerTypes.Image, error) {
 	daemon.refreshLock.Lock()
 	defer daemon.refreshLock.Unlock()
 	return daemon.images, nil
@@ -108,18 +128,19 @@ func (daemon *DockerDaemon) ImagesCount() int {
 }
 
 //Info returns system-wide information about the Docker server.
-func (daemon *DockerDaemon) Info() (*docker.Env, error) {
-	return daemon.client.Info()
+func (daemon *DockerDaemon) Info() (dockerTypes.Info, error) {
+	return daemon.client.Info(context.Background())
 }
 
 //Inspect the container with the given id
-func (daemon *DockerDaemon) Inspect(id string) (*docker.Container, error) {
-	return daemon.client.InspectContainer(id)
+func (daemon *DockerDaemon) Inspect(id string) (dockerTypes.ContainerJSON, error) {
+	return daemon.client.ContainerInspect(context.Background(), id)
 }
 
 //InspectImage the image with the name
-func (daemon *DockerDaemon) InspectImage(name string) (*docker.Image, error) {
-	return daemon.client.InspectImage(name)
+func (daemon *DockerDaemon) InspectImage(name string) (dockerTypes.ImageInspect, error) {
+	inspect, _, err := daemon.client.ImageInspectWithRaw(context.Background(), name, true)
+	return inspect, err
 }
 
 //IsContainerRunning returns true if the container with the given  is running
@@ -129,37 +150,33 @@ func (daemon *DockerDaemon) IsContainerRunning(id string) bool {
 
 //Kill the container with the given id
 func (daemon *DockerDaemon) Kill(id string) error {
-	opts := docker.KillContainerOptions{
-		ID: id,
-	}
-	return daemon.client.KillContainer(opts)
+	//TODO Sends the right signal
+	return daemon.client.ContainerKill(context.Background(), id, "")
 }
 
 //Logs shows the logs of the container with the given id
 func (daemon *DockerDaemon) Logs(id string) io.ReadCloser {
-	r, w := io.Pipe()
-	options := docker.LogsOptions{
-		Container:    id,
-		OutputStream: w,
-		ErrorStream:  w,
-		Follow:       true,
-		Stdout:       true,
-		Stderr:       true,
+	options := dockerTypes.ContainerLogsOptions{
+		ContainerID: id,
+		ShowStdout:  true,
+		ShowStderr:  true,
+		Timestamps:  false,
+		Follow:      true,
 	}
 
-	go daemon.client.Logs(options)
-	return r
+	reader, _ := daemon.client.ContainerLogs(context.Background(), options)
+	return reader
 }
 
 //Networks returns the list of Docker networks
-func (daemon *DockerDaemon) Networks() ([]docker.Network, error) {
+func (daemon *DockerDaemon) Networks() ([]dockerTypes.NetworkResource, error) {
 	daemon.refreshLock.Lock()
 	defer daemon.refreshLock.Unlock()
 	return daemon.networks, nil
 }
 
 //NetworkAt returns the network found at the given position.
-func (daemon *DockerDaemon) NetworkAt(pos int) (*docker.Network, error) {
+func (daemon *DockerDaemon) NetworkAt(pos int) (*dockerTypes.NetworkResource, error) {
 	daemon.refreshLock.Lock()
 	defer daemon.refreshLock.Unlock()
 	if pos >= len(daemon.networks) {
@@ -176,8 +193,8 @@ func (daemon *DockerDaemon) NetworksCount() int {
 }
 
 //NetworkInspect returns network detailed information
-func (daemon *DockerDaemon) NetworkInspect(id string) (*docker.Network, error) {
-	return daemon.client.NetworkInfo(id)
+func (daemon *DockerDaemon) NetworkInspect(id string) (dockerTypes.NetworkResource, error) {
+	return daemon.client.NetworkInspect(context.Background(), id)
 }
 
 //Ok is true if connecting to the Docker daemon went fine
@@ -188,21 +205,18 @@ func (daemon *DockerDaemon) Ok() (bool, error) {
 //RestartContainer restarts the container with the given id
 func (daemon *DockerDaemon) RestartContainer(id string) error {
 	//fixme: timeout to start a container
-	return daemon.client.RestartContainer(id, 10)
+	return daemon.client.ContainerRestart(context.Background(), id, defaultTimeout)
 }
 
 //Rm removes the container with the given id
 func (daemon *DockerDaemon) Rm(id string) error {
-	opts := docker.RemoveContainerOptions{
-		ID: id,
+	opts := dockerTypes.ContainerRemoveOptions{
+		ContainerID:   id,
+		RemoveVolumes: true,
+		RemoveLinks:   true,
+		Force:         true,
 	}
-	return daemon.client.RemoveContainer(opts)
-}
-
-//Rmi removes the image with the given name
-func (daemon *DockerDaemon) Rmi(name string, force bool) error {
-	options := docker.RemoveImageOptions{Force: force}
-	return daemon.client.RemoveImageExtended(name, options)
+	return daemon.client.ContainerRemove(context.Background(), opts)
 }
 
 //Refresh the container list
@@ -279,48 +293,23 @@ func (daemon *DockerDaemon) RemoveAllStoppedContainers() (int, error) {
 	return int(atomic.LoadUint32(&count)), err
 }
 
-//Stats shows resource usage statistics of the container with the given id
-func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- bool, <-chan error) {
-	statsFromDocker := make(chan *docker.Stats)
-	stats := make(chan *Stats)
-	dockerDone := make(chan bool, 1)
-	done := make(chan bool, 1)
-	errorC := make(chan error, 1)
+//Rmi removes the image with the given name
+func (daemon *DockerDaemon) Rmi(name string, force bool) ([]dockerTypes.ImageDelete, error) {
+	options := dockerTypes.ImageRemoveOptions{
+		ImageID: name,
+		Force:   force,
+	}
+	return daemon.client.ImageRemove(context.Background(), options)
+}
 
-	go func() {
-		options := docker.StatsOptions{
-			ID:     id,
-			Stream: true,
-			Stats:  statsFromDocker,
-			Done:   dockerDone,
-		}
-		if err := daemon.client.Stats(options); err != nil {
-			errorC <- err
-		}
-	}()
-	go func() {
-		for {
-			select {
-			case s := <-statsFromDocker:
-				if s != nil {
-					stats <- BuildStats(daemon.containerByID[id], s)
-				}
-			case <-done:
-				dockerDone <- true
-				//statsFromDocker is closed by the Docker client
-				//close(stats)
-				//close(done)
-				return
-			}
-		}
-	}()
-	return stats, done, errorC
+//Stats shows resource usage statistics of the container with the given id
+func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- struct{}) {
+	return StatsStream(daemon.client, daemon.ContainerByID(id), true)
 }
 
 //StopContainer stops the container with the given id
 func (daemon *DockerDaemon) StopContainer(id string) error {
-	//fixme: timeout to stop a container
-	return daemon.client.StopContainer(id, 10)
+	return daemon.client.ContainerStop(context.Background(), id, defaultTimeout)
 }
 
 //Sort the list of containers by the given mode
@@ -345,44 +334,35 @@ func (daemon *DockerDaemon) SortNetworks(sortMode SortNetworksMode) {
 }
 
 //StopEventChannel docker events are not sent to the given channel
-func (daemon *DockerDaemon) StopEventChannel(eventChan chan *docker.APIEvents) error {
-	err := daemon.client.RemoveEventListener(eventChan)
-	return err
+func (daemon *DockerDaemon) StopEventChannel(eventChan chan *events.Message) error {
+	//TODO handle events
+	//err := daemon.client.RemoveEventListener(eventChan)
+	//return err
+	return nil
 }
 
 //Top returns Top information for the given container
-func (daemon *DockerDaemon) Top(id string) (docker.TopResult, error) {
-	return daemon.client.TopContainer(id, "")
+func (daemon *DockerDaemon) Top(id string) (dockerTypes.ContainerProcessList, error) {
+	return daemon.client.ContainerTop(context.Background(), id, nil)
 }
 
 //Version returns  version information about the Docker Engine
-func (daemon *DockerDaemon) Version() (*Version, error) {
+func (daemon *DockerDaemon) Version() (*dockerTypes.Version, error) {
 	if daemon.version == nil {
-		v, err := daemon.client.Version()
+		v, err := daemon.client.ServerVersion(context.Background())
 		if err == nil {
-			version := &Version{
-				Version:       v.Get("Version"),
-				APIVersion:    v.Get("ApiVersion"),
-				GitCommit:     v.Get("GitCommit"),
-				GoVersion:     v.Get("GoVersion"),
-				Os:            v.Get("Os"),
-				Arch:          v.Get("Arch"),
-				KernelVersion: v.Get("KernelVersion"),
-				Experimental:  v.GetBool("Experimental"),
-				BuildTime:     v.Get("BuildTime"),
-			}
-			daemon.version = version
-			return version, nil
+			daemon.version = &v
+			return daemon.version, nil
 		}
 		return nil, err
 	}
 	return daemon.version, nil
 }
 
-func containers(client *docker.Client, allContainers bool) ([]docker.APIContainers, map[string]docker.APIContainers, error) {
-	containers, err := client.ListContainers(docker.ListContainersOptions{All: allContainers})
+func containers(client dockerAPI.APIClient, allContainers bool) ([]dockerTypes.Container, map[string]dockerTypes.Container, error) {
+	containers, err := client.ContainerList(context.Background(), dockerTypes.ContainerListOptions{All: allContainers, Size: true})
 	if err == nil {
-		var cmap = make(map[string]docker.APIContainers)
+		var cmap = make(map[string]dockerTypes.Container)
 
 		for _, c := range containers {
 			cmap[c.ID] = c
@@ -392,15 +372,14 @@ func containers(client *docker.Client, allContainers bool) ([]docker.APIContaine
 	return nil, nil, err
 }
 
-func images(client *docker.Client) ([]docker.APIImages, error) {
-	opts := docker.ListImagesOptions{
-		All:     false,
-		Digests: true}
-	return client.ListImages(opts)
+func images(client dockerAPI.APIClient) ([]dockerTypes.Image, error) {
+	opts := dockerTypes.ImageListOptions{
+		All: false}
+	return client.ImageList(context.Background(), opts)
 }
 
-func networks(client *docker.Client) ([]docker.Network, error) {
-	return client.ListNetworks()
+func networks(client dockerAPI.APIClient) ([]dockerTypes.NetworkResource, error) {
+	return client.NetworkList(context.Background(), dockerTypes.NetworkListOptions{})
 }
 
 //GetBool returns false if the given string looks like you mean

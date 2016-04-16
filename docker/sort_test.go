@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+
+	"github.com/docker/engine-api/types"
 )
-import "github.com/fsouza/go-dockerclient"
 
 func TestSortById(t *testing.T) {
 	c, error := containersToSort()
@@ -65,7 +66,7 @@ func TestSortByStatus(t *testing.T) {
 	}
 }
 
-func containersToSort() ([]docker.APIContainers, error) {
+func containersToSort() ([]types.Container, error) {
 	jsonContainers := `[
      {
              "Id": "8dfafdbc3a40",
@@ -92,11 +93,11 @@ func containersToSort() ([]docker.APIContainers, error) {
 						 "Names": ["6dfafdbc3a40"]
      }
 ]`
-	var containers []docker.APIContainers
+	var containers []types.Container
 	err := json.Unmarshal([]byte(jsonContainers), &containers)
 	return containers, err
 }
-func containersAsString(containers []docker.APIContainers) []string {
+func containersAsString(containers []types.Container) []string {
 	result := make([]string, len(containers))
 	for i, c := range containers {
 		result[i] = c.ID

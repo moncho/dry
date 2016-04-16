@@ -1,14 +1,14 @@
 package appui
 
 import (
-	`bytes`
+	"bytes"
 	"fmt"
 	"strings"
 	"sync"
 	"text/tabwriter"
-	`text/template`
+	"text/template"
 
-	godocker "github.com/fsouza/go-dockerclient"
+	"github.com/docker/engine-api/types"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 )
@@ -26,13 +26,13 @@ type column struct {
 //DockerPsRenderData holds information that might be
 //used during ps rendering
 type DockerPsRenderData struct {
-	containers        []godocker.APIContainers
+	containers        []types.Container
 	selectedContainer int
 	sortMode          docker.SortMode
 }
 
 //NewDockerPsRenderData creates render data structs
-func NewDockerPsRenderData(containers []godocker.APIContainers, selectedContainer int, sortMode docker.SortMode) *DockerPsRenderData {
+func NewDockerPsRenderData(containers []types.Container, selectedContainer int, sortMode docker.SortMode) *DockerPsRenderData {
 	return &DockerPsRenderData{
 		containers:        containers,
 		selectedContainer: selectedContainer,
@@ -144,7 +144,7 @@ func (r *DockerPs) containerInformation() string {
 	return buf.String()
 }
 
-func (r *DockerPs) containersToShow() []godocker.APIContainers {
+func (r *DockerPs) containersToShow() []types.Container {
 	containers := r.data.containers
 	cursorPos := r.data.selectedContainer
 	availableLines := r.height - containerTableStart - 1

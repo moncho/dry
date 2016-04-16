@@ -3,7 +3,7 @@ package docker
 import (
 	"sort"
 
-	"github.com/fsouza/go-dockerclient"
+	"github.com/docker/engine-api/types"
 )
 
 //Allowed sort methods
@@ -17,7 +17,7 @@ const (
 //SortNetworksMode represents allowed modes to sort Docker images
 type SortNetworksMode uint16
 
-type dockerNetworks []docker.Network
+type dockerNetworks []types.NetworkResource
 
 func (s dockerNetworks) Len() int      { return len(s) }
 func (s dockerNetworks) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
@@ -45,7 +45,7 @@ func (s networksByDriver) Less(i, j int) bool {
 }
 
 //SortNetworks sorts the given network slice using the given mode
-func SortNetworks(images []docker.Network, mode SortNetworksMode) {
+func SortNetworks(images []types.NetworkResource, mode SortNetworksMode) {
 	switch mode {
 	case SortNetworksByID:
 		sort.Sort(networksByID{images})

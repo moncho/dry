@@ -7,7 +7,7 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	godocker "github.com/fsouza/go-dockerclient"
+	"github.com/docker/engine-api/types"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 )
@@ -119,7 +119,7 @@ func (r *DockerNetworksRenderer) networkInformation() string {
 	return buf.String()
 }
 
-func (r *DockerNetworksRenderer) networksToShow() []godocker.Network {
+func (r *DockerNetworksRenderer) networksToShow() []types.NetworkResource {
 	networks, _ := r.daemon.Networks()
 	cursorPos := r.cursor.Position()
 	linesForNetworks := r.height - r.networkTableStart - 1

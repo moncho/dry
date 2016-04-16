@@ -3,7 +3,7 @@ package docker
 import (
 	"sort"
 
-	"github.com/fsouza/go-dockerclient"
+	"github.com/docker/engine-api/types"
 )
 
 //Allowed sort methods
@@ -18,7 +18,7 @@ const (
 //SortMode represents allowed modes to sort a container slice
 type SortMode uint16
 
-type apiContainers []docker.APIContainers
+type apiContainers []types.Container
 
 func (a apiContainers) Len() int      { return len(a) }
 func (a apiContainers) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
@@ -60,7 +60,7 @@ func (a byName) Less(i, j int) bool {
 }
 
 //SortContainers sorts the given containers slice using the given mode
-func SortContainers(containers []docker.APIContainers, mode SortMode) {
+func SortContainers(containers []types.Container, mode SortMode) {
 	switch mode {
 	case SortByContainerID:
 		sort.Sort(byContainerID{containers})

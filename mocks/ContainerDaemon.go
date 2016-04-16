@@ -2,21 +2,25 @@ package mocks
 
 import (
 	"encoding/json"
+	"io"
 
+	"github.com/docker/engine-api/types"
+	"github.com/docker/engine-api/types/events"
 	drydocker "github.com/moncho/dry/docker"
 )
-
-import "io"
-
-import "github.com/fsouza/go-dockerclient"
 
 //ContainerDaemonMock mocks a ContainerDaemonMock
 type ContainerDaemonMock struct {
 }
 
-//Containers mocked
-func (_m *ContainerDaemonMock) Containers() []docker.APIContainers {
-	return make([]docker.APIContainers, 0)
+//Containers mock
+func (_m *ContainerDaemonMock) Containers() []types.Container {
+	return make([]types.Container, 0)
+}
+
+//ContainerAt mock
+func (_m *ContainerDaemonMock) ContainerAt(pos int) (types.Container, error) {
+	return types.Container{}, nil
 }
 
 // ContainersCount provides a mock function with given fields:
@@ -30,8 +34,8 @@ func (_m *ContainerDaemonMock) ContainerIDAt(pos int) (string, string, error) {
 }
 
 // ContainerByID provides a mock function with given fields: cid
-func (_m *ContainerDaemonMock) ContainerByID(cid string) docker.APIContainers {
-	return docker.APIContainers{}
+func (_m *ContainerDaemonMock) ContainerByID(cid string) types.Container {
+	return types.Container{}
 }
 
 // DockerEnv provides a mock function with given fields:
@@ -40,23 +44,23 @@ func (_m *ContainerDaemonMock) DockerEnv() *drydocker.DockerEnv {
 }
 
 // Events provides a mock function with given fields:
-func (_m *ContainerDaemonMock) Events() (chan *docker.APIEvents, error) {
+func (_m *ContainerDaemonMock) Events() (chan *events.Message, error) {
 
 	return nil, nil
 }
 
 //History mock
-func (_m *ContainerDaemonMock) History(id string) ([]docker.ImageHistory, error) {
+func (_m *ContainerDaemonMock) History(id string) ([]types.ImageHistory, error) {
 	return nil, nil
 }
 
 //ImageAt mock
-func (_m *ContainerDaemonMock) ImageAt(pos int) (*docker.APIImages, error) {
+func (_m *ContainerDaemonMock) ImageAt(pos int) (*types.Image, error) {
 	return nil, nil
 }
 
 //Images mock
-func (_m *ContainerDaemonMock) Images() ([]docker.APIImages, error) {
+func (_m *ContainerDaemonMock) Images() ([]types.Image, error) {
 
 	imagesJSON := `[
 		 {
@@ -105,7 +109,7 @@ func (_m *ContainerDaemonMock) Images() ([]docker.APIImages, error) {
 							"RepoDigests": ["03b4557ad7b9"]
 		 }
 	]`
-	var images []docker.APIImages
+	var images []types.Image
 	err := json.Unmarshal([]byte(imagesJSON), &images)
 	return images, err
 }
@@ -117,18 +121,18 @@ func (_m *ContainerDaemonMock) ImagesCount() int {
 }
 
 // Info provides a mock function with given fields:
-func (_m *ContainerDaemonMock) Info() (*docker.Env, error) {
-	return nil, nil
+func (_m *ContainerDaemonMock) Info() (types.Info, error) {
+	return types.Info{}, nil
 }
 
 // Inspect provides a mock function with given fields: id
-func (_m *ContainerDaemonMock) Inspect(id string) (*docker.Container, error) {
-	return nil, nil
+func (_m *ContainerDaemonMock) Inspect(id string) (types.ContainerJSON, error) {
+	return types.ContainerJSON{}, nil
 }
 
 // InspectImage mock
-func (_m *ContainerDaemonMock) InspectImage(name string) (*docker.Image, error) {
-	return nil, nil
+func (_m *ContainerDaemonMock) InspectImage(name string) (types.ImageInspect, error) {
+	return types.ImageInspect{}, nil
 }
 
 // IsContainerRunning provides a mock function with given fields: id
@@ -147,12 +151,12 @@ func (_m *ContainerDaemonMock) Logs(id string) io.ReadCloser {
 }
 
 //Networks mock
-func (_m *ContainerDaemonMock) Networks() ([]docker.Network, error) {
+func (_m *ContainerDaemonMock) Networks() ([]types.NetworkResource, error) {
 	return nil, nil
 }
 
 //NetworkAt mock
-func (_m *ContainerDaemonMock) NetworkAt(position int) (*docker.Network, error) {
+func (_m *ContainerDaemonMock) NetworkAt(position int) (*types.NetworkResource, error) {
 	return nil, nil
 }
 
@@ -162,8 +166,8 @@ func (_m *ContainerDaemonMock) NetworksCount() int {
 }
 
 //NetworkInspect mock
-func (_m *ContainerDaemonMock) NetworkInspect(id string) (*docker.Network, error) {
-	return nil, nil
+func (_m *ContainerDaemonMock) NetworkInspect(id string) (types.NetworkResource, error) {
+	return types.NetworkResource{}, nil
 }
 
 // Ok provides a mock function with given fields:
@@ -184,8 +188,8 @@ func (_m *ContainerDaemonMock) Rm(id string) error {
 }
 
 // Rmi mock
-func (_m *ContainerDaemonMock) Rmi(id string, force bool) error {
-	return nil
+func (_m *ContainerDaemonMock) Rmi(id string, force bool) ([]types.ImageDelete, error) {
+	return nil, nil
 }
 
 // Refresh provides a mock function with given fields: allContainers
@@ -210,9 +214,9 @@ func (_m *ContainerDaemonMock) RemoveAllStoppedContainers() (int, error) {
 }
 
 // Stats provides a mock function with given fields: id
-func (_m *ContainerDaemonMock) Stats(id string) (<-chan *drydocker.Stats, chan<- bool, <-chan error) {
+func (_m *ContainerDaemonMock) Stats(id string) (<-chan *drydocker.Stats, chan<- struct{}) {
 
-	return nil, nil, nil
+	return nil, nil
 }
 
 // StopContainer provides a mock function with given fields: id
@@ -234,19 +238,19 @@ func (_m *ContainerDaemonMock) SortNetworks(sortMode drydocker.SortNetworksMode)
 }
 
 // StopEventChannel provides a mock function with given fields: eventChan
-func (_m *ContainerDaemonMock) StopEventChannel(eventChan chan *docker.APIEvents) error {
+func (_m *ContainerDaemonMock) StopEventChannel(eventChan chan *events.Message) error {
 
 	return nil
 }
 
 //Top function mock
-func (_m *ContainerDaemonMock) Top(id string) (docker.TopResult, error) {
+func (_m *ContainerDaemonMock) Top(id string) (types.ContainerProcessList, error) {
 
-	return docker.TopResult{}, nil
+	return types.ContainerProcessList{}, nil
 }
 
 // Version provides a mock function with given fields:
-func (_m *ContainerDaemonMock) Version() (*drydocker.Version, error) {
+func (_m *ContainerDaemonMock) Version() (*types.Version, error) {
 
-	return &drydocker.Version{}, nil
+	return &types.Version{}, nil
 }

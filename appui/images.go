@@ -8,7 +8,7 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	godocker "github.com/fsouza/go-dockerclient"
+	"github.com/docker/engine-api/types"
 	"github.com/moncho/dry/docker"
 )
 
@@ -28,13 +28,13 @@ type imagesColumn struct {
 //DockerImageRenderData holds information that might be
 //used during image list rendering
 type DockerImageRenderData struct {
-	images        []godocker.APIImages
+	images        []types.Image
 	selectedImage int
 	sortMode      docker.SortImagesMode
 }
 
 //NewDockerImageRenderData creates render data structs
-func NewDockerImageRenderData(images []godocker.APIImages, selectedImage int, sortMode docker.SortImagesMode) *DockerImageRenderData {
+func NewDockerImageRenderData(images []types.Image, selectedImage int, sortMode docker.SortImagesMode) *DockerImageRenderData {
 	return &DockerImageRenderData{
 		images:        images,
 		selectedImage: selectedImage,
@@ -137,7 +137,7 @@ func (r *DockerImagesRenderer) imageInformation() string {
 	return buf.String()
 }
 
-func (r *DockerImagesRenderer) imagesToShow() []godocker.APIImages {
+func (r *DockerImagesRenderer) imagesToShow() []types.Image {
 	images := r.data.images
 	cursorPos := r.data.selectedImage
 	linesForImages := r.height - imageTableStart - 1

@@ -6,6 +6,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/moncho/dry/appui"
+	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/nsf/termbox-go"
 )
@@ -161,30 +163,20 @@ func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.
 }
 
 //autorefresh view that autorefreshes its content every second
-func autorefresh(dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan<- struct{}, doneStats chan<- bool, errC <-chan error) {
+func statsScreen(screen *ui.Screen, keyboardQueue chan termbox.Event, stats <-chan *docker.Stats, viewClosed chan<- struct{}, done chan<- struct{}) {
 	screen.Clear()
 	v := ui.NewMarkupView("", 0, 0, screen.Width, screen.Height, false)
-	//used to coordinate rendering between the ticker
-	//and the exit event
+
 	var mutex = &sync.Mutex{}
-	Write(dry, v)
 	err := v.Render()
 	if err != nil {
 		ui.ShowErrorMessage(screen, keyboardQueue, err)
 	}
 	screen.Flush()
-	//the ticker is created after the first render
-	timestampQueue := time.NewTicker(1000 * time.Millisecond)
 
 loop:
 	for {
 		select {
-		case <-errC:
-			{
-				mutex.Lock()
-				timestampQueue.Stop()
-				break loop
-			}
 		case event := <-keyboardQueue:
 			switch event.Type {
 			case termbox.EventKey:
@@ -192,15 +184,14 @@ loop:
 					//the lock is acquired and the time-based refresh queue is stopped
 					//before breaking the loop
 					mutex.Lock()
-					timestampQueue.Stop()
 					break loop
 				}
 			}
-		case <-timestampQueue.C:
+		case s := <-stats:
 			{
 				mutex.Lock()
 				v.Clear()
-				Write(dry, v)
+				io.WriteString(v, appui.NewDockerStatsRenderer(s).Render())
 				v.Render()
 				screen.Flush()
 				mutex.Unlock()
@@ -208,12 +199,11 @@ loop:
 		}
 	}
 	//cleanup before exiting, the screen is cleared and the lock released
-	termbox.HideCursor()
 	screen.Clear()
 	screen.Sync()
 	mutex.Unlock()
-	doneStats <- true
-	done <- struct{}{}
+	viewClosed <- struct{}{}
+	close(done)
 }
 
 //less shows dry output in a "less" emulator

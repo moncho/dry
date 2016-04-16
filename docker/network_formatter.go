@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/fsouza/go-dockerclient"
+	"github.com/docker/engine-api/types"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 type NetworkFormatter struct {
 	trunc   bool
 	header  []string
-	network docker.Network
+	network types.NetworkResource
 }
 
 func (formatter *NetworkFormatter) addHeader(header string) {

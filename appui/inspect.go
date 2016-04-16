@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 
-	godocker "github.com/fsouza/go-dockerclient"
+	"github.com/docker/engine-api/types"
 	"github.com/moncho/dry/ui"
 )
 
 type inspectRenderer struct {
-	container *godocker.Container
+	container types.ContainerJSON
 }
 
 //NewDockerInspectRenderer creates renderer for inspect information
-func NewDockerInspectRenderer(container *godocker.Container) ui.Renderer {
+func NewDockerInspectRenderer(container types.ContainerJSON) ui.Renderer {
 	return &inspectRenderer{
 		container: container,
 	}
@@ -39,11 +39,11 @@ func (r *inspectRenderer) Render() string {
 }
 
 type inspectImageRenderer struct {
-	image *godocker.Image
+	image types.ImageInspect
 }
 
 //NewDockerInspectImageRenderer creates renderer for image inspect information
-func NewDockerInspectImageRenderer(image *godocker.Image) ui.Renderer {
+func NewDockerInspectImageRenderer(image types.ImageInspect) ui.Renderer {
 	return &inspectImageRenderer{
 		image: image,
 	}
@@ -69,11 +69,11 @@ func (r *inspectImageRenderer) Render() string {
 }
 
 type inspectNetworkRenderer struct {
-	network *godocker.Network
+	network types.NetworkResource
 }
 
 //NewDockerInspectNetworkRenderer creates renderer for network inspect information
-func NewDockerInspectNetworkRenderer(network *godocker.Network) ui.Renderer {
+func NewDockerInspectNetworkRenderer(network types.NetworkResource) ui.Renderer {
 	return &inspectNetworkRenderer{
 		network: network,
 	}

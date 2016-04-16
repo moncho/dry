@@ -66,11 +66,10 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 		switch event.Ch {
 		case 's', 'S': //stats
 			if cursorPos >= 0 {
-
-				done, errC, err := dry.Stats(cursorPos)
+				stats, done, err := dry.Stats(cursorPos)
 				if err == nil {
 					focus = false
-					go autorefresh(dry, screen, h.keyboardQueueForView, h.viewClosed, done, errC)
+					go statsScreen(screen, h.keyboardQueueForView, stats, h.viewClosed, done)
 				}
 			}
 		case 'l', 'L': //logs

@@ -6,7 +6,7 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/fsouza/go-dockerclient"
+	"github.com/docker/engine-api/types"
 )
 
 const (
@@ -35,11 +35,11 @@ type FormattingContext struct {
 }
 
 // Format helps to format the output using the parameters set in the FormattingContext.
-func Format(ctx FormattingContext, containers []docker.APIContainers) {
+func Format(ctx FormattingContext, containers []types.Container) {
 	tableFormat(ctx, containers)
 }
 
-func tableFormat(ctx FormattingContext, containers []docker.APIContainers) {
+func tableFormat(ctx FormattingContext, containers []types.Container) {
 
 	var (
 		buffer = bytes.NewBufferString("")
@@ -76,7 +76,7 @@ func tableFormat(ctx FormattingContext, containers []docker.APIContainers) {
 }
 
 // FormatImages formats the given images.
-func FormatImages(ctx FormattingContext, images []docker.APIImages) {
+func FormatImages(ctx FormattingContext, images []types.Image) {
 	var (
 		buffer = bytes.NewBufferString("")
 		tmpl   = ctx.Template
@@ -108,7 +108,7 @@ func FormatImages(ctx FormattingContext, images []docker.APIImages) {
 }
 
 // FormatNetworks formats the given slice of networks.
-func FormatNetworks(ctx FormattingContext, networks []docker.Network) {
+func FormatNetworks(ctx FormattingContext, networks []types.NetworkResource) {
 	var (
 		buffer = bytes.NewBufferString("")
 		tmpl   = ctx.Template

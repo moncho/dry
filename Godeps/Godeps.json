@@ -28,10 +28,6 @@
 			"Rev": "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
 		},
 		{
-			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Rev": "d92e9b886690a7daa42daa3807d1829c6e6a9d0a"
-		},
-		{
 			"ImportPath": "github.com/gosuri/uitable/util/strutil",
 			"Rev": "62e40473eadf9579716227a0033cd8db16e1c500"
 		},
@@ -52,6 +48,10 @@
 		{
 			"ImportPath": "github.com/olekukonko/tablewriter",
 			"Rev": "cca8bbc0798408af109aaaa239cbd2634846b340"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api",
+			"Rev": "5b9e86c11862e755be8871b64aada2a65ded4b8b"
 		}
 	]
 }

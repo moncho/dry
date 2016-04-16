@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/docker/docker/pkg/units"
-	"github.com/fsouza/go-dockerclient"
+	"github.com/docker/engine-api/types"
+	"github.com/docker/go-units"
 	"github.com/gosuri/uitable/util/strutil"
 )
 
@@ -29,7 +29,7 @@ const (
 type ContainerFormatter struct {
 	trunc  bool
 	header []string
-	c      docker.APIContainers
+	c      types.Container
 }
 
 //ID prettifies the id
@@ -156,10 +156,10 @@ func stripNamePrefix(ss []string) []string {
 	return ss
 }
 
-func displayablePorts(ports []docker.APIPort) string {
+func displayablePorts(ports []types.Port) string {
 	type portGroup struct {
-		first int64
-		last  int64
+		first int
+		last  int
 	}
 	groupMap := make(map[string]*portGroup)
 	var result []string
@@ -202,7 +202,7 @@ func displayablePorts(ports []docker.APIPort) string {
 }
 
 // byPortInfo is a temporary type used to sort types.Port by its fields
-type byPortInfo []docker.APIPort
+type byPortInfo []types.Port
 
 func (r byPortInfo) Len() int      { return len(r) }
 func (r byPortInfo) Swap(i, j int) { r[i], r[j] = r[j], r[i] }
@@ -222,7 +222,7 @@ func (r byPortInfo) Less(i, j int) bool {
 	return r[i].Type < r[j].Type
 }
 
-func formGroup(key string, start, last int64) string {
+func formGroup(key string, start, last int) string {
 	parts := strings.Split(key, "/")
 	groupType := parts[0]
 	var ip string
@@ -230,7 +230,7 @@ func formGroup(key string, start, last int64) string {
 		ip = parts[0]
 		groupType = parts[1]
 	}
-	group := strconv.FormatInt(start, 10)
+	group := strconv.Itoa(start)
 	if start != last {
 		group = fmt.Sprintf("%s-%d", group, last)
 	}

@@ -6,7 +6,7 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"github.com/docker/docker/pkg/units"
+	"github.com/docker/go-units"
 	"github.com/gosuri/uitable/util/strutil"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"

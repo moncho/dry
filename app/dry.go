@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/docker/docker/pkg/stringid"
-	godocker "github.com/fsouza/go-dockerclient"
+	"github.com/docker/engine-api/types"
+	"github.com/docker/engine-api/types/events"
 	"github.com/moncho/dry/appui"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -34,21 +35,20 @@ type state struct {
 //Dry represents the application.
 type Dry struct {
 	dockerDaemon       drydocker.ContainerDaemon
-	dockerEvents       chan *godocker.APIEvents
-	imageHistory       []godocker.ImageHistory
-	images             []godocker.APIImages
-	info               *godocker.Env
-	inspectedContainer *godocker.Container
-	inspectedImage     *godocker.Image
-	inspectedNetwork   *godocker.Network
+	dockerEvents       chan *events.Message
+	imageHistory       []types.ImageHistory
+	images             []types.Image
+	info               types.Info
+	inspectedContainer types.ContainerJSON
+	inspectedImage     types.ImageInspect
+	inspectedNetwork   types.NetworkResource
 	lastRefresh        time.Time
-	networks           []godocker.Network
+	networks           []types.NetworkResource
 	orderedCids        []string
 	output             chan string
 	refreshTimerMutex  sync.Locker
 	renderer           *appui.DockerPs
 	state              *state
-	stats              *drydocker.Stats
 }
 
 //Changed is true if the application state has changed
@@ -222,7 +222,7 @@ func (d *Dry) RemoveImage(position int, force bool) {
 		id := drydocker.ImageID(image.ID)
 		shortID := stringid.TruncateID(id)
 		d.appmessage(fmt.Sprintf("<red>Removing image:</> <white>%s</>", shortID))
-		if err := d.dockerDaemon.Rmi(id, force); err == nil {
+		if _, err = d.dockerDaemon.Rmi(id, force); err == nil {
 			d.doRefresh()
 			d.appmessage(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
 		} else {
@@ -400,33 +400,19 @@ func (d *Dry) RestartContainer(position int) {
 
 //Stats get stats of container in the given position until a
 //message is sent to the done channel
-func (d *Dry) Stats(position int) (chan<- bool, <-chan error, error) {
+func (d *Dry) Stats(position int) (<-chan *drydocker.Stats, chan<- struct{}, error) {
 	id, _, err := d.dockerDaemon.ContainerIDAt(position)
 	if err == nil {
 		if d.dockerDaemon.IsContainerRunning(id) {
-			done := make(chan bool, 1)
-			statsC, dockerDoneChannel, errC := d.dockerDaemon.Stats(id)
-			if err == nil {
-				go func() {
-					for {
-						select {
-						case s := <-statsC:
-							d.stats = s
-						case <-done:
-							dockerDoneChannel <- true
-							return
-						}
-					}
-				}()
-				d.changeViewMode(StatsMode)
-				return done, errC, nil
-			}
-			dockerDoneChannel <- true
+			statsC, dockerDoneChannel := d.dockerDaemon.Stats(id)
+			return statsC, dockerDoneChannel, nil
+
 		}
 		d.appmessage(
 			fmt.Sprintf("<red>Cannot run stats on stopped container. Id: </><white>%s</>", id))
 		err = errors.New("Cannot run stats on stopped container.")
 	}
+
 	return nil, nil, err
 }
 
@@ -479,9 +465,6 @@ func (d *Dry) appmessage(message string) {
 func (d *Dry) actionmessage(cid string, action string) {
 	d.appmessage(fmt.Sprintf("<red>%s container with id </><white>%s</>",
 		action, cid))
-}
-func (d *Dry) cleanStats() {
-	d.stats = nil
 }
 
 func (d *Dry) errormessage(cid string, action string, err error) {
@@ -540,13 +523,7 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, erro
 }
 
 //NewDryApp creates a new dry application
-func NewDryApp(screen *ui.Screen) (*Dry, error) {
-	d, err := drydocker.ConnectToDaemon()
-	return newDry(screen, d, err)
-}
-
-//NewDryAppWithDockerEnv creates a new dry application
-func NewDryAppWithDockerEnv(screen *ui.Screen, env *drydocker.DockerEnv) (*Dry, error) {
-	d, err := drydocker.ConnectToDaemonUsingEnv(env)
+func NewDryApp(screen *ui.Screen, env *drydocker.DockerEnv) (*Dry, error) {
+	d, err := drydocker.ConnectToDaemon(env)
 	return newDry(screen, d, err)
 }

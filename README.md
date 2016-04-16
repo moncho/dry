@@ -145,9 +145,8 @@ Code released under the MIT license. See
 
 Built on top of:
 * [termbox](https://github.com/nsf/termbox-go)
-* [go-dockerclient](https://github.com/fsouza/go-dockerclient)
 
-Also reused some code and ideas from the [Docker project](https://github.com/docker/docker) and [mop](https://github.com/michaeldv/mop).
+Also reused some code and ideas from the [Docker project](https://github.com/docker/docker).
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moncho/dry/trend.png)](https://bitdeli.com/free "Bitdeli Badge")

@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	logo = `     _
+	banner = `     _
     | |
   __| |  ____  _   _
  / _  | / ___)| | | |
@@ -26,10 +26,11 @@ const (
  \____||_|     \__  |
                (____/
 `
-	loader1 = "Connecting to the Docker host.  "
-	loader2 = "Connecting to the Docker host.. "
-	loader3 = "Connecting to the Docker host..."
 )
+
+var loadMessage = []string{"Connecting to the Docker host.  ",
+	"Connecting to the Docker host.. ",
+	"Connecting to the Docker host..."}
 
 //dryOptions represents command line flags variables
 type dryOptions struct {
@@ -46,41 +47,33 @@ type dryOptions struct {
 //-----------------------------------------------------------------------------
 
 func newApp(screen *ui.Screen, dockerEnv *docker.DockerEnv) (*app.Dry, error) {
-	if dockerEnv == nil {
-		return app.NewDryApp(screen)
-	}
-	return app.NewDryAppWithDockerEnv(screen, dockerEnv)
+	return app.NewDryApp(screen, dockerEnv)
 }
 
 func newDockerEnv(opts dryOptions) *docker.DockerEnv {
-	var dockerEnv *docker.DockerEnv
+	dockerEnv := &docker.DockerEnv{}
 	if opts.DockerHost == "" {
 		if os.Getenv("DOCKER_HOST") == "" {
 			log.Info(
 				fmt.Sprintf(
 					"No DOCKER_HOST environment variable found and no Host parameter was given, trying %s",
 					docker.DefaultDockerHost))
-			dockerEnv = &docker.DockerEnv{
-				DockerHost: docker.DefaultDockerHost,
-			}
+			dockerEnv.DockerHost = docker.DefaultDockerHost
 		} else {
-			dockerEnv = &docker.DockerEnv{
-				DockerHost:      os.Getenv("DOCKER_HOST"),
-				DockerTLSVerify: docker.GetBool(os.Getenv("DOCKER_TLS_VERIFY")),
-				DockerCertPath:  os.Getenv("DOCKER_CERT_PATH")}
+			dockerEnv.DockerHost = os.Getenv("DOCKER_HOST")
+			dockerEnv.DockerTLSVerify = docker.GetBool(os.Getenv("DOCKER_TLS_VERIFY"))
+			dockerEnv.DockerCertPath = os.Getenv("DOCKER_CERT_PATH")
 		}
 	} else {
-		dockerEnv = &docker.DockerEnv{
-			DockerHost:      opts.DockerHost,
-			DockerTLSVerify: docker.GetBool(opts.DockerTLSVerifiy),
-			DockerCertPath:  opts.DockerCertPath,
-		}
+		dockerEnv.DockerHost = opts.DockerHost
+		dockerEnv.DockerTLSVerify = docker.GetBool(opts.DockerTLSVerifiy)
+		dockerEnv.DockerCertPath = opts.DockerCertPath
 	}
 	return dockerEnv
 }
 
 func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.DockerEnv, stop <-chan struct{}) {
-	screen.RenderAtColumn(screen.Width/2-10, 0, ui.Yellow(logo))
+	screen.RenderAtColumn(screen.Width/2-10, 0, ui.Yellow(banner))
 	screen.RenderLine(2, 10, fmt.Sprintf("<blue>Version:</> %s", ui.White(version.VERSION)))
 	if dockerEnv != nil {
 		screen.RenderLine(2, 11, fmt.Sprintf("<blue>Docker Host:</> %s", ui.White(dockerEnv.DockerHost)))
@@ -88,23 +81,18 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.DockerEnv, stop <-ch
 		screen.RenderLine(2, 11, ui.White("No Docker host"))
 	}
 	go func() {
-		var loadingMessage = loader1
-		var rotorPos = 1
-		loaderTimer := time.NewTicker(1 * time.Second)
+		var rotorPos = 0
+		timer := time.NewTicker(1 * time.Second)
 		for {
 			select {
-			case <-loaderTimer.C:
+			case <-timer.C:
+				loadingMessage := loadMessage[rotorPos]
 				screen.RenderLine(screen.Width/2-12, 14, ui.White(loadingMessage))
 				screen.Flush()
-				if rotorPos == 1 {
-					loadingMessage = loader2
-					rotorPos = 2
-				} else if rotorPos == 2 {
-					loadingMessage = loader3
-					rotorPos = 3
+				if rotorPos < len(loadMessage)-1 {
+					rotorPos++
 				} else {
-					loadingMessage = loader1
-					rotorPos = 1
+					rotorPos = 0
 				}
 			case <-stop:
 				return
