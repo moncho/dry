@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/engine-api/types"
 	"github.com/docker/go-units"
 	"github.com/gosuri/uitable/util/strutil"
@@ -36,7 +35,7 @@ type ContainerFormatter struct {
 func (c *ContainerFormatter) ID() string {
 	c.addHeader(idHeader)
 	if c.trunc {
-		return stringid.TruncateID(c.c.ID)
+		return TruncateID(c.c.ID)
 	}
 	return c.c.ID
 }

@@ -4,7 +4,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/go-units"
 )
 
@@ -32,5 +31,20 @@ func ImageID(uglyID string) string {
 
 //ShortImageID shortens and beutifies an id
 func ShortImageID(uglyID string) string {
-	return stringid.TruncateID(ImageID(uglyID))
+	return TruncateID(ImageID(uglyID))
+}
+
+// TruncateID returns a shorthand version of a string identifier for convenience.
+// A collision with other shorthands is very unlikely, but possible.
+// In case of a collision a lookup with TruncIndex.Get() will fail, and the caller
+// will need to use a longer prefix, or the full-length Id.
+func TruncateID(id string) string {
+	if i := strings.IndexRune(id, ':'); i >= 0 {
+		id = id[i+1:]
+	}
+	trimTo := shortLen
+	if len(id) < shortLen {
+		trimTo = len(id)
+	}
+	return id[:trimTo]
 }

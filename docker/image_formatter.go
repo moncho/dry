@@ -3,7 +3,6 @@ package docker
 import (
 	"strings"
 
-	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/engine-api/types"
 	"github.com/docker/go-units"
 )
@@ -35,7 +34,7 @@ func (formatter *ImageFormatter) addHeader(header string) {
 func (formatter *ImageFormatter) ID() string {
 	formatter.addHeader(imageIDHeader)
 	if formatter.trunc {
-		return stringid.TruncateID(ImageID(formatter.image.ID))
+		return TruncateID(ImageID(formatter.image.ID))
 	}
 	return ImageID(formatter.image.ID)
 }

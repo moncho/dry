@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
-	"github.com/docker/docker/pkg/stringid"
 	dockerAPI "github.com/docker/engine-api/client"
 	dockerTypes "github.com/docker/engine-api/types"
 	"github.com/docker/engine-api/types/events"
@@ -67,7 +67,7 @@ func (daemon *DockerDaemon) ContainerIDAt(pos int) (string, string, error) {
 	if pos < 0 || pos >= len(daemon.containers) {
 		return "", "", fmt.Errorf("Invalid container position: %d", pos)
 	}
-	return daemon.containers[pos].ID, stringid.TruncateID(daemon.containers[pos].ID), nil
+	return daemon.containers[pos].ID, TruncateID(daemon.containers[pos].ID), nil
 }
 
 //ContainerByID returns the container with the given ID
@@ -82,18 +82,26 @@ func (daemon *DockerDaemon) DockerEnv() *DockerEnv {
 
 // Events returns a channel to receive Docker events.
 func (daemon *DockerDaemon) Events() (chan *events.Message, error) {
-	listener := make(chan *events.Message)
-	// TODO: Listen to Docker events
-	/*
-		cli.client.Events(context.Background(), options)
-		err := daemon.client.Events(listener)
+	eventC := make(chan *events.Message)
 
+	options := dockerTypes.EventsOptions{
+		Since: time.Now().String(),
+	}
+	events, err := daemon.client.Events(context.Background(), options)
 
+	if err != nil {
+		close(listener)
+		return nil, err
+	}
+
+	go decodeEvents(resBody, func(event events.Message, err error) error {
 		if err != nil {
-			close(listener)
-			return nil, err
+			closeChan <- err
+			return nil
 		}
-	*/
+		c <- event
+		return nil
+	})
 	return listener, nil
 }
 
@@ -212,8 +220,8 @@ func (daemon *DockerDaemon) RestartContainer(id string) error {
 func (daemon *DockerDaemon) Rm(id string) error {
 	opts := dockerTypes.ContainerRemoveOptions{
 		ContainerID:   id,
-		RemoveVolumes: true,
-		RemoveLinks:   true,
+		RemoveVolumes: false,
+		RemoveLinks:   false,
 		Force:         true,
 	}
 	return daemon.client.ContainerRemove(context.Background(), opts)

@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/engine-api/types"
 )
 
@@ -33,7 +32,7 @@ func (formatter *NetworkFormatter) addHeader(header string) {
 func (formatter *NetworkFormatter) ID() string {
 	formatter.addHeader(networkIDHeader)
 	if formatter.trunc {
-		return stringid.TruncateID(ImageID(formatter.network.ID))
+		return TruncateID(ImageID(formatter.network.ID))
 	}
 	return ImageID(formatter.network.ID)
 }

@@ -7,7 +7,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 )
@@ -51,7 +50,7 @@ func StatsStream(cli client.APIClient, container types.Container, streamStats bo
 //buildStats builds Stats with the given information
 func buildStats(container types.Container, stats *types.StatsJSON) *Stats {
 	s := &Stats{
-		CID:     stringid.TruncateID(container.ID),
+		CID:     TruncateID(container.ID),
 		Command: container.Command,
 		Stats:   stats,
 	}

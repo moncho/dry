@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/engine-api/types"
 	"github.com/docker/engine-api/types/events"
 	"github.com/moncho/dry/appui"
@@ -220,7 +219,7 @@ func (d *Dry) RemoveAllStoppedContainers() {
 func (d *Dry) RemoveImage(position int, force bool) {
 	if image, err := d.dockerDaemon.ImageAt(position); err == nil {
 		id := drydocker.ImageID(image.ID)
-		shortID := stringid.TruncateID(id)
+		shortID := drydocker.TruncateID(id)
 		d.appmessage(fmt.Sprintf("<red>Removing image:</> <white>%s</>", shortID))
 		if _, err = d.dockerDaemon.Rmi(id, force); err == nil {
 			d.doRefresh()
