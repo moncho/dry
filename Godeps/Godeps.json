@@ -45,7 +45,7 @@
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections",
-			"Rev": "5b9e86c11862e755be8871b64aada2a65ded4b8b"
+			"Rev": "5b7154ba2efe13ff86ae8830a9e7cb120b080d6e"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
