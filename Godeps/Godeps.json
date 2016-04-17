@@ -8,17 +8,7 @@
 			"Rev": "55eb11d21d2a31a3cc93838241d04800f52e823d"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/pkg/random",
-			"Comment": "v1.4.1-6830-g9a13c2d",
-			"Rev": "9a13c2dc79cc868ba3a863137ba27297314167e4"
-		},
-		{
 			"ImportPath": "github.com/docker/docker/pkg/stringid",
-			"Comment": "v1.4.1-6830-g9a13c2d",
-			"Rev": "9a13c2dc79cc868ba3a863137ba27297314167e4"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/units",
 			"Comment": "v1.4.1-6830-g9a13c2d",
 			"Rev": "9a13c2dc79cc868ba3a863137ba27297314167e4"
 		},
@@ -52,6 +42,15 @@
 		{
 			"ImportPath": "github.com/docker/engine-api",
 			"Rev": "5b9e86c11862e755be8871b64aada2a65ded4b8b"
+		},
+		{
+			"ImportPath": "github.com/docker/go-connections",
+			"Rev": "5b9e86c11862e755be8871b64aada2a65ded4b8b"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "84ba27dd5b2d8135e9da1395277f2c9333a2ffda"
 		}
+
 	]
 }
