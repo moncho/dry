@@ -3,9 +3,9 @@ package appui
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strings"
 
-	"github.com/docker/docker/utils"
 	dockerTypes "github.com/docker/engine-api/types"
 	"github.com/docker/go-units"
 	"github.com/moncho/dry/ui"
@@ -71,7 +71,7 @@ func (r *infoRenderer) Render() string {
 	writeKV(buffer, "Name", info.Name)
 	writeKV(buffer, "ID", info.ID)
 	writeKV(buffer, "Docker Root Dir", info.DockerRootDir)
-	writeKV(buffer, "Debug Mode (client)", utils.IsDebugEnabled())
+	writeKV(buffer, "Debug Mode (client)", isDebugEnabled())
 	writeKV(buffer, "Debug Mode (server)", info.Debug)
 
 	if info.Debug {
@@ -168,4 +168,9 @@ func (r *infoRenderer) Render() string {
 //writeKV write into the given buffer "key: value"
 func writeKV(buffer *bytes.Buffer, key string, value interface{}) {
 	buffer.WriteString(fmt.Sprintf("<white> %s </>: %v\n", key, value))
+}
+
+// isDebugEnabled checks whether the debug flag is set or not.
+func isDebugEnabled() bool {
+	return os.Getenv("DEBUG") != ""
 }
