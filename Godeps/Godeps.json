@@ -10,6 +10,10 @@
       "Comment": "v0.2.2-227-g5b9e86c",
       "Rev": "5b9e86c11862e755be8871b64aada2a65ded4b8b"
     }, {
+      "ImportPath": "github.com/docker/go-connections/nat",
+      "Comment": "v0.2.0-4-g5b7154b",
+      "Rev": "5b7154ba2efe13ff86ae8830a9e7cb120b080d6e"
+    }, {
       "ImportPath": "github.com/docker/go-units",
       "Comment": "v0.1.0-21-g0bbddae",
       "Rev": "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
