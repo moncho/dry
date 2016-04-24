@@ -11,7 +11,8 @@ build:
       package-dir: github.com/moncho/dry
 
     # golint step!
-    - wercker/golint
+    - wercker/golint:
+      exclude: "vendor"
 
     - script:
         name: install godep
@@ -32,4 +33,4 @@ build:
     - script:
         name: go test
         code: |
-          go test ./...
+          go test $(go list ./... | grep -v /vendor/)

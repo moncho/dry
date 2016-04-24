@@ -525,7 +525,7 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 	return nil, err
 }
 
-//NewDryApp creates a new dry application
+//NewDry creates a new dry application
 func NewDry(screen *ui.Screen, env *drydocker.DockerEnv) (*Dry, error) {
 	d, err := drydocker.ConnectToDaemon(env)
 	if err != nil {
