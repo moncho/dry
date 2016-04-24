@@ -1,4 +1,4 @@
-g {
+{
   "ImportPath": "github.com/moncho/dry",
   "GoVersion": "go1.6",
   "Deps": [{
