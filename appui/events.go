@@ -9,9 +9,15 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/docker/docker/pkg/jsonlog"
 	"github.com/docker/engine-api/types/events"
 	"github.com/moncho/dry/ui"
+)
+
+const (
+	// RFC3339NanoFixed is our own version of RFC339Nano because we want one
+	// that pads the nano seconds part with zeros to ensure
+	// the timestamps are aligned in the logs.
+	RFC3339NanoFixed = "2006-01-02T15:04:05.000000000Z07:00"
 )
 
 type eventsRenderer struct {
@@ -47,9 +53,9 @@ func printEvent(w io.Writer, event events.Message) {
 	io.WriteString(w, "<white>")
 
 	if event.TimeNano != 0 {
-		fmt.Fprintf(w, "%s ", time.Unix(0, event.TimeNano).Format(jsonlog.RFC3339NanoFixed))
+		fmt.Fprintf(w, "%s ", time.Unix(0, event.TimeNano).Format(RFC3339NanoFixed))
 	} else if event.Time != 0 {
-		fmt.Fprintf(w, "%s ", time.Unix(event.Time, 0).Format(jsonlog.RFC3339NanoFixed))
+		fmt.Fprintf(w, "%s ", time.Unix(event.Time, 0).Format(RFC3339NanoFixed))
 	}
 
 	fmt.Fprintf(w, "</><blue>%s %s %s</><white>", event.Type, event.Action, event.Actor.ID)
