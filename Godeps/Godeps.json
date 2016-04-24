@@ -40,6 +40,10 @@
     }, {
       "ImportPath": "github.com/opencontainers/runc",
       "Rev": "c6db82f9219b2ea4c98f80560205ed6c65aeea19"
+    }, {
+      "ImportPath": "github.com/codegangsta/cli",
+      "Rev": "71f57d300dd6a780ac1856c005c4b518cfd498ec"
+
     }
   ]
 }
