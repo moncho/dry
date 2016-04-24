@@ -1,48 +1,45 @@
-{
-	"ImportPath": "github.com/moncho/dry",
-	"GoVersion": "go1.6",
-	"Deps": [
-		{
-			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.7.3",
-			"Rev": "55eb11d21d2a31a3cc93838241d04800f52e823d"
-		},
-		{
-			"ImportPath": "github.com/docker/engine-api/types",
-			"Comment": "v0.2.2-227-g5b9e86c",
-			"Rev": "5b9e86c11862e755be8871b64aada2a65ded4b8b"
-		},
-		{
-			"ImportPath": "github.com/docker/go-connections/nat",
-			"Comment": "v0.2.0-4-g5b7154b",
-			"Rev": "5b7154ba2efe13ff86ae8830a9e7cb120b080d6e"
-		},
-		{
-			"ImportPath": "github.com/docker/go-units",
-			"Comment": "v0.1.0-21-g0bbddae",
-			"Rev": "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
-		},
-		{
-			"ImportPath": "github.com/gosuri/uitable/util/strutil",
-			"Rev": "62e40473eadf9579716227a0033cd8db16e1c500"
-		},
-		{
-			"ImportPath": "github.com/jessevdk/go-flags",
-			"Comment": "v1-322-gfc93116",
-			"Rev": "fc93116606d0a71d7e9de0ad5734fdb4b8eae834"
-		},
-		{
-			"ImportPath": "github.com/mattn/go-runewidth",
-			"Comment": "travisish-37-g12e0ff7",
-			"Rev": "12e0ff74603c9a3209d8bf84f8ab349fe1ad9477"
-		},
-		{
-			"ImportPath": "github.com/nsf/termbox-go",
-			"Rev": "4f9984b1541648f3a03da24e0f5987fd1c64247d"
-		},
-		{
-			"ImportPath": "github.com/olekukonko/tablewriter",
-			"Rev": "cca8bbc0798408af109aaaa239cbd2634846b340"
-		}
-	]
+g {
+  "ImportPath": "github.com/moncho/dry",
+  "GoVersion": "go1.6",
+  "Deps": [{
+      "ImportPath": "github.com/Sirupsen/logrus",
+      "Comment": "v0.7.3",
+      "Rev": "55eb11d21d2a31a3cc93838241d04800f52e823d"
+    }, {
+      "ImportPath": "github.com/docker/engine-api/types",
+      "Comment": "v0.2.2-227-g5b9e86c",
+      "Rev": "5b9e86c11862e755be8871b64aada2a65ded4b8b"
+    }, {
+      "ImportPath": "github.com/docker/go-connections/nat",
+      "Comment": "v0.2.0-4-g5b7154b",
+      "Rev": "5b7154ba2efe13ff86ae8830a9e7cb120b080d6e"
+    }, {
+      "ImportPath": "github.com/docker/go-units",
+      "Comment": "v0.1.0-21-g0bbddae",
+      "Rev": "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
+    }, {
+      "ImportPath": "github.com/gosuri/uitable/util/strutil",
+      "Rev": "62e40473eadf9579716227a0033cd8db16e1c500"
+    }, {
+      "ImportPath": "github.com/jessevdk/go-flags",
+      "Comment": "v1-322-gfc93116",
+      "Rev": "fc93116606d0a71d7e9de0ad5734fdb4b8eae834"
+    }, {
+      "ImportPath": "github.com/mattn/go-runewidth",
+      "Comment": "travisish-37-g12e0ff7",
+      "Rev": "12e0ff74603c9a3209d8bf84f8ab349fe1ad9477"
+    }, {
+      "ImportPath": "github.com/nsf/termbox-go",
+      "Rev": "4f9984b1541648f3a03da24e0f5987fd1c64247d"
+    }, {
+      "ImportPath": "github.com/olekukonko/tablewriter",
+      "Rev": "cca8bbc0798408af109aaaa239cbd2634846b340"
+    }, {
+      "ImportPath": "golang.org/x/net/context",
+      "Rev": "84ba27dd5b2d8135e9da1395277f2c9333a2ffda"
+    }, {
+      "ImportPath": "github.com/opencontainers/runc",
+      "Rev": "c6db82f9219b2ea4c98f80560205ed6c65aeea19"
+    }
+  ]
 }
