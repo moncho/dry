@@ -10,10 +10,6 @@
       "Comment": "v0.2.2-227-g5b9e86c",
       "Rev": "5b9e86c11862e755be8871b64aada2a65ded4b8b"
     }, {
-      "ImportPath": "github.com/docker/go-connections/nat",
-      "Comment": "v0.2.0-4-g5b7154b",
-      "Rev": "5b7154ba2efe13ff86ae8830a9e7cb120b080d6e"
-    }, {
       "ImportPath": "github.com/docker/go-units",
       "Comment": "v0.1.0-21-g0bbddae",
       "Rev": "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
@@ -37,15 +33,6 @@
     }, {
       "ImportPath": "golang.org/x/net/context",
       "Rev": "84ba27dd5b2d8135e9da1395277f2c9333a2ffda"
-    }, {
-      "ImportPath": "github.com/opencontainers/runc",
-      "Rev": "c6db82f9219b2ea4c98f80560205ed6c65aeea19"
-    }, {
-      "ImportPath": "github.com/codegangsta/cli",
-      "Rev": "71f57d300dd6a780ac1856c005c4b518cfd498ec"
-    }, {
-      "ImportPath": "github.com/coreos/go-systemd",
-      "Rev": "7b2428fec40033549c68f54e26e89e7ca9a9ce31"
     }
   ]
 }

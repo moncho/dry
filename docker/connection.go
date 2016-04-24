@@ -7,7 +7,7 @@ import (
 
 	"github.com/docker/engine-api/client"
 	dockerTypes "github.com/docker/engine-api/types"
-	"github.com/docker/go-connections/tlsconfig"
+	"github.com/moncho/dry/tls"
 )
 
 func connect(client client.APIClient, env *DockerEnv) (*DockerDaemon, error) {
@@ -41,13 +41,13 @@ func connect(client client.APIClient, env *DockerEnv) (*DockerDaemon, error) {
 func ConnectToDaemon(env *DockerEnv) (*DockerDaemon, error) {
 	var httpClient *http.Client
 	if dockerCertPath := env.DockerCertPath; dockerCertPath != "" {
-		options := tlsconfig.Options{
+		options := tls.Options{
 			CAFile:             filepath.Join(dockerCertPath, "ca.pem"),
 			CertFile:           filepath.Join(dockerCertPath, "cert.pem"),
 			KeyFile:            filepath.Join(dockerCertPath, "key.pem"),
 			InsecureSkipVerify: env.DockerTLSVerify,
 		}
-		tlsc, err := tlsconfig.Client(options)
+		tlsc, err := tls.Client(options)
 		if err != nil {
 			return nil, err
 		}
