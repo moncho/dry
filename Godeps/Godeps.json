@@ -37,6 +37,10 @@
     }, {
       "ImportPath": "golang.org/x/net/context",
       "Rev": "84ba27dd5b2d8135e9da1395277f2c9333a2ffda"
+    }, {
+      "ImportPath": "github.com/opencontainers/runc",
+      "Rev": "ae0fc15b1e969b06fa575638d234feaa1596d69c"
     }
+
   ]
 }
