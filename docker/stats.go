@@ -7,16 +7,16 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 )
 
-//StatsStream creates a channel on which to receive the stats of the given container
-func StatsStream(cli client.APIClient, container types.Container, streamStats bool) (<-chan *Stats, chan<- struct{}) {
+//StatsChannel creates a channel on which to receive the stats of the given container
+func StatsChannel(daemon *DockerDaemon, container types.Container, streamStats bool) (<-chan *Stats, chan<- struct{}) {
 	stats := make(chan *Stats)
 	done := make(chan struct{})
 
 	go func() {
+		cli := daemon.client
 		responseBody, err := cli.ContainerStats(context.Background(), container.Names[0], streamStats)
 		defer responseBody.Close()
 		defer close(stats)
@@ -37,8 +37,8 @@ func StatsStream(cli client.APIClient, container types.Container, streamStats bo
 				if err := dec.Decode(&statsJSON); err != nil {
 					return
 				}
-
-				stats <- buildStats(container, statsJSON)
+				top, _ := daemon.Top(container.ID)
+				stats <- buildStats(container, statsJSON, &top)
 			case <-done:
 				return
 			}
@@ -48,11 +48,12 @@ func StatsStream(cli client.APIClient, container types.Container, streamStats bo
 }
 
 //buildStats builds Stats with the given information
-func buildStats(container types.Container, stats *types.StatsJSON) *Stats {
+func buildStats(container types.Container, stats *types.StatsJSON, topResult *types.ContainerProcessList) *Stats {
 	s := &Stats{
-		CID:     TruncateID(container.ID),
-		Command: container.Command,
-		Stats:   stats,
+		CID:         TruncateID(container.ID),
+		Command:     container.Command,
+		Stats:       stats,
+		ProcessList: topResult,
 	}
 	s.CPUPercentage = calculateCPUPercent(stats)
 	br, bw := calculateBlockIO(stats)

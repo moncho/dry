@@ -39,6 +39,10 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 		dry.ToggleShowAllContainers()
 	case termbox.KeyF5: // refresh
 		dry.Refresh()
+	case termbox.KeyF9: // docker events
+		dry.ShowDockerEvents()
+		focus = false
+		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
 	case termbox.KeyF10: // docker info
 		dry.ShowInfo()
 		focus = false
@@ -129,6 +133,10 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 		dry.SortImages()
 	case termbox.KeyF5: // refresh
 		dry.Refresh()
+	case termbox.KeyF9: // docker events
+		dry.ShowDockerEvents()
+		focus = false
+		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
 	case termbox.KeyF10: // docker info
 		dry.ShowInfo()
 		focus = false
@@ -196,6 +204,10 @@ func (h networksScreenEventHandler) handle(event termbox.Event) (refresh bool, f
 	case termbox.KeyF5: // refresh
 		cursor.Reset()
 		dry.Refresh()
+	case termbox.KeyF9: // docker events
+		dry.ShowDockerEvents()
+		focus = false
+		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
 	case termbox.KeyF10: // docker info
 		dry.ShowInfo()
 		focus = false

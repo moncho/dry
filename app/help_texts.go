@@ -23,6 +23,7 @@ Connects to a Docker daemon, shows the list of containers and allows to execute 
 Visit <blue>http://moncho.github.io/dry/</> for more information.
 
 <yellow>Global keybinds</>
+	<white>F9</>        Shows the last 10 events reported by Docker
 	<white>F10</>       Inspects Docker
 	<white>1</>         To container list
 	<white>2</>         To image list
@@ -78,20 +79,20 @@ const (
 	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "
 	inspectMapping = "<b>[Enter]:<darkgrey>Inspect</></>"
 	keyMappings    = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[F9]:<darkgrey>Docker Events</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
 		"<b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</><blue>|</>" +
 		"<b>[E]:<darkgrey>Remove</> <b>[Crtl+K]:<darkgrey>Kill</> <b>[L]:<darkgrey>Logs</> <b>[Ctrl+R]:<darkgrey>Restart</> " +
 		"<b>[S]:<darkgrey>Stats</> <b>[Crtl+T]:<darkgrey>Stop</> <blue>|</>" +
 		inspectMapping
 
 	imagesKeyMappings = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F9]:<darkgrey>Docker Events</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
 		"<b>[1]:<darkgrey>Containers</> <b>[3]:<darkgrey>Networks</> <blue>|</>" +
 		"<b>[Crtl+E]:<darkgrey>Remove</> <b>[Crtl+F]:<darkgrey>Force Remove</> <b>[I]:<darkgrey>History</> <blue>|</>" +
 		inspectMapping
 
 	networkKeyMappings = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F9]:<darkgrey>Docker Events</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
 		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</>" +
 		inspectMapping
 )

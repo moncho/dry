@@ -7,11 +7,10 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	dockerAPI "github.com/docker/engine-api/client"
 	dockerTypes "github.com/docker/engine-api/types"
-	"github.com/docker/engine-api/types/events"
+	dockerEvents "github.com/docker/engine-api/types/events"
 	"golang.org/x/net/context"
 )
 
@@ -36,6 +35,7 @@ type DockerDaemon struct {
 	dockerEnv     *DockerEnv
 	version       *dockerTypes.Version
 	refreshLock   sync.Mutex
+	eventLog      *EventLog
 }
 
 //Containers returns the containers known by the daemon
@@ -81,28 +81,35 @@ func (daemon *DockerDaemon) DockerEnv() *DockerEnv {
 }
 
 // Events returns a channel to receive Docker events.
-func (daemon *DockerDaemon) Events() (chan *events.Message, error) {
-	eventC := make(chan *events.Message)
+func (daemon *DockerDaemon) Events() (chan dockerEvents.Message, chan<- struct{}, error) {
 
 	options := dockerTypes.EventsOptions{
-		Since: time.Now().String(),
+	//Since: time.Now().String(),
 	}
 	events, err := daemon.client.Events(context.Background(), options)
 
 	if err != nil {
-		close(listener)
-		return nil, err
+		//events.Close()
+		return nil, nil, err
 	}
+	eventC := make(chan dockerEvents.Message)
+	done := make(chan struct{})
 
-	go decodeEvents(resBody, func(event events.Message, err error) error {
-		if err != nil {
-			closeChan <- err
-			return nil
-		}
-		c <- event
-		return nil
-	})
-	return listener, nil
+	go func() {
+		go decodeEvents(events,
+			streamEvents(eventC),
+			logEvents(daemon.eventLog))
+		<-done
+		close(eventC)
+		events.Close()
+	}()
+
+	return eventC, done, nil
+}
+
+//EventLog returns the events log
+func (daemon *DockerDaemon) EventLog() *EventLog {
+	return daemon.eventLog
 }
 
 //History returns image history
@@ -312,7 +319,7 @@ func (daemon *DockerDaemon) Rmi(name string, force bool) ([]dockerTypes.ImageDel
 
 //Stats shows resource usage statistics of the container with the given id
 func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- struct{}) {
-	return StatsStream(daemon.client, daemon.ContainerByID(id), true)
+	return StatsChannel(daemon, daemon.ContainerByID(id), true)
 }
 
 //StopContainer stops the container with the given id
@@ -339,14 +346,6 @@ func (daemon *DockerDaemon) SortNetworks(sortMode SortNetworksMode) {
 	daemon.refreshLock.Lock()
 	defer daemon.refreshLock.Unlock()
 	SortNetworks(daemon.networks, sortMode)
-}
-
-//StopEventChannel docker events are not sent to the given channel
-func (daemon *DockerDaemon) StopEventChannel(eventChan chan *events.Message) error {
-	//TODO handle events
-	//err := daemon.client.RemoveEventListener(eventChan)
-	//return err
-	return nil
 }
 
 //Top returns Top information for the given container

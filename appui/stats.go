@@ -26,7 +26,13 @@ func NewDockerStatsRenderer(stats *drydocker.Stats) ui.Renderer {
 //Render container stats
 func (r *statsRenderer) Render() string {
 	s := r.stats
+	processList := r.stats.ProcessList
+
 	buf := bytes.NewBufferString("")
+	io.WriteString(buf, "\n")
+	io.WriteString(buf, "\n")
+	io.WriteString(buf, "<blue><b>STATS</></>\n")
+
 	w := tabwriter.NewWriter(buf, 22, 0, 1, ' ', 0)
 	io.WriteString(w, "<green>CONTAINER\tCOMMAND\t%%CPU\tMEM USAGE / LIMIT\t%%MEM\tNET I/O\tBLOCK I/O</>\n")
 	io.WriteString(
@@ -39,6 +45,12 @@ func (r *statsRenderer) Render() string {
 			s.MemoryPercentage,
 			units.HumanSize(s.NetworkRx), units.HumanSize(s.NetworkTx),
 			units.HumanSize(s.BlockRead), units.HumanSize(s.BlockWrite)))
+	if processList != nil {
+		topRenderer := NewDockerTopRenderer(processList)
+		io.WriteString(buf, "\n")
+		io.WriteString(buf, "\n")
+		io.WriteString(w, topRenderer.Render())
+	}
 	w.Flush()
 	return buf.String()
 }

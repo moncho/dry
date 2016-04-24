@@ -9,6 +9,7 @@ import (
 
 const (
 	imagePrefixForV10 = "sha256:"
+	shortLen          = 10
 )
 
 //DurationForHumans returns a human-readable approximation of a duration

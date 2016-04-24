@@ -16,6 +16,7 @@ const (
 	Main viewMode = iota
 	Images
 	Networks
+	EventsMode
 	HelpMode
 	ImageHistoryMode
 	InfoMode
@@ -103,6 +104,8 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 //Write sends dry output to the given writer
 func Write(d *Dry, w io.Writer) {
 	switch d.viewMode() {
+	case EventsMode:
+		io.WriteString(w, appui.NewDockerEventsRenderer(d.dockerDaemon.EventLog().Events()).Render())
 	case ImageHistoryMode:
 		io.WriteString(w, appui.NewDockerImageHistoryRenderer(d.imageHistory).Render())
 	case InspectMode:

@@ -47,7 +47,7 @@ type dryOptions struct {
 //-----------------------------------------------------------------------------
 
 func newApp(screen *ui.Screen, dockerEnv *docker.DockerEnv) (*app.Dry, error) {
-	return app.NewDryApp(screen, dockerEnv)
+	return app.NewDry(screen, dockerEnv)
 }
 
 func newDockerEnv(opts dryOptions) *docker.DockerEnv {
@@ -82,10 +82,11 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.DockerEnv, stop <-ch
 	}
 	go func() {
 		var rotorPos = 0
-		timer := time.NewTicker(1 * time.Second)
+		ticker := time.NewTicker(1 * time.Second)
+		//TODO Add timeout
 		for {
 			select {
-			case <-timer.C:
+			case <-ticker.C:
 				loadingMessage := loadMessage[rotorPos]
 				screen.RenderLine(screen.Width/2-12, 14, ui.White(loadingMessage))
 				screen.Flush()
@@ -94,6 +95,8 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.DockerEnv, stop <-ch
 				} else {
 					rotorPos = 0
 				}
+			case <-time.After(time.Second * 30):
+				return
 			case <-stop:
 				return
 			}

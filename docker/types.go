@@ -23,7 +23,8 @@ type ContainerDaemon interface {
 	ContainerIDAt(pos int) (string, string, error)
 	ContainerByID(cid string) types.Container
 	DockerEnv() *DockerEnv
-	Events() (chan *events.Message, error)
+	Events() (chan events.Message, chan<- struct{}, error)
+	EventLog() *EventLog
 	History(id string) ([]types.ImageHistory, error)
 	ImageAt(pos int) (*types.Image, error)
 	Images() ([]types.Image, error)
@@ -51,7 +52,6 @@ type ContainerDaemon interface {
 	Sort(sortMode SortMode)
 	SortImages(sortMode SortImagesMode)
 	SortNetworks(sortMode SortNetworksMode)
-	StopEventChannel(eventChan chan *events.Message) error
 	Top(id string) (types.ContainerProcessList, error)
 	Version() (*types.Version, error)
 }
@@ -70,4 +70,5 @@ type Stats struct {
 	BlockWrite       float64
 	PidsCurrent      uint64
 	Stats            *types.StatsJSON
+	ProcessList      *types.ContainerProcessList
 }

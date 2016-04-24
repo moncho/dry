@@ -10,7 +10,7 @@
 
 The demo below shows a **dry** session.
 
-[![asciicast](https://asciinema.org/a/35825.png)](https://asciinema.org/a/35825?autoplay=1)
+[![asciicast](https://asciinema.org/a/35825.png)](https://asciinema.org/a/35825?autoplay=1&speed=1.5)
 
 Upon connecting to a **Docker** host (local or remote), the main screen will show the list of containers and version information as reported by the **Docker Engine**. At all times, information about containers, images and networks shown by **dry** is up-to-date.
 
@@ -29,6 +29,7 @@ Besides this, it:
 ```
 [F1]        sort list
 [F5]        refresh list
+[F9]        show last 10 docker events
 [F10]       show docker info
 [1]         show container list
 [2]         show image list

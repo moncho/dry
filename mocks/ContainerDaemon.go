@@ -44,9 +44,14 @@ func (_m *ContainerDaemonMock) DockerEnv() *drydocker.DockerEnv {
 }
 
 // Events provides a mock function with given fields:
-func (_m *ContainerDaemonMock) Events() (chan *events.Message, error) {
+func (_m *ContainerDaemonMock) Events() (chan events.Message, chan<- struct{}, error) {
 
-	return nil, nil
+	return nil, nil, nil
+}
+
+//EventLog mock
+func (_m *ContainerDaemonMock) EventLog() *drydocker.EventLog {
+	return nil
 }
 
 //History mock
@@ -235,12 +240,6 @@ func (_m *ContainerDaemonMock) SortImages(sortMode drydocker.SortImagesMode) {
 
 //SortNetworks mock
 func (_m *ContainerDaemonMock) SortNetworks(sortMode drydocker.SortNetworksMode) {
-}
-
-// StopEventChannel provides a mock function with given fields: eventChan
-func (_m *ContainerDaemonMock) StopEventChannel(eventChan chan *events.Message) error {
-
-	return nil
 }
 
 //Top function mock

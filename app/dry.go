@@ -34,7 +34,8 @@ type state struct {
 //Dry represents the application.
 type Dry struct {
 	dockerDaemon       drydocker.ContainerDaemon
-	dockerEvents       chan *events.Message
+	dockerEvents       chan events.Message
+	dockerEventsDone   chan<- struct{}
 	imageHistory       []types.ImageHistory
 	images             []types.Image
 	info               types.Info
@@ -73,7 +74,7 @@ func (d *Dry) changeViewMode(newViewMode viewMode) {
 
 //Close closes dry, releasing any resources held by it
 func (d *Dry) Close() {
-	d.dockerDaemon.StopEventChannel(d.dockerEvents)
+	close(d.dockerEventsDone)
 	close(d.output)
 }
 
@@ -259,6 +260,11 @@ func (d *Dry) ShowMainView() {
 //ShowContainers changes the state of dry to show the container list
 func (d *Dry) ShowContainers() {
 	d.changeViewMode(Main)
+}
+
+//ShowDockerEvents changes the state of dry to show the log of docker events
+func (d *Dry) ShowDockerEvents() {
+	d.changeViewMode(EventsMode)
 }
 
 //ShowHelp changes the state of dry to show the extended help
@@ -484,45 +490,46 @@ func (d *Dry) setChanged(changed bool) {
 	defer d.state.mutex.Unlock()
 	d.state.changed = changed
 }
-func newDry(screen *ui.Screen, d *drydocker.DockerDaemon, err error) (*Dry, error) {
+func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
+	dockerEvents, dockerEventsDone, err := d.Events()
 	if err == nil {
-		dockerEvents, err := d.Events()
-		if err == nil {
 
-			state := &state{
-				changed:              true,
-				showingAllContainers: false,
-				SortMode:             drydocker.SortByContainerID,
-				SortImagesMode:       drydocker.SortImagesByRepo,
-				SortNetworksMode:     drydocker.SortNetworksByID,
-				viewMode:             Main,
-				previousViewMode:     Main,
-				mutex:                &sync.Mutex{},
-			}
-			d.Sort(state.SortMode)
-			d.SortImages(state.SortImagesMode)
-			d.SortNetworks(state.SortNetworksMode)
-			app := &Dry{}
-			app.state = state
-			app.dockerDaemon = d
-			app.renderer = appui.NewDockerPsRenderer(
-				app.dockerDaemon,
-				screen.Height)
-			app.output = make(chan string)
-			app.dockerEvents = dockerEvents
-			app.refreshTimerMutex = &sync.Mutex{}
-			//first refresh should not happen inmediately after dry creation
-			app.lastRefresh = time.Now().Add(TimeBetweenRefresh)
-			app.startDry()
-			return app, nil
+		state := &state{
+			changed:              true,
+			showingAllContainers: false,
+			SortMode:             drydocker.SortByContainerID,
+			SortImagesMode:       drydocker.SortImagesByRepo,
+			SortNetworksMode:     drydocker.SortNetworksByID,
+			viewMode:             Main,
+			previousViewMode:     Main,
+			mutex:                &sync.Mutex{},
 		}
-		return nil, err
+		d.Sort(state.SortMode)
+		d.SortImages(state.SortImagesMode)
+		d.SortNetworks(state.SortNetworksMode)
+		app := &Dry{}
+		app.state = state
+		app.dockerDaemon = d
+		app.renderer = appui.NewDockerPsRenderer(
+			app.dockerDaemon,
+			screen.Height)
+		app.output = make(chan string)
+		app.dockerEvents = dockerEvents
+		app.dockerEventsDone = dockerEventsDone
+		app.refreshTimerMutex = &sync.Mutex{}
+		//first refresh should not happen inmediately after dry creation
+		app.lastRefresh = time.Now().Add(TimeBetweenRefresh)
+		app.startDry()
+		return app, nil
 	}
 	return nil, err
 }
 
 //NewDryApp creates a new dry application
-func NewDryApp(screen *ui.Screen, env *drydocker.DockerEnv) (*Dry, error) {
+func NewDry(screen *ui.Screen, env *drydocker.DockerEnv) (*Dry, error) {
 	d, err := drydocker.ConnectToDaemon(env)
-	return newDry(screen, d, err)
+	if err != nil {
+		return nil, err
+	}
+	return newDry(screen, d)
 }
