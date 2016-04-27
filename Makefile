@@ -26,7 +26,7 @@ install:
 	go install $(PKG)
 
 test:
-	go test ./...
+	go test $(shell go list ./... | grep -v /vendor/)
 
 define buildpretty
 $(if $(and $(filter-out darwin_arm,$(1)_$(2)), $(filter-out windows_arm,$(1)_$(2))), \
