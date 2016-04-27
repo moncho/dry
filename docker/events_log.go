@@ -66,7 +66,7 @@ func (el *EventLog) Push(message *events.Message) {
 		el.rewind()
 	}
 	el.messages[el.tail] = message
-	// check if the window is full,
+	// check if the buffer is full,
 	// and move head pointer appropriately
 	if el.tail-el.head >= el.capacity {
 		el.head++

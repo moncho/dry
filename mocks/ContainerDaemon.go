@@ -44,7 +44,7 @@ func (_m *ContainerDaemonMock) DockerEnv() *drydocker.DockerEnv {
 }
 
 // Events provides a mock function with given fields:
-func (_m *ContainerDaemonMock) Events() (chan events.Message, chan<- struct{}, error) {
+func (_m *ContainerDaemonMock) Events() (<-chan events.Message, chan<- struct{}, error) {
 
 	return nil, nil, nil
 }

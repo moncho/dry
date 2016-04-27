@@ -81,7 +81,7 @@ func (daemon *DockerDaemon) DockerEnv() *DockerEnv {
 }
 
 // Events returns a channel to receive Docker events.
-func (daemon *DockerDaemon) Events() (chan dockerEvents.Message, chan<- struct{}, error) {
+func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct{}, error) {
 
 	options := dockerTypes.EventsOptions{
 	//Since: time.Now().String(),
@@ -89,7 +89,6 @@ func (daemon *DockerDaemon) Events() (chan dockerEvents.Message, chan<- struct{}
 	events, err := daemon.client.Events(context.Background(), options)
 
 	if err != nil {
-		//events.Close()
 		return nil, nil, err
 	}
 	eventC := make(chan dockerEvents.Message)

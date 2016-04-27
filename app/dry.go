@@ -34,7 +34,7 @@ type state struct {
 //Dry represents the application.
 type Dry struct {
 	dockerDaemon       drydocker.ContainerDaemon
-	dockerEvents       chan events.Message
+	dockerEvents       <-chan events.Message
 	dockerEventsDone   chan<- struct{}
 	imageHistory       []types.ImageHistory
 	images             []types.Image

@@ -23,7 +23,7 @@ type ContainerDaemon interface {
 	ContainerIDAt(pos int) (string, string, error)
 	ContainerByID(cid string) types.Container
 	DockerEnv() *DockerEnv
-	Events() (chan events.Message, chan<- struct{}, error)
+	Events() (<-chan events.Message, chan<- struct{}, error)
 	EventLog() *EventLog
 	History(id string) ([]types.ImageHistory, error)
 	ImageAt(pos int) (*types.Image, error)
