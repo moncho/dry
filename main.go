@@ -83,7 +83,7 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.DockerEnv, stop <-ch
 	go func() {
 		var rotorPos = 0
 		ticker := time.NewTicker(1 * time.Second)
-		//TODO Add timeout
+		timeOut := time.NewTimer(30 * time.Second)
 		for {
 			select {
 			case <-ticker.C:
@@ -95,8 +95,11 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.DockerEnv, stop <-ch
 				} else {
 					rotorPos = 0
 				}
-			case <-time.After(time.Second * 30):
-				return
+			case <-timeOut.C:
+				screen.Close()
+				log.Error(
+					"Dry could not connect with the host after 30 seconds.")
+				os.Exit(0)
 			case <-stop:
 				return
 			}
