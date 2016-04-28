@@ -25,7 +25,9 @@ const (
 ( (_| || |    | |_| |
  \____||_|     \__  |
                (____/
+
 `
+	cheese = "<white>made with ♥ (and go) by</> <blue>moncho</>"
 )
 
 var loadMessage = []string{"Connecting to the Docker host.  ",
@@ -80,6 +82,9 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.DockerEnv, stop <-ch
 	} else {
 		screen.RenderLine(2, 11, ui.White("No Docker host"))
 	}
+	//20 is a safe aproximation for the len of interpreted characters from the message
+	screen.RenderLine(screen.Width-len(cheese)+20, screen.Height-1, cheese)
+
 	go func() {
 		var rotorPos = 0
 		ticker := time.NewTicker(1 * time.Second)
