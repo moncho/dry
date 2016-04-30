@@ -110,12 +110,12 @@ func (v *View) Write(p []byte) (n int, err error) {
 // Render renders the view buffer contents.
 func (v *View) Render() error {
 	_, maxY := v.ViewSize()
-	x, y := 0, 0
+	y := 0
 	for _, vline := range v.lines[v.bufferY:] {
 		if y > maxY {
 			break
 		}
-		v.renderLine(x, y, string(vline))
+		v.renderLine(0, y, string(vline))
 		y++
 	}
 	if v.showCursor {
@@ -170,6 +170,7 @@ func (v *View) renderLine(x int, y int, line string) (int, error) {
 	if v.markup != nil {
 		lines = renderLineWithMarkup(x, y, maxWidth, line, v.markup)
 	} else {
+
 		ansiClean := terminal.RemoveANSIEscapeCharacters(line)
 		// Methods receives a single line, so just the first element
 		// returned by the cleaner is considered

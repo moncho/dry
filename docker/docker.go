@@ -171,14 +171,14 @@ func (daemon *DockerDaemon) Kill(id string) error {
 //Logs shows the logs of the container with the given id
 func (daemon *DockerDaemon) Logs(id string) io.ReadCloser {
 	options := dockerTypes.ContainerLogsOptions{
-		ContainerID: id,
-		ShowStdout:  true,
-		ShowStderr:  true,
-		Timestamps:  false,
-		Follow:      true,
+		ShowStdout: true,
+		ShowStderr: true,
+		Timestamps: false,
+		Follow:     true,
+		Details:    false,
 	}
 
-	reader, _ := daemon.client.ContainerLogs(context.Background(), options)
+	reader, _ := daemon.client.ContainerLogs(context.Background(), id, options)
 	return reader
 }
 
@@ -225,12 +225,11 @@ func (daemon *DockerDaemon) RestartContainer(id string) error {
 //Rm removes the container with the given id
 func (daemon *DockerDaemon) Rm(id string) error {
 	opts := dockerTypes.ContainerRemoveOptions{
-		ContainerID:   id,
 		RemoveVolumes: false,
 		RemoveLinks:   false,
 		Force:         true,
 	}
-	return daemon.client.ContainerRemove(context.Background(), opts)
+	return daemon.client.ContainerRemove(context.Background(), id, opts)
 }
 
 //Refresh the container list
@@ -310,10 +309,9 @@ func (daemon *DockerDaemon) RemoveAllStoppedContainers() (int, error) {
 //Rmi removes the image with the given name
 func (daemon *DockerDaemon) Rmi(name string, force bool) ([]dockerTypes.ImageDelete, error) {
 	options := dockerTypes.ImageRemoveOptions{
-		ImageID: name,
-		Force:   force,
+		Force: force,
 	}
-	return daemon.client.ImageRemove(context.Background(), options)
+	return daemon.client.ImageRemove(context.Background(), name, options)
 }
 
 //Stats shows resource usage statistics of the container with the given id

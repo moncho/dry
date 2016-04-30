@@ -25,6 +25,7 @@ func renderString(x, y, maxWidth int, s string, foreground, background termbox.A
 	//tracks the number of screen lines used to render
 	additionalLines := 0
 	startCol := x
+
 	for _, char := range s {
 		runewidth := runewidth.RuneWidth(char)
 		stringWidth += runewidth
@@ -35,6 +36,7 @@ func renderString(x, y, maxWidth int, s string, foreground, background termbox.A
 			virtualScreenWidth += virtualScreenWidth + maxWidth
 			additionalLines++
 			y += additionalLines
+			//new line, start column goes back to the beginning
 			startCol = x
 		}
 		termbox.SetCell(startCol, y, char, foreground, background)
