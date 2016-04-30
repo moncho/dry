@@ -17,6 +17,11 @@
 			"Rev": "55eb11d21d2a31a3cc93838241d04800f52e823d"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/pkg/stdcopy",
+			"Comment": "v1.4.1-11868-g7a56581",
+			"Rev": "7a5658129740cd8e4345246758aa30fe3c835d10"
+		},
+		{
 			"ImportPath": "github.com/docker/engine-api/client",
 			"Comment": "v0.2.2-264-g009426d",
 			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
@@ -62,6 +67,11 @@
 			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
 		},
 		{
+			"ImportPath": "github.com/docker/engine-api/types/reference",
+			"Comment": "v0.2.2-264-g009426d",
+			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+		},
+		{
 			"ImportPath": "github.com/docker/engine-api/types/registry",
 			"Comment": "v0.2.2-264-g009426d",
 			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
@@ -73,6 +83,11 @@
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/time",
+			"Comment": "v0.2.2-264-g009426d",
+			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/versions",
 			"Comment": "v0.2.2-264-g009426d",
 			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
 		},
