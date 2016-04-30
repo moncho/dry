@@ -6,6 +6,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -150,7 +151,7 @@ func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.
 	screen.Sync()
 	v := ui.NewLess()
 	go func() {
-		io.Copy(v, stream)
+		stdcopy.StdCopy(v, v, stream)
 	}()
 	if err := v.Focus(keyboardQueue); err != nil {
 		ui.ShowErrorMessage(screen, keyboardQueue, err)
