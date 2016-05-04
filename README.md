@@ -4,6 +4,7 @@
 [![License MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/moncho/dry#license-mit)
 [![wercker status](https://app.wercker.com/status/66c3ab71a46c0c8841f34a526fc23189/s/master "wercker status")](https://app.wercker.com/project/bykey/66c3ab71a46c0c8841f34a526fc23189)
 [![Go Report Card](http://goreportcard.com/badge/moncho/dry)](http://goreportcard.com/report/moncho/dry)
+[![codecov](https://codecov.io/gh/moncho/dry/branch/master/graph/badge.svg)](https://codecov.io/gh/moncho/dry)
 
 
 **dry** is a terminal application to manage **Docker** containers and images. It aims to be an alternative to the official **Docker CLI** when it is needed to repeatedly execute commands on existing containers and images, and also as a tool to monitor **Docker** containers from a terminal.
