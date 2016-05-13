@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	dockerAPI "github.com/docker/engine-api/client"
 	dockerTypes "github.com/docker/engine-api/types"
@@ -20,7 +21,9 @@ const (
 	DefaultDockerHost = "unix:///var/run/docker.sock"
 
 	//timeout in seconds for docker operations
-	defaultTimeout = 10
+	defaultTimeout = 10 * time.Second
+	//container operations timeout, docker api interprets the value as seconds
+	containerOpTimeout = 10
 )
 
 //DockerDaemon knows how to talk to the Docker daemon
@@ -86,7 +89,8 @@ func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct
 	options := dockerTypes.EventsOptions{
 	//Since: time.Now().String(),
 	}
-	events, err := daemon.client.Events(context.Background(), options)
+	ctx, cancel := context.WithCancel(context.Background())
+	events, err := daemon.client.Events(ctx, options)
 
 	if err != nil {
 		return nil, nil, err
@@ -95,10 +99,13 @@ func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct
 	done := make(chan struct{})
 
 	go func() {
-		go decodeEvents(events,
+		decodeEvents(
+			ctx,
+			events,
 			streamEvents(eventC),
 			logEvents(daemon.eventLog))
 		<-done
+		cancel()
 		close(eventC)
 		events.Close()
 	}()
@@ -113,7 +120,11 @@ func (daemon *DockerDaemon) EventLog() *EventLog {
 
 //History returns image history
 func (daemon *DockerDaemon) History(id string) ([]dockerTypes.ImageHistory, error) {
-	return daemon.client.ImageHistory(context.Background(), id)
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
+	return daemon.client.ImageHistory(
+		ctx, id)
 }
 
 //ImageAt returns the Image found at the given
@@ -143,17 +154,26 @@ func (daemon *DockerDaemon) ImagesCount() int {
 
 //Info returns system-wide information about the Docker server.
 func (daemon *DockerDaemon) Info() (dockerTypes.Info, error) {
-	return daemon.client.Info(context.Background())
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
+	return daemon.client.Info(ctx)
 }
 
 //Inspect the container with the given id
 func (daemon *DockerDaemon) Inspect(id string) (dockerTypes.ContainerJSON, error) {
-	return daemon.client.ContainerInspect(context.Background(), id)
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
+	return daemon.client.ContainerInspect(ctx, id)
 }
 
 //InspectImage the image with the name
 func (daemon *DockerDaemon) InspectImage(name string) (dockerTypes.ImageInspect, error) {
-	inspect, _, err := daemon.client.ImageInspectWithRaw(context.Background(), name, true)
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
+	inspect, _, err := daemon.client.ImageInspectWithRaw(ctx, name, true)
 	return inspect, err
 }
 
@@ -164,8 +184,12 @@ func (daemon *DockerDaemon) IsContainerRunning(id string) bool {
 
 //Kill the container with the given id
 func (daemon *DockerDaemon) Kill(id string) error {
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
 	//TODO Sends the right signal
-	return daemon.client.ContainerKill(context.Background(), id, "")
+
+	return daemon.client.ContainerKill(ctx, id, "")
 }
 
 //Logs shows the logs of the container with the given id
@@ -177,8 +201,10 @@ func (daemon *DockerDaemon) Logs(id string) io.ReadCloser {
 		Follow:     true,
 		Details:    false,
 	}
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
 
-	reader, _ := daemon.client.ContainerLogs(context.Background(), id, options)
+	reader, _ := daemon.client.ContainerLogs(ctx, id, options)
 	return reader
 }
 
@@ -208,7 +234,11 @@ func (daemon *DockerDaemon) NetworksCount() int {
 
 //NetworkInspect returns network detailed information
 func (daemon *DockerDaemon) NetworkInspect(id string) (dockerTypes.NetworkResource, error) {
-	return daemon.client.NetworkInspect(context.Background(), id)
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
+	return daemon.client.NetworkInspect(
+		ctx, id)
 }
 
 //Ok is true if connecting to the Docker daemon went fine
@@ -218,8 +248,11 @@ func (daemon *DockerDaemon) Ok() (bool, error) {
 
 //RestartContainer restarts the container with the given id
 func (daemon *DockerDaemon) RestartContainer(id string) error {
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
 	//fixme: timeout to start a container
-	return daemon.client.ContainerRestart(context.Background(), id, defaultTimeout)
+	return daemon.client.ContainerRestart(ctx, id, containerOpTimeout)
 }
 
 //Rm removes the container with the given id
@@ -229,7 +262,10 @@ func (daemon *DockerDaemon) Rm(id string) error {
 		RemoveLinks:   false,
 		Force:         true,
 	}
-	return daemon.client.ContainerRemove(context.Background(), id, opts)
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
+	return daemon.client.ContainerRemove(ctx, id, opts)
 }
 
 //Refresh the container list
@@ -311,7 +347,10 @@ func (daemon *DockerDaemon) Rmi(name string, force bool) ([]dockerTypes.ImageDel
 	options := dockerTypes.ImageRemoveOptions{
 		Force: force,
 	}
-	return daemon.client.ImageRemove(context.Background(), name, options)
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
+	return daemon.client.ImageRemove(ctx, name, options)
 }
 
 //Stats shows resource usage statistics of the container with the given id
@@ -321,7 +360,10 @@ func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- struct{}) {
 
 //StopContainer stops the container with the given id
 func (daemon *DockerDaemon) StopContainer(id string) error {
-	return daemon.client.ContainerStop(context.Background(), id, defaultTimeout)
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
+	return daemon.client.ContainerStop(ctx, id, containerOpTimeout)
 }
 
 //Sort the list of containers by the given mode
@@ -347,13 +389,19 @@ func (daemon *DockerDaemon) SortNetworks(sortMode SortNetworksMode) {
 
 //Top returns Top information for the given container
 func (daemon *DockerDaemon) Top(id string) (dockerTypes.ContainerProcessList, error) {
-	return daemon.client.ContainerTop(context.Background(), id, nil)
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
+	return daemon.client.ContainerTop(ctx, id, nil)
 }
 
 //Version returns  version information about the Docker Engine
 func (daemon *DockerDaemon) Version() (*dockerTypes.Version, error) {
 	if daemon.version == nil {
-		v, err := daemon.client.ServerVersion(context.Background())
+		//TODO use cancel function
+		ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
+		v, err := daemon.client.ServerVersion(ctx)
 		if err == nil {
 			daemon.version = &v
 			return daemon.version, nil
@@ -364,7 +412,10 @@ func (daemon *DockerDaemon) Version() (*dockerTypes.Version, error) {
 }
 
 func containers(client dockerAPI.APIClient, allContainers bool) ([]dockerTypes.Container, map[string]dockerTypes.Container, error) {
-	containers, err := client.ContainerList(context.Background(), dockerTypes.ContainerListOptions{All: allContainers, Size: true})
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
+	containers, err := client.ContainerList(ctx, dockerTypes.ContainerListOptions{All: allContainers, Size: true})
 	if err == nil {
 		var cmap = make(map[string]dockerTypes.Container)
 
@@ -377,13 +428,19 @@ func containers(client dockerAPI.APIClient, allContainers bool) ([]dockerTypes.C
 }
 
 func images(client dockerAPI.APIClient) ([]dockerTypes.Image, error) {
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
 	opts := dockerTypes.ImageListOptions{
 		All: false}
-	return client.ImageList(context.Background(), opts)
+	return client.ImageList(ctx, opts)
 }
 
 func networks(client dockerAPI.APIClient) ([]dockerTypes.NetworkResource, error) {
-	return client.NetworkList(context.Background(), dockerTypes.NetworkListOptions{})
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+
+	return client.NetworkList(ctx, dockerTypes.NetworkListOptions{})
 }
 
 //GetBool returns false if the given string looks like you mean

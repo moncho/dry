@@ -17,7 +17,8 @@ func StatsChannel(daemon *DockerDaemon, container types.Container, streamStats b
 
 	go func() {
 		cli := daemon.client
-		responseBody, err := cli.ContainerStats(context.Background(), container.Names[0], streamStats)
+		ctx, cancel := context.WithCancel(context.Background())
+		responseBody, err := cli.ContainerStats(ctx, container.Names[0], streamStats)
 		defer responseBody.Close()
 		defer close(stats)
 		if err != nil {
@@ -37,9 +38,14 @@ func StatsChannel(daemon *DockerDaemon, container types.Container, streamStats b
 				if err := dec.Decode(&statsJSON); err != nil {
 					return
 				}
-				top, _ := daemon.Top(container.ID)
-				stats <- buildStats(container, statsJSON, &top)
+				if statsJSON != nil {
+					top, _ := daemon.Top(container.ID)
+					stats <- buildStats(container, statsJSON, &top)
+				}
+			case <-ctx.Done():
+				return
 			case <-done:
+				cancel()
 				return
 			}
 		}

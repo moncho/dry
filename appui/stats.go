@@ -26,7 +26,10 @@ func NewDockerStatsRenderer(stats *drydocker.Stats) ui.Renderer {
 //Render container stats
 func (r *statsRenderer) Render() string {
 	s := r.stats
-	processList := r.stats.ProcessList
+	if s == nil {
+		return ""
+	}
+	processList := s.ProcessList
 
 	buf := bytes.NewBufferString("")
 	io.WriteString(buf, "\n")

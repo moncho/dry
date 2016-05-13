@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/moncho/dry",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v62",
+	"GodepVersion": "v65",
 	"Packages": [
 		"github.com/moncho/dry"
 	],
@@ -33,73 +33,73 @@
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/client",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/client/transport",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/client/transport/cancellable",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/blkiodev",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/container",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/events",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/filters",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/network",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/reference",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/registry",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/strslice",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/time",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/versions",
-			"Comment": "v0.2.2-264-g009426d",
-			"Rev": "009426d98aa84d199210a897dbb60bfee541877d"
+			"Comment": "v0.3.1-93-ge374c4f",
+			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections/nat",
