@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 
+	"golang.org/x/net/context"
+
 	"github.com/docker/engine-api/types/events"
 )
 
@@ -33,7 +35,10 @@ func logEvents(log *EventLog) eventProcessor {
 
 type eventProcessor func(event events.Message, err error) error
 
-func decodeEvents(input io.Reader, processors ...eventProcessor) error {
+func decodeEvents(
+	ctx context.Context,
+	input io.Reader,
+	processors ...eventProcessor) error {
 	dec := json.NewDecoder(input)
 	for {
 		var event events.Message
