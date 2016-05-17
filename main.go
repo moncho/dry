@@ -27,12 +27,19 @@ const (
                (____/
 
 `
-	cheese = "<white>made with ♥ (and go) by</> <blue>moncho</>"
+	cheese     = "<white>made with ♥ (and go) by</> <blue>moncho</>"
+	connecting = "ŏ Trying to connect with the Docker Host ŏ"
 )
 
-var loadMessage = []string{"Connecting to the Docker host.  ",
-	"Connecting to the Docker host.. ",
-	"Connecting to the Docker host..."}
+var loadMessage = []string{docker.Whale0,
+	docker.Whale1,
+	docker.Whale2,
+	docker.Whale3,
+	docker.Whale4,
+	docker.Whale5,
+	docker.Whale6,
+	docker.Whale7,
+	docker.Whale}
 
 //dryOptions represents command line flags variables
 type dryOptions struct {
@@ -75,25 +82,28 @@ func newDockerEnv(opts dryOptions) *docker.DockerEnv {
 }
 
 func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.DockerEnv, stop <-chan struct{}) {
-	screen.RenderAtColumn(screen.Width/2-10, 0, ui.Yellow(banner))
-	screen.RenderLine(2, 10, fmt.Sprintf("<blue>Version:</> %s", ui.White(version.VERSION)))
+	midscreen := screen.Width / 2
+	height := screen.Height
+	screen.RenderAtColumn(midscreen-len(connecting)/2, 1, ui.White(connecting))
+	screen.RenderLine(2, height-2, fmt.Sprintf("<blue>Dry Version:</> %s", ui.White(version.VERSION)))
 	if dockerEnv != nil {
-		screen.RenderLine(2, 11, fmt.Sprintf("<blue>Docker Host:</> %s", ui.White(dockerEnv.DockerHost)))
+		screen.RenderLine(2, height-1, fmt.Sprintf("<blue>Docker Host:</> %s", ui.White(dockerEnv.DockerHost)))
 	} else {
-		screen.RenderLine(2, 11, ui.White("No Docker host"))
+		screen.RenderLine(2, height-1, ui.White("No Docker host"))
 	}
-	//20 is a safe aproximation for the len of interpreted characters from the message
-	screen.RenderLine(screen.Width-len(cheese)+20, screen.Height-1, cheese)
 
+	//20 is a safe aproximation for the length of interpreted characters from the message
+	screen.RenderLine(screen.Width-len(cheese)+20, height-1, cheese)
+	screen.Flush()
 	go func() {
 		var rotorPos = 0
-		ticker := time.NewTicker(1 * time.Second)
+		ticker := time.NewTicker(250 * time.Millisecond)
 		timeOut := time.NewTimer(30 * time.Second)
 		for {
 			select {
 			case <-ticker.C:
 				loadingMessage := loadMessage[rotorPos]
-				screen.RenderLine(screen.Width/2-12, 14, ui.White(loadingMessage))
+				screen.RenderAtColumn(midscreen-19, height/2-6, ui.Cyan(loadingMessage))
 				screen.Flush()
 				if rotorPos < len(loadMessage)-1 {
 					rotorPos++

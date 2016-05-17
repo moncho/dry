@@ -26,3 +26,8 @@ func White(text string) string {
 func Yellow(text string) string {
 	return fmt.Sprintf("<yellow>%s</>", text)
 }
+
+//Cyan cyans the given string
+func Cyan(text string) string {
+	return fmt.Sprintf("<cyan>%s</>", text)
+}

@@ -196,12 +196,7 @@ func (cursor *Cursor) ScrollTo(pos int) {
 //Render renders the given content starting from
 //the given row
 func (screen *Screen) Render(initialRow int, str string) {
-	if !screen.cleared {
-		screen.Clear()
-	}
-	for row, line := range strings.Split(str, "\n") {
-		screen.RenderLine(0, initialRow+row, line)
-	}
+	screen.RenderAtColumn(0, initialRow, str)
 }
 
 //RenderAtColumn renders the given content starting from
