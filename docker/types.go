@@ -7,14 +7,6 @@ import (
 	"github.com/docker/engine-api/types/events"
 )
 
-//DockerEnv are the Docker-related environment variables defined
-type DockerEnv struct {
-	DockerHost       string
-	DockerTLSVerify  bool //tls must be verified
-	DockerCertPath   string
-	DockerAPIVersion string
-}
-
 //ContainerDaemon describes what is expected from the container daemon
 type ContainerDaemon interface {
 	Containers() []types.Container

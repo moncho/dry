@@ -1,13 +1,20 @@
 package docker
 
 import (
+	"crypto/tls"
+	"net"
 	"net/http"
 	"path/filepath"
-	"strings"
+	"time"
 
+	"github.com/docker/docker/opts"
 	"github.com/docker/engine-api/client"
-	dockerTypes "github.com/docker/engine-api/types"
-	"github.com/moncho/dry/tls"
+	"github.com/docker/go-connections/sockets"
+	drytls "github.com/moncho/dry/tls"
+)
+
+const (
+	DefaultConnectionTimeout = 32 * time.Second
 )
 
 func connect(client client.APIClient, env *DockerEnv) (*DockerDaemon, error) {
@@ -37,40 +44,69 @@ func connect(client client.APIClient, env *DockerEnv) (*DockerDaemon, error) {
 	return nil, err
 }
 
-//ConnectToDaemon connects to a Docker daemon using the given properties.
-func ConnectToDaemon(env *DockerEnv) (*DockerDaemon, error) {
-	var httpClient *http.Client
-	if dockerCertPath := env.DockerCertPath; dockerCertPath != "" {
-		options := tls.Options{
-			CAFile:             filepath.Join(dockerCertPath, "ca.pem"),
-			CertFile:           filepath.Join(dockerCertPath, "cert.pem"),
-			KeyFile:            filepath.Join(dockerCertPath, "key.pem"),
-			InsecureSkipVerify: env.DockerTLSVerify,
-		}
-		tlsc, err := tls.Client(options)
-		if err != nil {
-			return nil, err
-		}
-
-		httpClient = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: tlsc,
-			},
-		}
-	}
+func getServerHost(env *DockerEnv) (string, error) {
 
 	host := env.DockerHost
 	if host == "" {
 		host = DefaultDockerHost
 	}
+
+	return opts.ParseHost(env.DockerCertPath != "", host)
+}
+
+func newHTTPClient(host string, config *tls.Config) (*http.Client, error) {
+	if config == nil {
+		// let the api client configure the default transport.
+		return nil, nil
+	}
+
+	proto, addr, _, err := client.ParseHost(host)
+	if err != nil {
+		return nil, err
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: config,
+		Dial: func(network, addr string) (net.Conn, error) {
+			return net.DialTimeout(proto, addr, DefaultConnectionTimeout)
+		},
+	}
+
+	sockets.ConfigureTransport(tr, proto, addr)
+
+	return &http.Client{
+		Transport: tr,
+	}, nil
+}
+
+//ConnectToDaemon connects to a Docker daemon using the given properties.
+func ConnectToDaemon(env *DockerEnv) (*DockerDaemon, error) {
+
+	host, err := getServerHost(env)
+	if err != nil {
+		return nil, err
+	}
+	var tlsConfig *tls.Config = nil
+	if dockerCertPath := env.DockerCertPath; dockerCertPath != "" {
+		options := drytls.Options{
+			CAFile:             filepath.Join(dockerCertPath, "ca.pem"),
+			CertFile:           filepath.Join(dockerCertPath, "cert.pem"),
+			KeyFile:            filepath.Join(dockerCertPath, "key.pem"),
+			InsecureSkipVerify: env.DockerTLSVerify,
+		}
+		tlsConfig, err = drytls.Client(options)
+		if err != nil {
+			return nil, err
+		}
+	}
+	httpClient, err := newHTTPClient(host, tlsConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	client, err := client.NewClient(host, env.DockerAPIVersion, httpClient, nil)
 	if err == nil {
 		return connect(client, env)
 	}
 	return nil, err
-}
-
-//IsContainerRunning returns true if the given container is running
-func IsContainerRunning(container dockerTypes.Container) bool {
-	return strings.Contains(container.Status, "Up")
 }
