@@ -43,7 +43,8 @@ func (formatter *ImageFormatter) ID() string {
 func (formatter *ImageFormatter) Repository() string {
 	formatter.addHeader(repository)
 	if len(formatter.image.RepoTags) > 0 {
-		return strings.Split(formatter.image.RepoTags[0], ":")[0]
+		tagPos := strings.LastIndex(formatter.image.RepoTags[0], ":")
+		return formatter.image.RepoTags[0][:tagPos]
 	}
 	return ""
 }
@@ -52,7 +53,8 @@ func (formatter *ImageFormatter) Repository() string {
 func (formatter *ImageFormatter) Tag() string {
 	formatter.addHeader(tag)
 	if len(formatter.image.RepoTags) > 0 {
-		return strings.Split(formatter.image.RepoTags[0], ":")[1]
+		tagPos := strings.LastIndex(formatter.image.RepoTags[0], ":")
+		return formatter.image.RepoTags[0][tagPos+1:]
 	}
 	return ""
 
