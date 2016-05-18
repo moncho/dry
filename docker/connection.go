@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	//DefaultConnectionTimeout is the timeout for connecting with the Docker daemon
 	DefaultConnectionTimeout = 32 * time.Second
 )
 
@@ -86,7 +87,7 @@ func ConnectToDaemon(env *DockerEnv) (*DockerDaemon, error) {
 	if err != nil {
 		return nil, err
 	}
-	var tlsConfig *tls.Config = nil
+	var tlsConfig *tls.Config
 	if dockerCertPath := env.DockerCertPath; dockerCertPath != "" {
 		options := drytls.Options{
 			CAFile:             filepath.Join(dockerCertPath, "ca.pem"),
