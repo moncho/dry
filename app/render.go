@@ -43,7 +43,6 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		{
 			//after a refresh, sorting is needed
 			sortMode := d.state.SortMode
-			//d.dockerDaemon.Sort(sortMode)
 			containers := d.dockerDaemon.Containers()
 			count = len(containers)
 			updateCursorPosition(screen.Cursor, count)
@@ -62,7 +61,6 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		{
 			//after a refresh, sorting is needed
 			sortMode := d.state.SortImagesMode
-			//d.dockerDaemon.SortImages(sortMode)
 			renderer := appui.NewDockerImagesRenderer(d.dockerDaemon, screen.Height)
 
 			images, err := d.dockerDaemon.Images()

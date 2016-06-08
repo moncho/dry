@@ -96,20 +96,28 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.DockerEnv, stop <-ch
 	screen.RenderLine(screen.Width-len(cheese)+20, height-1, cheese)
 	screen.Flush()
 	go func() {
-		var rotorPos = 0
+		rotorPos := 0
+		forward := true
 		ticker := time.NewTicker(250 * time.Millisecond)
 		timeOut := time.NewTimer(30 * time.Second)
+
 		for {
 			select {
 			case <-ticker.C:
 				loadingMessage := loadMessage[rotorPos]
 				screen.RenderAtColumn(midscreen-19, height/2-6, ui.Cyan(loadingMessage))
 				screen.Flush()
-				if rotorPos < len(loadMessage)-1 {
+				if rotorPos == len(loadMessage)-1 {
+					forward = false
+				} else if rotorPos == 0 {
+					forward = true
+				}
+				if forward {
 					rotorPos++
 				} else {
-					rotorPos = 0
+					rotorPos--
 				}
+
 			case <-timeOut.C:
 				screen.Close()
 				log.Error(
