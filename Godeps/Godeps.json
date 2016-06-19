@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/moncho/dry",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v65",
+	"GodepVersion": "v74",
 	"Packages": [
 		"github.com/moncho/dry"
 	],
@@ -27,12 +27,12 @@
 			"Rev": "55f1b7651f6242617133312ff8af5c2e4e3628ea"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/pkg/stdcopy",
+			"ImportPath": "github.com/docker/docker/opts",
 			"Comment": "v1.4.1-11868-g7a56581",
 			"Rev": "7a5658129740cd8e4345246758aa30fe3c835d10"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/opts",
+			"ImportPath": "github.com/docker/docker/pkg/stdcopy",
 			"Comment": "v1.4.1-11868-g7a56581",
 			"Rev": "7a5658129740cd8e4345246758aa30fe3c835d10"
 		},
