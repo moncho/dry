@@ -32,6 +32,11 @@
 			"Rev": "7a5658129740cd8e4345246758aa30fe3c835d10"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/opts",
+			"Comment": "v1.4.1-11868-g7a56581",
+			"Rev": "7a5658129740cd8e4345246758aa30fe3c835d10"
+		},
+		{
 			"ImportPath": "github.com/docker/engine-api/client",
 			"Comment": "v0.3.1-93-ge374c4f",
 			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
