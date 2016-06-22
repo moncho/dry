@@ -101,6 +101,14 @@ If you dont like to **curl | sh**, binaries are provided.
 - **linux** [386](https://github.com/moncho/dry/releases/download/v0.5-alpha.4/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.5-alpha.4/dry-linux-amd64)
 - **windows** [386](https://github.com/moncho/dry/releases/download/v0.5-alpha.4/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.5-alpha.4/dry-windows-amd64)
 
+#### Mac OS X / Homebrew
+
+If you're on OS X and want to use homebrew:
+```
+brew tap moncho/dry
+brew install dry
+```
+
 #### Go
 
 And if you just run what you compile, use the source.
