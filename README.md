@@ -109,24 +109,12 @@ brew tap moncho/dry
 brew install dry
 ```
 
-#### Go
+#### Arch Linux
 
-And if you just run what you compile, use the source.
+```
+yaourt -S dry
+```
 
-Make sure that **$GOPATH** exists. Go get this project.
-```
-$ go get github.com/moncho/dry
-$ cd $GOPATH/src/github.com/moncho/dry
-```
-This project uses [godep](https://github.com/tools/godep) to handle its dependencies.
-```
-$ go get github.com/tools/godep
-$ godep restore
-```
-Build **dry**.
-```
-$ make install
-```
 
 ### Usage
 
@@ -157,6 +145,3 @@ Built on top of:
 * [termbox](https://github.com/nsf/termbox-go)
 
 Also reused some code and ideas from the [Docker project](https://github.com/docker/docker).
-
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moncho/dry/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
