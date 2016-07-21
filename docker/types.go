@@ -39,6 +39,7 @@ type ContainerDaemon interface {
 	RefreshImages() error
 	RefreshNetworks() error
 	RemoveAllStoppedContainers() (int, error)
+	RemoveDanglingImages() (int, error)
 	Stats(id string) (<-chan *Stats, chan<- struct{})
 	StopContainer(id string) error
 	Sort(sortMode SortMode)

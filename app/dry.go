@@ -216,6 +216,19 @@ func (d *Dry) RemoveAllStoppedContainers() {
 	}
 }
 
+//RemoveDanglingImages removes dangling images
+func (d *Dry) RemoveDanglingImages() {
+
+	d.appmessage("<red>Removing dangling images</>")
+	if count, err := d.dockerDaemon.RemoveDanglingImages(); err == nil {
+		d.appmessage(fmt.Sprintf("<red>Removed %d dangling images</>", count))
+	} else {
+		d.appmessage(
+			fmt.Sprintf(
+				"<red>Error removing dangling images. %s</>", err))
+	}
+}
+
 //RemoveImage removes the Docker image at the given position
 func (d *Dry) RemoveImage(position int, force bool) {
 	if image, err := d.dockerDaemon.ImageAt(position); err == nil {

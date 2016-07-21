@@ -12,6 +12,7 @@ import (
 	dockerAPI "github.com/docker/engine-api/client"
 	dockerTypes "github.com/docker/engine-api/types"
 	dockerEvents "github.com/docker/engine-api/types/events"
+	"github.com/docker/engine-api/types/filters"
 	"golang.org/x/net/context"
 )
 
@@ -25,6 +26,10 @@ const (
 	//container operations timeout, docker api interprets the value as seconds
 	containerOpTimeout = 10
 )
+
+//Defaults for listing images
+var defaultImageListOptions = dockerTypes.ImageListOptions{
+	All: false}
 
 //DockerDaemon knows how to talk to the Docker daemon
 type DockerDaemon struct {
@@ -287,7 +292,7 @@ func (daemon *DockerDaemon) RefreshImages() error {
 	daemon.refreshLock.Lock()
 	defer daemon.refreshLock.Unlock()
 
-	images, err := images(daemon.client)
+	images, err := images(daemon.client, defaultImageListOptions)
 
 	if err == nil {
 		daemon.images = images
@@ -331,6 +336,42 @@ func (daemon *DockerDaemon) RemoveAllStoppedContainers() (int, error) {
 					}
 				}(container.ID)
 			}
+		}
+		wg.Wait()
+		select {
+		case e := <-errs:
+			return 0, e
+		default:
+		}
+	}
+	return int(atomic.LoadUint32(&count)), err
+}
+
+//RemoveDanglingImages removes dangling images
+func (daemon *DockerDaemon) RemoveDanglingImages() (int, error) {
+	danglingfilters := filters.NewArgs()
+	danglingfilters.Add("dangling", "true")
+	images, err := images(daemon.client,
+		dockerTypes.ImageListOptions{
+			Filters: danglingfilters})
+	var count uint32
+	errs := make(chan error, 1)
+	defer close(errs)
+	if err == nil {
+		var wg sync.WaitGroup
+		for _, image := range images {
+			wg.Add(1)
+			go func(id string) {
+				defer atomic.AddUint32(&count, 1)
+				defer wg.Done()
+				_, err = daemon.Rmi(id, true)
+				if err != nil {
+					select {
+					case errs <- err:
+					default:
+					}
+				}
+			}(image.ID)
 		}
 		wg.Wait()
 		select {
@@ -429,12 +470,10 @@ func containers(client dockerAPI.APIClient, allContainers bool) ([]dockerTypes.C
 	return nil, nil, err
 }
 
-func images(client dockerAPI.APIClient) ([]dockerTypes.Image, error) {
+func images(client dockerAPI.APIClient, opts dockerTypes.ImageListOptions) ([]dockerTypes.Image, error) {
 	//TODO use cancel function
 	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
 
-	opts := dockerTypes.ImageListOptions{
-		All: false}
 	return client.ImageList(ctx, opts)
 }
 
