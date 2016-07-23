@@ -21,7 +21,7 @@ const (
 func connect(client client.APIClient, env *DockerEnv) (*DockerDaemon, error) {
 	containers, containersByID, err := containers(client, false)
 	if err == nil {
-		images, err := images(client)
+		images, err := images(client, defaultImageListOptions)
 		if err == nil {
 			networks, err := networks(client)
 			if err == nil {

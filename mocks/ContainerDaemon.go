@@ -218,6 +218,11 @@ func (_m *ContainerDaemonMock) RemoveAllStoppedContainers() (int, error) {
 
 }
 
+//RemoveDanglingImages mock
+func (_m *ContainerDaemonMock) RemoveDanglingImages() (int, error) {
+	return 0, nil
+}
+
 // Stats provides a mock function with given fields: id
 func (_m *ContainerDaemonMock) Stats(id string) (<-chan *drydocker.Stats, chan<- struct{}) {
 
