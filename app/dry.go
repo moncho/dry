@@ -78,89 +78,120 @@ func (d *Dry) Close() {
 	close(d.output)
 }
 
-//History  prepares dry to show image history
-func (d *Dry) History(position int) {
+//HistoryAt prepares dry to show image history of image at the given positions
+func (d *Dry) HistoryAt(position int) {
 	if apiImage, err := d.dockerDaemon.ImageAt(position); err == nil {
-		history, err := d.dockerDaemon.History(apiImage.ID)
-		if err == nil {
-			d.changeViewMode(ImageHistoryMode)
-			d.imageHistory = history
-		} else {
-			d.appmessage(fmt.Sprintf("<red>Error getting history of image </><white>%s: %s</>", apiImage.ID, err.Error()))
-		}
+		d.History(apiImage.ID)
 	} else {
 		d.appmessage(fmt.Sprintf("<red>Error getting history of image </><white>: %s</>", err.Error()))
 	}
-
 }
 
-//Inspect prepares dry to inspect container at the given position
-func (d *Dry) Inspect(position int) {
-	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		c, err := d.dockerDaemon.Inspect(id)
-		if err == nil {
-			d.changeViewMode(InspectMode)
-			d.inspectedContainer = c
-		} else {
-			d.errormessage(shortID, "inspecting", err)
-		}
+//History  prepares dry to show image history
+func (d *Dry) History(id string) {
+	history, err := d.dockerDaemon.History(id)
+	if err == nil {
+		d.changeViewMode(ImageHistoryMode)
+		d.imageHistory = history
 	} else {
-		d.errormessage(shortID, "inspecting", err)
+		d.appmessage(fmt.Sprintf("<red>Error getting history of image </><white>%s: %s</>", id, err.Error()))
 	}
 }
 
-//InspectImage prepares dry to show image information for the image at the given position
-func (d *Dry) InspectImage(position int) {
+//InspectAt prepares dry to inspect container at the given position
+func (d *Dry) InspectAt(position int) {
+	if id, _, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
+		d.Inspect(id)
+	} else {
+		d.errorMessage(position, "inspecting", err)
+	}
+}
 
+//Inspect prepares dry to inspect container with the given id
+func (d *Dry) Inspect(id string) {
+	c, err := d.dockerDaemon.Inspect(id)
+	if err == nil {
+		d.changeViewMode(InspectMode)
+		d.inspectedContainer = c
+	} else {
+		d.errorMessage(id, "inspecting", err)
+	}
+}
+
+//InspectImageAt prepares dry to show image information for the image at the given position
+func (d *Dry) InspectImageAt(position int) {
 	if apiImage, err := d.dockerDaemon.ImageAt(position); err == nil {
-		image, err := d.dockerDaemon.InspectImage(apiImage.ID)
-		if err == nil {
-			d.changeViewMode(InspectImageMode)
-			d.inspectedImage = image
-		} else {
-			d.errormessage(apiImage.ID, "inspecting image", err)
-		}
+		d.InspectImage(apiImage.ID)
 	} else {
-		d.errormessage(apiImage.ID, "inspecting image", err)
+		d.errorMessage(apiImage.ID, "inspecting image", err)
 	}
 }
 
-//InspectNetwork prepares dry to show network information for the network at the given position
-func (d *Dry) InspectNetwork(position int) {
+//InspectImage prepares dry to show image information for the image with the given id
+func (d *Dry) InspectImage(id string) {
+	image, err := d.dockerDaemon.InspectImage(id)
+	if err == nil {
+		d.changeViewMode(InspectImageMode)
+		d.inspectedImage = image
+	} else {
+		d.errorMessage(id, "inspecting image", err)
+	}
+}
 
+//InspectNetworkAt prepares dry to show network information for the network at the given position
+func (d *Dry) InspectNetworkAt(position int) {
 	if network, err := d.dockerDaemon.NetworkAt(position); err == nil {
-		network, err := d.dockerDaemon.NetworkInspect(network.ID)
-		if err == nil {
-			d.changeViewMode(InspectNetworkMode)
-			d.inspectedNetwork = network
-		} else {
-			d.errormessage(network.ID, "inspecting network", err)
-		}
+		d.InspectNetwork(network.ID)
 	} else {
-		d.errormessage(network.ID, "inspecting network", err)
+		d.errorMessage(network.ID, "inspecting network", err)
 	}
 }
 
-//Kill the docker container at the given position
-func (d *Dry) Kill(position int) {
-	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		d.actionmessage(shortID, "Killing")
-		err := d.dockerDaemon.Kill(id)
-		if err == nil {
-			d.actionmessage(shortID, "killed")
-		} else {
-			d.errormessage(shortID, "killing", err)
-		}
+//InspectNetwork prepares dry to show network information for the network with the given id
+func (d *Dry) InspectNetwork(id string) {
+	network, err := d.dockerDaemon.NetworkInspect(id)
+	if err == nil {
+		d.changeViewMode(InspectNetworkMode)
+		d.inspectedNetwork = network
+	} else {
+		d.errorMessage(network.ID, "inspecting network", err)
 	}
 }
 
-//Logs retrieves the log of the docker container at the given position
-func (d *Dry) Logs(position int) (io.ReadCloser, error) {
+//KillAt the docker container at the given position
+func (d *Dry) KillAt(position int) {
+	if id, _, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
+		d.Kill(id)
+	} else {
+		d.errorMessage(position, "killing", err)
+	}
+}
+
+//Kill the docker container with the given id
+func (d *Dry) Kill(id string) {
+
+	d.actionMessage(id, "Killing")
+	err := d.dockerDaemon.Kill(id)
+	if err == nil {
+		d.actionMessage(id, "killed")
+	} else {
+		d.errorMessage(id, "killing", err)
+	}
+
+}
+
+//LogsAt retrieves the log of the docker container at the given position
+func (d *Dry) LogsAt(position int) (io.ReadCloser, error) {
 	id, _, err := d.dockerDaemon.ContainerIDAt(position)
 	if err == nil {
-		return d.dockerDaemon.Logs(id), nil
+		return d.Logs(id)
 	}
 	return nil, err
+}
+
+//Logs retrieves the log of the docker container with the given id
+func (d *Dry) Logs(id string) (io.ReadCloser, error) {
+	return d.dockerDaemon.Logs(id), nil
 }
 
 //OuputChannel returns the channel where dry messages are written
@@ -229,20 +260,24 @@ func (d *Dry) RemoveDanglingImages() {
 	}
 }
 
-//RemoveImage removes the Docker image at the given position
-func (d *Dry) RemoveImage(position int, force bool) {
+//RemoveImageAt removes the Docker image at the given position
+func (d *Dry) RemoveImageAt(position int, force bool) {
 	if image, err := d.dockerDaemon.ImageAt(position); err == nil {
-		id := drydocker.ImageID(image.ID)
-		shortID := drydocker.TruncateID(id)
-		d.appmessage(fmt.Sprintf("<red>Removing image:</> <white>%s</>", shortID))
-		if _, err = d.dockerDaemon.Rmi(id, force); err == nil {
-			d.doRefresh()
-			d.appmessage(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
-		} else {
-			d.appmessage(fmt.Sprintf("<red>Error removing image </><white>%s: %s</>", shortID, err.Error()))
-		}
+		d.RemoveImage(drydocker.ImageID(image.ID), force)
 	} else {
 		d.appmessage(fmt.Sprintf("<red>Error removing image</>: %s", err.Error()))
+	}
+}
+
+//RemoveImage removes the Docker image with the given id
+func (d *Dry) RemoveImage(id string, force bool) {
+	shortID := drydocker.TruncateID(id)
+	d.appmessage(fmt.Sprintf("<red>Removing image:</> <white>%s</>", shortID))
+	if _, err := d.dockerDaemon.Rmi(id, force); err == nil {
+		d.doRefresh()
+		d.appmessage(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
+	} else {
+		d.appmessage(fmt.Sprintf("<red>Error removing image </><white>%s: %s</>", shortID, err.Error()))
 	}
 }
 
@@ -250,18 +285,48 @@ func (d *Dry) resetTimer() {
 	d.lastRefresh = time.Now()
 }
 
-//Rm removes the container at the given position
-func (d *Dry) Rm(position int) {
-	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		d.actionmessage(shortID, "Removing")
-		if err := d.dockerDaemon.Rm(id); err == nil {
-			d.actionmessage(shortID, "Removed")
-		} else {
-			d.errormessage(shortID, "removing", err)
-		}
+//RestartContainerAt (re)starts the container at the given position
+func (d *Dry) RestartContainerAt(position int) {
+	if id, _, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
+		d.RestartContainer(id)
 	} else {
-		d.errormessage(id, "removing", err)
+		d.errorMessage(position, "restarting", err)
 	}
+}
+
+//RestartContainer (re)starts the container with the given id
+func (d *Dry) RestartContainer(id string) {
+	shortID := drydocker.TruncateID(id)
+	d.actionMessage(shortID, "Restarting")
+	go func() {
+		err := d.dockerDaemon.RestartContainer(id)
+		if err == nil {
+			d.actionMessage(shortID, "Restarted")
+		} else {
+			d.errorMessage(shortID, "restarting", err)
+		}
+	}()
+}
+
+//RmAt removes the container at the given position
+func (d *Dry) RmAt(position int) {
+	if id, _, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
+		d.Rm(id)
+	} else {
+		d.errorMessage(position, "removing", err)
+	}
+}
+
+//Rm removes the container with the given id
+func (d *Dry) Rm(id string) {
+	shortID := drydocker.TruncateID(id)
+	d.actionMessage(shortID, "Removing")
+	if err := d.dockerDaemon.Rm(id); err == nil {
+		d.actionMessage(shortID, "Removed")
+	} else {
+		d.errorMessage(shortID, "removing", err)
+	}
+
 }
 
 //ShowMainView changes the state of dry to show the main view, main views are
@@ -398,54 +463,51 @@ func (d *Dry) startDry() {
 	}()
 }
 
-//RestartContainer (re)starts the container at the given position
-func (d *Dry) RestartContainer(position int) {
-	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		d.actionmessage(shortID, "Restarting")
-		go func() {
-			err := d.dockerDaemon.RestartContainer(id)
-			if err == nil {
-				d.actionmessage(shortID, "Restarted")
-			} else {
-				d.errormessage(shortID, "restarting", err)
-			}
-		}()
-	} else {
-		d.errormessage(shortID, "restarting", err)
-	}
-
-}
-
-//Stats get stats of container in the given position until a
+//StatsAt get stats of container in the given position until a
 //message is sent to the done channel
-func (d *Dry) Stats(position int) (<-chan *drydocker.Stats, chan<- struct{}, error) {
+func (d *Dry) StatsAt(position int) (<-chan *drydocker.Stats, chan<- struct{}, error) {
 	id, _, err := d.dockerDaemon.ContainerIDAt(position)
 	if err == nil {
-		if d.dockerDaemon.IsContainerRunning(id) {
-			statsC, dockerDoneChannel := d.dockerDaemon.Stats(id)
-			return statsC, dockerDoneChannel, nil
-
-		}
-		d.appmessage(
-			fmt.Sprintf("<red>Cannot run stats on stopped container. Id: </><white>%s</>", id))
-		err = errors.New("Cannot run stats on stopped container.")
+		return d.Stats(id)
 	}
-
 	return nil, nil, err
 }
 
-//StopContainer stops the container at the given position
-func (d *Dry) StopContainer(position int) {
-	if id, shortID, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		d.actionmessage(shortID, "Stopping")
-		go func() {
-			if err := d.dockerDaemon.StopContainer(id); err == nil {
-				d.actionmessage(shortID, "Stopped")
-			} else {
-				d.errormessage(shortID, "stopping", err)
-			}
-		}()
+//Stats get stats of container with the given id until a
+//message is sent to the done channel
+func (d *Dry) Stats(id string) (<-chan *drydocker.Stats, chan<- struct{}, error) {
+
+	if d.dockerDaemon.IsContainerRunning(id) {
+		statsC, dockerDoneChannel := d.dockerDaemon.Stats(id)
+		return statsC, dockerDoneChannel, nil
+
 	}
+	d.appmessage(
+		fmt.Sprintf("<red>Cannot run stats on stopped container. Id: </><white>%s</>", id))
+
+	return nil, nil, errors.New("Cannot run stats on stopped container.")
+}
+
+//StopContainerAt stops the container at the given position
+func (d *Dry) StopContainerAt(position int) {
+	if id, _, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
+		d.StopContainer(id)
+	} else {
+		d.errorMessage(position, "stopping", err)
+	}
+}
+
+//StopContainer stops the container with the given id
+func (d *Dry) StopContainer(id string) {
+	shortID := drydocker.TruncateID(id)
+	d.actionMessage(shortID, "Stopping")
+	go func() {
+		if err := d.dockerDaemon.StopContainer(id); err == nil {
+			d.actionMessage(shortID, "Stopped")
+		} else {
+			d.errorMessage(shortID, "stopping", err)
+		}
+	}()
 }
 
 //ToggleShowAllContainers changes between showing running containers and
@@ -480,15 +542,15 @@ func (d *Dry) appmessage(message string) {
 	}()
 }
 
-func (d *Dry) actionmessage(cid string, action string) {
-	d.appmessage(fmt.Sprintf("<red>%s container with id </><white>%s</>",
+func (d *Dry) actionMessage(cid interface{}, action string) {
+	d.appmessage(fmt.Sprintf("<red>%s container with id </><white>%v</>",
 		action, cid))
 }
 
-func (d *Dry) errormessage(cid string, action string, err error) {
+func (d *Dry) errorMessage(cid interface{}, action string, err error) {
 	d.appmessage(
 		fmt.Sprintf(
-			"<red>Error %s container </><white>%s. %s</>",
+			"<red>Error %s container </><white>%v. %s</>",
 			action, cid, err.Error()))
 }
 
