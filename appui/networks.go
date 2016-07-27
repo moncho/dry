@@ -27,7 +27,6 @@ type DockerNetworksRenderer struct {
 	daemon                docker.ContainerDaemon
 	dockerInfo            string // Docker environment information
 	sortMode              docker.SortNetworksMode
-	networkTableStart     int
 	height                int
 }
 
@@ -49,9 +48,6 @@ func NewDockerNetworksRenderer(daemon docker.ContainerDaemon, screenHeight int, 
 	r.cursor = cursor
 	r.daemon = daemon
 	r.sortMode = sortMode
-	//Safe guess about how many lines from the start of screen (including network table header) before
-	//networks are actually written to screen
-	r.networkTableStart = 10
 	r.height = screenHeight
 	return r
 }
@@ -93,7 +89,7 @@ func (r *DockerNetworksRenderer) tableHeader() string {
 		if r.sortMode != col.mode {
 			columns[i] = col.title
 		} else {
-			columns[i] = arrow() + col.title
+			columns[i] = DownArrow + col.title
 		}
 	}
 	return "<green>" + strings.Join(columns, "\t") + "</>"
@@ -122,7 +118,7 @@ func (r *DockerNetworksRenderer) networkInformation() string {
 func (r *DockerNetworksRenderer) networksToShow() []types.NetworkResource {
 	networks, _ := r.daemon.Networks()
 	cursorPos := r.cursor.Position()
-	linesForNetworks := r.height - r.networkTableStart - 1
+	linesForNetworks := r.height - networkTableStartPos - 1
 
 	if len(networks) < linesForNetworks {
 		return networks

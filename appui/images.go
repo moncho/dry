@@ -12,13 +12,6 @@ import (
 	"github.com/moncho/dry/docker"
 )
 
-const (
-
-	//Safe guess about how many lines from the start of screen (including image table header) before
-	//images are actually written to screen
-	imageTableStart = 10
-)
-
 type imagesColumn struct {
 	name  string // The name of the field in the struct.
 	title string // Title to display in the tableHeader.
@@ -111,7 +104,7 @@ func (r *DockerImagesRenderer) tableHeader() string {
 		if r.data.sortMode != col.mode {
 			columns[i] = col.title
 		} else {
-			columns[i] = arrow() + col.title
+			columns[i] = DownArrow + col.title
 		}
 	}
 	return "<green>" + strings.Join(columns, "\t") + "</>"
@@ -140,7 +133,7 @@ func (r *DockerImagesRenderer) imageInformation() string {
 func (r *DockerImagesRenderer) imagesToShow() []types.Image {
 	images := r.data.images
 	cursorPos := r.data.selectedImage
-	linesForImages := r.height - imageTableStart - 1
+	linesForImages := r.height - imageTableStartPos - 1
 
 	if len(images) < linesForImages {
 		return images

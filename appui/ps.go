@@ -13,10 +13,6 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
-const (
-	containerTableStart = 10
-)
-
 type column struct {
 	name  string // The name of the field in the struct.
 	title string // Title to display in the tableHeader.
@@ -115,7 +111,7 @@ func (r *DockerPs) tableHeader() string {
 		if r.data.sortMode != col.mode {
 			columns[i] = col.title
 		} else {
-			columns[i] = arrow() + col.title
+			columns[i] = DownArrow + col.title
 		}
 	}
 	return "<green>" + strings.Join(columns, "\t") + "</>"
@@ -147,7 +143,7 @@ func (r *DockerPs) containerInformation() string {
 func (r *DockerPs) containersToShow() []types.Container {
 	containers := r.data.containers
 	cursorPos := r.data.selectedContainer
-	availableLines := r.height - containerTableStart - 1
+	availableLines := r.height - containerTableStartPos - 1
 
 	if len(containers) < availableLines {
 		return containers
@@ -183,9 +179,4 @@ func buildContainerTableTemplate(dockerInfo string) *template.Template {
 func buildContainerTemplate() *template.Template {
 
 	return template.Must(template.New(`container`).Parse(docker.DefaultTableFormat))
-}
-
-//-----------------------------------------------------------------------------
-func arrow() string {
-	return string('\U00002193')
 }
