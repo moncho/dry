@@ -78,6 +78,16 @@ func (d *Dry) Close() {
 	close(d.output)
 }
 
+//ContainerAt returns the container at the given position
+func (d *Dry) ContainerAt(position int) (types.Container, error) {
+	return d.dockerDaemon.ContainerAt(position)
+}
+
+//ContainerIDAt returns the id of the container at the given position
+func (d *Dry) ContainerIDAt(position int) (string, string, error) {
+	return d.dockerDaemon.ContainerIDAt(position)
+}
+
 //HistoryAt prepares dry to show image history of image at the given positions
 func (d *Dry) HistoryAt(position int) {
 	if apiImage, err := d.dockerDaemon.ImageAt(position); err == nil {
@@ -327,6 +337,26 @@ func (d *Dry) Rm(id string) {
 		d.errorMessage(shortID, "removing", err)
 	}
 
+}
+
+//runCommand runs the given command on the container with the given id
+func (d *Dry) runCommand(command drydocker.Command, id string) {
+	switch command {
+	case drydocker.INSPECT:
+		d.Inspect(id)
+	case drydocker.KILL:
+		d.Kill(id)
+	case drydocker.LOGS:
+		d.Logs(id)
+	case drydocker.RM:
+		d.Rm(id)
+	case drydocker.RESTART:
+		d.RestartContainer(id)
+	case drydocker.STATS:
+		d.Stats(id)
+	case drydocker.STOP:
+		d.StopContainer(id)
+	}
 }
 
 //ShowMainView changes the state of dry to show the main view, main views are

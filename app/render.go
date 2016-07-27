@@ -9,11 +9,12 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
+//ViewMode represents dry possible views
 type viewMode uint16
 
 //known view modes
 const (
-	Main viewMode = iota
+	Main viewMode = iota //This is the container list view
 	Images
 	Networks
 	EventsMode
@@ -23,12 +24,6 @@ const (
 	InspectImageMode
 	InspectNetworkMode
 	InspectMode
-)
-
-const (
-	//The position from the top (0) where a line describing what is
-	//being shown is placed. Kind of a magic number.
-	screenDescriptionIndex = 5
 )
 
 //Render renders dry in the given screen
@@ -88,6 +83,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 				appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.state.SortNetworksMode).Render())
 			what = "Networks"
 			count = d.dockerDaemon.NetworksCount()
+			updateCursorPosition(screen.Cursor, count)
 			keymap = networkKeyMappings
 		}
 
@@ -124,7 +120,7 @@ func Write(d *Dry, w io.Writer) {
 }
 
 func renderViewTitle(screen *ui.Screen, what string, howMany int) {
-	screen.RenderLine(0, screenDescriptionIndex,
+	screen.RenderLine(0, appui.MainScreenHeaderSize,
 		fmt.Sprintf(
 			"<b><blue>%s: </><yellow>%d</></>", what, howMany))
 }

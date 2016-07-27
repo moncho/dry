@@ -7,8 +7,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/moncho/dry/appui"
-	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/nsf/termbox-go"
 )
@@ -40,6 +38,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	timestampQueue := time.NewTicker(1 * time.Second)
 
 	viewClosed := make(chan struct{}, 1)
+	//On receive dry is rendered
 	renderChan := make(chan struct{})
 
 	keyboardQueueForView := make(chan termbox.Event)
@@ -55,8 +54,8 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	//renders dry on message
 	go func() {
 		for {
-			_, stillOpen := <-renderChan
-			if stillOpen {
+			_, ok := <-renderChan
+			if ok {
 				screen.Clear()
 				Render(dry, screen, statusBar)
 			} else {
@@ -161,50 +160,6 @@ func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.
 	screen.Clear()
 	screen.Sync()
 	done <- struct{}{}
-}
-
-//autorefresh view that autorefreshes its content every second
-func statsScreen(screen *ui.Screen, keyboardQueue chan termbox.Event, stats <-chan *docker.Stats, viewClosed chan<- struct{}, done chan<- struct{}) {
-	screen.Clear()
-	v := ui.NewMarkupView("", 0, 0, screen.Width, screen.Height, false)
-
-	var mutex = &sync.Mutex{}
-	err := v.Render()
-	if err != nil {
-		ui.ShowErrorMessage(screen, keyboardQueue, err)
-	}
-	screen.Flush()
-
-loop:
-	for {
-		select {
-		case event := <-keyboardQueue:
-			switch event.Type {
-			case termbox.EventKey:
-				if event.Key == termbox.KeyEsc {
-					//the lock is acquired and the time-based refresh queue is stopped
-					//before breaking the loop
-					mutex.Lock()
-					break loop
-				}
-			}
-		case s := <-stats:
-			{
-				mutex.Lock()
-				v.Clear()
-				io.WriteString(v, appui.NewDockerStatsRenderer(s).Render())
-				v.Render()
-				screen.Flush()
-				mutex.Unlock()
-			}
-		}
-	}
-	//cleanup before exiting, the screen is cleared and the lock released
-	screen.Clear()
-	screen.Sync()
-	mutex.Unlock()
-	viewClosed <- struct{}{}
-	close(done)
 }
 
 //less shows dry output in a "less" emulator
