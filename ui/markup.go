@@ -1,8 +1,8 @@
 package ui
 
 import (
-	`regexp`
-	`strings`
+	"regexp"
+	"strings"
 
 	"github.com/nsf/termbox-go"
 )
@@ -35,9 +35,9 @@ func tags() map[string]termbox.Attribute {
 	tags[`cyan`] = termbox.ColorCyan
 	tags[`cyan0`] = termbox.ColorCyan
 	tags[`white`] = termbox.ColorWhite
-	tags[`grey`] = 0xE9
-	tags[`grey2`] = 0xF4
-	tags[`darkgrey`] = 0xE8
+	tags[`grey`] = Grey
+	tags[`grey2`] = Grey2
+	tags[`darkgrey`] = Darkgrey
 	tags[`right`] = termbox.ColorDefault // Termbox can combine attributes and a single color using bitwise OR.
 	tags[`b`] = termbox.AttrBold
 	tags[`u`] = termbox.AttrUnderline
@@ -83,7 +83,7 @@ func NewMarkup() *Markup {
 func (markup *Markup) IsTag(str string) bool {
 	tag, open := probeForTag(str)
 
-	if tag == `` {
+	if tag == "" {
 		return false
 	}
 
@@ -119,7 +119,7 @@ func (markup *Markup) process(tag string, open bool) bool {
 //-----------------------------------------------------------------------------
 func probeForTag(str string) (string, bool) {
 	if len(str) > 2 && str[0:1] == `<` && str[len(str)-1:] == `>` {
-		return extractTagName(str), str[1:2] != `/`
+		return extractTagName(str), str[1:2] != "/"
 	}
 
 	return ``, false

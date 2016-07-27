@@ -5,6 +5,9 @@ import "fmt"
 //Colors
 const (
 	MenuBarBackgroundColor = 0x19
+	Grey                   = 0xE9
+	Grey2                  = 0xF4
+	Darkgrey               = 0xE8
 )
 
 //Blue blues the given string

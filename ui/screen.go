@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	termui "github.com/gizak/termui"
 	"github.com/nsf/termbox-go"
 )
 
@@ -96,6 +97,28 @@ func (screen *Screen) Flush() *Screen {
 	defer screen.termboxMutex.Unlock()
 	termbox.Flush()
 	return screen
+}
+
+// RenderBufferer renders all Bufferer in the given order from left to right,
+// right could overlap on left ones.
+// This allows usage of termui widgets.
+func (screen *Screen) RenderBufferer(bs ...termui.Bufferer) {
+	screen.termboxMutex.Lock()
+	defer screen.termboxMutex.Unlock()
+	for _, b := range bs {
+		buf := b.Buffer()
+		// set cels in buf
+		for p, c := range buf.CellMap {
+			if p.In(buf.Area) {
+				termbox.SetCell(p.X, p.Y, c.Ch, toTmAttr(c.Fg), toTmAttr(c.Bg))
+			}
+		}
+	}
+	termbox.Flush()
+}
+
+func toTmAttr(x termui.Attribute) termbox.Attribute {
+	return termbox.Attribute(x)
 }
 
 // RenderLine takes the incoming string, tokenizes it to extract markup
