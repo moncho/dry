@@ -3,8 +3,8 @@
 	"GoVersion": "go1.6",
 	"GodepVersion": "v74",
 	"Packages": [
-		"github.com/moncho/dry"
-	],
+          "github.com/moncho/dry"
+   ],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Microsoft/go-winio",
@@ -14,7 +14,7 @@
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.7.3",
-			"Rev": "55eb11d21d2a31a3cc93838241d04800f52e823d"
+			"Rev": "a283a10442df8dc09befd873fab202bf8a253d6a"
 		},
 		{
 			"ImportPath": "github.com/docker/distribution/digest",
@@ -39,72 +39,72 @@
 		{
 			"ImportPath": "github.com/docker/engine-api/client",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/client/transport",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/client/transport/cancellable",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/blkiodev",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/container",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/events",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/filters",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/network",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/reference",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/registry",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/strslice",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/time",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/versions",
 			"Comment": "v0.3.1-93-ge374c4f",
-			"Rev": "e374c4fb5b121a8fd4295ec5eb91a8068c6304f4"
+			"Rev": "3d1601b9d2436a70b0dfc045a23f6503d19195df"
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections/nat",
@@ -127,6 +127,10 @@
 			"Rev": "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
 		},
 		{
+			"ImportPath": "github.com/gizak/termui",
+			"Rev": "202925a536c7febe22698792a2b6de68edb2726d"
+		},
+		{
 			"ImportPath": "github.com/gosuri/uitable/util/strutil",
 			"Rev": "62e40473eadf9579716227a0033cd8db16e1c500"
 		},
@@ -139,6 +143,10 @@
 			"ImportPath": "github.com/mattn/go-runewidth",
 			"Comment": "travisish-37-g12e0ff7",
 			"Rev": "12e0ff74603c9a3209d8bf84f8ab349fe1ad9477"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/go-wordwrap",
+			"Rev": "ad45545899c7b13c020ea92b2072220eefad42b8"
 		},
 		{
 			"ImportPath": "github.com/nsf/termbox-go",
