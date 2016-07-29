@@ -12,7 +12,7 @@ type imagesScreenEventHandler struct {
 	viewClosed           chan struct{}
 }
 
-func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, focus bool) {
+func (h imagesScreenEventHandler) handle(renderChan chan<- struct{}, event termbox.Event) (focus bool) {
 	focus = true
 	dry := h.dry
 	screen := h.screen
@@ -24,10 +24,8 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 	switch event.Key {
 	case termbox.KeyArrowUp: //cursor up
 		cursor.ScrollCursorUp()
-		refresh = true
 	case termbox.KeyArrowDown: // cursor down
 		cursor.ScrollCursorDown()
-		refresh = true
 	case termbox.KeyF1: //sort
 		dry.SortImages()
 	case termbox.KeyF5: // refresh
@@ -42,7 +40,6 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
 	case termbox.KeyCtrlD: //remove dangling images
 		dry.RemoveDanglingImages()
-		cursor.ScrollCursorDown()
 	case termbox.KeyCtrlE: //remove image
 		dry.RemoveImageAt(cursorPos, false)
 		cursor.ScrollCursorDown()
@@ -76,6 +73,8 @@ func (h imagesScreenEventHandler) handle(event termbox.Event) (refresh bool, foc
 		}
 
 	}
-
-	return (refresh || dry.Changed()), focus
+	if focus {
+		renderChan <- struct{}{}
+	}
+	return focus
 }

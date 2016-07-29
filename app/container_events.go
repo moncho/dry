@@ -4,7 +4,6 @@ import (
 	"io"
 	"sync"
 
-	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -18,7 +17,7 @@ type containersScreenEventHandler struct {
 	closeView            chan struct{}
 }
 
-func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool, focus bool) {
+func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event termbox.Event) (focus bool) {
 	focus = true
 	dry := h.dry
 	screen := h.screen
@@ -29,10 +28,8 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 	switch event.Key {
 	case termbox.KeyArrowUp: //cursor up
 		cursor.ScrollCursorUp()
-		refresh = true
 	case termbox.KeyArrowDown: // cursor down
 		cursor.ScrollCursorDown()
-		refresh = true
 	case termbox.KeyF1: //sort
 		dry.Sort()
 	case termbox.KeyF2: //show all containers
@@ -59,11 +56,6 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 	case termbox.KeyCtrlT: //stop
 		dry.StopContainerAt(cursorPos)
 	case termbox.KeyEnter: //inspect
-		/*if cursorPos >= 0 {
-			dry.Inspect(cursorPos)
-			focus = false
-			go less(dry, screen, h.keyboardQueueForView, h.closeView)
-		}*/
 		if cursorPos >= 0 {
 			focus = false
 			go showContainerOptions(dry, screen, h.keyboardQueueForView, h.closeView)
@@ -112,7 +104,10 @@ func (h containersScreenEventHandler) handle(event termbox.Event) (refresh bool,
 			}
 		}
 	}
-	return (refresh || dry.Changed()), focus
+	if focus {
+		renderChan <- struct{}{}
+	}
+	return focus
 }
 
 //statsScreen shows container stats on the screen
@@ -161,29 +156,18 @@ loop:
 
 //statsScreen shows container stats on the screen
 func showContainerOptions(dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
-	l := termui.NewList()
+	screen.Cursor.Reset()
+
 	//TODO handle error
 	container, _ := dry.ContainerAt(screen.Cursor.Position())
-	screen.Cursor.Reset()
-	commandsLen := len(docker.CommandDescriptions)
-	commands := make([]string, commandsLen)
-	copy(commands, docker.CommandDescriptions)
-	commands[0] = replaceAtIndex(
-		commands[0],
-		appui.RightArrow,
-		0)
-	l.Items = commands
-	l.BorderLabel = " Container " + container.Names[0] + " commands "
-	l.BorderLabelFg = termui.ColorBlue
-	l.Height = screen.Height - appui.MainScreenHeaderSize - appui.MainScreenFooterSize
-	l.Width = screen.Width
-	l.X = 0
-	l.Y = appui.MainScreenHeaderSize
 
-	screen.RenderBufferer(l)
-	screen.Flush()
-
+	l := appui.NewContainerCommands(container,
+		screen.Height-appui.MainScreenHeaderSize-appui.MainScreenFooterSize,
+		screen.Width)
+	commandsLen := len(l.Commands)
 	refreshChan := make(chan struct{}, 1)
+
+	refreshChan <- struct{}{}
 
 loop:
 	for {
@@ -212,12 +196,8 @@ loop:
 				}
 			}
 		case <-refreshChan:
-			copy(commands, docker.CommandDescriptions)
-			commands[screen.Cursor.Position()] = replaceAtIndex(
-				commands[screen.Cursor.Position()],
-				appui.RightArrow,
-				0)
-			screen.RenderBufferer(l)
+			markSelectedCommand(l.Commands, screen.Cursor.Position())
+			screen.RenderBufferer(l.List)
 			screen.Flush()
 		}
 	}
@@ -227,6 +207,15 @@ loop:
 	screen.Sync()
 	screen.Cursor.Reset()
 	closeView <- struct{}{}
+}
+
+//adds an arrow character before the command description on the given index
+func markSelectedCommand(commands []string, index int) {
+	copy(commands, docker.CommandDescriptions)
+	commands[index] = replaceAtIndex(
+		commands[index],
+		appui.RightArrow,
+		0)
 }
 
 func replaceAtIndex(str string, replacement string, index int) string {

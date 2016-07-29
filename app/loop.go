@@ -51,7 +51,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	defer close(viewClosed)
 	defer close(renderChan)
 
-	//renders dry on message
+	//renders dry on message until renderChan is closed
 	go func() {
 		for {
 			_, ok := <-renderChan
@@ -96,19 +96,15 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	//loop handles input and timer events until a closing event happens
 loop:
 	for {
-		//Used for refresh-forcing events happening outside dry
-		var refresh = false
 		select {
 		case <-timestampQueue.C:
-			if focus.hasFocus() {
-				timestamp := time.Now().Format(`15:04:05`)
-				screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
-				screen.Flush()
-			}
+			timestamp := time.Now().Format(`15:04:05`)
+			screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
+			screen.Flush()
 		case <-viewClosed:
 			focus.set(true)
 			dry.ShowMainView()
-			refresh = true
+			renderChan <- struct{}{}
 		case event := <-keyboardQueue:
 			switch event.Type {
 			case termbox.EventKey:
@@ -121,8 +117,7 @@ loop:
 					} else {
 						handler := eventHandlerFactory(dry, screen, keyboardQueueForView, viewClosed)
 						if handler != nil {
-							r, f := handler.handle(event)
-							refresh = r
+							f := handler.handle(renderChan, event)
 							focus.set(f)
 						} else {
 							log.Panic("There is no event handler")
@@ -134,11 +129,7 @@ loop:
 				}
 			case termbox.EventResize:
 				screen.Resize()
-				refresh = true
 			}
-		}
-		if focus.hasFocus() && refresh {
-			renderChan <- struct{}{}
 		}
 	}
 

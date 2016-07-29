@@ -12,7 +12,7 @@ type networksScreenEventHandler struct {
 	viewClosed           chan struct{}
 }
 
-func (h networksScreenEventHandler) handle(event termbox.Event) (refresh bool, focus bool) {
+func (h networksScreenEventHandler) handle(renderChan chan<- struct{}, event termbox.Event) (focus bool) {
 	focus = true
 	dry := h.dry
 	screen := h.screen
@@ -21,10 +21,8 @@ func (h networksScreenEventHandler) handle(event termbox.Event) (refresh bool, f
 	switch event.Key {
 	case termbox.KeyArrowUp: //cursor up
 		cursor.ScrollCursorUp()
-		refresh = true
 	case termbox.KeyArrowDown: // cursor down
 		cursor.ScrollCursorDown()
-		refresh = true
 	case termbox.KeyF1: //sort
 		dry.SortNetworks()
 	case termbox.KeyF5: // refresh
@@ -56,5 +54,8 @@ func (h networksScreenEventHandler) handle(event termbox.Event) (refresh bool, f
 		cursor.Reset()
 		dry.ShowImages()
 	}
-	return (refresh || dry.Changed()), focus
+	if focus {
+		renderChan <- struct{}{}
+	}
+	return focus
 }

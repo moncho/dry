@@ -7,7 +7,7 @@ import (
 
 //eventHandler maps a key to an app action
 type eventHandler interface {
-	handle(event termbox.Event) (refresh bool, focus bool)
+	handle(renderChan chan<- struct{}, event termbox.Event) (focus bool)
 }
 
 //eventHandlerFactory creates eventHandlers

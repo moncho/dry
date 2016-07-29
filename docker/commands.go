@@ -23,13 +23,13 @@ const (
 
 //ContainerCommands is the list of container commands
 var ContainerCommands = []CommandDescription{
-	CommandDescription{INSPECT, " Display container low-level information"},
-	CommandDescription{KILL, " Kill container"},
-	CommandDescription{LOGS, " Fetch logs"},
-	CommandDescription{RM, " Remove container"},
-	CommandDescription{RESTART, " Restart"},
-	CommandDescription{STATS, " Stats + Top"},
-	CommandDescription{STOP, " Stop"},
+	CommandDescription{INSPECT, "  Display container low-level information"},
+	CommandDescription{KILL, "  Kill container"},
+	CommandDescription{LOGS, "  Fetch logs"},
+	CommandDescription{RM, "  Remove container"},
+	CommandDescription{RESTART, "  Restart"},
+	CommandDescription{STATS, "  Stats + Top"},
+	CommandDescription{STOP, "  Stop"},
 }
 
 //CommandDescriptions lists command descriptions in the same order
