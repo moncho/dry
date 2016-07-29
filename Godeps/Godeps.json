@@ -14,7 +14,7 @@
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.7.3",
-			"Rev": "a283a10442df8dc09befd873fab202bf8a253d6a"
+			"Rev": "55eb11d21d2a31a3cc93838241d04800f52e823d"
 		},
 		{
 			"ImportPath": "github.com/docker/distribution/digest",
