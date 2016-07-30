@@ -1,8 +1,6 @@
 package appui
 
 import (
-	"fmt"
-
 	"github.com/docker/engine-api/types"
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
@@ -15,22 +13,24 @@ type ContainerCommandList struct {
 }
 
 //NewContainerCommands creates a Bufferer with the list of container commands
-func NewContainerCommands(container types.Container, height, width int) *ContainerCommandList {
+func NewContainerCommands(container types.Container, x, y, height, width int) *ContainerCommandList {
 	l := termui.NewList()
 
-	shortID := docker.TruncateID(container.ID)
+	//shortID := docker.TruncateID(container.ID)
 	commandsLen := len(docker.CommandDescriptions)
 	commands := make([]string, commandsLen)
 	l.Items = commands
-	l.BorderLabel =
-		fmt.Sprintf(" %s - %s ", container.Names[0], shortID)
-	l.BorderLabelFg = termui.ColorYellow
-	l.Height = height
-	l.Width = width
-	l.PaddingTop = 2
+	l.Border = false
+	//l.BorderLabel =
+	//	fmt.Sprintf(" %s - %s ", container.Names[0], shortID)
+	l.BorderFg = termui.ColorBlue
+	l.Height = len(commands) + 4 // 2 because of the top+bottom padding, 2 because of the borders
+	l.Width = width / 2
+	l.PaddingTop = 1
+	l.PaddingBottom = 1
 	l.PaddingLeft = 2
-	l.X = 0
-	l.Y = MainScreenHeaderSize
+	l.X = x
+	l.Y = y
 
 	return &ContainerCommandList{l, commands}
 }

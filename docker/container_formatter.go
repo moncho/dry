@@ -95,7 +95,7 @@ func (c *ContainerFormatter) RunningFor() string {
 //Ports prettifies the container port information
 func (c *ContainerFormatter) Ports() string {
 	c.addHeader(portsHeader)
-	return displayablePorts(c.c.Ports)
+	return DisplayablePorts(c.c.Ports)
 }
 
 //Status prettifies the container status
@@ -155,7 +155,8 @@ func stripNamePrefix(ss []string) []string {
 	return ss
 }
 
-func displayablePorts(ports []types.Port) string {
+//DisplayablePorts formats the given ports information for displaying
+func DisplayablePorts(ports []types.Port) string {
 	type portGroup struct {
 		first int
 		last  int

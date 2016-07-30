@@ -93,4 +93,6 @@ const (
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F9]:<darkgrey>Docker Events</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
 		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</>" +
 		inspectMapping
+
+	commandsMenuBar = "<b>[Esc]:<darkgrey>Back</> <b>[Up]:<darkgrey>Cursor Up</> <b>[Down]:<darkgrey>Cursor Down</> <b>[Intro]:<darkgrey>Execute Command</>"
 )

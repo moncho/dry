@@ -156,13 +156,19 @@ loop:
 
 //statsScreen shows container stats on the screen
 func showContainerOptions(dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
-	screen.Cursor.Reset()
 
 	//TODO handle error
 	container, _ := dry.ContainerAt(screen.Cursor.Position())
+	screen.Clear()
+	screen.Cursor.Reset()
 
+	info, infoLines := appui.NewContainerInfo(container)
+	screen.RenderLineWithBackGround(0, screen.Height-1, commandsMenuBar, ui.MenuBarBackgroundColor)
+	screen.Render(1, info)
 	l := appui.NewContainerCommands(container,
-		screen.Height-appui.MainScreenHeaderSize-appui.MainScreenFooterSize,
+		0,
+		infoLines+1,
+		screen.Height-appui.MainScreenFooterSize-infoLines-1,
 		screen.Width)
 	commandsLen := len(l.Commands)
 	refreshChan := make(chan struct{}, 1)
