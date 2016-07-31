@@ -110,7 +110,7 @@ func (v *View) Write(p []byte) (n int, err error) {
 // Render renders the view buffer contents.
 func (v *View) Render() error {
 	_, maxY := v.ViewSize()
-	y := 0
+	y := v.y0
 	for _, vline := range v.lines[v.bufferY:] {
 		if y > maxY {
 			break
