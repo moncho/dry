@@ -109,10 +109,16 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 
 //statsScreen shows container stats on the screen
 func statsScreen(screen *ui.Screen, dry *Dry, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
+	defer func() {
+		closeView <- struct{}{}
+	}()
 	screen.Clear()
 
 	//TODO handle error
 	container, _ := dry.ContainerAt(screen.Cursor.Position())
+	if !docker.IsContainerRunning(container) {
+		return
+	}
 
 	stats, done, err := dry.Stats(container.ID)
 	if err != nil {
@@ -157,12 +163,15 @@ loop:
 	screen.Clear()
 	screen.Sync()
 	mutex.Unlock()
-	closeView <- struct{}{}
 	close(done)
 }
 
 //statsScreen shows container stats on the screen
 func showContainerOptions(dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
+
+	defer func() {
+		closeView <- struct{}{}
+	}()
 
 	//TODO handle error
 	container, _ := dry.ContainerAt(screen.Cursor.Position())
@@ -219,7 +228,6 @@ loop:
 	screen.Clear()
 	screen.Sync()
 	screen.Cursor.Reset()
-	closeView <- struct{}{}
 }
 
 //adds an arrow character before the command description on the given index

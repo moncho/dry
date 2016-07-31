@@ -136,7 +136,10 @@ loop:
 	log.Debug("something broke the loop. Time to die")
 }
 
-func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.Event, done chan<- struct{}) {
+func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
+	defer func() {
+		closeView <- struct{}{}
+	}()
 	screen.Clear()
 	screen.Sync()
 	v := ui.NewLess()
@@ -150,11 +153,13 @@ func stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.
 	termbox.HideCursor()
 	screen.Clear()
 	screen.Sync()
-	done <- struct{}{}
 }
 
 //less shows dry output in a "less" emulator
-func less(dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done chan struct{}) {
+func less(dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan struct{}) {
+	defer func() {
+		closeView <- struct{}{}
+	}()
 	screen.Clear()
 	v := ui.NewLess()
 	v.MarkupSupport()
@@ -167,5 +172,4 @@ func less(dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, done ch
 	screen.Clear()
 	screen.Sync()
 
-	done <- struct{}{}
 }
