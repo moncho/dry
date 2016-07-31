@@ -7,7 +7,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/docker/go-units"
-	"github.com/gosuri/uitable/util/strutil"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 )
@@ -32,17 +31,13 @@ func (r *statsRenderer) Render() string {
 	processList := s.ProcessList
 
 	buf := bytes.NewBufferString("")
-	io.WriteString(buf, "\n")
-	io.WriteString(buf, "\n")
-	io.WriteString(buf, "<blue><b>STATS</></>\n")
+	io.WriteString(buf, "<yellow><b>STATS</></>\n")
 
 	w := tabwriter.NewWriter(buf, 22, 0, 1, ' ', 0)
-	io.WriteString(w, "<green>CONTAINER\tCOMMAND\t%%CPU\tMEM USAGE / LIMIT\t%%MEM\tNET I/O\tBLOCK I/O</>\n")
+	io.WriteString(w, "<blue>%CPU\tMEM USAGE / LIMIT\t%MEM\tNET I/O\tBLOCK I/O</>\n")
 	io.WriteString(
 		w,
-		fmt.Sprintf("<white>%s\t%s\t%.2f\t%s / %s\t%.2f\t%s / %s\t%s / %s</>\n",
-			s.CID,
-			strutil.Resize(s.Command, 20),
+		fmt.Sprintf("<white>%.2f\t%s / %s\t%.2f\t%s / %s\t%s / %s</>\n\n",
 			s.CPUPercentage,
 			units.HumanSize(s.Memory), units.HumanSize(s.MemoryLimit),
 			s.MemoryPercentage,
@@ -50,8 +45,6 @@ func (r *statsRenderer) Render() string {
 			units.HumanSize(s.BlockRead), units.HumanSize(s.BlockWrite)))
 	if processList != nil {
 		topRenderer := NewDockerTopRenderer(processList)
-		io.WriteString(buf, "\n")
-		io.WriteString(buf, "\n")
 		io.WriteString(w, topRenderer.Render())
 	}
 	w.Flush()

@@ -28,12 +28,11 @@ func (r *topRenderer) Render() string {
 	procList := r.processList
 
 	w := tabwriter.NewWriter(buf, 20, 1, 3, ' ', 0)
-	io.WriteString(w, "\n\n")
 
-	io.WriteString(w, "<blue><b>PROCESS LIST</></>\n\n")
+	io.WriteString(w, "<yellow><b>PROCESS LIST</></>\n\n")
 
 	fmt.Fprintln(w,
-		fmt.Sprintf("<green>%s</>",
+		fmt.Sprintf("<blue>%s</>",
 			strings.Join(procList.Titles, "\t")))
 
 	for _, proc := range procList.Processes {

@@ -14,7 +14,8 @@ type ContainerInfo struct {
 	container types.Container
 }
 
-//NewContainerInfo creates a Bufferer with the list of container commands
+//NewContainerInfo returns detailed container information. The seconds parameter
+//is the number of lines.
 func NewContainerInfo(container types.Container) (string, int) {
 
 	buffer := new(bytes.Buffer)

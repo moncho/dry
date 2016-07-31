@@ -67,11 +67,8 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 		switch event.Ch {
 		case 's', 'S': //stats
 			if cursorPos >= 0 {
-				stats, done, err := dry.StatsAt(cursorPos)
-				if err == nil {
-					focus = false
-					go statsScreen(screen, h.keyboardQueueForView, stats, h.closeView, done)
-				}
+				focus = false
+				go statsScreen(screen, dry, h.keyboardQueueForView, h.closeView)
 			}
 		case 'i', 'I': //inspect
 			if cursorPos >= 0 {
@@ -111,12 +108,22 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 }
 
 //statsScreen shows container stats on the screen
-func statsScreen(screen *ui.Screen, keyboardQueue chan termbox.Event, stats <-chan *docker.Stats, closeView chan<- struct{}, done chan<- struct{}) {
+func statsScreen(screen *ui.Screen, dry *Dry, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
 	screen.Clear()
-	v := ui.NewMarkupView("", 0, 0, screen.Width, screen.Height, false)
+
+	//TODO handle error
+	container, _ := dry.ContainerAt(screen.Cursor.Position())
+
+	stats, done, err := dry.Stats(container.ID)
+	if err != nil {
+		ui.ShowErrorMessage(screen, keyboardQueue, err)
+	}
+	info, infoLines := appui.NewContainerInfo(container)
+	screen.Render(1, info)
+	v := ui.NewMarkupView("", 0, infoLines+1, screen.Width, screen.Height, false)
 
 	var mutex = &sync.Mutex{}
-	err := v.Render()
+	err = v.Render()
 	if err != nil {
 		ui.ShowErrorMessage(screen, keyboardQueue, err)
 	}
