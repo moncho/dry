@@ -62,12 +62,11 @@ func (d *Dry) Changed() bool {
 func (d *Dry) changeViewMode(newViewMode viewMode) {
 	d.state.mutex.Lock()
 	defer d.state.mutex.Unlock()
+	//If the new view is one of the main screens, it must be
+	//considered as the view to go back to.
 	if newViewMode == Main || newViewMode == Networks || newViewMode == Images {
 		d.state.previousViewMode = newViewMode
-	} else {
-		d.state.previousViewMode = d.state.viewMode
 	}
-	d.state.previousViewMode = d.state.viewMode
 	d.state.viewMode = newViewMode
 	d.state.changed = true
 }
