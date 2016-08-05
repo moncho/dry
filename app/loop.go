@@ -98,9 +98,11 @@ loop:
 	for {
 		select {
 		case <-timestampQueue.C:
-			timestamp := time.Now().Format(`15:04:05`)
-			screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
-			screen.Flush()
+			if focus.hasFocus() {
+				timestamp := time.Now().Format(`15:04:05`)
+				screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
+				screen.Flush()
+			}
 		case <-viewClosed:
 			focus.set(true)
 			dry.ShowMainView()
