@@ -338,26 +338,6 @@ func (d *Dry) Rm(id string) {
 
 }
 
-//runCommand runs the given command on the container with the given id
-func (d *Dry) runCommand(command drydocker.Command, id string) {
-	switch command {
-	case drydocker.INSPECT:
-		d.Inspect(id)
-	case drydocker.KILL:
-		d.Kill(id)
-	case drydocker.LOGS:
-		d.Logs(id)
-	case drydocker.RM:
-		d.Rm(id)
-	case drydocker.RESTART:
-		d.RestartContainer(id)
-	case drydocker.STATS:
-		d.Stats(id)
-	case drydocker.STOP:
-		d.StopContainer(id)
-	}
-}
-
 //ShowMainView changes the state of dry to show the main view, main views are
 //the container list, the image list or the network list
 func (d *Dry) ShowMainView() {
