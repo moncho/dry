@@ -4,12 +4,17 @@ import (
 	"io"
 	"sync"
 
+	"github.com/docker/engine-api/types"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/nsf/termbox-go"
 )
 
+type commandToExecute struct {
+	command   docker.Command
+	container types.Container
+}
 type containersScreenEventHandler struct {
 	dry                  *Dry
 	screen               *ui.Screen
@@ -17,8 +22,9 @@ type containersScreenEventHandler struct {
 	closeView            chan struct{}
 }
 
-func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event termbox.Event) (focus bool) {
-	focus = true
+func (h containersScreenEventHandler) handle(event termbox.Event) {
+	h.closeView <- struct{}{}
+	closeView := true
 	dry := h.dry
 	screen := h.screen
 	cursor := screen.Cursor
@@ -39,26 +45,24 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 		dry.Refresh()
 	case termbox.KeyF9: // docker events
 		dry.ShowDockerEvents()
-		focus = false
+		closeView = false
 		go less(dry, screen, h.keyboardQueueForView, h.closeView)
 	case termbox.KeyF10: // docker info
 		dry.ShowInfo()
-		focus = false
+		closeView = false
 		go less(dry, screen, h.keyboardQueueForView, h.closeView)
 	case termbox.KeyCtrlE: //remove all stopped
 		dry.RemoveAllStoppedContainers()
 	case termbox.KeyCtrlK: //kill
-		if cursorPos >= 0 {
-			dry.KillAt(cursorPos)
-		}
+		dry.KillAt(cursorPos)
 	case termbox.KeyCtrlR: //start
 		dry.RestartContainerAt(cursorPos)
 	case termbox.KeyCtrlT: //stop
 		dry.StopContainerAt(cursorPos)
 	case termbox.KeyEnter: //inspect
 		if cursorPos >= 0 {
-			focus = false
-			go showContainerOptions(dry, screen, h.keyboardQueueForView, h.closeView)
+			closeView = false
+			go showContainerOptions(h, dry, screen, h.keyboardQueueForView, h.closeView)
 		}
 	default: //Not handled
 		handled = false
@@ -67,25 +71,32 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 		switch event.Ch {
 		case 's', 'S': //stats
 			if cursorPos >= 0 {
-				focus = false
-				go statsScreen(screen, dry, h.keyboardQueueForView, h.closeView)
+				container, err := dry.ContainerAt(cursorPos)
+				if err == nil {
+					closeView = false
+					h.handleCommand(commandToExecute{
+						docker.STATS,
+						container,
+					})
+				} else {
+					ui.ShowErrorMessage(screen, h.keyboardQueueForView, err)
+				}
 			}
 		case 'i', 'I': //inspect
 			if cursorPos >= 0 {
 				dry.InspectAt(cursorPos)
-				focus = false
+				closeView = false
 				go less(dry, screen, h.keyboardQueueForView, h.closeView)
 			}
 		case 'l', 'L': //logs
 			if cursorPos >= 0 {
 				if logs, err := dry.LogsAt(cursorPos); err == nil {
-					focus = false
-					dry.ShowContainers()
+					closeView = false
 					go stream(screen, logs, h.keyboardQueueForView, h.closeView)
 				}
 			}
 		case '?', 'h', 'H': //help
-			focus = false
+			closeView = false
 			dry.ShowHelp()
 			go less(dry, screen, h.keyboardQueueForView, h.closeView)
 		case '2':
@@ -101,21 +112,44 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 			}
 		}
 	}
-	if focus {
-		renderChan <- struct{}{}
+	if closeView {
+		h.closeView <- struct{}{}
 	}
-	return focus
+}
+
+func (h containersScreenEventHandler) handleCommand(command commandToExecute) {
+	closeView := true
+	dry := h.dry
+	screen := h.screen
+
+	id := command.container.ID
+
+	switch command.command {
+	case docker.KILL:
+		dry.Kill(id)
+	case docker.RESTART:
+		dry.RestartContainer(id)
+	case docker.STOP:
+		dry.StopContainer(id)
+	case docker.STATS:
+		closeView = false
+		go statsScreen(command.container, screen, dry, h.keyboardQueueForView, h.closeView)
+	case docker.INSPECT:
+		dry.Inspect(id)
+		closeView = false
+	}
+	if closeView {
+		h.closeView <- struct{}{}
+	}
 }
 
 //statsScreen shows container stats on the screen
-func statsScreen(screen *ui.Screen, dry *Dry, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
+func statsScreen(container types.Container, screen *ui.Screen, dry *Dry, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
 	defer func() {
 		closeView <- struct{}{}
 	}()
 	screen.Clear()
 
-	//TODO handle error
-	container, _ := dry.ContainerAt(screen.Cursor.Position())
 	if !docker.IsContainerRunning(container) {
 		return
 	}
@@ -123,6 +157,7 @@ func statsScreen(screen *ui.Screen, dry *Dry, keyboardQueue chan termbox.Event, 
 	stats, done, err := dry.Stats(container.ID)
 	if err != nil {
 		ui.ShowErrorMessage(screen, keyboardQueue, err)
+		return
 	}
 	info, infoLines := appui.NewContainerInfo(container)
 	screen.Render(1, info)
@@ -132,6 +167,7 @@ func statsScreen(screen *ui.Screen, dry *Dry, keyboardQueue chan termbox.Event, 
 	err = v.Render()
 	if err != nil {
 		ui.ShowErrorMessage(screen, keyboardQueue, err)
+		return
 	}
 	screen.Flush()
 
@@ -145,7 +181,6 @@ loop:
 					//the lock is acquired before breaking the loop
 					mutex.Lock()
 					stats = nil
-					break loop
 				}
 			}
 		case s := <-stats:
@@ -158,6 +193,9 @@ loop:
 				mutex.Unlock()
 			}
 		}
+		if stats == nil {
+			break loop
+		}
 	}
 	//cleanup before exiting, the screen is cleared and the lock released
 	screen.Clear()
@@ -167,15 +205,12 @@ loop:
 }
 
 //statsScreen shows container stats on the screen
-func showContainerOptions(dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
-
-	defer func() {
-		closeView <- struct{}{}
-	}()
+func showContainerOptions(h containersScreenEventHandler, dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
 
 	//TODO handle error
 	container, _ := dry.ContainerAt(screen.Cursor.Position())
 	screen.Clear()
+	screen.Sync()
 	screen.Cursor.Reset()
 
 	info, infoLines := appui.NewContainerInfo(container)
@@ -188,8 +223,21 @@ func showContainerOptions(dry *Dry, screen *ui.Screen, keyboardQueue chan termbo
 		screen.Width)
 	commandsLen := len(l.Commands)
 	refreshChan := make(chan struct{}, 1)
-
+	var command docker.CommandDescription
 	refreshChan <- struct{}{}
+
+	go func() {
+		for {
+			_, ok := <-refreshChan
+			if ok {
+				markSelectedCommand(l.Commands, screen.Cursor.Position())
+				screen.RenderBufferer(l.List)
+				screen.Flush()
+			} else {
+				return
+			}
+		}
+	}()
 
 loop:
 	for {
@@ -198,7 +246,7 @@ loop:
 			switch event.Type {
 			case termbox.EventKey:
 				if event.Key == termbox.KeyEsc {
-					refreshChan = nil
+					close(refreshChan)
 					break loop
 				} else if event.Key == termbox.KeyArrowUp { //cursor up
 					if screen.Cursor.Position() > 0 {
@@ -211,23 +259,28 @@ loop:
 						refreshChan <- struct{}{}
 					}
 				} else if event.Key == termbox.KeyEnter { // execute command
-					command := docker.ContainerCommands[screen.Cursor.Position()]
-					refreshChan = nil
-					dry.runCommand(command.Command, container.ID)
+					command = docker.ContainerCommands[screen.Cursor.Position()]
+					close(refreshChan)
 					break loop
 				}
 			}
-		case <-refreshChan:
-			markSelectedCommand(l.Commands, screen.Cursor.Position())
-			screen.RenderBufferer(l.List)
-			screen.Flush()
 		}
 	}
 
-	//cleanup before exiting, the screen is cleared
 	screen.Clear()
 	screen.Sync()
 	screen.Cursor.Reset()
+
+	if (docker.CommandDescription{}) != command {
+		h.handleCommand(
+			commandToExecute{
+				command.Command,
+				container,
+			})
+	} else {
+		//view is closed here if there is not a command to execute
+		closeView <- struct{}{}
+	}
 }
 
 //adds an arrow character before the command description on the given index

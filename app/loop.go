@@ -27,6 +27,11 @@ func (f *focusTracker) hasFocus() bool {
 	defer f.mutex.Unlock()
 	return f.focus
 }
+func (f *focusTracker) flip() {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+	f.focus = !f.focus
+}
 
 //RenderLoop renders dry until it quits
 func RenderLoop(dry *Dry, screen *ui.Screen) {
@@ -37,9 +42,9 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	keyboardQueue, done := ui.EventChannel()
 	timestampQueue := time.NewTicker(1 * time.Second)
 
-	viewClosed := make(chan struct{}, 1)
+	viewClosed := make(chan struct{})
 	//On receive dry is rendered
-	renderChan := make(chan struct{})
+	renderChan := make(chan struct{}, 1)
 
 	keyboardQueueForView := make(chan termbox.Event)
 	dryOutputChan := dry.OuputChannel()
@@ -51,25 +56,31 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	defer close(viewClosed)
 	defer close(renderChan)
 
+	//tracks if the main loop has the focus (and responds to events),
+	//or if events have to be delegated.
+	//creation belongs outside the loop
+	focus := &focusTracker{&sync.Mutex{}, true}
+
 	//renders dry on message until renderChan is closed
 	go func() {
 		for {
-			_, ok := <-renderChan
-			if ok {
-				screen.Clear()
-				Render(dry, screen, statusBar)
-			} else {
-				return
+			select {
+			case <-timestampQueue.C:
+				timestamp := time.Now().Format(`15:04:05`)
+				screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
+				screen.Flush()
+			case _, ok := <-renderChan:
+				if ok {
+					screen.Clear()
+					Render(dry, screen, statusBar)
+				} else {
+					return
+				}
 			}
 		}
 	}()
 
 	renderChan <- struct{}{}
-
-	//tracks if the main loop has the focus (and responds to events),
-	//or if events have to be delegated.
-	//creation belongs outside the loop
-	focus := &focusTracker{&sync.Mutex{}, true}
 
 	go func(focus *focusTracker) {
 		for {
@@ -93,20 +104,25 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 		}
 	}(focus)
 
+	go func() {
+		for {
+			_, ok := <-viewClosed
+			if ok {
+				focus.flip()
+				dry.ShowMainView()
+				renderChan <- struct{}{}
+			}
+		}
+	}()
+
 	//loop handles input and timer events until a closing event happens
 loop:
 	for {
 		select {
-		case <-timestampQueue.C:
-			timestamp := time.Now().Format(`15:04:05`)
-			screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
-			screen.Flush()
-		case <-viewClosed:
-			focus.set(true)
-			dry.ShowMainView()
-			renderChan <- struct{}{}
 		case event := <-keyboardQueue:
 			switch event.Type {
+			case termbox.EventInterrupt:
+				break loop
 			case termbox.EventKey:
 				if event.Key == termbox.KeyCtrlC { //Ctrl+C breaks the loop (and exits dry) no matter what
 					break loop
@@ -117,8 +133,7 @@ loop:
 					} else {
 						handler := eventHandlerFactory(dry, screen, keyboardQueueForView, viewClosed)
 						if handler != nil {
-							f := handler.handle(renderChan, event)
-							focus.set(f)
+							handler.handle(event)
 						} else {
 							log.Panic("There is no event handler")
 						}
