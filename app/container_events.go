@@ -211,9 +211,8 @@ loop:
 						refreshChan <- struct{}{}
 					}
 				} else if event.Key == termbox.KeyEnter { // execute command
-					command := docker.ContainerCommands[screen.Cursor.Position()]
+					//docker.ContainerCommands[screen.Cursor.Position()]
 					refreshChan = nil
-					dry.runCommand(command.Command, container.ID)
 					break loop
 				}
 			}
