@@ -115,7 +115,7 @@ func (v *View) Render() error {
 		if y > maxY {
 			break
 		}
-		v.renderLine(0, y, string(vline))
+		v.renderLine(v.x0, y, string(vline))
 		y++
 	}
 	if v.showCursor {
