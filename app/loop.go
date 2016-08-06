@@ -27,6 +27,7 @@ func (f *focusTracker) hasFocus() bool {
 	defer f.mutex.Unlock()
 	return f.focus
 }
+
 func (f *focusTracker) flip() {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
@@ -39,8 +40,10 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 		return
 	}
 
-	keyboardQueue, done := ui.EventChannel()
-	timestampQueue := time.NewTicker(1 * time.Second)
+	termuiEvents, done := ui.EventChannel()
+	keyboardQueue := make(chan termbox.Event)
+
+	timer := time.NewTicker(1 * time.Second)
 
 	viewClosed := make(chan struct{})
 	//On receive dry is rendered
@@ -50,8 +53,9 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	dryOutputChan := dry.OuputChannel()
 	statusBar := ui.NewStatusBar(0, screen.Width)
 
-	defer timestampQueue.Stop()
+	defer timer.Stop()
 	defer close(done)
+	defer close(keyboardQueue)
 	defer close(keyboardQueueForView)
 	defer close(viewClosed)
 	defer close(renderChan)
@@ -65,7 +69,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	go func() {
 		for {
 			select {
-			case <-timestampQueue.C:
+			case <-timer.C:
 				timestamp := time.Now().Format(`15:04:05`)
 				screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
 				screen.Flush()
@@ -82,69 +86,87 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 
 	renderChan <- struct{}{}
 
+	//timer and status bar are shown if the main
+	//loop has the focus
 	go func(focus *focusTracker) {
 		for {
-			dryMessage, ok := <-dryOutputChan
-			if ok {
+			select {
+			case <-timer.C:
 				if focus.hasFocus() {
-					statusBar.StatusMessage(dryMessage, 10*time.Second)
-					if dry.Changed() {
-						renderChan <- struct{}{}
-					} else {
-						statusBar.Render()
-					}
+					timestamp := time.Now().Format(`15:04:05`)
+					screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
 					screen.Flush()
-				} else {
-					//stop the status bar until the focus is retrieved
-					statusBar.Stop()
 				}
-			} else {
-				return
+			case dryMessage, ok := <-dryOutputChan:
+				if ok {
+					if focus.hasFocus() {
+						statusBar.StatusMessage(dryMessage, 10*time.Second)
+						if dry.Changed() {
+							renderChan <- struct{}{}
+						} else {
+							statusBar.Render()
+						}
+						screen.Flush()
+					} else {
+						//stop the status bar until the focus is retrieved
+						statusBar.Stop()
+					}
+				} else {
+					return
+				}
 			}
 		}
 	}(focus)
 
 	go func() {
-		for {
-			_, ok := <-viewClosed
-			if ok {
-				focus.flip()
-				dry.ShowMainView()
-				renderChan <- struct{}{}
+		for range viewClosed {
+			focus.flip()
+			dry.ShowMainView()
+			renderChan <- struct{}{}
+		}
+	}()
+
+	go func() {
+		for event := range keyboardQueue {
+			switch event.Type {
+			case termbox.EventKey:
+				if focus.hasFocus() {
+					handler := eventHandlerFactory(dry, screen, keyboardQueueForView, viewClosed)
+					if handler != nil {
+						keepFocusHere := handler.handle(renderChan, event)
+						focus.set(keepFocusHere)
+					} else {
+						log.Panic("There is no event handler")
+					}
+				} else {
+					//Whoever has the focus, handles the event
+					select {
+					case keyboardQueueForView <- event:
+					default:
+					}
+				}
 			}
 		}
 	}()
 
-	//loop handles input and timer events until a closing event happens
+	//main loop that handles termui events
 loop:
-	for {
-		select {
-		case event := <-keyboardQueue:
-			switch event.Type {
-			case termbox.EventInterrupt:
+	for event := range termuiEvents {
+		switch event.Type {
+		case termbox.EventInterrupt:
+			break loop
+		case termbox.EventKey:
+			//Ctrl+C breaks the loop (and exits dry) no matter what
+			if event.Key == termbox.KeyCtrlC || (focus.hasFocus() && (event.Ch == 'q' || event.Ch == 'Q')) {
 				break loop
-			case termbox.EventKey:
-				if event.Key == termbox.KeyCtrlC { //Ctrl+C breaks the loop (and exits dry) no matter what
-					break loop
+			} else {
+				select {
+				case keyboardQueue <- event:
+				default:
 				}
-				if focus.hasFocus() {
-					if event.Ch == 'q' || event.Ch == 'Q' {
-						break loop
-					} else {
-						handler := eventHandlerFactory(dry, screen, keyboardQueueForView, viewClosed)
-						if handler != nil {
-							handler.handle(event)
-						} else {
-							log.Panic("There is no event handler")
-						}
-					}
-				} else {
-					//Whoever has the focus, handles the event
-					keyboardQueueForView <- event
-				}
-			case termbox.EventResize:
-				screen.Resize()
 			}
+		case termbox.EventResize:
+			screen.Resize()
 		}
 	}
 
