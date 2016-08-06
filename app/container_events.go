@@ -22,9 +22,8 @@ type containersScreenEventHandler struct {
 	closeView            chan struct{}
 }
 
-func (h containersScreenEventHandler) handle(event termbox.Event) {
-	h.closeView <- struct{}{}
-	closeView := true
+func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event termbox.Event) bool {
+	focus := true
 	dry := h.dry
 	screen := h.screen
 	cursor := screen.Cursor
@@ -45,11 +44,11 @@ func (h containersScreenEventHandler) handle(event termbox.Event) {
 		dry.Refresh()
 	case termbox.KeyF9: // docker events
 		dry.ShowDockerEvents()
-		closeView = false
+		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.closeView)
 	case termbox.KeyF10: // docker info
 		dry.ShowInfo()
-		closeView = false
+		focus = false
 		go less(dry, screen, h.keyboardQueueForView, h.closeView)
 	case termbox.KeyCtrlE: //remove all stopped
 		dry.RemoveAllStoppedContainers()
@@ -61,7 +60,7 @@ func (h containersScreenEventHandler) handle(event termbox.Event) {
 		dry.StopContainerAt(cursorPos)
 	case termbox.KeyEnter: //inspect
 		if cursorPos >= 0 {
-			closeView = false
+			focus = false
 			go showContainerOptions(h, dry, screen, h.keyboardQueueForView, h.closeView)
 		}
 	default: //Not handled
@@ -73,7 +72,7 @@ func (h containersScreenEventHandler) handle(event termbox.Event) {
 			if cursorPos >= 0 {
 				container, err := dry.ContainerAt(cursorPos)
 				if err == nil {
-					closeView = false
+					focus = false
 					h.handleCommand(commandToExecute{
 						docker.STATS,
 						container,
@@ -85,18 +84,18 @@ func (h containersScreenEventHandler) handle(event termbox.Event) {
 		case 'i', 'I': //inspect
 			if cursorPos >= 0 {
 				dry.InspectAt(cursorPos)
-				closeView = false
+				focus = false
 				go less(dry, screen, h.keyboardQueueForView, h.closeView)
 			}
 		case 'l', 'L': //logs
 			if cursorPos >= 0 {
 				if logs, err := dry.LogsAt(cursorPos); err == nil {
-					closeView = false
+					focus = false
 					go stream(screen, logs, h.keyboardQueueForView, h.closeView)
 				}
 			}
 		case '?', 'h', 'H': //help
-			closeView = false
+			focus = false
 			dry.ShowHelp()
 			go less(dry, screen, h.keyboardQueueForView, h.closeView)
 		case '2':
@@ -112,13 +111,14 @@ func (h containersScreenEventHandler) handle(event termbox.Event) {
 			}
 		}
 	}
-	if closeView {
-		h.closeView <- struct{}{}
+	if focus {
+		renderChan <- struct{}{}
 	}
+	return focus
 }
 
 func (h containersScreenEventHandler) handleCommand(command commandToExecute) {
-	closeView := true
+	focus := true
 	dry := h.dry
 	screen := h.screen
 
@@ -132,13 +132,13 @@ func (h containersScreenEventHandler) handleCommand(command commandToExecute) {
 	case docker.STOP:
 		dry.StopContainer(id)
 	case docker.STATS:
-		closeView = false
+		focus = false
 		go statsScreen(command.container, screen, dry, h.keyboardQueueForView, h.closeView)
 	case docker.INSPECT:
 		dry.Inspect(id)
-		closeView = false
+		focus = false
 	}
-	if closeView {
+	if focus {
 		h.closeView <- struct{}{}
 	}
 }
