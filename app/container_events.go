@@ -83,15 +83,28 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 			}
 		case 'i', 'I': //inspect
 			if cursorPos >= 0 {
-				dry.InspectAt(cursorPos)
-				focus = false
-				go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeView)
+				container, err := dry.ContainerAt(cursorPos)
+				if err == nil {
+					focus = false
+					h.handleCommand(commandToExecute{
+						docker.INSPECT,
+						container,
+					})
+				} else {
+					ui.ShowErrorMessage(screen, h.keyboardQueueForView, err)
+				}
 			}
 		case 'l', 'L': //logs
 			if cursorPos >= 0 {
-				if logs, err := dry.LogsAt(cursorPos); err == nil {
+				container, err := dry.ContainerAt(cursorPos)
+				if err == nil {
 					focus = false
-					go appui.Stream(screen, logs, h.keyboardQueueForView, h.closeView)
+					h.handleCommand(commandToExecute{
+						docker.LOGS,
+						container,
+					})
+				} else {
+					ui.ShowErrorMessage(screen, h.keyboardQueueForView, err)
 				}
 			}
 		case '?', 'h', 'H': //help
@@ -131,12 +144,18 @@ func (h containersScreenEventHandler) handleCommand(command commandToExecute) {
 		dry.RestartContainer(id)
 	case docker.STOP:
 		dry.StopContainer(id)
+	case docker.LOGS:
+		if logs, err := dry.Logs(id); err == nil {
+			focus = false
+			go appui.Stream(screen, logs, h.keyboardQueueForView, h.closeView)
+		}
 	case docker.STATS:
 		focus = false
 		go statsScreen(command.container, screen, dry, h.keyboardQueueForView, h.closeView)
 	case docker.INSPECT:
 		dry.Inspect(id)
 		focus = false
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeView)
 	}
 	if focus {
 		h.closeView <- struct{}{}
