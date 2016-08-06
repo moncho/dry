@@ -20,7 +20,7 @@ func Stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.
 		stdcopy.StdCopy(v, v, stream)
 	}()
 	if err := v.Focus(keyboardQueue); err != nil {
-		ui.ShowErrorMessage(screen, keyboardQueue, err)
+		ui.ShowErrorMessage(screen, keyboardQueue, closeView, err)
 	}
 	stream.Close()
 	termbox.HideCursor()

@@ -19,7 +19,7 @@ func Less(renderer ui.Renderer, screen *ui.Screen, keyboardQueue chan termbox.Ev
 
 	//Focus blocks until v decides that it does not want focus any more
 	if err := v.Focus(keyboardQueue); err != nil {
-		ui.ShowErrorMessage(screen, keyboardQueue, err)
+		ui.ShowErrorMessage(screen, keyboardQueue, closeView, err)
 	}
 	termbox.HideCursor()
 	screen.Clear()

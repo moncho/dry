@@ -71,40 +71,40 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 		case 's', 'S': //stats
 			if cursorPos >= 0 {
 				container, err := dry.ContainerAt(cursorPos)
+				focus = false
 				if err == nil {
-					focus = false
 					h.handleCommand(commandToExecute{
 						docker.STATS,
 						container,
 					})
 				} else {
-					ui.ShowErrorMessage(screen, h.keyboardQueueForView, err)
+					ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
 				}
 			}
 		case 'i', 'I': //inspect
 			if cursorPos >= 0 {
+				focus = false
 				container, err := dry.ContainerAt(cursorPos)
 				if err == nil {
-					focus = false
 					h.handleCommand(commandToExecute{
 						docker.INSPECT,
 						container,
 					})
 				} else {
-					ui.ShowErrorMessage(screen, h.keyboardQueueForView, err)
+					ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
 				}
 			}
 		case 'l', 'L': //logs
 			if cursorPos >= 0 {
+				focus = false
 				container, err := dry.ContainerAt(cursorPos)
 				if err == nil {
-					focus = false
 					h.handleCommand(commandToExecute{
 						docker.LOGS,
 						container,
 					})
 				} else {
-					ui.ShowErrorMessage(screen, h.keyboardQueueForView, err)
+					ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
 				}
 			}
 		case '?', 'h', 'H': //help
@@ -163,11 +163,16 @@ func (h containersScreenEventHandler) handleCommand(command commandToExecute) {
 }
 
 //statsScreen shows container stats on the screen
+//TODO move to appui
 func statsScreen(container types.Container, screen *ui.Screen, dry *Dry, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
-	defer func() {
-		closeView <- struct{}{}
-	}()
+	closeViewOnExit := true
 	screen.Clear()
+
+	defer func() {
+		if closeViewOnExit {
+			closeView <- struct{}{}
+		}
+	}()
 
 	if !docker.IsContainerRunning(container) {
 		return
@@ -175,17 +180,19 @@ func statsScreen(container types.Container, screen *ui.Screen, dry *Dry, keyboar
 
 	stats, done, err := dry.Stats(container.ID)
 	if err != nil {
-		ui.ShowErrorMessage(screen, keyboardQueue, err)
+		closeViewOnExit = false
+		ui.ShowErrorMessage(screen, keyboardQueue, closeView, err)
 		return
 	}
 	info, infoLines := appui.NewContainerInfo(container)
 	screen.Render(1, info)
-	v := ui.NewMarkupView("", 0, infoLines+1, screen.Width, screen.Height, false)
+	v := ui.NewMarkupView("", 10, infoLines+1, screen.Width, screen.Height, false)
 
 	var mutex = &sync.Mutex{}
 	err = v.Render()
 	if err != nil {
-		ui.ShowErrorMessage(screen, keyboardQueue, err)
+		closeViewOnExit = false
+		ui.ShowErrorMessage(screen, keyboardQueue, closeView, err)
 		return
 	}
 	screen.Flush()
