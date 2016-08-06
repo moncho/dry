@@ -7,10 +7,10 @@ type Renderer interface {
 	Render() string
 }
 
-//stringRenderer adapts a string to the render interface.
-type stringRenderer string
+//StringRenderer adapts a string to the render interface.
+type StringRenderer string
 
 //Render a string
-func (s stringRenderer) Render() string {
+func (s StringRenderer) Render() string {
 	return fmt.Sprint(s)
 }

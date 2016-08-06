@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
 	"github.com/nsf/termbox-go"
 )
@@ -33,11 +34,11 @@ func (h imagesScreenEventHandler) handle(renderChan chan<- struct{}, event termb
 	case termbox.KeyF9: // docker events
 		dry.ShowDockerEvents()
 		focus = false
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
 	case termbox.KeyF10: // docker info
 		dry.ShowInfo()
 		focus = false
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
 	case termbox.KeyCtrlD: //remove dangling images
 		dry.RemoveDanglingImages()
 	case termbox.KeyCtrlE: //remove image
@@ -49,7 +50,7 @@ func (h imagesScreenEventHandler) handle(renderChan chan<- struct{}, event termb
 	case termbox.KeyEnter: //inspect image
 		dry.InspectImageAt(cursorPos)
 		focus = false
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
 	default:
 		handled = false
 	}
@@ -59,7 +60,7 @@ func (h imagesScreenEventHandler) handle(renderChan chan<- struct{}, event termb
 		case '?', 'h', 'H': //help
 			focus = false
 			dry.ShowHelp()
-			go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+			go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
 		case '1':
 			cursor.Reset()
 			dry.ShowContainers()
@@ -69,7 +70,7 @@ func (h imagesScreenEventHandler) handle(renderChan chan<- struct{}, event termb
 		case 'i', 'I': //image history
 			dry.HistoryAt(cursorPos)
 			focus = false
-			go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+			go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
 		}
 
 	}

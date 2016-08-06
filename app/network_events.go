@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
 	"github.com/nsf/termbox-go"
 )
@@ -31,22 +32,22 @@ func (h networksScreenEventHandler) handle(renderChan chan<- struct{}, event ter
 	case termbox.KeyF9: // docker events
 		dry.ShowDockerEvents()
 		focus = false
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
 	case termbox.KeyF10: // docker info
 		dry.ShowInfo()
 		focus = false
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
 	case termbox.KeyEnter: //inspect
 		dry.InspectNetworkAt(cursorPos)
 		focus = false
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
 	}
 
 	switch event.Ch {
 	case '?', 'h', 'H': //help
 		focus = false
 		dry.ShowHelp()
-		go less(dry, screen, h.keyboardQueueForView, h.viewClosed)
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
 	case '1':
 		cursor.Reset()
 		dry.ShowContainers()

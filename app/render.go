@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/moncho/dry/appui"
@@ -95,28 +94,30 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	screen.Flush()
 }
 
-//Write sends dry output to the given writer
-func Write(d *Dry, w io.Writer) {
+//renderDry sends dry output to the given writer
+func renderDry(d *Dry) ui.Renderer {
+	var output ui.Renderer
 	switch d.viewMode() {
 	case EventsMode:
-		io.WriteString(w, appui.NewDockerEventsRenderer(d.dockerDaemon.EventLog().Events()).Render())
+		output = appui.NewDockerEventsRenderer(d.dockerDaemon.EventLog().Events())
 	case ImageHistoryMode:
-		io.WriteString(w, appui.NewDockerImageHistoryRenderer(d.imageHistory).Render())
+		output = appui.NewDockerImageHistoryRenderer(d.imageHistory)
 	case InspectMode:
-		io.WriteString(w, appui.NewDockerInspectRenderer(d.inspectedContainer).Render())
+		output = appui.NewDockerInspectRenderer(d.inspectedContainer)
 	case InspectImageMode:
-		io.WriteString(w, appui.NewDockerInspectImageRenderer(d.inspectedImage).Render())
+		output = appui.NewDockerInspectImageRenderer(d.inspectedImage)
 	case InspectNetworkMode:
-		io.WriteString(w, appui.NewDockerInspectNetworkRenderer(d.inspectedNetwork).Render())
+		output = appui.NewDockerInspectNetworkRenderer(d.inspectedNetwork)
 	case HelpMode:
-		io.WriteString(w, help)
+		output = ui.StringRenderer(help)
 	case InfoMode:
-		io.WriteString(w, appui.NewDockerInfoRenderer(d.info).Render())
+		output = appui.NewDockerInfoRenderer(d.info)
 	default:
 		{
-			io.WriteString(w, "Dry is not ready yet for rendering, be patient...")
+			output = ui.StringRenderer("Dry is not ready yet for rendering, be patient...")
 		}
 	}
+	return output
 }
 
 func renderViewTitle(screen *ui.Screen, what string, howMany int) {
