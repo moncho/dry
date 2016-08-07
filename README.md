@@ -42,20 +42,22 @@ Besides this, it:
 
 #### Container commands
 ```
+[Enter]     show container command menu
 [F2]        toggle on/off showing stopped containers
-[Enter]     inspect
-[Ctrl]+[k]    kill
+[i]         inspect
+[Ctrl]+[k]  kill
 [l]         logs
 [e]         remove
-[Ctrl]+[e]    remove all stopped containers
-[Ctrl]+[r]    start/restart
+[Ctrl]+[e]  remove all stopped containers
+[Ctrl]+[r]  start/restart
 [s]         stats
-[Ctrl]+[t]    stop
+[Ctrl]+[t]  stop
 ```
 
 #### Image commands
 ```
 [i]         history
+[Ctrl]+[d]    remove dangling images
 [Ctrl]+[e]    remove image
 [Ctrl]+[f]    remove image (force)
 [Enter]     inspect
