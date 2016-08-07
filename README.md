@@ -145,5 +145,7 @@ Code released under the MIT license. See
 
 Built on top of:
 * [termbox](https://github.com/nsf/termbox-go)
+* [termui](https://github.com/gizak/termui)
+* [Docker engine-api](https://github.com/docker/engine-api)
 
 Also reused some code and ideas from the [Docker project](https://github.com/docker/docker).
