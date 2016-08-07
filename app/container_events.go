@@ -1,7 +1,6 @@
 package app
 
 import (
-	"io"
 	"sync"
 
 	"github.com/docker/engine-api/types"
@@ -186,15 +185,8 @@ func statsScreen(container types.Container, screen *ui.Screen, dry *Dry, keyboar
 	}
 	info, infoLines := appui.NewContainerInfo(container)
 	screen.Render(1, info)
-	v := ui.NewMarkupView("", 10, infoLines+1, screen.Width, screen.Height, false)
 
 	var mutex = &sync.Mutex{}
-	err = v.Render()
-	if err != nil {
-		closeViewOnExit = false
-		ui.ShowErrorMessage(screen, keyboardQueue, closeView, err)
-		return
-	}
 	screen.Flush()
 
 loop:
@@ -212,9 +204,9 @@ loop:
 		case s := <-stats:
 			{
 				mutex.Lock()
-				v.Clear()
-				io.WriteString(v, appui.NewDockerStatsRenderer(s).Render())
-				v.Render()
+				screen.RenderBufferer(
+					appui.NewDockerStatsBufferer(
+						s, 0, infoLines+3, screen.Height, screen.Width)...)
 				screen.Flush()
 				mutex.Unlock()
 			}
