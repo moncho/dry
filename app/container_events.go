@@ -58,10 +58,8 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 	case termbox.KeyCtrlT: //stop
 		dry.StopContainerAt(cursorPos)
 	case termbox.KeyEnter: //inspect
-		if cursorPos >= 0 {
-			focus = false
-			go showContainerOptions(h, dry, screen, h.keyboardQueueForView, h.closeView)
-		}
+		focus = false
+		go showContainerOptions(h, dry, screen, h.keyboardQueueForView, h.closeView)
 	default: //Not handled
 		handled = false
 	}
@@ -226,75 +224,80 @@ loop:
 func showContainerOptions(h containersScreenEventHandler, dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
 
 	//TODO handle error
-	container, _ := dry.ContainerAt(screen.Cursor.Position())
-	screen.Clear()
-	screen.Sync()
-	screen.Cursor.Reset()
+	container, err := dry.ContainerAt(screen.Cursor.Position())
+	if err == nil {
+		screen.Clear()
+		screen.Sync()
+		screen.Cursor.Reset()
 
-	info, infoLines := appui.NewContainerInfo(container)
-	screen.RenderLineWithBackGround(0, screen.Height-1, commandsMenuBar, ui.MenuBarBackgroundColor)
-	screen.Render(1, info)
-	l := appui.NewContainerCommands(container,
-		0,
-		infoLines+1,
-		screen.Height-appui.MainScreenFooterSize-infoLines-1,
-		screen.Width)
-	commandsLen := len(l.Commands)
-	refreshChan := make(chan struct{}, 1)
-	var command docker.CommandDescription
-	refreshChan <- struct{}{}
+		info, infoLines := appui.NewContainerInfo(container)
+		screen.RenderLineWithBackGround(0, screen.Height-1, commandsMenuBar, ui.MenuBarBackgroundColor)
+		screen.Render(1, info)
+		l := appui.NewContainerCommands(container,
+			0,
+			infoLines+1,
+			screen.Height-appui.MainScreenFooterSize-infoLines-1,
+			screen.Width)
+		commandsLen := len(l.Commands)
+		refreshChan := make(chan struct{}, 1)
+		var command docker.CommandDescription
+		refreshChan <- struct{}{}
 
-	go func() {
-		for {
-			_, ok := <-refreshChan
-			if ok {
-				markSelectedCommand(l.Commands, screen.Cursor.Position())
-				screen.RenderBufferer(l.List)
-				screen.Flush()
-			} else {
-				return
+		go func() {
+			for {
+				_, ok := <-refreshChan
+				if ok {
+					markSelectedCommand(l.Commands, screen.Cursor.Position())
+					screen.RenderBufferer(l.List)
+					screen.Flush()
+				} else {
+					return
+				}
 			}
-		}
-	}()
+		}()
 
-loop:
-	for {
-		select {
-		case event := <-keyboardQueue:
-			switch event.Type {
-			case termbox.EventKey:
-				if event.Key == termbox.KeyEsc {
-					close(refreshChan)
-					break loop
-				} else if event.Key == termbox.KeyArrowUp { //cursor up
-					if screen.Cursor.Position() > 0 {
-						screen.Cursor.ScrollCursorUp()
-						refreshChan <- struct{}{}
+	loop:
+		for {
+			select {
+			case event := <-keyboardQueue:
+				switch event.Type {
+				case termbox.EventKey:
+					if event.Key == termbox.KeyEsc {
+						close(refreshChan)
+						break loop
+					} else if event.Key == termbox.KeyArrowUp { //cursor up
+						if screen.Cursor.Position() > 0 {
+							screen.Cursor.ScrollCursorUp()
+							refreshChan <- struct{}{}
+						}
+					} else if event.Key == termbox.KeyArrowDown { // cursor down
+						if screen.Cursor.Position() < commandsLen-1 {
+							screen.Cursor.ScrollCursorDown()
+							refreshChan <- struct{}{}
+						}
+					} else if event.Key == termbox.KeyEnter { // execute command
+						command = docker.ContainerCommands[screen.Cursor.Position()]
+						close(refreshChan)
+						break loop
 					}
-				} else if event.Key == termbox.KeyArrowDown { // cursor down
-					if screen.Cursor.Position() < commandsLen-1 {
-						screen.Cursor.ScrollCursorDown()
-						refreshChan <- struct{}{}
-					}
-				} else if event.Key == termbox.KeyEnter { // execute command
-					command = docker.ContainerCommands[screen.Cursor.Position()]
-					close(refreshChan)
-					break loop
 				}
 			}
 		}
-	}
 
-	screen.Clear()
-	screen.Sync()
-	screen.Cursor.Reset()
+		screen.Clear()
+		screen.Sync()
+		screen.Cursor.Reset()
 
-	if (docker.CommandDescription{}) != command {
-		h.handleCommand(
-			commandToExecute{
-				command.Command,
-				container,
-			})
+		if (docker.CommandDescription{}) != command {
+			h.handleCommand(
+				commandToExecute{
+					command.Command,
+					container,
+				})
+		} else {
+			//view is closed here if there is not a command to execute
+			closeView <- struct{}{}
+		}
 	} else {
 		//view is closed here if there is not a command to execute
 		closeView <- struct{}{}
