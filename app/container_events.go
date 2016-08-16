@@ -115,9 +115,14 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 			cursor.Reset()
 			dry.ShowNetworks()
 		case 'e', 'E': //remove
-			if cursorPos >= 0 {
-				dry.RmAt(cursorPos)
-				cursor.ScrollCursorDown()
+			container, err := dry.ContainerAt(cursorPos)
+			if err == nil {
+				h.handleCommand(commandToExecute{
+					docker.RM,
+					container,
+				})
+			} else {
+				ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
 			}
 		}
 	}
@@ -146,6 +151,9 @@ func (h containersScreenEventHandler) handleCommand(command commandToExecute) {
 			focus = false
 			go appui.Stream(screen, logs, h.keyboardQueueForView, h.closeView)
 		}
+	case docker.RM:
+		dry.Rm(id)
+		screen.Cursor.ScrollCursorDown()
 	case docker.STATS:
 		focus = false
 		go statsScreen(command.container, screen, dry, h.keyboardQueueForView, h.closeView)
@@ -223,8 +231,9 @@ loop:
 //statsScreen shows container stats on the screen
 func showContainerOptions(h containersScreenEventHandler, dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
 
+	selectedContainer := screen.Cursor.Position()
 	//TODO handle error
-	container, err := dry.ContainerAt(screen.Cursor.Position())
+	container, err := dry.ContainerAt(selectedContainer)
 	if err == nil {
 		screen.Clear()
 		screen.Sync()
@@ -286,7 +295,7 @@ func showContainerOptions(h containersScreenEventHandler, dry *Dry, screen *ui.S
 
 		screen.Clear()
 		screen.Sync()
-		screen.Cursor.Reset()
+		screen.Cursor.ScrollTo(selectedContainer)
 
 		if (docker.CommandDescription{}) != command {
 			h.handleCommand(
