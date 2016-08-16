@@ -11,7 +11,7 @@ import (
 
 const (
 	//DefaultTableFormat is the default table format to render a list of containers
-	DefaultTableFormat = "{{.ID}}\t{{.Image}}\t{{.Command}}\t{{.RunningFor}} ago\t{{.Status}}\t{{.Ports}}\t{{.Names}}"
+	DefaultTableFormat = "{{.ID}}\t{{.Image}}\t{{.Command}}\t{{.Status}}\t{{.Ports}}\t{{.Names}}"
 	//DefaultImageTableFormat is the default table format to render a list of images
 	DefaultImageTableFormat = "{{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}} ago\t{{.Size}}"
 	//DefaultNetworkTableFormat is the default table format to render a list of networks

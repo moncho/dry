@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strconv"
@@ -61,12 +62,14 @@ func (c *ContainerFormatter) Image() string {
 	if c.c.Image == "" {
 		return "<no image>"
 	}
-	//No ImageID field on the go-docker API yet
-	//if c.trunc {
-	//if stringid.TruncateID(c.c.ImageID) == stringid.TruncateID(c.c.Image) {
-	//			return stringutils.Truncate(c.c.Image, 12)
-	//		}
-	//}
+	imageLen := len(c.c.Image)
+	if c.trunc && imageLen > 40 {
+		var buffer bytes.Buffer
+		buffer.WriteString(c.c.Image[:18])
+		buffer.WriteString("...")
+		buffer.WriteString(c.c.Image[imageLen-18 : imageLen])
+		return buffer.String()
+	}
 	return c.c.Image
 }
 
