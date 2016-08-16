@@ -27,8 +27,7 @@ func NewContainerInfo(container types.Container) (string, int) {
 	}
 	data := [][]string{
 		[]string{ui.Blue("Container Name:"), ui.Yellow(container.Names[0]), ui.Blue("ID:"), ui.Yellow(docker.TruncateID(container.ID)), ui.Blue("Status:"), status},
-		[]string{ui.Blue("Image:"), ui.Yellow(container.Image)},
-		[]string{ui.Blue("Created:"), ui.Yellow(docker.DurationForHumans(container.Created))},
+		[]string{ui.Blue("Image:"), ui.Yellow(container.Image), ui.Blue("Created:"), ui.Yellow(docker.DurationForHumans(container.Created) + " ago")},
 		[]string{ui.Blue("Command:"), ui.Yellow(container.Command)},
 		[]string{ui.Blue("Port mapping:"), ui.Yellow(docker.DisplayablePorts(container.Ports))},
 	}
