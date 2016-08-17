@@ -5,8 +5,10 @@ type Command int
 
 const (
 
+	//HISTORY Image history command
+	HISTORY Command = iota
 	//INSPECT Inspect command
-	INSPECT Command = iota
+	INSPECT
 	//KILL kill command
 	KILL
 	//LOGS logs command
@@ -23,11 +25,12 @@ const (
 
 //ContainerCommands is the list of container commands
 var ContainerCommands = []CommandDescription{
-	CommandDescription{INSPECT, "  Display container low-level information"},
-	CommandDescription{KILL, "  Kill container"},
 	CommandDescription{LOGS, "  Fetch logs"},
+	CommandDescription{INSPECT, "  Inspect container"},
+	CommandDescription{KILL, "  Kill container"},
 	CommandDescription{RM, "  Remove container"},
 	CommandDescription{RESTART, "  Restart"},
+	CommandDescription{HISTORY, "  Show image history"},
 	CommandDescription{STATS, "  Stats + Top"},
 	CommandDescription{STOP, "  Stop"},
 }

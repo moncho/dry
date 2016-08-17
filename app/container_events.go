@@ -161,6 +161,10 @@ func (h containersScreenEventHandler) handleCommand(command commandToExecute) {
 		dry.Inspect(id)
 		focus = false
 		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeView)
+	case docker.HISTORY:
+		dry.History(command.container.ImageID)
+		focus = false
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeView)
 	}
 	if focus {
 		h.closeView <- struct{}{}
