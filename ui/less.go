@@ -144,7 +144,7 @@ func (less *Less) Search(pattern string) error {
 
 func (less *Less) readInput(inputBoxEventChan chan termbox.Event, inputBoxOuput chan string) error {
 	_, height := less.ViewSize()
-	eb := NewInputBox(0, height, "/", inputBoxOuput, inputBoxEventChan)
+	eb := NewInputBox(0, height, ">>>", inputBoxOuput, inputBoxEventChan)
 	eb.Focus()
 	return nil
 }
@@ -357,5 +357,4 @@ func (less *Less) drawCursor() {
 
 func clear() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	//termbox.Flush()
 }
