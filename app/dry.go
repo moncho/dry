@@ -16,7 +16,7 @@ import (
 
 const (
 	//TimeBetweenRefresh defines the time that has to pass between dry refreshes
-	TimeBetweenRefresh = 10 * time.Second
+	TimeBetweenRefresh = 30 * time.Second
 )
 
 // state tracks dry state
@@ -203,6 +203,11 @@ func (d *Dry) Logs(id string) (io.ReadCloser, error) {
 	return d.dockerDaemon.Logs(id), nil
 }
 
+//NetworkAt returns the network found at the given position.
+func (d *Dry) NetworkAt(pos int) (*types.NetworkResource, error) {
+	return d.dockerDaemon.NetworkAt(pos)
+}
+
 //OuputChannel returns the channel where dry messages are written
 func (d *Dry) OuputChannel() <-chan string {
 	return d.output
@@ -287,6 +292,18 @@ func (d *Dry) RemoveImage(id string, force bool) {
 		d.appmessage(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
 	} else {
 		d.appmessage(fmt.Sprintf("<red>Error removing image </><white>%s: %s</>", shortID, err.Error()))
+	}
+}
+
+//RemoveNetwork removes the Docker network with the given id
+func (d *Dry) RemoveNetwork(id string) {
+	shortID := drydocker.TruncateID(id)
+	d.appmessage(fmt.Sprintf("<red>Removing network:</> <white>%s</>", shortID))
+	if err := d.dockerDaemon.RemoveNetwork(id); err == nil {
+		d.doRefresh()
+		d.appmessage(fmt.Sprintf("<red>Removed network:</> <white>%s</>", shortID))
+	} else {
+		d.appmessage(fmt.Sprintf("<red>Error network image </><white>%s: %s</>", shortID, err.Error()))
 	}
 }
 

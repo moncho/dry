@@ -41,6 +41,16 @@ func (h networksScreenEventHandler) handle(renderChan chan<- struct{}, event ter
 		dry.InspectNetworkAt(cursorPos)
 		focus = false
 		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
+	case termbox.KeyCtrlE: //remove network
+		if cursorPos >= 0 {
+			network, err := dry.NetworkAt(cursorPos)
+			if err == nil {
+				dry.RemoveNetwork(network.ID)
+				cursor.ScrollCursorDown()
+			} else {
+				ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.viewClosed, err)
+			}
+		}
 	}
 
 	switch event.Ch {
