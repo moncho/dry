@@ -77,22 +77,19 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 
 const (
 	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "
-	inspectMapping = "<b>[Enter]:<darkgrey>Commands</></>"
 	keyMappings    = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[F9]:<darkgrey>Docker Events</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
-		"<b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</><blue>|</>" +
-		inspectMapping
+		"<b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</><blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
 
 	imagesKeyMappings = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F9]:<darkgrey>Docker Events</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
 		"<b>[1]:<darkgrey>Containers</> <b>[3]:<darkgrey>Networks</> <blue>|</>" +
-		"<b>[Crtl+D]:<darkgrey>Remove Dangling</> <b>[Crtl+E]:<darkgrey>Remove</> <b>[Crtl+F]:<darkgrey>Force Remove</> <b>[I]:<darkgrey>History</> <blue>|</>" +
-		inspectMapping
+		"<b>[Crtl+D]:<darkgrey>Remove Dangling</> <b>[Crtl+E]:<darkgrey>Remove</> <b>[Crtl+F]:<darkgrey>Force Remove</> <b>[I]:<darkgrey>History</> <blue>|</>"
 
 	networkKeyMappings = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F9]:<darkgrey>Docker Events</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
 		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</>" +
-		inspectMapping
+		"<b>[Crtl+E]:<darkgrey>Remove</> <b>[Enter]:<darkgrey>Inspect</>"
 
 	commandsMenuBar = "<b>[Esc]:<darkgrey>Back</> <b>[Up]:<darkgrey>Cursor Up</> <b>[Down]:<darkgrey>Cursor Down</> <b>[Intro]:<darkgrey>Execute Command</>"
 )
