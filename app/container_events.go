@@ -213,10 +213,12 @@ loop:
 			}
 		case s := <-stats:
 			{
+				//Magic number 3 is the separations between container info
+				//and stats
 				mutex.Lock()
 				screen.RenderBufferer(
 					appui.NewDockerStatsBufferer(
-						s, 0, infoLines+3, screen.Height, screen.Width)...)
+						s, 0, infoLines+3, screen.Height-infoLines-3, screen.Width)...)
 				screen.Flush()
 				mutex.Unlock()
 			}
@@ -244,7 +246,7 @@ func showContainerOptions(h containersScreenEventHandler, dry *Dry, screen *ui.S
 		screen.Cursor.Reset()
 
 		info, infoLines := appui.NewContainerInfo(container)
-		screen.RenderLineWithBackGround(0, screen.Height-1, commandsMenuBar, ui.MenuBarBackgroundColor)
+		screen.RenderLineWithBackGround(0, screen.Height-1, commandsMenuBar, appui.DryTheme.Footer)
 		screen.Render(1, info)
 		l := appui.NewContainerCommands(container,
 			0,
