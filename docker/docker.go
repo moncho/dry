@@ -13,6 +13,7 @@ import (
 	dockerTypes "github.com/docker/engine-api/types"
 	dockerEvents "github.com/docker/engine-api/types/events"
 	"github.com/docker/engine-api/types/filters"
+	pkgError "github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
 
@@ -475,7 +476,7 @@ func containers(client dockerAPI.APIClient, allContainers bool) ([]dockerTypes.C
 		}
 		return containers, cmap, nil
 	}
-	return nil, nil, err
+	return nil, nil, pkgError.Wrap(err, "Error retrieving container list")
 }
 
 func images(client dockerAPI.APIClient, opts dockerTypes.ImageListOptions) ([]dockerTypes.Image, error) {

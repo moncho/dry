@@ -11,6 +11,8 @@ import (
 	"github.com/docker/engine-api/client"
 	"github.com/docker/go-connections/sockets"
 	drytls "github.com/moncho/dry/tls"
+	"github.com/moncho/dry/version"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -18,13 +20,17 @@ const (
 	DefaultConnectionTimeout = 32 * time.Second
 )
 
+var headers = map[string]string{
+	"User-Agent": "dry/" + version.VERSION,
+}
+
 func connect(client client.APIClient, env *DockerEnv) (*DockerDaemon, error) {
 	containers, containersByID, err := containers(client, false)
 	if err == nil {
-		images, err := images(client, defaultImageListOptions)
-		if err == nil {
-			networks, err := networks(client)
-			if err == nil {
+		images, errI := images(client, defaultImageListOptions)
+		if errI == nil {
+			networks, errN := networks(client)
+			if errN == nil {
 				d := &DockerDaemon{
 					client:        client,
 					err:           err,
@@ -39,8 +45,6 @@ func connect(client client.APIClient, env *DockerEnv) (*DockerDaemon, error) {
 				return d, nil
 			}
 		}
-		return nil, err
-
 	}
 	return nil, err
 }
@@ -85,7 +89,7 @@ func ConnectToDaemon(env *DockerEnv) (*DockerDaemon, error) {
 
 	host, err := getServerHost(env)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Invalid Host")
 	}
 	var tlsConfig *tls.Config
 	if dockerCertPath := env.DockerCertPath; dockerCertPath != "" {
@@ -97,17 +101,17 @@ func ConnectToDaemon(env *DockerEnv) (*DockerDaemon, error) {
 		}
 		tlsConfig, err = drytls.Client(options)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "TLS setup error")
 		}
 	}
 	httpClient, err := newHTTPClient(host, tlsConfig)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "HttpClient creation error")
 	}
 
-	client, err := client.NewClient(host, env.DockerAPIVersion, httpClient, nil)
+	client, err := client.NewClient(host, env.DockerAPIVersion, httpClient, headers)
 	if err == nil {
 		return connect(client, env)
 	}
-	return nil, err
+	return nil, errors.Wrap(err, "Error creating client")
 }
