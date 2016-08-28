@@ -7,6 +7,15 @@ import (
 
 const (
 	searchPattern = "line"
+
+	lines = `line 1
+		lien 2
+		line3
+	line 4
+	line 5
+	Nope
+	Still nope
+	Really, nope`
 )
 
 //TestSearch tests basic search
