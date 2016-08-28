@@ -227,6 +227,9 @@ func (d *Dry) Refresh() {
 }
 
 func (d *Dry) doRefresh() {
+	d.state.mutex.Lock()
+	defer d.state.mutex.Unlock()
+	d.state.changed = true
 	var err error
 	switch d.state.viewMode {
 	case Main:
@@ -244,9 +247,6 @@ func (d *Dry) doRefresh() {
 	if err != nil {
 		d.appmessage("There was an error refreshing: " + err.Error())
 	}
-	d.state.mutex.Lock()
-	defer d.state.mutex.Unlock()
-	d.state.changed = true
 }
 
 //RemoveAllStoppedContainers removes all stopped containers
