@@ -131,8 +131,11 @@ func (less *Less) Search(pattern string) error {
 		searchResult, err := search.NewSearch(less.lines, pattern)
 		if err == nil {
 			less.searchResult = searchResult
-			_, y := less.Position()
-			searchResult.InitialLine(y)
+			if searchResult.Hits > 0 {
+				_, y := less.Position()
+				searchResult.InitialLine(y)
+				less.gotoNextSearchHit()
+			}
 		} else {
 			return err
 		}
