@@ -1,10 +1,10 @@
 {
 	"ImportPath": "github.com/moncho/dry",
-	"GoVersion": "go1.6",
+	"GoVersion": "go1.7",
 	"GodepVersion": "v74",
 	"Packages": [
-          "github.com/moncho/dry"
-   ],
+		"github.com/moncho/dry"
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Microsoft/go-winio",
@@ -160,6 +160,11 @@
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/user",
 			"Comment": "v0.1.0-13-gc6db82f",
 			"Rev": "c6db82f9219b2ea4c98f80560205ed6c65aeea19"
+		},
+		{
+			"ImportPath": "github.com/pkg/errors",
+			"Comment": "v0.7.0-1-g494e70f",
+			"Rev": "494e70f7620561491c2ca11e185bbef4b70060da"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
