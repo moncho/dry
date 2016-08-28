@@ -16,13 +16,10 @@ type ContainerCommandList struct {
 func NewContainerCommands(container types.Container, x, y, height, width int) *ContainerCommandList {
 	l := termui.NewList()
 
-	//shortID := docker.TruncateID(container.ID)
 	commandsLen := len(docker.CommandDescriptions)
 	commands := make([]string, commandsLen)
 	l.Items = commands
 	l.Border = false
-	//l.BorderLabel =
-	//	fmt.Sprintf(" %s - %s ", container.Names[0], shortID)
 	l.BorderFg = termui.ColorBlue
 	l.Height = len(commands) + 4 // 2 because of the top+bottom padding, 2 because of the borders
 	l.Width = width / 2
