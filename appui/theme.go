@@ -5,24 +5,8 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-//ColorTheme is the color theme for dry
-type ColorTheme struct {
-	Fg           ui.Color
-	Bg           ui.Color
-	DarkBg       ui.Color
-	Prompt       ui.Color
-	Key          ui.Color
-	Current      ui.Color
-	CurrentMatch ui.Color
-	Spinner      ui.Color
-	Info         ui.Color
-	Cursor       ui.Color
-	Selected     ui.Color
-	Header       ui.Color
-}
-
 //Default16 default theme for 16-color mode
-var Default16 = &ColorTheme{
+var Default16 = &ui.ColorTheme{
 	Fg:           15,
 	Bg:           0,
 	DarkBg:       ui.Color(termbox.ColorBlack),
@@ -34,10 +18,11 @@ var Default16 = &ColorTheme{
 	Info:         ui.Color(termbox.ColorWhite),
 	Cursor:       ui.Color(termbox.ColorRed),
 	Selected:     ui.Color(termbox.ColorMagenta),
-	Header:       ui.Color(termbox.ColorCyan)}
+	Header:       ui.Color(termbox.ColorCyan),
+	Footer:       ui.Color(termbox.ColorCyan)}
 
 //Dark256 dark theme for 256-color mode
-var Dark256 = &ColorTheme{
+var Dark256 = &ui.ColorTheme{
 	Fg:           15,
 	Bg:           0,
 	DarkBg:       236,
@@ -49,10 +34,11 @@ var Dark256 = &ColorTheme{
 	Info:         144,
 	Cursor:       161,
 	Selected:     168,
-	Header:       109}
+	Header:       ui.MenuBarBackgroundColor,
+	Footer:       ui.MenuBarBackgroundColor}
 
 //Light256 light theme for 256-color mode
-var Light256 = &ColorTheme{
+var Light256 = &ui.ColorTheme{
 	Fg:           15,
 	Bg:           0,
 	DarkBg:       251,
@@ -64,7 +50,8 @@ var Light256 = &ColorTheme{
 	Info:         101,
 	Cursor:       161,
 	Selected:     168,
-	Header:       31}
+	Header:       31,
+	Footer:       31}
 
 //DryTheme is the active theme for dry
 var DryTheme = Dark256
