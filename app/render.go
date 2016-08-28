@@ -88,7 +88,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 
 	}
 	renderViewTitle(screen, what, count)
-	screen.RenderLineWithBackGround(0, screen.Height-1, keymap, ui.MenuBarBackgroundColor)
+	screen.RenderLineWithBackGround(0, screen.Height-1, keymap, appui.DryTheme.Footer)
 	d.setChanged(false)
 
 	screen.Flush()
