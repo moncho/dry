@@ -13,6 +13,10 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+const (
+	statsHeight = 4
+)
+
 type statsRenderer struct {
 	stats *drydocker.Stats
 }
@@ -56,7 +60,7 @@ func (r *statsRenderer) Render() string {
 //NewDockerStatsBufferer creates termui bufferer for docker stats
 func NewDockerStatsBufferer(stats *drydocker.Stats, x, y, height, width int) []termui.Bufferer {
 	var result []termui.Bufferer
-	top, length := NewDockerTopBufferer(stats.ProcessList, 0, y, height, width)
+	top, length := NewDockerTopBufferer(stats.ProcessList, 0, y, height-statsHeight, width)
 	result = append(result,
 		top)
 	yPos := y + length
@@ -77,7 +81,7 @@ func NewDockerStatsBufferer(stats *drydocker.Stats, x, y, height, width int) []t
 	p := termui.NewPar(buf.String())
 	p.X = x
 	p.Y = yPos
-	p.Height = height
+	p.Height = statsHeight
 	p.Width = width
 	p.TextFgColor = termui.Attribute(termbox.ColorYellow)
 	p.BorderLabel = " STATS "

@@ -2,12 +2,15 @@ package ui
 
 import "fmt"
 
+//Color representation
+type Color uint16
+
 //Colors
 const (
-	MenuBarBackgroundColor = 0x19
-	Grey                   = 0xE9
-	Grey2                  = 0xF4
-	Darkgrey               = 0xE8
+	MenuBarBackgroundColor Color = 0x19
+	Grey                   Color = 0xE9
+	Grey2                  Color = 0xF4
+	Darkgrey               Color = 0xE8
 )
 
 //Blue blues the given string

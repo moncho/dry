@@ -66,18 +66,12 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	//renders dry on message until renderChan is closed
 	go func() {
 		for {
-			select {
-			case <-timer.C:
-				timestamp := time.Now().Format(`15:04:05`)
-				screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
-				screen.Flush()
-			case _, ok := <-renderChan:
-				if ok {
-					screen.Clear()
-					Render(dry, screen, statusBar)
-				} else {
-					return
-				}
+			_, ok := <-renderChan
+			if ok {
+				screen.Clear()
+				Render(dry, screen, statusBar)
+			} else {
+				return
 			}
 		}
 	}()

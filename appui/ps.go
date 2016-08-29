@@ -38,7 +38,6 @@ func NewDockerPsRenderData(containers []types.Container, selectedContainer int, 
 
 //DockerPs knows how render a container list
 type DockerPs struct {
-	appHeadear             *ui.Renderer
 	columns                []column // List of columns.
 	containerTableTemplate *template.Template
 	containerTemplate      *template.Template
@@ -54,10 +53,9 @@ func NewDockerPsRenderer(daemon docker.ContainerDaemon, screenHeight int) *Docke
 	r := &DockerPs{}
 
 	r.columns = []column{
-		{`ID`, `CONTAINER ID`, docker.SortByContainerID},
+		{`ID`, `CONTAINER`, docker.SortByContainerID},
 		{`Image`, `IMAGE`, docker.SortByImage},
 		{`Command`, `COMMAND`, docker.NoSort},
-		{`Created`, `CREATED`, docker.NoSort},
 		{`Status`, `STATUS`, docker.SortByStatus},
 		{`Ports`, `PORTS`, docker.NoSort},
 		{`Names`, `NAMES`, docker.SortByName},

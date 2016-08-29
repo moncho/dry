@@ -16,7 +16,7 @@ import (
 
 const (
 	//TimeBetweenRefresh defines the time that has to pass between dry refreshes
-	TimeBetweenRefresh = 10 * time.Second
+	TimeBetweenRefresh = 30 * time.Second
 )
 
 // state tracks dry state
@@ -28,7 +28,7 @@ type state struct {
 	SortMode             drydocker.SortMode
 	SortImagesMode       drydocker.SortImagesMode
 	SortNetworksMode     drydocker.SortNetworksMode
-	mutex                sync.Locker
+	mutex                sync.RWMutex
 }
 
 //Dry represents the application.
@@ -53,8 +53,8 @@ type Dry struct {
 
 //Changed is true if the application state has changed
 func (d *Dry) Changed() bool {
-	d.state.mutex.Lock()
-	defer d.state.mutex.Unlock()
+	d.state.mutex.RLock()
+	defer d.state.mutex.RUnlock()
 	return d.state.changed
 }
 
@@ -203,6 +203,11 @@ func (d *Dry) Logs(id string) (io.ReadCloser, error) {
 	return d.dockerDaemon.Logs(id), nil
 }
 
+//NetworkAt returns the network found at the given position.
+func (d *Dry) NetworkAt(pos int) (*types.NetworkResource, error) {
+	return d.dockerDaemon.NetworkAt(pos)
+}
+
 //OuputChannel returns the channel where dry messages are written
 func (d *Dry) OuputChannel() <-chan string {
 	return d.output
@@ -287,6 +292,18 @@ func (d *Dry) RemoveImage(id string, force bool) {
 		d.appmessage(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
 	} else {
 		d.appmessage(fmt.Sprintf("<red>Error removing image </><white>%s: %s</>", shortID, err.Error()))
+	}
+}
+
+//RemoveNetwork removes the Docker network with the given id
+func (d *Dry) RemoveNetwork(id string) {
+	shortID := drydocker.TruncateID(id)
+	d.appmessage(fmt.Sprintf("<red>Removing network:</> <white>%s</>", shortID))
+	if err := d.dockerDaemon.RemoveNetwork(id); err == nil {
+		d.doRefresh()
+		d.appmessage(fmt.Sprintf("<red>Removed network:</> <white>%s</>", shortID))
+	} else {
+		d.appmessage(fmt.Sprintf("<red>Error network image </><white>%s: %s</>", shortID, err.Error()))
 	}
 }
 
@@ -400,8 +417,8 @@ func (d *Dry) ShowInfo() error {
 //Sort rotates to the next sort mode.
 //SortByContainerID -> SortByImage -> SortByStatus -> SortByName -> SortByContainerID
 func (d *Dry) Sort() {
-	d.state.mutex.Lock()
-	defer d.state.mutex.Unlock()
+	d.state.mutex.RLock()
+	defer d.state.mutex.RUnlock()
 	switch d.state.SortMode {
 	case drydocker.SortByContainerID:
 		d.state.SortMode = drydocker.SortByImage
@@ -420,8 +437,8 @@ func (d *Dry) Sort() {
 //SortImages rotates to the next sort mode.
 //SortImagesByRepo -> SortImagesByID -> SortImagesByCreationDate -> SortImagesBySize -> SortImagesByRepo
 func (d *Dry) SortImages() {
-	d.state.mutex.Lock()
-	defer d.state.mutex.Unlock()
+	d.state.mutex.RLock()
+	defer d.state.mutex.RUnlock()
 	switch d.state.SortImagesMode {
 	case drydocker.SortImagesByRepo:
 		d.state.SortImagesMode = drydocker.SortImagesByID
@@ -442,8 +459,8 @@ func (d *Dry) SortImages() {
 //SortNetworks rotates to the next sort mode.
 //SortNetworksByID -> SortNetworksByName -> SortNetworksByDriver
 func (d *Dry) SortNetworks() {
-	d.state.mutex.Lock()
-	defer d.state.mutex.Unlock()
+	d.state.mutex.RLock()
+	defer d.state.mutex.RUnlock()
 	switch d.state.SortNetworksMode {
 	case drydocker.SortNetworksByID:
 		d.state.SortNetworksMode = drydocker.SortNetworksByName
@@ -564,8 +581,8 @@ func (d *Dry) errorMessage(cid interface{}, action string, err error) {
 }
 
 func (d *Dry) viewMode() viewMode {
-	d.state.mutex.Lock()
-	defer d.state.mutex.Unlock()
+	d.state.mutex.RLock()
+	defer d.state.mutex.RUnlock()
 	return d.state.viewMode
 }
 
@@ -586,7 +603,6 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 			SortNetworksMode:     drydocker.SortNetworksByID,
 			viewMode:             Main,
 			previousViewMode:     Main,
-			mutex:                &sync.Mutex{},
 		}
 		d.Sort(state.SortMode)
 		d.SortImages(state.SortImagesMode)

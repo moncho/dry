@@ -13,6 +13,7 @@ import (
 	dockerTypes "github.com/docker/engine-api/types"
 	dockerEvents "github.com/docker/engine-api/types/events"
 	"github.com/docker/engine-api/types/filters"
+	pkgError "github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
 
@@ -383,6 +384,14 @@ func (daemon *DockerDaemon) RemoveDanglingImages() (int, error) {
 	return int(atomic.LoadUint32(&count)), err
 }
 
+//RemoveNetwork removes the network with the given id
+func (daemon *DockerDaemon) RemoveNetwork(id string) error {
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
+
+	return daemon.client.NetworkRemove(ctx, id)
+}
+
 //Rmi removes the image with the given name
 func (daemon *DockerDaemon) Rmi(name string, force bool) ([]dockerTypes.ImageDelete, error) {
 	options := dockerTypes.ImageRemoveOptions{
@@ -467,7 +476,7 @@ func containers(client dockerAPI.APIClient, allContainers bool) ([]dockerTypes.C
 		}
 		return containers, cmap, nil
 	}
-	return nil, nil, err
+	return nil, nil, pkgError.Wrap(err, "Error retrieving container list")
 }
 
 func images(client dockerAPI.APIClient, opts dockerTypes.ImageListOptions) ([]dockerTypes.Image, error) {

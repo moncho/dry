@@ -149,7 +149,7 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 
 //RenderLineWithBackGround does what RenderLine does but rendering the line
 //with the given background color
-func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor uint16) {
+func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor Color) {
 	screen.termboxMutex.Lock()
 	defer screen.termboxMutex.Unlock()
 	start, column := 0, 0

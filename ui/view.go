@@ -201,8 +201,7 @@ func (v *View) clearRunes() {
 
 // writeRune writes a rune into the view's internal buffer, at the
 // position corresponding to the point (x, y). The length of the internal
-// buffer is increased if the point is out of bounds. Overwrite mode is
-// governed by the value of View.overwrite.
+// buffer is increased if the point is out of bounds.
 func (v *View) writeRune(x, y int, ch rune) error {
 	v.tainted = true
 

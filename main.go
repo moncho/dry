@@ -189,9 +189,11 @@ func main() {
 	if err == nil {
 		app.RenderLoop(dry, screen)
 		dry.Close()
+		screen.Close()
 	} else {
+		//screen has to be closed before logging
+		screen.Close()
 		log.WithField("error", err).Error(
 			"There was an error launching dry")
 	}
-	screen.Close()
 }

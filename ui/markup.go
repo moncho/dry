@@ -35,9 +35,9 @@ func tags() map[string]termbox.Attribute {
 	tags[`cyan`] = termbox.ColorCyan
 	tags[`cyan0`] = termbox.ColorCyan
 	tags[`white`] = termbox.ColorWhite
-	tags[`grey`] = Grey
-	tags[`grey2`] = Grey2
-	tags[`darkgrey`] = Darkgrey
+	tags[`grey`] = termbox.Attribute(Grey)
+	tags[`grey2`] = termbox.Attribute(Grey2)
+	tags[`darkgrey`] = termbox.Attribute(Darkgrey)
 	tags[`right`] = termbox.ColorDefault // Termbox can combine attributes and a single color using bitwise OR.
 	tags[`b`] = termbox.AttrBold
 	tags[`u`] = termbox.AttrUnderline

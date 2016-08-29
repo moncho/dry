@@ -223,6 +223,11 @@ func (_m *ContainerDaemonMock) RemoveDanglingImages() (int, error) {
 	return 0, nil
 }
 
+//RemoveNetwork mock
+func (_m *ContainerDaemonMock) RemoveNetwork(id string) error {
+	return nil
+}
+
 // Stats provides a mock function with given fields: id
 func (_m *ContainerDaemonMock) Stats(id string) (<-chan *drydocker.Stats, chan<- struct{}) {
 

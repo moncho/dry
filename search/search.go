@@ -7,17 +7,6 @@ import (
 
 import "fmt"
 
-const (
-	lines = `line 1
-	lien 2
-	line3
-line 4
-line 5
-Nope
-Still nope
-Really, nope`
-)
-
 //Result describes the results of a search
 type Result struct {
 	Hits    int
@@ -59,9 +48,9 @@ func (result *Result) String() string {
 // * InitialLine(3) will set the internal iteration index at 1.
 // * InitialLine(4) will set the internal iteration index at 1.
 // * InitialLine(10) will set the internal iteration index at 2.
-func (result *Result) InitialLine(lineNumber int) error {
+func (result *Result) InitialLine(lineNumber int) (int, error) {
 	if result.Lines == nil {
-		return nohitsError()
+		return -1, nohitsError()
 	}
 	candidate := 0
 	for i, line := range result.Lines {
@@ -72,7 +61,7 @@ func (result *Result) InitialLine(lineNumber int) error {
 		}
 	}
 	result.index = candidate
-	return nil
+	return candidate, nil
 }
 
 //NextLine returns the previous line while iterating the search results.

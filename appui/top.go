@@ -13,6 +13,11 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+const (
+	// title + borders
+	minimumHeight = 3
+)
+
 type topRenderer struct {
 	processList *types.ContainerProcessList
 }
@@ -52,12 +57,19 @@ func NewDockerTopBufferer(processList *types.ContainerProcessList, x, y, height,
 	if processList != nil {
 		buf := bytes.NewBufferString("")
 		w := tabwriter.NewWriter(buf, 20, 1, 3, ' ', 0)
-		lines := 3 // title + borders
+		lines := minimumHeight // title + borders
 
 		fmt.Fprintln(w,
 			fmt.Sprintf("[%s](fg-blue)",
 				strings.Join(processList.Titles, "\t")))
 
+		//Commented because process list does not always includes
+		//the same columns and sortByPid sorts by the first column
+		//which is not guaranteed to be the PID.
+		/*		if len(processList.Processes) > 2 {
+					sort.Sort(sortByPID(processList.Processes))
+				}
+		*/
 		for _, proc := range processList.Processes {
 			fmt.Fprintln(w,
 				fmt.Sprintf("[%s](fg-white)",
@@ -68,7 +80,7 @@ func NewDockerTopBufferer(processList *types.ContainerProcessList, x, y, height,
 		p := termui.NewPar(buf.String())
 		p.X = x
 		p.Y = y
-		p.Height = height
+		p.Height = height - minimumHeight
 		p.Width = width
 		p.TextFgColor = termui.Attribute(termbox.ColorYellow)
 		p.BorderLabel = " PROCESS LIST "
@@ -79,7 +91,25 @@ func NewDockerTopBufferer(processList *types.ContainerProcessList, x, y, height,
 		p.BorderRight = false
 		p.BorderTop = true
 
+		if p.Height < lines {
+			return p, p.Height
+		}
+
 		return p, lines
 	}
 	return termui.NewPar(""), 0
+}
+
+type sortByPID [][]string
+
+func (s sortByPID) Len() int {
+	return len(s)
+}
+
+func (s sortByPID) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s sortByPID) Less(i, j int) bool {
+	return s[i][0] < s[j][0]
 }
