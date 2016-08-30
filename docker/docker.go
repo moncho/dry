@@ -34,24 +34,23 @@ var defaultImageListOptions = dockerTypes.ImageListOptions{
 
 //DockerDaemon knows how to talk to the Docker daemon
 type DockerDaemon struct {
-	client        dockerAPI.APIClient              //client used to to connect to the Docker daemon
-	containerByID map[string]dockerTypes.Container // Containers by their id
-	containers    []dockerTypes.Container
-	images        []dockerTypes.Image
-	networks      []dockerTypes.NetworkResource
-	err           error // Errors, if any.
-	connected     bool
-	dockerEnv     *DockerEnv
-	version       *dockerTypes.Version
-	refreshLock   sync.Mutex
-	eventLog      *EventLog
+	client         dockerAPI.APIClient //client used to to connect to the Docker daemon
+	containerStore *ContainerStore
+	images         []dockerTypes.Image
+	networks       []dockerTypes.NetworkResource
+	err            error // Errors, if any.
+	connected      bool
+	dockerEnv      *DockerEnv
+	version        *dockerTypes.Version
+	refreshLock    sync.Mutex
+	eventLog       *EventLog
 }
 
 //Containers returns the containers known by the daemon
 func (daemon *DockerDaemon) Containers() []dockerTypes.Container {
 	daemon.refreshLock.Lock()
 	defer daemon.refreshLock.Unlock()
-	return daemon.containers
+	return containerStore.List()
 }
 
 //ContainerAt returns the container at the given position
