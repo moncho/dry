@@ -72,7 +72,7 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 				if err == nil {
 					h.handleCommand(commandToExecute{
 						docker.STATS,
-						container,
+						*container,
 					})
 				} else {
 					ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
@@ -85,7 +85,7 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 				if err == nil {
 					h.handleCommand(commandToExecute{
 						docker.INSPECT,
-						container,
+						*container,
 					})
 				} else {
 					ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
@@ -98,7 +98,7 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 				if err == nil {
 					h.handleCommand(commandToExecute{
 						docker.LOGS,
-						container,
+						*container,
 					})
 				} else {
 					ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
@@ -115,11 +115,14 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 			cursor.Reset()
 			dry.ShowNetworks()
 		case 'e', 'E': //remove
+			//Since a command is created the focus is handled by handleCommand
+			//Fixes #24
+			focus = false
 			container, err := dry.ContainerAt(cursorPos)
 			if err == nil {
 				h.handleCommand(commandToExecute{
 					docker.RM,
-					container,
+					*container,
 				})
 			} else {
 				ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
@@ -245,10 +248,10 @@ func showContainerOptions(h containersScreenEventHandler, dry *Dry, screen *ui.S
 		screen.Sync()
 		screen.Cursor.Reset()
 
-		info, infoLines := appui.NewContainerInfo(container)
+		info, infoLines := appui.NewContainerInfo(*container)
 		screen.RenderLineWithBackGround(0, screen.Height-1, commandsMenuBar, appui.DryTheme.Footer)
 		screen.Render(1, info)
-		l := appui.NewContainerCommands(container,
+		l := appui.NewContainerCommands(*container,
 			0,
 			infoLines+1,
 			screen.Height-appui.MainScreenFooterSize-infoLines-1,
@@ -307,7 +310,7 @@ func showContainerOptions(h containersScreenEventHandler, dry *Dry, screen *ui.S
 			h.handleCommand(
 				commandToExecute{
 					command.Command,
-					container,
+					*container,
 				})
 		} else {
 			//view is closed here if there is not a command to execute
