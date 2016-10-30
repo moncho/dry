@@ -7,9 +7,9 @@ import (
 	dockerTypes "github.com/docker/engine-api/types"
 )
 
-var testContainers = createTestContainers()
+var testContainers = createTestContainers(10)
 var containerCount = len(testContainers)
-var hundredContainers = createLongListOfTestContainers()
+var hundredContainers = createTestContainers(100)
 
 func BenchmarkMemoryStoreContainerCreation(b *testing.B) {
 	for i := 0; i < b.N; i++ {
@@ -101,22 +101,11 @@ func TestContainerAt(t *testing.T) {
 		t.Errorf("Container at did not work, got %v", container)
 	}
 }
-func createTestContainers() []*dockerTypes.Container {
+
+func createTestContainers(numberOfContainers int) []*dockerTypes.Container {
 	var containers []*dockerTypes.Container
 
-	for i := 0; i < 10; i++ {
-		containers = append(containers, &dockerTypes.Container{
-			ID: strconv.Itoa(i),
-		})
-	}
-
-	return containers
-}
-
-func createLongListOfTestContainers() []*dockerTypes.Container {
-	var containers []*dockerTypes.Container
-
-	for i := 0; i < 100; i++ {
+	for i := 0; i < numberOfContainers; i++ {
 		containers = append(containers, &dockerTypes.Container{
 			ID: strconv.Itoa(i),
 		})
