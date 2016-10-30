@@ -243,7 +243,7 @@ func showContainerOptions(h containersScreenEventHandler, dry *Dry, screen *ui.S
 	selectedContainer := screen.Cursor.Position()
 	//TODO handle error
 	container, err := dry.ContainerAt(selectedContainer)
-	if err == nil {
+	if err == nil && container != nil {
 		screen.Clear()
 		screen.Sync()
 		screen.Cursor.Reset()
