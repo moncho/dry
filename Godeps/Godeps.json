@@ -165,6 +165,14 @@
 			"ImportPath": "github.com/pkg/errors",
 			"Comment": "v0.7.0-1-g494e70f",
 			"Rev": "494e70f7620561491c2ca11e185bbef4b70060da"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "84ba27dd5b2d8135e9da1395277f2c9333a2ffda"
+		},
+		{
+			"ImportPath": "golang.org/x/net/proxy",
+			"Rev": "84ba27dd5b2d8135e9da1395277f2c9333a2ffda"
 		}
 	]
 }
