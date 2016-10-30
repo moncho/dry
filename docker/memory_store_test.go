@@ -9,6 +9,21 @@ import (
 
 var testContainers = createTestContainers()
 var containerCount = len(testContainers)
+var hundredContainers = createLongListOfTestContainers()
+
+func BenchmarkMemoryStoreContainerCreation(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		NewMemoryStoreWithContainers(hundredContainers)
+	}
+}
+
+func BenchmarkMemoryStoreContainerListing(b *testing.B) {
+	memStore := NewMemoryStoreWithContainers(hundredContainers)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		memStore.List()
+	}
+}
 
 func TestMemoryStoreCreation(t *testing.T) {
 
@@ -90,6 +105,18 @@ func createTestContainers() []*dockerTypes.Container {
 	var containers []*dockerTypes.Container
 
 	for i := 0; i < 10; i++ {
+		containers = append(containers, &dockerTypes.Container{
+			ID: strconv.Itoa(i),
+		})
+	}
+
+	return containers
+}
+
+func createLongListOfTestContainers() []*dockerTypes.Container {
+	var containers []*dockerTypes.Container
+
+	for i := 0; i < 100; i++ {
 		containers = append(containers, &dockerTypes.Container{
 			ID: strconv.Itoa(i),
 		})
