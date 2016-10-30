@@ -22,13 +22,13 @@ type column struct {
 //DockerPsRenderData holds information that might be
 //used during ps rendering
 type DockerPsRenderData struct {
-	containers        []types.Container
+	containers        []*types.Container
 	selectedContainer int
 	sortMode          docker.SortMode
 }
 
 //NewDockerPsRenderData creates render data structs
-func NewDockerPsRenderData(containers []types.Container, selectedContainer int, sortMode docker.SortMode) *DockerPsRenderData {
+func NewDockerPsRenderData(containers []*types.Container, selectedContainer int, sortMode docker.SortMode) *DockerPsRenderData {
 	return &DockerPsRenderData{
 		containers:        containers,
 		selectedContainer: selectedContainer,
@@ -49,7 +49,7 @@ type DockerPs struct {
 }
 
 //NewDockerPsRenderer creates a renderer for a container list
-func NewDockerPsRenderer(daemon docker.ContainerDaemon, screenHeight int) *DockerPs {
+func NewDockerPsRenderer(dockerInfo string, screenHeight int) *DockerPs {
 	r := &DockerPs{}
 
 	r.columns = []column{
@@ -60,7 +60,7 @@ func NewDockerPsRenderer(daemon docker.ContainerDaemon, screenHeight int) *Docke
 		{`Ports`, `PORTS`, docker.NoSort},
 		{`Names`, `NAMES`, docker.SortByName},
 	}
-	di := dockerInfo(daemon)
+	di := dockerInfo
 	r.layout = ui.NewLayout()
 	//r.layout.Header = appHeader
 	r.containerTableTemplate = buildContainerTableTemplate(di)
@@ -138,7 +138,7 @@ func (r *DockerPs) containerInformation() string {
 	return buf.String()
 }
 
-func (r *DockerPs) containersToShow() []types.Container {
+func (r *DockerPs) containersToShow() []*types.Container {
 	containers := r.data.containers
 	cursorPos := r.data.selectedContainer
 	availableLines := r.height - containerTableStartPos - 1

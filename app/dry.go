@@ -33,6 +33,7 @@ type state struct {
 
 //Dry represents the application.
 type Dry struct {
+	ui                 *appui.AppUI
 	dockerDaemon       drydocker.ContainerDaemon
 	dockerEvents       <-chan events.Message
 	dockerEventsDone   chan<- struct{}
@@ -47,7 +48,6 @@ type Dry struct {
 	orderedCids        []string
 	output             chan string
 	refreshTimerMutex  sync.Locker
-	renderer           *appui.DockerPs
 	state              *state
 }
 
@@ -78,7 +78,7 @@ func (d *Dry) Close() {
 }
 
 //ContainerAt returns the container at the given position
-func (d *Dry) ContainerAt(position int) (types.Container, error) {
+func (d *Dry) ContainerAt(position int) (*types.Container, error) {
 	return d.dockerDaemon.ContainerAt(position)
 }
 
@@ -352,7 +352,6 @@ func (d *Dry) Rm(id string) {
 	} else {
 		d.errorMessage(shortID, "removing", err)
 	}
-
 }
 
 //ShowMainView changes the state of dry to show the main view, main views are
@@ -608,11 +607,9 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 		d.SortImages(state.SortImagesMode)
 		d.SortNetworks(state.SortNetworksMode)
 		app := &Dry{}
+		app.ui = appui.NewAppUI(d, screen.Height)
 		app.state = state
 		app.dockerDaemon = d
-		app.renderer = appui.NewDockerPsRenderer(
-			app.dockerDaemon,
-			screen.Height)
 		app.output = make(chan string)
 		app.dockerEvents = dockerEvents
 		app.dockerEventsDone = dockerEventsDone

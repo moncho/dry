@@ -44,8 +44,8 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 				containers,
 				screen.Cursor.Position(),
 				sortMode)
-			d.renderer.PrepareToRender(data)
-			screen.Render(1, d.renderer.Render())
+			d.ui.ContainerComponent.PrepareToRender(data)
+			screen.Render(1, d.ui.ContainerComponent.Render())
 
 			what = "Containers"
 			keymap = keyMappings
