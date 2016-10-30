@@ -9,11 +9,11 @@ import (
 
 //ContainerDaemon describes what is expected from the container daemon
 type ContainerDaemon interface {
-	Containers() []types.Container
-	ContainerAt(pos int) (types.Container, error)
+	Containers() []*types.Container
+	ContainerAt(pos int) (*types.Container, error)
 	ContainersCount() int
 	ContainerIDAt(pos int) (string, string, error)
-	ContainerByID(cid string) types.Container
+	ContainerByID(cid string) *types.Container
 	DockerEnv() *DockerEnv
 	Events() (<-chan events.Message, chan<- struct{}, error)
 	EventLog() *EventLog

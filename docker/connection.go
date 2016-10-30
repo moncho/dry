@@ -25,20 +25,19 @@ var headers = map[string]string{
 }
 
 func connect(client client.APIClient, env *DockerEnv) (*DockerDaemon, error) {
-	containers, containersByID, err := containers(client, false)
+	containers, err := containers(client, false)
 	if err == nil {
 		images, errI := images(client, defaultImageListOptions)
 		if errI == nil {
 			networks, errN := networks(client)
 			if errN == nil {
 				d := &DockerDaemon{
-					client:        client,
-					err:           err,
-					containerByID: containersByID,
-					containers:    containers,
-					images:        images,
-					networks:      networks,
-					dockerEnv:     env,
+					client:         client,
+					err:            err,
+					containerStore: NewMemoryStoreWithContainers(containers),
+					images:         images,
+					networks:       networks,
+					dockerEnv:      env,
 				}
 				d.eventLog = NewEventLog()
 				d.Version()

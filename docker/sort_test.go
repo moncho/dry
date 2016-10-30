@@ -66,7 +66,7 @@ func TestSortByStatus(t *testing.T) {
 	}
 }
 
-func containersToSort() ([]types.Container, error) {
+func containersToSort() ([]*types.Container, error) {
 	jsonContainers := `[
      {
              "Id": "8dfafdbc3a40",
@@ -93,11 +93,11 @@ func containersToSort() ([]types.Container, error) {
 						 "Names": ["6dfafdbc3a40"]
      }
 ]`
-	var containers []types.Container
+	var containers []*types.Container
 	err := json.Unmarshal([]byte(jsonContainers), &containers)
 	return containers, err
 }
-func containersAsString(containers []types.Container) []string {
+func containersAsString(containers []*types.Container) []string {
 	result := make([]string, len(containers))
 	for i, c := range containers {
 		result[i] = c.ID

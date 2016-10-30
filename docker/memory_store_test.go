@@ -1,0 +1,114 @@
+package docker
+
+import (
+	"strconv"
+	"testing"
+
+	dockerTypes "github.com/docker/engine-api/types"
+)
+
+var testContainers = createTestContainers()
+var containerCount = len(testContainers)
+
+func TestMemoryStoreCreation(t *testing.T) {
+
+	memStore := NewMemoryStoreWithContainers(testContainers)
+	if memStore == nil {
+		t.Error("Memstore is nil")
+	}
+	if memStore.Size() != containerCount {
+		t.Errorf("Memstore does not contain the expected the number of elements, expected: %d, got: %d", containerCount, memStore.Size())
+	}
+
+	if memStore.Get("1") == nil {
+		t.Error("Memstore does not contain expected container")
+	}
+
+	if memStore.Get("11") != nil {
+		t.Error("Memstore contains an unexpected container")
+	}
+
+	checkMemoryStore(memStore, containerCount, t)
+}
+
+func TestMemoryStoreAddContainer(t *testing.T) {
+	memStore := NewMemoryStoreWithContainers(testContainers)
+	memStore.Add(&dockerTypes.Container{
+		ID: "11",
+	})
+
+	checkMemoryStore(memStore, containerCount+1, t)
+}
+
+func TestMemoryStoreAddDuplicatedContainer(t *testing.T) {
+	containerCount := containerCount
+	memStore := NewMemoryStoreWithContainers(testContainers)
+	memStore.Add(&dockerTypes.Container{
+		ID: "10",
+	})
+
+	memStore.Add(&dockerTypes.Container{
+		ID: "10",
+	})
+	containerCount++
+	containers := memStore.List()
+
+	checkMemoryStore(memStore, containerCount, t)
+
+	for i, c := range containers {
+		t.Log(c.ID)
+		if strconv.Itoa(i) != c.ID {
+			t.Errorf("Expected ID %d, got %s", i, c.ID)
+		}
+	}
+}
+
+func TestFilter(t *testing.T) {
+	memStore := NewMemoryStoreWithContainers(testContainers)
+	filter := func(c *dockerTypes.Container) bool {
+		return c.ID == "1"
+	}
+	filtered := memStore.Filter(filter)
+	checkMemoryStore(memStore, containerCount, t)
+
+	if len(filtered) != 1 || filtered[0].ID != "1" {
+		t.Errorf("Filter did not work, got %v", filtered)
+	}
+}
+
+func TestContainerAt(t *testing.T) {
+	memStore := NewMemoryStoreWithContainers(testContainers)
+
+	container := memStore.At(0)
+	checkMemoryStore(memStore, containerCount, t)
+
+	if container == nil || container.ID != "0" {
+		t.Errorf("Container at did not work, got %v", container)
+	}
+}
+func createTestContainers() []*dockerTypes.Container {
+	var containers []*dockerTypes.Container
+
+	for i := 0; i < 10; i++ {
+		containers = append(containers, &dockerTypes.Container{
+			ID: strconv.Itoa(i),
+		})
+	}
+
+	return containers
+}
+
+func checkMemoryStore(memStore *ContainerStore, containerCount int, t *testing.T) {
+	containers := memStore.List()
+	if memStore.Size() != containerCount {
+		t.Errorf("Memstore does not contain the expected the number of elements, expected: %d, got: %d", containerCount, memStore.Size())
+	}
+
+	if len(containers) != containerCount {
+		t.Errorf("Element list from memstore does not contain the expected the number of elements, expected: %d, got: %d", containerCount, len(containers))
+	}
+
+	if len(memStore.c) != len(memStore.s) {
+		t.Error("Memstore internal state is incorrect")
+	}
+}

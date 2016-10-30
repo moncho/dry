@@ -6,12 +6,10 @@ import (
 	"github.com/docker/engine-api/types"
 )
 
-//StoreFilter defines a function to filter container
-type StoreFilter func(*types.Container) bool
-
 // ContainerStore keeps track of containers.
 type ContainerStore struct {
 	s map[string]*types.Container
+	c []*types.Container
 	sync.RWMutex
 }
 
@@ -22,12 +20,47 @@ func NewMemoryStore() *ContainerStore {
 	}
 }
 
+// NewMemoryStoreWithContainers creates a new memory store from the given container slice.
+func NewMemoryStoreWithContainers(containers []*types.Container) *ContainerStore {
+	store := NewMemoryStore()
+	for _, container := range containers {
+		store.add(container)
+	}
+	return store
+}
+
+func (c *ContainerStore) add(cont *types.Container) {
+	//If a container with the given ID exists already it is replaced
+	if _, ok := c.s[cont.ID]; ok {
+		for pos, container := range c.c {
+			if container.ID == cont.ID {
+				c.c = append(c.c[0:pos], c.c[pos:]...)
+				break
+			}
+		}
+	} else {
+		c.c = append(c.c, cont)
+	}
+	c.s[cont.ID] = cont
+}
+
 // Add appends a new container to the memory store.
 // It overrides the id if it existed before.
-func (c *ContainerStore) Add(id string, cont *types.Container) {
+func (c *ContainerStore) Add(cont *types.Container) {
 	c.Lock()
-	c.s[id] = cont
+	c.add(cont)
 	c.Unlock()
+}
+
+// At returns a container from the store by its position in the store
+func (c *ContainerStore) At(pos int) *types.Container {
+	if pos < 0 || pos >= len(c.c) {
+		return nil
+	}
+	c.RLock()
+	res := c.c[pos]
+	c.RUnlock()
+	return res
 }
 
 // Get returns a container from the store by id.
@@ -47,31 +80,35 @@ func (c *ContainerStore) Delete(id string) {
 
 // List returns a list of containers from the store.
 func (c *ContainerStore) List() []*types.Container {
-	return c.all()
+	return c.all(ContainerFilters.Unfiltered())
+}
+
+// Sort sorts the store
+func (c *ContainerStore) Sort(mode SortMode) {
+	c.RLock()
+	defer c.RUnlock()
+	SortContainers(c.c, mode)
 }
 
 // Size returns the number of containers in the store.
 func (c *ContainerStore) Size() int {
 	c.RLock()
 	defer c.RUnlock()
-	return len(c.s)
+	return len(c.c)
 }
 
-// First returns the first container found in the store by the given filter.
-func (c *ContainerStore) First(filter StoreFilter) *types.Container {
-	for _, container := range c.s {
-		if filter(container) {
-			return container
-		}
-	}
-	return nil
+// Filter returns containers found in the store by the given filter.
+func (c *ContainerStore) Filter(filter ContainerFilter) []*types.Container {
+	return c.all(filter)
 }
 
-func (c *ContainerStore) all() []*types.Container {
+func (c *ContainerStore) all(filter ContainerFilter) []*types.Container {
 	c.RLock()
-	containers := make([]*types.Container, 0, len(c.s))
-	for _, cont := range c.s {
-		containers = append(containers, cont)
+	var containers []*types.Container
+	for _, cont := range c.c {
+		if filter(cont) {
+			containers = append(containers, cont)
+		}
 	}
 	c.RUnlock()
 	return containers

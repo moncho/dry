@@ -35,11 +35,11 @@ type FormattingContext struct {
 }
 
 // Format helps to format the output using the parameters set in the FormattingContext.
-func Format(ctx FormattingContext, containers []types.Container) {
+func Format(ctx FormattingContext, containers []*types.Container) {
 	tableFormat(ctx, containers)
 }
 
-func tableFormat(ctx FormattingContext, containers []types.Container) {
+func tableFormat(ctx FormattingContext, containers []*types.Container) {
 
 	var (
 		buffer = bytes.NewBufferString("")
@@ -57,7 +57,7 @@ func tableFormat(ctx FormattingContext, containers []types.Container) {
 		if index == ctx.Selected {
 			buffer.WriteString("<white>")
 		} else {
-			if IsContainerRunning(container) {
+			if IsContainerRunning(*container) {
 				buffer.WriteString("<cyan0>")
 			} else {
 				buffer.WriteString("<grey2>")

@@ -14,13 +14,13 @@ type ContainerDaemonMock struct {
 }
 
 //Containers mock
-func (_m *ContainerDaemonMock) Containers() []types.Container {
-	return make([]types.Container, 0)
+func (_m *ContainerDaemonMock) Containers() []*types.Container {
+	return make([]*types.Container, 0)
 }
 
 //ContainerAt mock
-func (_m *ContainerDaemonMock) ContainerAt(pos int) (types.Container, error) {
-	return types.Container{}, nil
+func (_m *ContainerDaemonMock) ContainerAt(pos int) (*types.Container, error) {
+	return &types.Container{}, nil
 }
 
 // ContainersCount provides a mock function with given fields:
@@ -34,8 +34,8 @@ func (_m *ContainerDaemonMock) ContainerIDAt(pos int) (string, string, error) {
 }
 
 // ContainerByID provides a mock function with given fields: cid
-func (_m *ContainerDaemonMock) ContainerByID(cid string) types.Container {
-	return types.Container{}
+func (_m *ContainerDaemonMock) ContainerByID(cid string) *types.Container {
+	return &types.Container{}
 }
 
 // DockerEnv provides a mock function with given fields:
