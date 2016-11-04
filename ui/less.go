@@ -13,7 +13,7 @@ const (
 	starttext = "(start)"
 )
 
-//Less is a View specilization with less-like behaviour and characteristics, meaning:
+//Less is a View specialization with less-like behaviour and characteristics, meaning:
 // * The cursor is always shown at the bottom of the screen.
 // * Navigation is done using less keybindings.
 // * Basic search is supported.
