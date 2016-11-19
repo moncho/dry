@@ -13,29 +13,9 @@ import (
 type ContainerDaemonMock struct {
 }
 
-//Containers mock
-func (_m *ContainerDaemonMock) Containers() []*types.Container {
-	return make([]*types.Container, 0)
-}
-
-//ContainerAt mock
-func (_m *ContainerDaemonMock) ContainerAt(pos int) (*types.Container, error) {
-	return &types.Container{}, nil
-}
-
-// ContainersCount provides a mock function with given fields:
-func (_m *ContainerDaemonMock) ContainersCount() int {
-	return 0
-}
-
-// ContainerIDAt provides a mock function with given fields: pos
-func (_m *ContainerDaemonMock) ContainerIDAt(pos int) (string, string, error) {
-	return "", "", nil
-}
-
-// ContainerByID provides a mock function with given fields: cid
-func (_m *ContainerDaemonMock) ContainerByID(cid string) *types.Container {
-	return &types.Container{}
+//ContainerStore mock
+func (_m *ContainerDaemonMock) ContainerStore() *drydocker.ContainerStore {
+	return nil
 }
 
 // DockerEnv provides a mock function with given fields:

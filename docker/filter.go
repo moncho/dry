@@ -17,11 +17,6 @@ func (c ContainerFilter) Unfiltered() ContainerFilter {
 	return func(c *types.Container) bool { return true }
 }
 
-//Unfiltered does not filter containers
-func Unfiltered() ContainerFilter {
-	return func(c *types.Container) bool { return true }
-}
-
 //ByName filters containers by name
 func (c ContainerFilter) ByName(name string) ContainerFilter {
 	return func(c *types.Container) bool {

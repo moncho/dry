@@ -37,7 +37,12 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		{
 			//after a refresh, sorting is needed
 			sortMode := d.state.SortMode
-			containers := d.dockerDaemon.Containers()
+			containers := d.dockerDaemon.ContainerStore().List()
+
+			if d.state.filter != nil {
+				containers = d.dockerDaemon.ContainerStore().Filter(d.state.filter)
+			}
+
 			count = len(containers)
 			updateCursorPosition(screen.Cursor, count)
 			data := appui.NewDockerPsRenderData(
@@ -94,7 +99,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	screen.Flush()
 }
 
-//renderDry sends dry output to the given writer
+//renderDry returns a Renderer with dry's current content
 func renderDry(d *Dry) ui.Renderer {
 	var output ui.Renderer
 	switch d.viewMode() {

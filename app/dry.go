@@ -22,13 +22,14 @@ const (
 // state tracks dry state
 type state struct {
 	changed              bool
+	filter               drydocker.ContainerFilter
+	mutex                sync.RWMutex
+	previousViewMode     viewMode
 	showingAllContainers bool
 	viewMode             viewMode
-	previousViewMode     viewMode
 	SortMode             drydocker.SortMode
 	SortImagesMode       drydocker.SortImagesMode
 	SortNetworksMode     drydocker.SortNetworksMode
-	mutex                sync.RWMutex
 }
 
 //Dry represents the application.
@@ -78,13 +79,14 @@ func (d *Dry) Close() {
 }
 
 //ContainerAt returns the container at the given position
-func (d *Dry) ContainerAt(position int) (*types.Container, error) {
-	return d.dockerDaemon.ContainerAt(position)
+func (d *Dry) ContainerAt(position int) *types.Container {
+	return d.dockerDaemon.ContainerStore().At(position)
 }
 
 //ContainerIDAt returns the id of the container at the given position
-func (d *Dry) ContainerIDAt(position int) (string, string, error) {
-	return d.dockerDaemon.ContainerIDAt(position)
+func (d *Dry) ContainerIDAt(position int) (string, string) {
+	c := d.ContainerAt(position)
+	return c.ID, drydocker.TruncateID(c.ID)
 }
 
 //HistoryAt prepares dry to show image history of image at the given positions
@@ -109,11 +111,8 @@ func (d *Dry) History(id string) {
 
 //InspectAt prepares dry to inspect container at the given position
 func (d *Dry) InspectAt(position int) {
-	if id, _, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		d.Inspect(id)
-	} else {
-		d.errorMessage(position, "inspecting", err)
-	}
+	id, _ := d.ContainerIDAt(position)
+	d.Inspect(id)
 }
 
 //Inspect prepares dry to inspect container with the given id
@@ -169,11 +168,9 @@ func (d *Dry) InspectNetwork(id string) {
 
 //KillAt the docker container at the given position
 func (d *Dry) KillAt(position int) {
-	if id, _, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		d.Kill(id)
-	} else {
-		d.errorMessage(position, "killing", err)
-	}
+	id, _ := d.ContainerIDAt(position)
+	d.Kill(id)
+
 }
 
 //Kill the docker container with the given id
@@ -191,11 +188,8 @@ func (d *Dry) Kill(id string) {
 
 //LogsAt retrieves the log of the docker container at the given position
 func (d *Dry) LogsAt(position int) (io.ReadCloser, error) {
-	id, _, err := d.dockerDaemon.ContainerIDAt(position)
-	if err == nil {
-		return d.Logs(id)
-	}
-	return nil, err
+	id, _ := d.ContainerIDAt(position)
+	return d.Logs(id)
 }
 
 //Logs retrieves the log of the docker container with the given id
@@ -313,11 +307,9 @@ func (d *Dry) resetTimer() {
 
 //RestartContainerAt (re)starts the container at the given position
 func (d *Dry) RestartContainerAt(position int) {
-	if id, _, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		d.RestartContainer(id)
-	} else {
-		d.errorMessage(position, "restarting", err)
-	}
+	id, _ := d.ContainerIDAt(position)
+	d.RestartContainer(id)
+
 }
 
 //RestartContainer (re)starts the container with the given id
@@ -336,11 +328,8 @@ func (d *Dry) RestartContainer(id string) {
 
 //RmAt removes the container at the given position
 func (d *Dry) RmAt(position int) {
-	if id, _, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		d.Rm(id)
-	} else {
-		d.errorMessage(position, "removing", err)
-	}
+	id, _ := d.ContainerIDAt(position)
+	d.Rm(id)
 }
 
 //Rm removes the container with the given id
@@ -352,6 +341,11 @@ func (d *Dry) Rm(id string) {
 	} else {
 		d.errorMessage(shortID, "removing", err)
 	}
+}
+
+//ContainerAt returns the container at the given position
+func (d *Dry) SetContainerFilter(filter drydocker.ContainerFilter) {
+	d.state.filter = filter
 }
 
 //ShowMainView changes the state of dry to show the main view, main views are
@@ -491,11 +485,8 @@ func (d *Dry) startDry() {
 //StatsAt get stats of container in the given position until a
 //message is sent to the done channel
 func (d *Dry) StatsAt(position int) (<-chan *drydocker.Stats, chan<- struct{}, error) {
-	id, _, err := d.dockerDaemon.ContainerIDAt(position)
-	if err == nil {
-		return d.Stats(id)
-	}
-	return nil, nil, err
+	id, _ := d.ContainerIDAt(position)
+	return d.Stats(id)
 }
 
 //Stats get stats of container with the given id until a
@@ -515,11 +506,8 @@ func (d *Dry) Stats(id string) (<-chan *drydocker.Stats, chan<- struct{}, error)
 
 //StopContainerAt stops the container at the given position
 func (d *Dry) StopContainerAt(position int) {
-	if id, _, err := d.dockerDaemon.ContainerIDAt(position); err == nil {
-		d.StopContainer(id)
-	} else {
-		d.errorMessage(position, "stopping", err)
-	}
+	id, _ := d.ContainerIDAt(position)
+	d.StopContainer(id)
 }
 
 //StopContainer stops the container with the given id

@@ -67,41 +67,37 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 		switch event.Ch {
 		case 's', 'S': //stats
 			if cursorPos >= 0 {
-				container, err := dry.ContainerAt(cursorPos)
-				focus = false
-				if err == nil {
+				container := dry.ContainerAt(cursorPos)
+				if container != nil {
+					focus = false
 					h.handleCommand(commandToExecute{
 						docker.STATS,
 						*container,
 					})
-				} else {
-					ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
 				}
 			}
 		case 'i', 'I': //inspect
 			if cursorPos >= 0 {
-				focus = false
-				container, err := dry.ContainerAt(cursorPos)
-				if err == nil {
+				container := dry.ContainerAt(cursorPos)
+				if container != nil {
+					focus = false
+
 					h.handleCommand(commandToExecute{
 						docker.INSPECT,
 						*container,
 					})
-				} else {
-					ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
 				}
 			}
 		case 'l', 'L': //logs
 			if cursorPos >= 0 {
-				focus = false
-				container, err := dry.ContainerAt(cursorPos)
-				if err == nil {
+				container := dry.ContainerAt(cursorPos)
+				if container != nil {
+					focus = false
+
 					h.handleCommand(commandToExecute{
 						docker.LOGS,
 						*container,
 					})
-				} else {
-					ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
 				}
 			}
 		case '?', 'h', 'H': //help
@@ -115,17 +111,15 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 			cursor.Reset()
 			dry.ShowNetworks()
 		case 'e', 'E': //remove
-			//Since a command is created the focus is handled by handleCommand
-			//Fixes #24
-			focus = false
-			container, err := dry.ContainerAt(cursorPos)
-			if err == nil {
+			container := dry.ContainerAt(cursorPos)
+			if container != nil {
+				//Since a command is created the focus is handled by handleCommand
+				//Fixes #24
+				focus = false
 				h.handleCommand(commandToExecute{
 					docker.RM,
 					*container,
 				})
-			} else {
-				ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
 			}
 		}
 	}
@@ -242,8 +236,8 @@ func showContainerOptions(h containersScreenEventHandler, dry *Dry, screen *ui.S
 
 	selectedContainer := screen.Cursor.Position()
 	//TODO handle error
-	container, err := dry.ContainerAt(selectedContainer)
-	if err == nil && container != nil {
+	container := dry.ContainerAt(selectedContainer)
+	if container != nil {
 		screen.Clear()
 		screen.Sync()
 		screen.Cursor.Reset()

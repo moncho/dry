@@ -53,6 +53,11 @@ func init() {
 }
 
 //Containers returns the containers known by the daemon
+func (daemon *DockerDaemon) ContainerStore() *ContainerStore {
+	return daemon.containerStore
+}
+
+//Containers returns the containers known by the daemon
 func (daemon *DockerDaemon) Containers() []*dockerTypes.Container {
 	return daemon.containerStore.List()
 }
