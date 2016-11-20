@@ -52,7 +52,7 @@ func init() {
 	log.SetOutput(os.Stderr)
 }
 
-//Containers returns the containers known by the daemon
+//ContainerStore returns the container store
 func (daemon *DockerDaemon) ContainerStore() *ContainerStore {
 	return daemon.containerStore
 }
