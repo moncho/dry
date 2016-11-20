@@ -10,6 +10,8 @@ import (
 type ContainerFilter func(*types.Container) bool
 
 //ContainerFilters is a holder of predefined ContainerFilter(s)
+//The intentions is that something like 'ContainerFilters.ByName("name")'
+//can be used to declare a filter.
 var ContainerFilters ContainerFilter
 
 //Unfiltered does not filter containers
@@ -21,6 +23,7 @@ func (c ContainerFilter) Unfiltered() ContainerFilter {
 func (c ContainerFilter) ByName(name string) ContainerFilter {
 	return func(c *types.Container) bool {
 		for _, containerName := range c.Names {
+
 			if strings.Contains(containerName, name) {
 				return true
 			}

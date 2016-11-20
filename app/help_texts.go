@@ -37,7 +37,8 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 <yellow>Container list keybinds</>
 	<white>F1</>        Cycles through containers sort modes (by Id | by Image | by Status | by Name)
 	<white>F2</>        Toggles showing all containers (default shows just running)
-	<white>F5</>        Refresh container list
+	<white>F3</>        Filters containers by its name	
+	<white>F5</>        Refreshes container list
 	<white>e</>         Removes the selected container
 	<white>Crtl+e</>    Removes all stopped containers
 	<white>Crtl+k</>    Kills the selected container
@@ -78,7 +79,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 const (
 	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "
 	keyMappings    = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[F9]:<darkgrey>Docker Events</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F3]:<darkgrey>Filter(By Name)</> <b>[F5]:<darkgrey>Refresh</> <b>[F9]:<darkgrey>Docker Events</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
 		"<b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</><blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
 
 	imagesKeyMappings = commonMappings +

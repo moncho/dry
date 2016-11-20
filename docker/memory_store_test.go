@@ -91,6 +91,22 @@ func TestFilter(t *testing.T) {
 	}
 }
 
+func TestStoreFilterByName(t *testing.T) {
+	memStore := NewMemoryStoreWithContainers(testContainers)
+	filter := ContainerFilters.ByName("1")
+	filtered := memStore.Filter(filter)
+	checkMemoryStore(memStore, containerCount, t)
+
+	if len(filtered) != 1 || filtered[0].Names[0] != "Name1" {
+		t.Errorf("Filter did not work, got %v", filtered)
+	}
+
+	filtered = memStore.Filter(ContainerFilters.ByName("2"))
+	if len(filtered) != 1 || filtered[0].Names[0] != "Name2" {
+		t.Errorf("Filter did not work, got %v", filtered)
+	}
+}
+
 func TestContainerAt(t *testing.T) {
 	memStore := NewMemoryStoreWithContainers(testContainers)
 
@@ -107,7 +123,8 @@ func createTestContainers(numberOfContainers int) []*dockerTypes.Container {
 
 	for i := 0; i < numberOfContainers; i++ {
 		containers = append(containers, &dockerTypes.Container{
-			ID: strconv.Itoa(i),
+			ID:    strconv.Itoa(i),
+			Names: []string{"Name" + strconv.Itoa(i)},
 		})
 	}
 

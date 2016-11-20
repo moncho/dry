@@ -21,9 +21,10 @@ const (
 
 // state tracks dry state
 type state struct {
-	changed              bool
-	filter               drydocker.ContainerFilter
-	mutex                sync.RWMutex
+	changed       bool
+	filter        drydocker.ContainerFilter
+	filterPattern string
+	sync.RWMutex
 	previousViewMode     viewMode
 	showingAllContainers bool
 	viewMode             viewMode
@@ -54,15 +55,15 @@ type Dry struct {
 
 //Changed is true if the application state has changed
 func (d *Dry) Changed() bool {
-	d.state.mutex.RLock()
-	defer d.state.mutex.RUnlock()
+	d.state.RLock()
+	defer d.state.RUnlock()
 	return d.state.changed
 }
 
 //changeViewMode changes the view mode of dry
 func (d *Dry) changeViewMode(newViewMode viewMode) {
-	d.state.mutex.Lock()
-	defer d.state.mutex.Unlock()
+	d.state.Lock()
+	defer d.state.Unlock()
 	//If the new view is one of the main screens, it must be
 	//considered as the view to go back to.
 	if newViewMode == Main || newViewMode == Networks || newViewMode == Images {
@@ -80,13 +81,32 @@ func (d *Dry) Close() {
 
 //ContainerAt returns the container at the given position
 func (d *Dry) ContainerAt(position int) *types.Container {
+	if d.state.filter != nil && position >= 0 {
+		containers := d.containerList()
+		if len(containers) > position {
+			return containers[position]
+		}
+		return nil
+	}
 	return d.dockerDaemon.ContainerStore().At(position)
 }
 
 //ContainerIDAt returns the id of the container at the given position
 func (d *Dry) ContainerIDAt(position int) (string, string) {
 	c := d.ContainerAt(position)
-	return c.ID, drydocker.TruncateID(c.ID)
+	if c != nil {
+		return c.ID, drydocker.TruncateID(c.ID)
+	}
+	return "", ""
+}
+func (d *Dry) containerList() []*types.Container {
+	var containers []*types.Container
+	if d.state.filter != nil {
+		containers = d.dockerDaemon.ContainerStore().Filter(d.state.filter)
+	} else {
+		containers = d.dockerDaemon.ContainerStore().List()
+	}
+	return containers
 }
 
 //HistoryAt prepares dry to show image history of image at the given positions
@@ -112,7 +132,9 @@ func (d *Dry) History(id string) {
 //InspectAt prepares dry to inspect container at the given position
 func (d *Dry) InspectAt(position int) {
 	id, _ := d.ContainerIDAt(position)
-	d.Inspect(id)
+	if id != "" {
+		d.Inspect(id)
+	}
 }
 
 //Inspect prepares dry to inspect container with the given id
@@ -169,8 +191,9 @@ func (d *Dry) InspectNetwork(id string) {
 //KillAt the docker container at the given position
 func (d *Dry) KillAt(position int) {
 	id, _ := d.ContainerIDAt(position)
-	d.Kill(id)
-
+	if id != "" {
+		d.Kill(id)
+	}
 }
 
 //Kill the docker container with the given id
@@ -189,7 +212,10 @@ func (d *Dry) Kill(id string) {
 //LogsAt retrieves the log of the docker container at the given position
 func (d *Dry) LogsAt(position int) (io.ReadCloser, error) {
 	id, _ := d.ContainerIDAt(position)
-	return d.Logs(id)
+	if id != "" {
+		return d.Logs(id)
+	}
+	return nil, fmt.Errorf("No container found at position %d", position)
 }
 
 //Logs retrieves the log of the docker container with the given id
@@ -221,8 +247,8 @@ func (d *Dry) Refresh() {
 }
 
 func (d *Dry) doRefresh() {
-	d.state.mutex.Lock()
-	defer d.state.mutex.Unlock()
+	d.state.Lock()
+	defer d.state.Unlock()
 	d.state.changed = true
 	var err error
 	switch d.state.viewMode {
@@ -308,8 +334,9 @@ func (d *Dry) resetTimer() {
 //RestartContainerAt (re)starts the container at the given position
 func (d *Dry) RestartContainerAt(position int) {
 	id, _ := d.ContainerIDAt(position)
-	d.RestartContainer(id)
-
+	if id != "" {
+		d.RestartContainer(id)
+	}
 }
 
 //RestartContainer (re)starts the container with the given id
@@ -329,7 +356,9 @@ func (d *Dry) RestartContainer(id string) {
 //RmAt removes the container at the given position
 func (d *Dry) RmAt(position int) {
 	id, _ := d.ContainerIDAt(position)
-	d.Rm(id)
+	if id != "" {
+		d.Rm(id)
+	}
 }
 
 //Rm removes the container with the given id
@@ -343,9 +372,18 @@ func (d *Dry) Rm(id string) {
 	}
 }
 
-//ContainerAt returns the container at the given position
-func (d *Dry) SetContainerFilter(filter drydocker.ContainerFilter) {
-	d.state.filter = filter
+//SetContainerFilter sets a filter for the container list
+func (d *Dry) SetContainerFilter(filter string) {
+	d.state.Lock()
+	defer d.state.Unlock()
+	d.state.filterPattern = filter
+	//If the given filter pattern is empty the filter is set to null
+	//so ContainerIDAt can take the easiest code path.
+	if filter != "" {
+		d.state.filter = drydocker.ContainerFilters.ByName(filter)
+	} else {
+		d.state.filter = nil
+	}
 }
 
 //ShowMainView changes the state of dry to show the main view, main views are
@@ -410,8 +448,8 @@ func (d *Dry) ShowInfo() error {
 //Sort rotates to the next sort mode.
 //SortByContainerID -> SortByImage -> SortByStatus -> SortByName -> SortByContainerID
 func (d *Dry) Sort() {
-	d.state.mutex.RLock()
-	defer d.state.mutex.RUnlock()
+	d.state.RLock()
+	defer d.state.RUnlock()
 	switch d.state.SortMode {
 	case drydocker.SortByContainerID:
 		d.state.SortMode = drydocker.SortByImage
@@ -430,8 +468,8 @@ func (d *Dry) Sort() {
 //SortImages rotates to the next sort mode.
 //SortImagesByRepo -> SortImagesByID -> SortImagesByCreationDate -> SortImagesBySize -> SortImagesByRepo
 func (d *Dry) SortImages() {
-	d.state.mutex.RLock()
-	defer d.state.mutex.RUnlock()
+	d.state.RLock()
+	defer d.state.RUnlock()
 	switch d.state.SortImagesMode {
 	case drydocker.SortImagesByRepo:
 		d.state.SortImagesMode = drydocker.SortImagesByID
@@ -452,8 +490,8 @@ func (d *Dry) SortImages() {
 //SortNetworks rotates to the next sort mode.
 //SortNetworksByID -> SortNetworksByName -> SortNetworksByDriver
 func (d *Dry) SortNetworks() {
-	d.state.mutex.RLock()
-	defer d.state.mutex.RUnlock()
+	d.state.RLock()
+	defer d.state.RUnlock()
 	switch d.state.SortNetworksMode {
 	case drydocker.SortNetworksByID:
 		d.state.SortNetworksMode = drydocker.SortNetworksByName
@@ -486,7 +524,10 @@ func (d *Dry) startDry() {
 //message is sent to the done channel
 func (d *Dry) StatsAt(position int) (<-chan *drydocker.Stats, chan<- struct{}, error) {
 	id, _ := d.ContainerIDAt(position)
-	return d.Stats(id)
+	if id != "" {
+		return d.Stats(id)
+	}
+	return nil, nil, fmt.Errorf("Container not found at position %d", position)
 }
 
 //Stats get stats of container with the given id until a
@@ -507,7 +548,9 @@ func (d *Dry) Stats(id string) (<-chan *drydocker.Stats, chan<- struct{}, error)
 //StopContainerAt stops the container at the given position
 func (d *Dry) StopContainerAt(position int) {
 	id, _ := d.ContainerIDAt(position)
-	d.StopContainer(id)
+	if id != "" {
+		d.StopContainer(id)
+	}
 }
 
 //StopContainer stops the container with the given id
@@ -568,14 +611,14 @@ func (d *Dry) errorMessage(cid interface{}, action string, err error) {
 }
 
 func (d *Dry) viewMode() viewMode {
-	d.state.mutex.RLock()
-	defer d.state.mutex.RUnlock()
+	d.state.RLock()
+	defer d.state.RUnlock()
 	return d.state.viewMode
 }
 
 func (d *Dry) setChanged(changed bool) {
-	d.state.mutex.Lock()
-	defer d.state.mutex.Unlock()
+	d.state.Lock()
+	defer d.state.Unlock()
 	d.state.changed = changed
 }
 func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
