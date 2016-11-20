@@ -17,6 +17,11 @@
 			"Rev": "55eb11d21d2a31a3cc93838241d04800f52e823d"
 		},
 		{
+			"ImportPath": "github.com/chzyer/readline",
+			"Comment": "v1.4-19-gc914be6",
+			"Rev": "c914be64f07d9998f52bf0d598ec26d457168c0f"
+		},
+		{
 			"ImportPath": "github.com/docker/distribution/digest",
 			"Comment": "v2.4.0-rc.1-22-g55f1b76",
 			"Rev": "55f1b7651f6242617133312ff8af5c2e4e3628ea"
