@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/opts"
 	"github.com/docker/engine-api/client"
 	"github.com/docker/go-connections/sockets"
+	homedir "github.com/mitchellh/go-homedir"
 	drytls "github.com/moncho/dry/tls"
 	"github.com/moncho/dry/version"
 	"github.com/pkg/errors"
@@ -20,25 +21,29 @@ const (
 	DefaultConnectionTimeout = 32 * time.Second
 )
 
+var defaultDockerPath string
+
 var headers = map[string]string{
 	"User-Agent": "dry/" + version.VERSION,
 }
 
+func init() {
+	defaultDockerPath, _ = homedir.Expand("~/.docker")
+}
 func connect(client client.APIClient, env *DockerEnv) (*DockerDaemon, error) {
-	containers, containersByID, err := containers(client, false)
+	containers, err := containers(client, false)
 	if err == nil {
 		images, errI := images(client, defaultImageListOptions)
 		if errI == nil {
 			networks, errN := networks(client)
 			if errN == nil {
 				d := &DockerDaemon{
-					client:        client,
-					err:           err,
-					containerByID: containersByID,
-					containers:    containers,
-					images:        images,
-					networks:      networks,
-					dockerEnv:     env,
+					client:         client,
+					err:            err,
+					containerStore: NewMemoryStoreWithContainers(containers),
+					images:         images,
+					networks:       networks,
+					dockerEnv:      env,
 				}
 				d.eventLog = NewEventLog()
 				d.Version()
@@ -92,6 +97,7 @@ func ConnectToDaemon(env *DockerEnv) (*DockerDaemon, error) {
 		return nil, errors.Wrap(err, "Invalid Host")
 	}
 	var tlsConfig *tls.Config
+	//If a path to certificates is given use the path to read certificates from
 	if dockerCertPath := env.DockerCertPath; dockerCertPath != "" {
 		options := drytls.Options{
 			CAFile:             filepath.Join(dockerCertPath, "ca.pem"),
@@ -99,6 +105,22 @@ func ConnectToDaemon(env *DockerEnv) (*DockerDaemon, error) {
 			KeyFile:            filepath.Join(dockerCertPath, "key.pem"),
 			InsecureSkipVerify: env.DockerTLSVerify,
 		}
+		tlsConfig, err = drytls.Client(options)
+		if err != nil {
+			return nil, errors.Wrap(err, "TLS setup error")
+		}
+	} else if env.DockerTLSVerify {
+		//No cert path is given but TLS verify is set, default location for
+		//docker certs will be used.
+		//See https://docs.docker.com/engine/security/https/#secure-by-default
+		//Fixes #23
+		options := drytls.Options{
+			CAFile:             filepath.Join(defaultDockerPath, "ca.pem"),
+			CertFile:           filepath.Join(defaultDockerPath, "cert.pem"),
+			KeyFile:            filepath.Join(defaultDockerPath, "key.pem"),
+			InsecureSkipVerify: env.DockerTLSVerify,
+		}
+		env.DockerCertPath = defaultDockerPath
 		tlsConfig, err = drytls.Client(options)
 		if err != nil {
 			return nil, errors.Wrap(err, "TLS setup error")

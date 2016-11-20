@@ -17,6 +17,11 @@
 			"Rev": "55eb11d21d2a31a3cc93838241d04800f52e823d"
 		},
 		{
+			"ImportPath": "github.com/chzyer/readline",
+			"Comment": "v1.4-19-gc914be6",
+			"Rev": "c914be64f07d9998f52bf0d598ec26d457168c0f"
+		},
+		{
 			"ImportPath": "github.com/docker/distribution/digest",
 			"Comment": "v2.4.0-rc.1-22-g55f1b76",
 			"Rev": "55f1b7651f6242617133312ff8af5c2e4e3628ea"
@@ -143,6 +148,10 @@
 			"ImportPath": "github.com/mattn/go-runewidth",
 			"Comment": "travisish-37-g12e0ff7",
 			"Rev": "12e0ff74603c9a3209d8bf84f8ab349fe1ad9477"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/go-homedir",
+			"Rev": "756f7b183b7ab78acdbbee5c7f392838ed459dda"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/go-wordwrap",

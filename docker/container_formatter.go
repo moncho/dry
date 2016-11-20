@@ -29,7 +29,7 @@ const (
 type ContainerFormatter struct {
 	trunc  bool
 	header []string
-	c      types.Container
+	c      *types.Container
 }
 
 //ID prettifies the id

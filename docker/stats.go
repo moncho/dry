@@ -11,7 +11,7 @@ import (
 )
 
 //StatsChannel creates a channel on which to receive the stats of the given container
-func StatsChannel(daemon *DockerDaemon, container types.Container, streamStats bool) (<-chan *Stats, chan<- struct{}) {
+func StatsChannel(daemon *DockerDaemon, container *types.Container, streamStats bool) (<-chan *Stats, chan<- struct{}) {
 	stats := make(chan *Stats)
 	done := make(chan struct{})
 
@@ -54,7 +54,7 @@ func StatsChannel(daemon *DockerDaemon, container types.Container, streamStats b
 }
 
 //buildStats builds Stats with the given information
-func buildStats(container types.Container, stats *types.StatsJSON, topResult *types.ContainerProcessList) *Stats {
+func buildStats(container *types.Container, stats *types.StatsJSON, topResult *types.ContainerProcessList) *Stats {
 	s := &Stats{
 		CID:         TruncateID(container.ID),
 		Command:     container.Command,

@@ -37,18 +37,26 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		{
 			//after a refresh, sorting is needed
 			sortMode := d.state.SortMode
-			containers := d.dockerDaemon.Containers()
+			containers := d.containerList()
+
 			count = len(containers)
 			updateCursorPosition(screen.Cursor, count)
 			data := appui.NewDockerPsRenderData(
 				containers,
 				screen.Cursor.Position(),
 				sortMode)
-			d.renderer.PrepareToRender(data)
-			screen.Render(1, d.renderer.Render())
+			d.ui.ContainerComponent.PrepareToRender(data)
+			screen.Render(1, d.ui.ContainerComponent.Render())
 
-			what = "Containers"
 			keymap = keyMappings
+			title := fmt.Sprintf(
+				"<b><blue>Containers: </><yellow>%d</></>", count)
+			if d.state.filterPattern != "" {
+				title = title + fmt.Sprintf(
+					"<b><blue> | Showing containers named: </><yellow>%s</></> ", d.state.filterPattern)
+			}
+
+			screen.RenderLine(0, appui.MainScreenHeaderSize, title)
 
 		}
 	case Images:
@@ -75,6 +83,8 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 
 			what = "Images"
 			keymap = imagesKeyMappings
+			renderViewTitle(screen, what, count)
+
 		}
 	case Networks:
 		{
@@ -84,17 +94,18 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			count = d.dockerDaemon.NetworksCount()
 			updateCursorPosition(screen.Cursor, count)
 			keymap = networkKeyMappings
+			renderViewTitle(screen, what, count)
+
 		}
 
 	}
-	renderViewTitle(screen, what, count)
 	screen.RenderLineWithBackGround(0, screen.Height-1, keymap, appui.DryTheme.Footer)
 	d.setChanged(false)
 
 	screen.Flush()
 }
 
-//renderDry sends dry output to the given writer
+//renderDry returns a Renderer with dry's current content
 func renderDry(d *Dry) ui.Renderer {
 	var output ui.Renderer
 	switch d.viewMode() {

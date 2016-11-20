@@ -13,7 +13,7 @@ const (
 	starttext = "(start)"
 )
 
-//Less is a View specilization with less-like behaviour and characteristics, meaning:
+//Less is a View specialization with less-like behaviour and characteristics, meaning:
 // * The cursor is always shown at the bottom of the screen.
 // * Navigation is done using less keybindings.
 // * Basic search is supported.
@@ -147,7 +147,7 @@ func (less *Less) Search(pattern string) error {
 
 func (less *Less) readInput(inputBoxEventChan chan termbox.Event, inputBoxOuput chan string) error {
 	_, height := less.ViewSize()
-	eb := NewInputBox(0, height, ">>>", inputBoxOuput, inputBoxEventChan)
+	eb := NewInputBox(0, height, ">>> ", inputBoxOuput, inputBoxEventChan)
 	eb.Focus()
 	return nil
 }

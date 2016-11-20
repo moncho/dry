@@ -39,6 +39,10 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 	case termbox.KeyF2: //show all containers
 		cursor.Reset()
 		dry.ToggleShowAllContainers()
+	case termbox.KeyF3: //filter containers
+		if filter, err := appui.ReadLine("Show containers named (leave empty to remove the filter) >>> "); err == nil {
+			dry.SetContainerFilter(filter)
+		}
 	case termbox.KeyF5: // refresh
 		dry.Refresh()
 	case termbox.KeyF9: // docker events
@@ -50,7 +54,11 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 		focus = false
 		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeView)
 	case termbox.KeyCtrlE: //remove all stopped
-		dry.RemoveAllStoppedContainers()
+		if confirmation, err := appui.ReadLine("All stopped containers will be removed. Do you want to continue? (y/N) "); err == nil {
+			if confirmation == "Y" || confirmation == "y" {
+				dry.RemoveAllStoppedContainers()
+			}
+		}
 	case termbox.KeyCtrlK: //kill
 		dry.KillAt(cursorPos)
 	case termbox.KeyCtrlR: //start
@@ -67,41 +75,37 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 		switch event.Ch {
 		case 's', 'S': //stats
 			if cursorPos >= 0 {
-				container, err := dry.ContainerAt(cursorPos)
-				focus = false
-				if err == nil {
+				container := dry.ContainerAt(cursorPos)
+				if container != nil {
+					focus = false
 					h.handleCommand(commandToExecute{
 						docker.STATS,
-						container,
+						*container,
 					})
-				} else {
-					ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
 				}
 			}
 		case 'i', 'I': //inspect
 			if cursorPos >= 0 {
-				focus = false
-				container, err := dry.ContainerAt(cursorPos)
-				if err == nil {
+				container := dry.ContainerAt(cursorPos)
+				if container != nil {
+					focus = false
+
 					h.handleCommand(commandToExecute{
 						docker.INSPECT,
-						container,
+						*container,
 					})
-				} else {
-					ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
 				}
 			}
 		case 'l', 'L': //logs
 			if cursorPos >= 0 {
-				focus = false
-				container, err := dry.ContainerAt(cursorPos)
-				if err == nil {
+				container := dry.ContainerAt(cursorPos)
+				if container != nil {
+					focus = false
+
 					h.handleCommand(commandToExecute{
 						docker.LOGS,
-						container,
+						*container,
 					})
-				} else {
-					ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
 				}
 			}
 		case '?', 'h', 'H': //help
@@ -115,14 +119,15 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 			cursor.Reset()
 			dry.ShowNetworks()
 		case 'e', 'E': //remove
-			container, err := dry.ContainerAt(cursorPos)
-			if err == nil {
+			container := dry.ContainerAt(cursorPos)
+			if container != nil {
+				//Since a command is created the focus is handled by handleCommand
+				//Fixes #24
+				focus = false
 				h.handleCommand(commandToExecute{
 					docker.RM,
-					container,
+					*container,
 				})
-			} else {
-				ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeView, err)
 			}
 		}
 	}
@@ -239,16 +244,16 @@ func showContainerOptions(h containersScreenEventHandler, dry *Dry, screen *ui.S
 
 	selectedContainer := screen.Cursor.Position()
 	//TODO handle error
-	container, err := dry.ContainerAt(selectedContainer)
-	if err == nil {
+	container := dry.ContainerAt(selectedContainer)
+	if container != nil {
 		screen.Clear()
 		screen.Sync()
 		screen.Cursor.Reset()
 
-		info, infoLines := appui.NewContainerInfo(container)
+		info, infoLines := appui.NewContainerInfo(*container)
 		screen.RenderLineWithBackGround(0, screen.Height-1, commandsMenuBar, appui.DryTheme.Footer)
 		screen.Render(1, info)
-		l := appui.NewContainerCommands(container,
+		l := appui.NewContainerCommands(*container,
 			0,
 			infoLines+1,
 			screen.Height-appui.MainScreenFooterSize-infoLines-1,
@@ -307,7 +312,7 @@ func showContainerOptions(h containersScreenEventHandler, dry *Dry, screen *ui.S
 			h.handleCommand(
 				commandToExecute{
 					command.Command,
-					container,
+					*container,
 				})
 		} else {
 			//view is closed here if there is not a command to execute
