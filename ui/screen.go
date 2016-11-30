@@ -66,7 +66,6 @@ func (screen *Screen) Clear() *Screen {
 	defer screen.termboxMutex.Unlock()
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	screen.cleared = true
-	termbox.Flush()
 	return screen
 }
 
