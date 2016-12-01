@@ -43,6 +43,7 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 		if filter, err := appui.ReadLine("Show containers named (leave empty to remove the filter) >>> "); err == nil {
 			dry.SetContainerFilter(filter)
 		}
+		screen.ClearAndFlush()
 	case termbox.KeyF5: // refresh
 		dry.Refresh()
 	case termbox.KeyF9: // docker events
@@ -55,6 +56,7 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeView)
 	case termbox.KeyCtrlE: //remove all stopped
 		if confirmation, err := appui.ReadLine("All stopped containers will be removed. Do you want to continue? (y/N) "); err == nil {
+			screen.ClearAndFlush()
 			if confirmation == "Y" || confirmation == "y" {
 				dry.RemoveAllStoppedContainers()
 			}

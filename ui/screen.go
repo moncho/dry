@@ -69,6 +69,13 @@ func (screen *Screen) Clear() *Screen {
 	return screen
 }
 
+//ClearAndFlush cleares the screen and then flushes internal buffers
+func (screen *Screen) ClearAndFlush() *Screen {
+	screen.Clear()
+	screen.Flush()
+	return screen
+}
+
 // Sync forces a complete resync between the termbox and a terminal.
 func (screen *Screen) Sync() *Screen {
 	screen.termboxMutex.Lock()
