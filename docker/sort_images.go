@@ -3,7 +3,7 @@ package docker
 import (
 	"sort"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 )
 
 //Allowed sort methods
@@ -18,7 +18,7 @@ const (
 //SortImagesMode represents allowed modes to sort Docker images
 type SortImagesMode uint16
 
-type apiImages []types.Image
+type apiImages []types.ImageSummary
 
 func (s apiImages) Len() int      { return len(s) }
 func (s apiImages) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
@@ -52,7 +52,7 @@ func (s byCreationDate) Less(i, j int) bool {
 }
 
 //SortImages sorts the given image slice using the given mode
-func SortImages(images []types.Image, mode SortImagesMode) {
+func SortImages(images []types.ImageSummary, mode SortImagesMode) {
 	switch mode {
 	case SortImagesByID:
 		sort.Sort(byID{images})

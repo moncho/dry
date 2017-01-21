@@ -3,8 +3,8 @@ package mock
 import (
 	"strconv"
 
-	dockerAPI "github.com/docker/engine-api/client"
-	"github.com/docker/engine-api/types"
+	dockerAPI "github.com/docker/docker/api/client"
+	"github.com/docker/docker/api/types"
 	context "golang.org/x/net/context"
 )
 

@@ -3,7 +3,7 @@ package docker
 import (
 	"strings"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 )
 
 //ContainerFilter defines a function to filter container

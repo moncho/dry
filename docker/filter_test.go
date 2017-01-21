@@ -3,7 +3,7 @@ package docker
 import (
 	"testing"
 
-	dockerTypes "github.com/docker/engine-api/types"
+	dockerTypes "github.com/docker/docker/api/types"
 )
 
 func TestFilterByName(t *testing.T) {

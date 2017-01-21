@@ -6,7 +6,7 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 )
 
 const (
@@ -76,7 +76,7 @@ func tableFormat(ctx FormattingContext, containers []*types.Container) {
 }
 
 // FormatImages formats the given images.
-func FormatImages(ctx FormattingContext, images []types.Image) {
+func FormatImages(ctx FormattingContext, images []types.ImageSummary) {
 	var (
 		buffer = bytes.NewBufferString("")
 		tmpl   = ctx.Template

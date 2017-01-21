@@ -7,25 +7,20 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/docker/engine-api/types/events"
+	"github.com/docker/docker/api/types/events"
 )
 
 // streamEvents sends incoming events to the provided channel.
 func streamEvents(out chan<- events.Message) eventProcessor {
-	return func(event events.Message, err error) error {
-		if err != nil {
-			return err
-		}
+	return func(event events.Message) error {
 		out <- event
 		return nil
 	}
 }
 
 func logEvents(log *EventLog) eventProcessor {
-	return func(event events.Message, err error) error {
-		if err != nil {
-			return err
-		} else if log == nil {
+	return func(event events.Message) error {
+		if log == nil {
 			return errors.New("No logger given")
 		}
 		log.Push(&event)
@@ -33,7 +28,7 @@ func logEvents(log *EventLog) eventProcessor {
 	}
 }
 
-type eventProcessor func(event events.Message, err error) error
+type eventProcessor func(event events.Message) error
 
 func decodeEvents(
 	ctx context.Context,
@@ -46,11 +41,21 @@ func decodeEvents(
 		if err != nil && err == io.EOF {
 			break
 		}
-		for _, ep := range processors {
-			if procErr := ep(event, err); procErr != nil {
-				return procErr
-			}
+		return handleEvent(ctx, event, processors...)
+	}
+	return nil
+}
+
+func handleEvent(
+	ctx context.Context,
+	event events.Message,
+	processors ...eventProcessor) error {
+
+	for _, ep := range processors {
+		if procErr := ep(event); procErr != nil {
+			return procErr
 		}
 	}
+
 	return nil
 }

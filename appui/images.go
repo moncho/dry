@@ -8,7 +8,7 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/docker"
 )
 
@@ -21,13 +21,13 @@ type imagesColumn struct {
 //DockerImageRenderData holds information that might be
 //used during image list rendering
 type DockerImageRenderData struct {
-	images        []types.Image
+	images        []types.ImageSummary
 	selectedImage int
 	sortMode      docker.SortImagesMode
 }
 
 //NewDockerImageRenderData creates render data structs
-func NewDockerImageRenderData(images []types.Image, selectedImage int, sortMode docker.SortImagesMode) *DockerImageRenderData {
+func NewDockerImageRenderData(images []types.ImageSummary, selectedImage int, sortMode docker.SortImagesMode) *DockerImageRenderData {
 	return &DockerImageRenderData{
 		images:        images,
 		selectedImage: selectedImage,
@@ -130,7 +130,7 @@ func (r *DockerImagesRenderer) imageInformation() string {
 	return buf.String()
 }
 
-func (r *DockerImagesRenderer) imagesToShow() []types.Image {
+func (r *DockerImagesRenderer) imagesToShow() []types.ImageSummary {
 	images := r.data.images
 	cursorPos := r.data.selectedImage
 	linesForImages := r.height - imageTableStartPos - 1

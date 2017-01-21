@@ -3,8 +3,8 @@ package docker
 import (
 	"io"
 
-	"github.com/docker/engine-api/types"
-	"github.com/docker/engine-api/types/events"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/events"
 )
 
 //ContainerDaemon describes what is expected from the container daemon
@@ -14,8 +14,8 @@ type ContainerDaemon interface {
 	Events() (<-chan events.Message, chan<- struct{}, error)
 	EventLog() *EventLog
 	History(id string) ([]types.ImageHistory, error)
-	ImageAt(pos int) (*types.Image, error)
-	Images() ([]types.Image, error)
+	ImageAt(pos int) (*types.ImageSummary, error)
+	Images() ([]types.ImageSummary, error)
 	ImagesCount() int
 	Info() (types.Info, error)
 	Inspect(id string) (types.ContainerJSON, error)

@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/docker/engine-api/types"
-	"github.com/docker/engine-api/types/events"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/events"
 	"github.com/moncho/dry/appui"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -40,7 +40,7 @@ type Dry struct {
 	dockerEvents       <-chan events.Message
 	dockerEventsDone   chan<- struct{}
 	imageHistory       []types.ImageHistory
-	images             []types.Image
+	images             []types.ImageSummary
 	info               types.Info
 	inspectedContainer types.ContainerJSON
 	inspectedImage     types.ImageInspect
