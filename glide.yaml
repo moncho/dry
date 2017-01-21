@@ -1,0 +1,72 @@
+package: github.com/moncho/dry
+import:
+- package: github.com/Microsoft/go-winio
+  version: ^0.3.3
+- package: github.com/Sirupsen/logrus
+  version: ^0.7.3
+- package: github.com/chzyer/readline
+  version: c914be64f07d9998f52bf0d598ec26d457168c0f
+- package: github.com/docker/distribution
+  version: 55f1b7651f6242617133312ff8af5c2e4e3628ea
+  subpackages:
+  - digest
+  - reference
+- package: github.com/docker/docker
+  version: 2b89356c07b1824041985386d0c9485e49d9b987
+  subpackages:
+  - api/types
+  - api/types/blkiodev
+  - api/types/container
+  - api/types/events
+  - api/types/filters
+  - api/types/mount
+  - api/types/network
+  - api/types/reference
+  - api/types/registry
+  - api/types/strslice
+  - api/types/swarm
+  - api/types/time
+  - api/types/versions
+  - api/types/volume
+  - cli/debug
+  - client
+  - opts
+  - pkg/stdcopy
+  - pkg/tlsconfig
+- package: github.com/docker/go-connections
+  version: 5b7154ba2efe13ff86ae8830a9e7cb120b080d6e
+  subpackages:
+  - nat
+  - sockets
+  - tlsconfig
+- package: github.com/docker/go-units
+  version: 0bbddae09c5a5419a8c6dcdd7ff90da3d450393b
+- package: github.com/gizak/termui
+  version: 202925a536c7febe22698792a2b6de68edb2726d
+- package: github.com/gosuri/uitable
+  version: 62e40473eadf9579716227a0033cd8db16e1c500
+  subpackages:
+  - util/strutil
+- package: github.com/jessevdk/go-flags
+  version: fc93116606d0a71d7e9de0ad5734fdb4b8eae834
+- package: github.com/maruel/panicparse
+  version: ad661195ed0e88491e0f14be6613304e3b1141d6
+  subpackages:
+  - stack
+- package: github.com/mattn/go-runewidth
+  version: 12e0ff74603c9a3209d8bf84f8ab349fe1ad9477
+- package: github.com/mitchellh/go-homedir
+  version: 756f7b183b7ab78acdbbee5c7f392838ed459dda
+- package: github.com/mitchellh/go-wordwrap
+  version: ad45545899c7b13c020ea92b2072220eefad42b8
+- package: github.com/nsf/termbox-go
+  version: 362329b0aa6447eadd52edd8d660ec1dff470295
+- package: github.com/olekukonko/tablewriter
+  version: cca8bbc0798408af109aaaa239cbd2634846b340
+- package: github.com/opencontainers/runc
+  version: c6db82f9219b2ea4c98f80560205ed6c65aeea19
+  subpackages:
+  - libcontainer/user
+- package: github.com/pkg/errors
+  version: 494e70f7620561491c2ca11e185bbef4b70060da
+
