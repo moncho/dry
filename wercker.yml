@@ -1,4 +1,4 @@
-box: golang:1.6.3
+box: golang:1.8rc2
 dev:
   steps:
     - internal/watch:
@@ -14,15 +14,12 @@ build:
     - wercker/golint:
       exclude: "vendor"
 
+    - termie/glide-build@2014.345.145 build: false
+  
     - script:
-        name: install godep
+        name: glide install
         code: |
-          go get github.com/tools/godep
-
-    - script:
-        name: godep restore
-        code: |
-           godep restore
+           glide install
 
     # Build the project
     - script:
