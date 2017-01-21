@@ -14,9 +14,6 @@ build:
     - wercker/golint:
       exclude: "vendor"
 
-    - wercker/glide-install@2.1.1:
-        name: glide install
-    
     # Build the project
     - script:
         name: go build
