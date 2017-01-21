@@ -3,9 +3,10 @@ package mock
 import (
 	"strconv"
 
-	dockerAPI "github.com/docker/docker/api/client"
+	"golang.org/x/net/context"
+
 	"github.com/docker/docker/api/types"
-	context "golang.org/x/net/context"
+	dockerAPI "github.com/docker/docker/client"
 )
 
 //APIClientMock mocks docker APIClient

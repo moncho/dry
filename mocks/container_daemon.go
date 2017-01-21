@@ -40,12 +40,12 @@ func (_m *ContainerDaemonMock) History(id string) ([]types.ImageHistory, error) 
 }
 
 //ImageAt mock
-func (_m *ContainerDaemonMock) ImageAt(pos int) (*types.Image, error) {
+func (_m *ContainerDaemonMock) ImageAt(pos int) (*types.ImageSummary, error) {
 	return nil, nil
 }
 
 //Images mock
-func (_m *ContainerDaemonMock) Images() ([]types.Image, error) {
+func (_m *ContainerDaemonMock) Images() ([]types.ImageSummary, error) {
 
 	imagesJSON := `[
 		 {
@@ -94,7 +94,7 @@ func (_m *ContainerDaemonMock) Images() ([]types.Image, error) {
 							"RepoDigests": ["03b4557ad7b9"]
 		 }
 	]`
-	var images []types.Image
+	var images []types.ImageSummary
 	err := json.Unmarshal([]byte(imagesJSON), &images)
 	return images, err
 }
