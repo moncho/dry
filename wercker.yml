@@ -14,7 +14,8 @@ build:
     - wercker/golint:
       exclude: "vendor"
 
-    - termie/glide-build@2014.345.145 build: false
+    - termie/glide-build@2014.345.145:
+      build: false
   
     - script:
         name: glide install
