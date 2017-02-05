@@ -397,6 +397,11 @@ func (d *Dry) ShowContainers() {
 	d.changeViewMode(Main)
 }
 
+//ShowDiskUsage changes the state of dry to show docker disk usage
+func (d *Dry) ShowDiskUsage() {
+	d.changeViewMode(DiskUsage)
+}
+
 //ShowDockerEvents changes the state of dry to show the log of docker events
 func (d *Dry) ShowDockerEvents() {
 	d.changeViewMode(EventsMode)

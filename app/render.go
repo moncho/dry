@@ -14,6 +14,7 @@ type viewMode uint16
 //known view modes
 const (
 	Main viewMode = iota //This is the container list view
+	DiskUsage
 	Images
 	Networks
 	EventsMode

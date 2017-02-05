@@ -7,66 +7,51 @@ import (
 )
 
 type networksScreenEventHandler struct {
-	dry                  *Dry
-	screen               *ui.Screen
-	keyboardQueueForView chan termbox.Event
-	viewClosed           chan struct{}
+	baseEventbandler
 }
 
-func (h networksScreenEventHandler) handle(renderChan chan<- struct{}, event termbox.Event) (focus bool) {
-	focus = true
+func (h *networksScreenEventHandler) handle(event termbox.Event) {
+	focus := true
 	dry := h.dry
 	screen := h.screen
 	cursor := screen.Cursor
 	cursorPos := cursor.Position()
+	handled := false
 	switch event.Key {
-	case termbox.KeyArrowUp: //cursor up
-		cursor.ScrollCursorUp()
-	case termbox.KeyArrowDown: // cursor down
-		cursor.ScrollCursorDown()
 	case termbox.KeyF1: //sort
+		handled = true
 		dry.SortNetworks()
-	case termbox.KeyF5: // refresh
-		cursor.Reset()
-		dry.Refresh()
-	case termbox.KeyF9: // docker events
-		dry.ShowDockerEvents()
-		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
-	case termbox.KeyF10: // docker info
-		dry.ShowInfo()
-		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
 	case termbox.KeyEnter: //inspect
+		handled = true
 		dry.InspectNetworkAt(cursorPos)
 		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeViewChan)
 	case termbox.KeyCtrlE: //remove network
+		handled = true
 		if cursorPos >= 0 {
 			network, err := dry.NetworkAt(cursorPos)
 			if err == nil {
 				dry.RemoveNetwork(network.ID)
 				cursor.ScrollCursorDown()
 			} else {
-				ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.viewClosed, err)
+				ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeViewChan, err)
 			}
 		}
 	}
+	if !handled {
+		switch event.Ch {
+		case '3':
+			//already in network screen
+			handled = true
 
-	switch event.Ch {
-	case '?', 'h', 'H': //help
-		focus = false
-		dry.ShowHelp()
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
-	case '1':
-		cursor.Reset()
-		dry.ShowContainers()
-	case '2':
-		cursor.Reset()
-		dry.ShowImages()
+		}
 	}
-	if focus {
-		renderChan <- struct{}{}
+	if handled {
+		h.setFocus(focus)
+		if h.hasFocus() {
+			h.renderChan <- struct{}{}
+		}
+	} else {
+		h.baseEventbandler.handle(event)
 	}
-	return focus
 }

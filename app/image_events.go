@@ -2,19 +2,15 @@ package app
 
 import (
 	"github.com/moncho/dry/appui"
-	"github.com/moncho/dry/ui"
 	"github.com/nsf/termbox-go"
 )
 
 type imagesScreenEventHandler struct {
-	dry                  *Dry
-	screen               *ui.Screen
-	keyboardQueueForView chan termbox.Event
-	viewClosed           chan struct{}
+	baseEventbandler
 }
 
-func (h imagesScreenEventHandler) handle(renderChan chan<- struct{}, event termbox.Event) (focus bool) {
-	focus = true
+func (h *imagesScreenEventHandler) handle(event termbox.Event) {
+	focus := true
 	dry := h.dry
 	screen := h.screen
 	cursor := screen.Cursor
@@ -23,22 +19,8 @@ func (h imagesScreenEventHandler) handle(renderChan chan<- struct{}, event termb
 	handled := true
 
 	switch event.Key {
-	case termbox.KeyArrowUp: //cursor up
-		cursor.ScrollCursorUp()
-	case termbox.KeyArrowDown: // cursor down
-		cursor.ScrollCursorDown()
 	case termbox.KeyF1: //sort
 		dry.SortImages()
-	case termbox.KeyF5: // refresh
-		dry.Refresh()
-	case termbox.KeyF9: // docker events
-		dry.ShowDockerEvents()
-		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
-	case termbox.KeyF10: // docker info
-		dry.ShowInfo()
-		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
 	case termbox.KeyCtrlD: //remove dangling images
 		dry.RemoveDanglingImages()
 	case termbox.KeyCtrlE: //remove image
@@ -50,32 +32,31 @@ func (h imagesScreenEventHandler) handle(renderChan chan<- struct{}, event termb
 	case termbox.KeyEnter: //inspect image
 		dry.InspectImageAt(cursorPos)
 		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeViewChan)
 	default:
 		handled = false
 	}
 
 	if !handled {
 		switch event.Ch {
-		case '?', 'h', 'H': //help
-			focus = false
-			dry.ShowHelp()
-			go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
-		case '1':
-			cursor.Reset()
-			dry.ShowContainers()
-		case '3':
-			cursor.Reset()
-			dry.ShowNetworks()
+		case '2':
+			handled = true
+
 		case 'i', 'I': //image history
+			handled = true
+
 			dry.HistoryAt(cursorPos)
 			focus = false
-			go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.viewClosed)
+			go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeViewChan)
 		}
 
 	}
-	if focus {
-		renderChan <- struct{}{}
+	if handled {
+		h.setFocus(focus)
+		if h.hasFocus() {
+			h.renderChan <- struct{}{}
+		}
+	} else {
+		h.baseEventbandler.handle(event)
 	}
-	return focus
 }

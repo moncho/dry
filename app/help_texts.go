@@ -23,14 +23,15 @@ Connects to a Docker daemon, shows the list of containers and allows to execute 
 Visit <blue>http://moncho.github.io/dry/</> for more information.
 
 <yellow>Global keybinds</>
+	<white>F8</>        Shows Docker disk usage
 	<white>F9</>        Shows the last 10 events reported by Docker
 	<white>F10</>       Inspects Docker
 	<white>1</>         To container list
 	<white>2</>         To image list
 	<white>3</>         To network list
 	<white>h</>         Shows this help screen
-	<white>Crtl+c</>    Quits dry inmediately
-	<white>q</>         Quits <white>dry</>.
+	<white>Crtl+c</>    Quits <white>dry</> inmediately
+	<white>q</>         Quits <white>dry</>
 	<white>esc</>       Goes back to the main screen
 
 
@@ -79,16 +80,16 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 const (
 	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "
 	keyMappings    = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F3]:<darkgrey>Filter(By Name)</> <b>[F5]:<darkgrey>Refresh</> <b>[F9]:<darkgrey>Docker Events</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F3]:<darkgrey>Filter(By Name)</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
 		"<b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</><blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
 
 	imagesKeyMappings = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F9]:<darkgrey>Docker Events</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
 		"<b>[1]:<darkgrey>Containers</> <b>[3]:<darkgrey>Networks</> <blue>|</>" +
 		"<b>[Crtl+D]:<darkgrey>Remove Dangling</> <b>[Crtl+E]:<darkgrey>Remove</> <b>[Crtl+F]:<darkgrey>Force Remove</> <b>[I]:<darkgrey>History</> <blue>|</>"
 
 	networkKeyMappings = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[F9]:<darkgrey>Docker Events</> <b>[F10]:<darkgrey>Docker Info</> <blue>|</> " +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
 		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</>" +
 		"<b>[Crtl+E]:<darkgrey>Remove</> <b>[Enter]:<darkgrey>Inspect</>"
 

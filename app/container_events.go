@@ -15,13 +15,10 @@ type commandToExecute struct {
 	container types.Container
 }
 type containersScreenEventHandler struct {
-	dry                  *Dry
-	screen               *ui.Screen
-	keyboardQueueForView chan termbox.Event
-	closeView            chan struct{}
+	baseEventbandler
 }
 
-func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event termbox.Event) bool {
+func (h *containersScreenEventHandler) handle(event termbox.Event) {
 	focus := true
 	dry := h.dry
 	screen := h.screen
@@ -30,10 +27,6 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 	//Controls if the event has been handled by the first switch statement
 	handled := true
 	switch event.Key {
-	case termbox.KeyArrowUp: //cursor up
-		cursor.ScrollCursorUp()
-	case termbox.KeyArrowDown: // cursor down
-		cursor.ScrollCursorDown()
 	case termbox.KeyF1: //sort
 		dry.Sort()
 	case termbox.KeyF2: //show all containers
@@ -44,16 +37,6 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 			dry.SetContainerFilter(filter)
 		}
 		screen.ClearAndFlush()
-	case termbox.KeyF5: // refresh
-		dry.Refresh()
-	case termbox.KeyF9: // docker events
-		dry.ShowDockerEvents()
-		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeView)
-	case termbox.KeyF10: // docker info
-		dry.ShowInfo()
-		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeView)
 	case termbox.KeyCtrlE: //remove all stopped
 		if confirmation, err := appui.ReadLine("All stopped containers will be removed. Do you want to continue? (y/N) "); err == nil {
 			screen.ClearAndFlush()
@@ -69,13 +52,15 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 		dry.StopContainerAt(cursorPos)
 	case termbox.KeyEnter: //inspect
 		focus = false
-		go showContainerOptions(h, dry, screen, h.keyboardQueueForView, h.closeView)
+		go showContainerOptions(h, dry, screen, h.keyboardQueueForView, h.closeViewChan)
 	default: //Not handled
 		handled = false
 	}
 	if !handled {
+
 		switch event.Ch {
 		case 's', 'S': //stats
+			handled = true
 			if cursorPos >= 0 {
 				container := dry.ContainerAt(cursorPos)
 				if container != nil {
@@ -87,6 +72,8 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 				}
 			}
 		case 'i', 'I': //inspect
+			handled = true
+
 			if cursorPos >= 0 {
 				container := dry.ContainerAt(cursorPos)
 				if container != nil {
@@ -99,6 +86,8 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 				}
 			}
 		case 'l', 'L': //logs
+			handled = true
+
 			if cursorPos >= 0 {
 				container := dry.ContainerAt(cursorPos)
 				if container != nil {
@@ -110,17 +99,12 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 					})
 				}
 			}
-		case '?', 'h', 'H': //help
-			focus = false
-			dry.ShowHelp()
-			go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeView)
-		case '2':
-			cursor.Reset()
-			dry.ShowImages()
-		case '3':
-			cursor.Reset()
-			dry.ShowNetworks()
+		case '1':
+			//already in container screen
+			handled = true
 		case 'e', 'E': //remove
+			handled = true
+
 			container := dry.ContainerAt(cursorPos)
 			if container != nil {
 				//Since a command is created the focus is handled by handleCommand
@@ -133,13 +117,17 @@ func (h containersScreenEventHandler) handle(renderChan chan<- struct{}, event t
 			}
 		}
 	}
-	if focus {
-		renderChan <- struct{}{}
+	if handled {
+		h.setFocus(focus)
+		if h.hasFocus() {
+			h.renderChan <- struct{}{}
+		}
+	} else {
+		h.baseEventbandler.handle(event)
 	}
-	return focus
 }
 
-func (h containersScreenEventHandler) handleCommand(command commandToExecute) {
+func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 	focus := true
 	dry := h.dry
 	screen := h.screen
@@ -156,25 +144,25 @@ func (h containersScreenEventHandler) handleCommand(command commandToExecute) {
 	case docker.LOGS:
 		if logs, err := dry.Logs(id); err == nil {
 			focus = false
-			go appui.Stream(screen, logs, h.keyboardQueueForView, h.closeView)
+			go appui.Stream(screen, logs, h.keyboardQueueForView, h.closeViewChan)
 		}
 	case docker.RM:
 		dry.Rm(id)
 		screen.Cursor.ScrollCursorDown()
 	case docker.STATS:
 		focus = false
-		go statsScreen(command.container, screen, dry, h.keyboardQueueForView, h.closeView)
+		go statsScreen(command.container, screen, dry, h.keyboardQueueForView, h.closeViewChan)
 	case docker.INSPECT:
 		dry.Inspect(id)
 		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeView)
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeViewChan)
 	case docker.HISTORY:
 		dry.History(command.container.ImageID)
 		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeView)
+		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeViewChan)
 	}
 	if focus {
-		h.closeView <- struct{}{}
+		h.closeViewChan <- struct{}{}
 	}
 }
 
@@ -242,7 +230,7 @@ loop:
 }
 
 //statsScreen shows container stats on the screen
-func showContainerOptions(h containersScreenEventHandler, dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
+func showContainerOptions(h *containersScreenEventHandler, dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
 
 	selectedContainer := screen.Cursor.Position()
 	//TODO handle error

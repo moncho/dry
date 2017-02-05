@@ -78,8 +78,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 
 	renderChan <- struct{}{}
 
-	//timer and status bar are shown if the main
-	//loop has the focus
+	//timer and status bar are shown if the main loop has the focus
 	go func(focus *focusTracker) {
 		for {
 			select {
@@ -120,22 +119,19 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 
 	go func() {
 		for event := range keyboardQueue {
-			switch event.Type {
-			case termbox.EventKey:
-				if focus.hasFocus() {
-					handler := eventHandlerFactory(dry, screen, keyboardQueueForView, viewClosed)
-					if handler != nil {
-						keepFocusHere := handler.handle(renderChan, event)
-						focus.set(keepFocusHere)
-					} else {
-						log.Panic("There is no event handler")
-					}
+			if focus.hasFocus() {
+				handler := eventHandlerFactory(dry, screen, keyboardQueueForView, viewClosed, renderChan)
+				if handler != nil {
+					handler.handle(event)
+					focus.set(handler.hasFocus())
 				} else {
-					//Whoever has the focus, handles the event
-					select {
-					case keyboardQueueForView <- event:
-					default:
-					}
+					log.Panic("There is no event handler")
+				}
+			} else {
+				//Whoever has the focus, handles the event
+				select {
+				case keyboardQueueForView <- event:
+				default:
 				}
 			}
 		}
