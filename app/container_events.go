@@ -15,7 +15,7 @@ type commandToExecute struct {
 	container types.Container
 }
 type containersScreenEventHandler struct {
-	baseEventbandler
+	baseEventHandler
 }
 
 func (h *containersScreenEventHandler) handle(event termbox.Event) {
@@ -123,7 +123,7 @@ func (h *containersScreenEventHandler) handle(event termbox.Event) {
 			h.renderChan <- struct{}{}
 		}
 	} else {
-		h.baseEventbandler.handle(event)
+		h.baseEventHandler.handle(event)
 	}
 }
 

@@ -21,7 +21,7 @@ type eventHandler interface {
 		renderChan chan<- struct{})
 }
 
-type baseEventbandler struct {
+type baseEventHandler struct {
 	dry                  *Dry
 	screen               *ui.Screen
 	keyboardQueueForView chan termbox.Event
@@ -31,7 +31,7 @@ type baseEventbandler struct {
 	sync.RWMutex
 }
 
-func (b *baseEventbandler) initialize(dry *Dry,
+func (b *baseEventHandler) initialize(dry *Dry,
 	screen *ui.Screen,
 	keyboardQueueForView chan termbox.Event,
 	closeViewChan chan struct{},
@@ -43,19 +43,19 @@ func (b *baseEventbandler) initialize(dry *Dry,
 	b.renderChan = renderChan
 }
 
-func (b *baseEventbandler) hasFocus() bool {
+func (b *baseEventHandler) hasFocus() bool {
 	b.RLock()
 	defer b.RUnlock()
 	return b.focus
 }
 
-func (b *baseEventbandler) setFocus(focus bool) {
+func (b *baseEventHandler) setFocus(focus bool) {
 	b.Lock()
 	defer b.Unlock()
 	b.focus = focus
 }
 
-func (b *baseEventbandler) handle(event termbox.Event) {
+func (b *baseEventHandler) handle(event termbox.Event) {
 	dry := b.dry
 	screen := b.screen
 	cursor := screen.Cursor

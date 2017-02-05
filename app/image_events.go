@@ -6,7 +6,7 @@ import (
 )
 
 type imagesScreenEventHandler struct {
-	baseEventbandler
+	baseEventHandler
 }
 
 func (h *imagesScreenEventHandler) handle(event termbox.Event) {
@@ -57,6 +57,6 @@ func (h *imagesScreenEventHandler) handle(event termbox.Event) {
 			h.renderChan <- struct{}{}
 		}
 	} else {
-		h.baseEventbandler.handle(event)
+		h.baseEventHandler.handle(event)
 	}
 }
