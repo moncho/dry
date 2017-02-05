@@ -62,3 +62,11 @@ type Stats struct {
 	Stats            *types.StatsJSON
 	ProcessList      *types.ContainerProcessList
 }
+
+//PrunerReport represents the result of a prune operation
+type PrunerReport struct {
+	ContainerReport types.ContainersPruneReport
+	ImagesReport    types.ImagesPruneReport
+	NetworksReport  types.NetworksPruneReport
+	VolumesReport   types.VolumesPruneReport
+}

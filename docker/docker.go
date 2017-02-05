@@ -266,6 +266,37 @@ func (daemon *DockerDaemon) Ok() (bool, error) {
 	return daemon.err == nil, daemon.err
 }
 
+//Prune requests the Docker daemon to prune unused containers, images
+//networks and volumes
+func (daemon *DockerDaemon) Prune() (*PrunerReport, error) {
+	c := context.Background()
+
+	args := filters.Args{}
+	args.Add("all", "y")
+	cReport, err := daemon.client.ContainersPrune(c, args)
+	if err != nil {
+		return nil, err
+	}
+	iReport, err := daemon.client.ImagesPrune(c, args)
+	if err != nil {
+		return nil, err
+	}
+	nReport, err := daemon.client.NetworksPrune(c, args)
+	if err != nil {
+		return nil, err
+	}
+	vRreport, err := daemon.client.VolumesPrune(c, args)
+	if err != nil {
+		return nil, err
+	}
+	return &PrunerReport{
+		ContainerReport: cReport,
+		ImagesReport:    iReport,
+		NetworksReport:  nReport,
+		VolumesReport:   vRreport}, nil
+
+}
+
 //RestartContainer restarts the container with the given id
 func (daemon *DockerDaemon) RestartContainer(id string) error {
 	//TODO use cancel function
