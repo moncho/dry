@@ -50,6 +50,12 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	keyboardQueueForView := make(chan termbox.Event)
 	dryOutputChan := dry.OuputChannel()
 	statusBar := ui.NewStatusBar(0, screen.Width)
+	eventHandlerFactory := &eventHandlerFactory{
+		dry:                  dry,
+		screen:               screen,
+		keyboardQueueForView: keyboardQueueForView,
+		viewClosed:           viewClosed,
+		renderChan:           renderChan}
 
 	defer timer.Stop()
 	defer close(done)
@@ -120,7 +126,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	go func() {
 		for event := range keyboardQueue {
 			if focus.hasFocus() {
-				handler := eventHandlerFactory(dry, screen, keyboardQueueForView, viewClosed, renderChan)
+				handler := eventHandlerFactory.handlerFor(dry.viewMode())
 				if handler != nil {
 					handler.handle(event)
 					focus.set(handler.hasFocus())

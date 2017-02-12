@@ -18,6 +18,11 @@ func (_m *ContainerDaemonMock) ContainerStore() *drydocker.ContainerStore {
 	return nil
 }
 
+//DiskUsage mock
+func (_m *ContainerDaemonMock) DiskUsage() (types.DiskUsage, error) {
+	return types.DiskUsage{}, nil
+}
+
 // DockerEnv provides a mock function with given fields:
 func (_m *ContainerDaemonMock) DockerEnv() *drydocker.DockerEnv {
 	return &drydocker.DockerEnv{DockerHost: "dry.io", DockerTLSVerify: false, DockerCertPath: ""}
@@ -155,10 +160,15 @@ func (_m *ContainerDaemonMock) NetworkInspect(id string) (types.NetworkResource,
 	return types.NetworkResource{}, nil
 }
 
-// Ok provides a mock function with given fields:
+// Ok mocks OK
 func (_m *ContainerDaemonMock) Ok() (bool, error) {
 
 	return false, nil
+}
+
+// Prune mocks prune command
+func (_m *ContainerDaemonMock) Prune() (*drydocker.PruneReport, error) {
+	return nil, nil
 }
 
 // RestartContainer provides a mock function with given fields: id

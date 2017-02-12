@@ -47,7 +47,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 				screen.Cursor.Position(),
 				sortMode)
 			d.ui.ContainerComponent.PrepareToRender(data)
-			screen.Render(1, d.ui.ContainerComponent.Render())
+			screen.RenderRenderer(1, d.ui.ContainerComponent)
 
 			keymap = keyMappings
 			title := fmt.Sprintf(
@@ -76,8 +76,8 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 					sortMode)
 
 				renderer.PrepareForRender(data)
-				screen.Render(1,
-					renderer.Render())
+				screen.RenderRenderer(1,
+					renderer)
 			} else {
 				screen.Render(1, err.Error())
 			}
@@ -89,14 +89,27 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Networks:
 		{
-			screen.Render(1,
-				appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.state.SortNetworksMode).Render())
+			screen.RenderRenderer(1,
+				appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.state.SortNetworksMode))
 			what = "Networks"
 			count = d.dockerDaemon.NetworksCount()
 			updateCursorPosition(screen.Cursor, count)
 			keymap = networkKeyMappings
 			renderViewTitle(screen, what, count)
 
+		}
+	case DiskUsage:
+		{
+			if du, err := d.dockerDaemon.DiskUsage(); err == nil {
+				d.ui.DiskUsageComponet.PrepareToRender(&du, d.PruneReport())
+				screen.RenderRenderer(1,
+					d.ui.DiskUsageComponet)
+
+			} else {
+				screen.Render(1,
+					"There was an error retrieving disk usage information.")
+			}
+			keymap = diskUsageKeyMappings
 		}
 
 	}

@@ -91,6 +91,13 @@ func (daemon *DockerDaemon) ContainerByID(cid string) *dockerTypes.Container {
 	return daemon.containerStore.Get(cid)
 }
 
+//DiskUsage returns reported Docker disk usage
+func (daemon *DockerDaemon) DiskUsage() (dockerTypes.DiskUsage, error) {
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	return daemon.client.DiskUsage(ctx)
+}
+
 //DockerEnv returns Docker-related environment variables
 func (daemon *DockerDaemon) DockerEnv() *DockerEnv {
 	return daemon.dockerEnv
@@ -268,11 +275,11 @@ func (daemon *DockerDaemon) Ok() (bool, error) {
 
 //Prune requests the Docker daemon to prune unused containers, images
 //networks and volumes
-func (daemon *DockerDaemon) Prune() (*PrunerReport, error) {
+func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
 	c := context.Background()
 
-	args := filters.Args{}
-	args.Add("all", "y")
+	args := filters.NewArgs()
+	args.Add("force", "y")
 	cReport, err := daemon.client.ContainersPrune(c, args)
 	if err != nil {
 		return nil, err
@@ -289,7 +296,7 @@ func (daemon *DockerDaemon) Prune() (*PrunerReport, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &PrunerReport{
+	return &PruneReport{
 		ContainerReport: cReport,
 		ImagesReport:    iReport,
 		NetworksReport:  nReport,

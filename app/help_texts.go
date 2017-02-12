@@ -93,5 +93,9 @@ const (
 		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</>" +
 		"<b>[Crtl+E]:<darkgrey>Remove</> <b>[Enter]:<darkgrey>Inspect</>"
 
+	diskUsageKeyMappings = commonMappings +
+		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</> <b>[3]:<darkgrey>Networks</> <blue>|</>" +
+		"<b>[Crtl+P]:<darkgrey>Prune</>"
+
 	commandsMenuBar = "<b>[Esc]:<darkgrey>Back</> <b>[Up]:<darkgrey>Cursor Up</> <b>[Down]:<darkgrey>Cursor Down</> <b>[Intro]:<darkgrey>Execute Command</>"
 )

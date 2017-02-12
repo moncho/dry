@@ -10,6 +10,7 @@ import (
 //ContainerDaemon describes what is expected from the container daemon
 type ContainerDaemon interface {
 	ContainerStore() *ContainerStore
+	DiskUsage() (types.DiskUsage, error)
 	DockerEnv() *DockerEnv
 	Events() (<-chan events.Message, chan<- struct{}, error)
 	EventLog() *EventLog
@@ -28,6 +29,7 @@ type ContainerDaemon interface {
 	NetworksCount() int
 	NetworkInspect(id string) (types.NetworkResource, error)
 	Ok() (bool, error)
+	Prune() (*PruneReport, error)
 	RestartContainer(id string) error
 	Rm(id string) error
 	Rmi(id string, force bool) ([]types.ImageDelete, error)
@@ -63,10 +65,18 @@ type Stats struct {
 	ProcessList      *types.ContainerProcessList
 }
 
-//PrunerReport represents the result of a prune operation
-type PrunerReport struct {
+//PruneReport represents the result of a prune operation
+type PruneReport struct {
 	ContainerReport types.ContainersPruneReport
 	ImagesReport    types.ImagesPruneReport
 	NetworksReport  types.NetworksPruneReport
 	VolumesReport   types.VolumesPruneReport
+}
+
+//TotalSpaceReclaimed reports the total space reclaimed
+func (p *PruneReport) TotalSpaceReclaimed() uint64 {
+	total := p.ContainerReport.SpaceReclaimed
+	total += p.ImagesReport.SpaceReclaimed
+	total += p.VolumesReport.SpaceReclaimed
+	return total
 }
