@@ -3,9 +3,9 @@ package logrus
 import (
 	"bytes"
 	"fmt"
-	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -20,16 +20,10 @@ const (
 
 var (
 	baseTimestamp time.Time
-	isTerminal    bool
 )
 
 func init() {
 	baseTimestamp = time.Now()
-	isTerminal = IsTerminal()
-}
-
-func miniTS() int {
-	return int(time.Since(baseTimestamp) / time.Second)
 }
 
 type TextFormatter struct {
@@ -54,11 +48,15 @@ type TextFormatter struct {
 	// that log extremely frequently and don't use the JSON formatter this may not
 	// be desired.
 	DisableSorting bool
+
+	// Whether the logger's out is to a terminal
+	isTerminal   bool
+	terminalOnce sync.Once
 }
 
 func (f *TextFormatter) Format(entry *Entry) ([]byte, error) {
 	var b *bytes.Buffer
-	var keys []string = make([]string, 0, len(entry.Data))
+	keys := make([]string, 0, len(entry.Data))
 	for k := range entry.Data {
 		keys = append(keys, k)
 	}
@@ -74,8 +72,13 @@ func (f *TextFormatter) Format(entry *Entry) ([]byte, error) {
 
 	prefixFieldClashes(entry.Data)
 
-	isColorTerminal := isTerminal && (runtime.GOOS != "windows")
-	isColored := (f.ForceColors || isColorTerminal) && !f.DisableColors
+	f.terminalOnce.Do(func() {
+		if entry.Logger != nil {
+			f.isTerminal = IsTerminal(entry.Logger.Out)
+		}
+	})
+
+	isColored := (f.ForceColors || f.isTerminal) && !f.DisableColors
 
 	timestampFormat := f.TimestampFormat
 	if timestampFormat == "" {
@@ -115,8 +118,10 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *Entry, keys []strin
 
 	levelText := strings.ToUpper(entry.Level.String())[0:4]
 
-	if !f.FullTimestamp {
-		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%04d] %-44s ", levelColor, levelText, miniTS(), entry.Message)
+	if f.DisableTimestamp {
+		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m %-44s ", levelColor, levelText, entry.Message)
+	} else if !f.FullTimestamp {
+		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%04d] %-44s ", levelColor, levelText, int(entry.Time.Sub(baseTimestamp)/time.Second), entry.Message)
 	} else {
 		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s] %-44s ", levelColor, levelText, entry.Time.Format(timestampFormat), entry.Message)
 	}

@@ -50,11 +50,20 @@ package unix
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include <linux/icmpv6.h>
-#include <termios.h>
+#include <asm/termbits.h>
 #include <time.h>
 #include <unistd.h>
 #include <ustat.h>
 #include <utime.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
+
+#ifdef TCSETS2
+// On systems that have "struct termios2" use this as type Termios.
+typedef struct termios2 termios_t;
+#else
+typedef struct termios termios_t;
+#endif
 
 enum {
 	sizeofPtr = sizeof(void*),
@@ -91,6 +100,8 @@ typedef struct user_regs PtraceRegs;
 typedef struct user_pt_regs PtraceRegs;
 #elif defined(__powerpc64__)
 typedef struct pt_regs PtraceRegs;
+#elif defined(__mips__)
+typedef struct user PtraceRegs;
 #else
 typedef struct user_regs_struct PtraceRegs;
 #endif
@@ -98,10 +109,13 @@ typedef struct user_regs_struct PtraceRegs;
 // The real epoll_event is a union, and godefs doesn't handle it well.
 struct my_epoll_event {
 	uint32_t events;
-#ifdef __ARM_EABI__
+#if defined(__ARM_EABI__) || defined(__aarch64__)
 	// padding is not specified in linux/eventpoll.h but added to conform to the
 	// alignment requirements of EABI
 	int32_t padFd;
+#endif
+#ifdef  __powerpc64__
+	int32_t _padFd;
 #endif
 	int32_t fd;
 	int32_t pad;
@@ -187,6 +201,8 @@ type RawSockaddrLinklayer C.struct_sockaddr_ll
 
 type RawSockaddrNetlink C.struct_sockaddr_nl
 
+type RawSockaddrHCI C.struct_sockaddr_hci
+
 type RawSockaddr C.struct_sockaddr
 
 type RawSockaddrAny C.struct_sockaddr_any
@@ -226,6 +242,7 @@ const (
 	SizeofSockaddrUnix      = C.sizeof_struct_sockaddr_un
 	SizeofSockaddrLinklayer = C.sizeof_struct_sockaddr_ll
 	SizeofSockaddrNetlink   = C.sizeof_struct_sockaddr_nl
+	SizeofSockaddrHCI       = C.sizeof_struct_sockaddr_hci
 	SizeofLinger            = C.sizeof_struct_linger
 	SizeofIPMreq            = C.sizeof_struct_ip_mreq
 	SizeofIPMreqn           = C.sizeof_struct_ip_mreqn
@@ -391,9 +408,10 @@ type EpollEvent C.struct_my_epoll_event
 const (
 	AT_FDCWD            = C.AT_FDCWD
 	AT_REMOVEDIR        = C.AT_REMOVEDIR
+	AT_SYMLINK_FOLLOW   = C.AT_SYMLINK_FOLLOW
 	AT_SYMLINK_NOFOLLOW = C.AT_SYMLINK_NOFOLLOW
 )
 
 // Terminal handling
 
-type Termios C.struct_termios
+type Termios C.termios_t

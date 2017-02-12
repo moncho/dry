@@ -256,14 +256,6 @@ func (f *decompressor) getCode(h *huffman) uint16 {
 	return 0
 }
 
-// mod17 computes the value mod 17.
-func mod17(b byte) byte {
-	for b >= 17 {
-		b -= 17
-	}
-	return b
-}
-
 // readTree updates the huffman tree path lengths in lens by
 // reading and decoding lengths from the byte stream. lens
 // should be prepopulated with the previous block's tree's path
@@ -288,7 +280,7 @@ func (f *decompressor) readTree(lens []byte) error {
 		}
 		switch {
 		case c <= 16: // length is delta from previous length
-			lens[i] = mod17(lens[i] + 17 - c)
+			lens[i] = (lens[i] + 17 - c) % 17
 			i++
 		case c == 17: // next n + 4 lengths are zero
 			zeroes := int(f.getBits(4)) + 4
@@ -317,7 +309,7 @@ func (f *decompressor) readTree(lens []byte) error {
 			if c > 16 {
 				return errCorrupt
 			}
-			l := mod17(lens[i] + 17 - c)
+			l := (lens[i] + 17 - c) % 17
 			for j := 0; j < same; j++ {
 				lens[i+j] = l
 			}

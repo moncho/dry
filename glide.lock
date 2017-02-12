@@ -1,5 +1,5 @@
-hash: 8d9fea1da404e15898ef8b37c55a63953efcf09ac9c2e677d15fdcfa99192f19
-updated: 2017-01-21T21:32:19.257573094+01:00
+hash: e8a00d93db3b9d873cc317009d31cead552b3f5ebc226206c61d210a13dd26c6
+updated: 2017-02-12T20:43:40.860440058+01:00
 imports:
 - name: github.com/chzyer/readline
   version: c914be64f07d9998f52bf0d598ec26d457168c0f
@@ -11,6 +11,7 @@ imports:
 - name: github.com/docker/docker
   version: 2b89356c07b1824041985386d0c9485e49d9b987
   subpackages:
+  - api
   - api/types
   - api/types/blkiodev
   - api/types/container
@@ -25,11 +26,22 @@ imports:
   - api/types/time
   - api/types/versions
   - api/types/volume
+  - cli
+  - cli/command/formatter
+  - cli/command/inspect
   - cli/debug
   - client
   - opts
+  - pkg/ioutils
+  - pkg/longpath
+  - pkg/random
   - pkg/stdcopy
+  - pkg/stringid
+  - pkg/stringutils
+  - pkg/system
+  - pkg/templates
   - pkg/tlsconfig
+  - reference
 - name: github.com/docker/go-connections
   version: 5b7154ba2efe13ff86ae8830a9e7cb120b080d6e
   subpackages:
@@ -38,12 +50,16 @@ imports:
   - tlsconfig
 - name: github.com/docker/go-units
   version: 0bbddae09c5a5419a8c6dcdd7ff90da3d450393b
+- name: github.com/docker/libtrust
+  version: fa567046d9b14f6aa788882a950d69651d230b21
 - name: github.com/gizak/termui
   version: 202925a536c7febe22698792a2b6de68edb2726d
 - name: github.com/gosuri/uitable
   version: 62e40473eadf9579716227a0033cd8db16e1c500
   subpackages:
   - util/strutil
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/jessevdk/go-flags
   version: fc93116606d0a71d7e9de0ad5734fdb4b8eae834
 - name: github.com/maruel/panicparse
@@ -53,7 +69,7 @@ imports:
 - name: github.com/mattn/go-runewidth
   version: 12e0ff74603c9a3209d8bf84f8ab349fe1ad9477
 - name: github.com/Microsoft/go-winio
-  version: 24a3e3d3fc7451805e09d11e11e95d9a0a4f205e
+  version: fff283ad5116362ca252298cfc9b95828956d85d
 - name: github.com/mitchellh/go-homedir
   version: 756f7b183b7ab78acdbbee5c7f392838ed459dda
 - name: github.com/mitchellh/go-wordwrap
@@ -62,14 +78,22 @@ imports:
   version: 362329b0aa6447eadd52edd8d660ec1dff470295
 - name: github.com/olekukonko/tablewriter
   version: cca8bbc0798408af109aaaa239cbd2634846b340
+- name: github.com/opencontainers/go-digest
+  version: aa2ec055abd10d26d539eb630a92241b781ce4bc
 - name: github.com/opencontainers/runc
   version: c6db82f9219b2ea4c98f80560205ed6c65aeea19
   subpackages:
   - libcontainer/user
+- name: github.com/patrickmn/go-cache
+  version: 1881a9bccb818787f68c52bfba648c6cf34c34fa
 - name: github.com/pkg/errors
   version: 494e70f7620561491c2ca11e185bbef4b70060da
 - name: github.com/Sirupsen/logrus
-  version: d26492970760ca5d33129d2d799e34be5c4782eb
+  version: c078b1e43f58d563c74cebe63c85789e76ddb627
+- name: github.com/spf13/cobra
+  version: 312092086bed4968099259622145a0c9ae280064
+- name: github.com/spf13/pflag
+  version: 5644820622454e71517561946e3d94b9f9db6842
 - name: golang.org/x/net
   version: f2499483f923065a842d38eb4c7f1927e6fc6e6d
   subpackages:
@@ -77,7 +101,7 @@ imports:
   - context/ctxhttp
   - proxy
 - name: golang.org/x/sys
-  version: 354f231ae1a9ca2d3a6a1a7c5d40b1213d761675
+  version: e82cb4d7dffc35bcec7bc8bf9e402377e0ecf3f4
   subpackages:
   - unix
   - windows

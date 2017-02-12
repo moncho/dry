@@ -69,4 +69,5 @@ import:
   - libcontainer/user
 - package: github.com/pkg/errors
   version: 494e70f7620561491c2ca11e185bbef4b70060da
-
+- package: github.com/patrickmn/go-cache
+  version: ^2.0.0
