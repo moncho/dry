@@ -105,6 +105,13 @@ func (screen *Screen) Flush() *Screen {
 	return screen
 }
 
+//Position tells on which screen line the cursor is
+func (cursor *Cursor) Position() int {
+	cursor.mutex.RLock()
+	defer cursor.mutex.RUnlock()
+	return cursor.line
+}
+
 // RenderBufferer renders all Bufferer in the given order from left to right,
 // right could overlap on left ones.
 // This allows usage of termui widgets.
@@ -121,10 +128,6 @@ func (screen *Screen) RenderBufferer(bs ...termui.Bufferer) {
 		}
 	}
 	termbox.Flush()
-}
-
-func toTmAttr(x termui.Attribute) termbox.Attribute {
-	return termbox.Attribute(x)
 }
 
 // RenderLine takes the incoming string, tokenizes it to extract markup
@@ -182,11 +185,25 @@ func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor
 	fill(start+1, y, screen.Width, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
 }
 
-//Position tells on which screen line the cursor is
-func (cursor *Cursor) Position() int {
-	cursor.mutex.RLock()
-	defer cursor.mutex.RUnlock()
-	return cursor.line
+//Render renders the given content starting from the given row
+func (screen *Screen) Render(row int, str string) {
+	screen.RenderAtColumn(0, row, str)
+}
+
+//RenderAtColumn renders the given content starting from
+//the given row at the given column
+func (screen *Screen) RenderAtColumn(column, initialRow int, str string) {
+	if !screen.cleared {
+		screen.Clear()
+	}
+	for row, line := range strings.Split(str, "\n") {
+		screen.RenderLine(column, initialRow+row, line)
+	}
+}
+
+//RenderRenderer renders the given renderer starting from the given row
+func (screen *Screen) RenderRenderer(row int, renderer Renderer) {
+	screen.Render(row, renderer.Render())
 }
 
 //Reset sets the cursor in the initial position
@@ -222,19 +239,6 @@ func (cursor *Cursor) ScrollTo(pos int) {
 
 }
 
-//Render renders the given content starting from
-//the given row
-func (screen *Screen) Render(initialRow int, str string) {
-	screen.RenderAtColumn(0, initialRow, str)
-}
-
-//RenderAtColumn renders the given content starting from
-//the given row at the given column
-func (screen *Screen) RenderAtColumn(column, initialRow int, str string) {
-	if !screen.cleared {
-		screen.Clear()
-	}
-	for row, line := range strings.Split(str, "\n") {
-		screen.RenderLine(column, initialRow+row, line)
-	}
+func toTmAttr(x termui.Attribute) termbox.Attribute {
+	return termbox.Attribute(x)
 }
