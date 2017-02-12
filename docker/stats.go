@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 )
 
 //StatsChannel creates a channel on which to receive the stats of the given container
@@ -18,7 +18,8 @@ func StatsChannel(daemon *DockerDaemon, container *types.Container, streamStats 
 	go func() {
 		cli := daemon.client
 		ctx, cancel := context.WithCancel(context.Background())
-		responseBody, err := cli.ContainerStats(ctx, container.Names[0], streamStats)
+		containerStats, err := cli.ContainerStats(ctx, container.Names[0], streamStats)
+		responseBody := containerStats.Body
 		defer responseBody.Close()
 		defer close(stats)
 		if err != nil {

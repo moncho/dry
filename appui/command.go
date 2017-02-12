@@ -1,7 +1,7 @@
 package appui
 
 import (
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
 )

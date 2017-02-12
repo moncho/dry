@@ -6,7 +6,7 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 )
 
 const (
@@ -16,6 +16,8 @@ const (
 	DefaultImageTableFormat = "{{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}} ago\t{{.Size}}"
 	//DefaultNetworkTableFormat is the default table format to render a list of networks
 	DefaultNetworkTableFormat = "{{.ID}}\t{{.Name}}\t{{.Driver}}\t{{.Containers}}"
+	//DefaultDiskUsageTableFormat table format to render Docker disk usage
+	DefaultDiskUsageTableFormat = "{{.Type}}\t{{.Total}}\t{{.Active}}\t{{.Size}}\t{{.Reclaimable}}"
 )
 
 // FormattingContext contains information required by the formatter to print the output as desired.
@@ -76,7 +78,7 @@ func tableFormat(ctx FormattingContext, containers []*types.Container) {
 }
 
 // FormatImages formats the given images.
-func FormatImages(ctx FormattingContext, images []types.Image) {
+func FormatImages(ctx FormattingContext, images []types.ImageSummary) {
 	var (
 		buffer = bytes.NewBufferString("")
 		tmpl   = ctx.Template

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/docker/engine-api/types"
-	"github.com/docker/engine-api/types/events"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/events"
 	drydocker "github.com/moncho/dry/docker"
 )
 
@@ -16,6 +16,11 @@ type ContainerDaemonMock struct {
 //ContainerStore mock
 func (_m *ContainerDaemonMock) ContainerStore() *drydocker.ContainerStore {
 	return nil
+}
+
+//DiskUsage mock
+func (_m *ContainerDaemonMock) DiskUsage() (types.DiskUsage, error) {
+	return types.DiskUsage{}, nil
 }
 
 // DockerEnv provides a mock function with given fields:
@@ -40,12 +45,12 @@ func (_m *ContainerDaemonMock) History(id string) ([]types.ImageHistory, error) 
 }
 
 //ImageAt mock
-func (_m *ContainerDaemonMock) ImageAt(pos int) (*types.Image, error) {
+func (_m *ContainerDaemonMock) ImageAt(pos int) (*types.ImageSummary, error) {
 	return nil, nil
 }
 
 //Images mock
-func (_m *ContainerDaemonMock) Images() ([]types.Image, error) {
+func (_m *ContainerDaemonMock) Images() ([]types.ImageSummary, error) {
 
 	imagesJSON := `[
 		 {
@@ -94,7 +99,7 @@ func (_m *ContainerDaemonMock) Images() ([]types.Image, error) {
 							"RepoDigests": ["03b4557ad7b9"]
 		 }
 	]`
-	var images []types.Image
+	var images []types.ImageSummary
 	err := json.Unmarshal([]byte(imagesJSON), &images)
 	return images, err
 }
@@ -155,10 +160,15 @@ func (_m *ContainerDaemonMock) NetworkInspect(id string) (types.NetworkResource,
 	return types.NetworkResource{}, nil
 }
 
-// Ok provides a mock function with given fields:
+// Ok mocks OK
 func (_m *ContainerDaemonMock) Ok() (bool, error) {
 
 	return false, nil
+}
+
+// Prune mocks prune command
+func (_m *ContainerDaemonMock) Prune() (*drydocker.PruneReport, error) {
+	return nil, nil
 }
 
 // RestartContainer provides a mock function with given fields: id

@@ -3,7 +3,7 @@ package docker
 import (
 	"sort"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 )
 
 //Allowed sort methods

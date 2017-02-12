@@ -3,7 +3,7 @@ package docker
 import (
 	"strings"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/go-units"
 )
 
@@ -20,7 +20,7 @@ const (
 type ImageFormatter struct {
 	trunc  bool
 	header []string
-	image  types.Image
+	image  types.ImageSummary
 }
 
 func (formatter *ImageFormatter) addHeader(header string) {

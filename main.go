@@ -60,7 +60,7 @@ func newApp(screen *ui.Screen, dockerEnv *docker.DockerEnv) (*app.Dry, error) {
 }
 
 func newDockerEnv(opts dryOptions) *docker.DockerEnv {
-	dockerEnv := &docker.DockerEnv{}
+	dockerEnv := docker.NewEnv()
 	if opts.DockerHost == "" {
 		if os.Getenv("DOCKER_HOST") == "" {
 			log.Info(

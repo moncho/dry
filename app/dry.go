@@ -7,11 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/docker/engine-api/types"
-	"github.com/docker/engine-api/types/events"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/events"
 	"github.com/moncho/dry/appui"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
+	cache "github.com/patrickmn/go-cache"
 )
 
 const (
@@ -40,7 +41,7 @@ type Dry struct {
 	dockerEvents       <-chan events.Message
 	dockerEventsDone   chan<- struct{}
 	imageHistory       []types.ImageHistory
-	images             []types.Image
+	images             []types.ImageSummary
 	info               types.Info
 	inspectedContainer types.ContainerJSON
 	inspectedImage     types.ImageInspect
@@ -51,6 +52,8 @@ type Dry struct {
 	output             chan string
 	refreshTimerMutex  sync.Locker
 	state              *state
+	//cache is a potential replacement for state
+	cache *cache.Cache
 }
 
 //Changed is true if the application state has changed
@@ -238,6 +241,26 @@ func (d *Dry) Ok() (bool, error) {
 	return d.dockerDaemon.Ok()
 }
 
+//Prune runs docker prune
+func (d *Dry) Prune() {
+	pr, err := d.dockerDaemon.Prune()
+	if err == nil {
+		d.cache.Add(pruneReport, pr, 30*time.Second)
+	} else {
+		d.appmessage(
+			fmt.Sprintf(
+				"<red>Error running prune. %s</>", err))
+	}
+}
+
+//PruneReport returns docker prune report, if any available
+func (d *Dry) PruneReport() *drydocker.PruneReport {
+	if pr, ok := d.cache.Get(pruneReport); ok {
+		return pr.(*drydocker.PruneReport)
+	}
+	return nil
+}
+
 //Refresh forces a dry refresh
 func (d *Dry) Refresh() {
 	d.refreshTimerMutex.Lock()
@@ -395,6 +418,11 @@ func (d *Dry) ShowMainView() {
 //ShowContainers changes the state of dry to show the container list
 func (d *Dry) ShowContainers() {
 	d.changeViewMode(Main)
+}
+
+//ShowDiskUsage changes the state of dry to show docker disk usage
+func (d *Dry) ShowDiskUsage() {
+	d.changeViewMode(DiskUsage)
 }
 
 //ShowDockerEvents changes the state of dry to show the log of docker events
@@ -623,6 +651,7 @@ func (d *Dry) setChanged(changed bool) {
 }
 func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 	dockerEvents, dockerEventsDone, err := d.Events()
+	c := cache.New(5*time.Minute, 30*time.Second)
 	if err == nil {
 
 		state := &state{
@@ -647,6 +676,7 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 		app.refreshTimerMutex = &sync.Mutex{}
 		//first refresh should not happen inmediately after dry creation
 		app.lastRefresh = time.Now().Add(TimeBetweenRefresh)
+		app.cache = c
 		app.startDry()
 		return app, nil
 	}

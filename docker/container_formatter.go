@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/go-units"
 	"github.com/gosuri/uitable/util/strutil"
 )
@@ -170,10 +170,10 @@ func DisplayablePorts(ports []types.Port) string {
 	var groupMapKeys []string
 	sort.Sort(byPortInfo(ports))
 	for _, port := range ports {
-		current := port.PrivatePort
+		current := int(port.PrivatePort)
 		portKey := port.Type
 		if port.IP != "" {
-			if port.PublicPort != current {
+			if int(port.PublicPort) != current {
 				hostMappings = append(hostMappings,
 					fmt.Sprintf("%s:%d->%d/%s", port.IP, port.PublicPort, port.PrivatePort, port.Type))
 				continue

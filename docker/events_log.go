@@ -1,6 +1,6 @@
 package docker
 
-import "github.com/docker/engine-api/types/events"
+import "github.com/docker/docker/api/types/events"
 
 const (
 	//DefaultCapacity of a new EventLog.

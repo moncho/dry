@@ -1,4 +1,4 @@
-box: golang:1.6.3
+box: golang:1.8rc2
 dev:
   steps:
     - internal/watch:
@@ -13,16 +13,6 @@ build:
     # golint step!
     - wercker/golint:
       exclude: "vendor"
-
-    - script:
-        name: install godep
-        code: |
-          go get github.com/tools/godep
-
-    - script:
-        name: godep restore
-        code: |
-           godep restore
 
     # Build the project
     - script:

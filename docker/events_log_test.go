@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/docker/engine-api/types/events"
+	"github.com/docker/docker/api/types/events"
 )
 
 func TestEventLogCreation(t *testing.T) {

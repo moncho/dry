@@ -9,7 +9,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/docker/engine-api/types/events"
+	"github.com/docker/docker/api/types/events"
 	"github.com/moncho/dry/ui"
 )
 

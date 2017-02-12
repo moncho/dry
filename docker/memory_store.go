@@ -3,7 +3,7 @@ package docker
 import (
 	"sync"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 )
 
 // ContainerStore keeps track of containers.
