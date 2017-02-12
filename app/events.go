@@ -100,28 +100,40 @@ func (b *baseEventHandler) handle(event termbox.Event) {
 	}
 }
 
-//eventHandlerFactory creates eventHandlers
-func eventHandlerFactory(
-	dry *Dry,
-	screen *ui.Screen,
-	keyboardQueueForView chan termbox.Event,
-	viewClosed chan struct{},
-	renderChan chan<- struct{}) eventHandler {
-	var handler eventHandler
-	switch dry.viewMode() {
-	case Images:
-		handler = &imagesScreenEventHandler{}
+type eventHandlerFactory struct {
+	dry                  *Dry
+	screen               *ui.Screen
+	keyboardQueueForView chan termbox.Event
+	viewClosed           chan struct{}
+	renderChan           chan<- struct{}
+	handlers             map[viewMode]eventHandler
+	once                 sync.Once
+}
 
-	case Networks:
-		handler = &networksScreenEventHandler{}
+//handlerFor creates eventHandlers
+func (eh *eventHandlerFactory) handlerFor(view viewMode) eventHandler {
 
-	case DiskUsage:
-		handler = &dfScreenEventHandler{}
+	eh.once.Do(func() {
+		eh.handlers = make(map[viewMode]eventHandler)
+		handler := &imagesScreenEventHandler{}
+		handler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
+		eh.handlers[Images] = handler
 
-	default:
-		handler = &containersScreenEventHandler{}
+		iHandler := &networksScreenEventHandler{}
+		iHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
 
-	}
-	handler.initialize(dry, screen, keyboardQueueForView, viewClosed, renderChan)
-	return handler
+		eh.handlers[Networks] = iHandler
+
+		duHandler := &diskUsageScreenEventHandler{}
+		duHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
+
+		eh.handlers[DiskUsage] = duHandler
+
+		cHandler := &containersScreenEventHandler{}
+		cHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
+		eh.handlers[Main] = cHandler
+
+	})
+
+	return eh.handlers[view]
 }
