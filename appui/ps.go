@@ -45,7 +45,7 @@ type DockerPs struct {
 	height                 int
 	layout                 *ui.Layout
 	data                   *DockerPsRenderData
-	renderLock             sync.Mutex
+	renderLock             sync.RWMutex
 }
 
 //NewDockerPsRenderer creates a renderer for a container list
@@ -80,8 +80,8 @@ func (r *DockerPs) PrepareToRender(data *DockerPsRenderData) {
 
 //Render docker ps
 func (r *DockerPs) Render() string {
-	r.renderLock.Lock()
-	defer r.renderLock.Unlock()
+	r.renderLock.RLock()
+	defer r.renderLock.RUnlock()
 
 	vars := struct {
 		ContainerTable string
