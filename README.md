@@ -30,6 +30,7 @@ Besides this, it:
 ```
 [F1]        sort list
 [F5]        refresh list
+[F8]        show docker disk usage
 [F9]        show last 10 docker events
 [F10]       show docker info
 [1]         show container list
