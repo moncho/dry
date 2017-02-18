@@ -12,6 +12,7 @@ const (
 	name               = "NAME"
 	driver             = "DRIVER"
 	numberOfContainers = "NUMBER OF CONTAINERS"
+	scope              = "SCOPE"
 )
 
 //NetworkFormatter knows how to pretty-print the information of an network
@@ -56,4 +57,10 @@ func (formatter *NetworkFormatter) Containers() string {
 		return strconv.Itoa(len(formatter.network.Containers))
 	}
 	return "0"
+}
+
+//Scope prettifies the network scope
+func (formatter *NetworkFormatter) Scope() string {
+	formatter.addHeader(scope)
+	return formatter.network.Scope
 }
