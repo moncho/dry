@@ -58,8 +58,8 @@ func (screen *Screen) Resize() *Screen {
 
 //Clear makes the entire screen blank using default background color.
 func (screen *Screen) Clear() *Screen {
-	screen.RLock()
-	defer screen.RUnlock()
+	screen.Lock()
+	defer screen.Unlock()
 	termbox.Clear(termbox.Attribute(screen.theme.Fg), termbox.Attribute(screen.theme.Bg))
 	return screen
 }
@@ -92,6 +92,7 @@ func (screen *Screen) ClearLine(x int, y int) *Screen {
 	return screen
 }
 
+//ColorTheme changes the color theme of the screen to the given one.
 func (screen *Screen) ColorTheme(theme *ColorTheme) *Screen {
 	screen.Lock()
 	defer screen.Unlock()
@@ -101,8 +102,8 @@ func (screen *Screen) ColorTheme(theme *ColorTheme) *Screen {
 
 //Flush synchronizes the internal buffer with the terminal.
 func (screen *Screen) Flush() *Screen {
-	screen.RLock()
-	defer screen.RUnlock()
+	screen.Lock()
+	defer screen.Unlock()
 	termbox.Flush()
 	return screen
 }
