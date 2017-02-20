@@ -176,7 +176,7 @@ func main() {
 			log.Info(http.ListenAndServe("localhost:6060", nil))
 		}()
 	}
-	screen := ui.NewScreen(*appui.DryTheme)
+	screen := ui.NewScreen(appui.DryTheme)
 	running = true
 
 	//Loading screen

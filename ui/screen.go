@@ -12,14 +12,13 @@ import (
 // Screen is thin wrapper aroung Termbox library to provide basic display
 // capabilities as required by dry.
 type Screen struct {
-	Width        int     // Current number of columns.
-	Height       int     // Current number of rows.
-	cleared      bool    // True after the screens gets cleared.
-	markup       *Markup // Pointer to markup processor (gets created by screen).
-	pausedAt     *time.Time
-	Cursor       *Cursor // Pointer to cursor (gets created by screen).
-	termboxMutex sync.Locker
-	theme        ColorTheme
+	Width    int     // Current number of columns.
+	Height   int     // Current number of rows.
+	markup   *Markup // Pointer to markup processor (gets created by screen).
+	pausedAt *time.Time
+	Cursor   *Cursor // Pointer to cursor (gets created by screen).
+	sync.RWMutex
+	theme *ColorTheme
 }
 
 //Cursor represents the cursor position on the screen
@@ -31,7 +30,7 @@ type Cursor struct {
 //NewScreen initializes Termbox, creates screen along with layout and markup, and
 //calculates current screen dimensions. Once initialized the screen is
 //ready for display.
-func NewScreen(theme ColorTheme) *Screen {
+func NewScreen(theme *ColorTheme) *Screen {
 
 	if err := termbox.Init(); err != nil {
 		panic(err)
@@ -40,7 +39,6 @@ func NewScreen(theme ColorTheme) *Screen {
 	screen := &Screen{}
 	screen.markup = NewMarkup(theme)
 	screen.Cursor = &Cursor{line: 0}
-	screen.termboxMutex = &sync.Mutex{}
 	screen.theme = theme
 	return screen.Resize()
 }
@@ -55,16 +53,14 @@ func (screen *Screen) Close() *Screen {
 // dimensions and requests to clear the screen on next update.
 func (screen *Screen) Resize() *Screen {
 	screen.Width, screen.Height = termbox.Size()
-	screen.cleared = false
 	return screen
 }
 
 //Clear makes the entire screen blank using default background color.
 func (screen *Screen) Clear() *Screen {
-	screen.termboxMutex.Lock()
-	defer screen.termboxMutex.Unlock()
+	screen.RLock()
+	defer screen.RUnlock()
 	termbox.Clear(termbox.Attribute(screen.theme.Fg), termbox.Attribute(screen.theme.Bg))
-	screen.cleared = true
 	return screen
 }
 
@@ -77,8 +73,8 @@ func (screen *Screen) ClearAndFlush() *Screen {
 
 // Sync forces a complete resync between the termbox and a terminal.
 func (screen *Screen) Sync() *Screen {
-	screen.termboxMutex.Lock()
-	defer screen.termboxMutex.Unlock()
+	screen.Lock()
+	defer screen.Unlock()
 	termbox.Sync()
 	return screen
 }
@@ -86,8 +82,8 @@ func (screen *Screen) Sync() *Screen {
 // ClearLine erases the contents of the line starting from (x,y) coordinate
 // till the end of the line.
 func (screen *Screen) ClearLine(x int, y int) *Screen {
-	screen.termboxMutex.Lock()
-	defer screen.termboxMutex.Unlock()
+	screen.RLock()
+	defer screen.RUnlock()
 	for i := x; i < screen.Width; i++ {
 		termbox.SetCell(i, y, ' ', termbox.Attribute(screen.theme.Fg), termbox.Attribute(screen.theme.Bg))
 	}
@@ -96,10 +92,17 @@ func (screen *Screen) ClearLine(x int, y int) *Screen {
 	return screen
 }
 
+func (screen *Screen) ColorTheme(theme *ColorTheme) *Screen {
+	screen.Lock()
+	defer screen.Unlock()
+	screen.markup = NewMarkup(theme)
+	return screen
+}
+
 //Flush synchronizes the internal buffer with the terminal.
 func (screen *Screen) Flush() *Screen {
-	screen.termboxMutex.Lock()
-	defer screen.termboxMutex.Unlock()
+	screen.RLock()
+	defer screen.RUnlock()
 	termbox.Flush()
 	return screen
 }
@@ -115,8 +118,8 @@ func (cursor *Cursor) Position() int {
 // right could overlap on left ones.
 // This allows usage of termui widgets.
 func (screen *Screen) RenderBufferer(bs ...termui.Bufferer) {
-	screen.termboxMutex.Lock()
-	defer screen.termboxMutex.Unlock()
+	screen.Lock()
+	defer screen.Unlock()
 	for _, b := range bs {
 		buf := b.Buffer()
 		// set cels in buf
@@ -132,10 +135,10 @@ func (screen *Screen) RenderBufferer(bs ...termui.Bufferer) {
 // RenderLine takes the incoming string, tokenizes it to extract markup
 // elements, and displays it all starting at (x,y) location.
 func (screen *Screen) RenderLine(x int, y int, str string) {
-	screen.termboxMutex.Lock()
-	defer screen.termboxMutex.Unlock()
-	start, column := 0, 0
+	screen.Lock()
+	defer screen.Unlock()
 
+	start, column := 0, 0
 	for _, token := range Tokenize(str, supportedTags) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
 		if screen.markup.IsTag(token) {
@@ -158,8 +161,8 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 //RenderLineWithBackGround does what RenderLine does but rendering the line
 //with the given background color
 func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor Color) {
-	screen.termboxMutex.Lock()
-	defer screen.termboxMutex.Unlock()
+	screen.Lock()
+	defer screen.Unlock()
 	start, column := 0, 0
 	if x > 0 {
 		fill(0, y, x, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
@@ -192,9 +195,6 @@ func (screen *Screen) Render(row int, str string) {
 //RenderAtColumn renders the given content starting from
 //the given row at the given column
 func (screen *Screen) RenderAtColumn(column, initialRow int, str string) {
-	if !screen.cleared {
-		screen.Clear()
-	}
 	for row, line := range strings.Split(str, "\n") {
 		screen.RenderLine(column, initialRow+row, line)
 	}

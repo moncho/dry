@@ -37,7 +37,7 @@ var Black256 = &ui.ColorTheme{
 //Dark256 dark theme for 256-color mode
 var Dark256 = &ui.ColorTheme{
 	Fg:           ui.Color255,
-	Bg:           ui.Color236,
+	Bg:           ui.Color234,
 	DarkBg:       ui.ColorBlack,
 	Prompt:       ui.Color110,
 	Key:          ui.Color108,
@@ -67,4 +67,17 @@ var Light256 = &ui.ColorTheme{
 	Footer:       ui.Color31}
 
 //DryTheme is the active theme for dry
-var DryTheme = Black256
+var DryTheme = Dark256
+
+//ColorThemes holds the list of dry color themes
+var ColorThemes = []*ui.ColorTheme{Black256, Dark256}
+
+//RotateColorTheme changes the color theme to the next one in the
+//rotation order.
+func RotateColorTheme() {
+	if DryTheme == ColorThemes[0] {
+		DryTheme = ColorThemes[1]
+	} else {
+		DryTheme = ColorThemes[0]
+	}
+}

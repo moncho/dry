@@ -15,7 +15,7 @@ func Stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.
 	}()
 	screen.Clear()
 	screen.Sync()
-	v := ui.NewLess(*DryTheme)
+	v := ui.NewLess(DryTheme)
 	go func() {
 		stdcopy.StdCopy(v, v, stream)
 	}()

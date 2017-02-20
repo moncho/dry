@@ -23,7 +23,7 @@ type View struct {
 	showCursor       bool
 
 	tainted bool // marks if the viewBuffer must be updated
-	theme   ColorTheme
+	theme   *ColorTheme
 	markup  *Markup
 }
 
@@ -429,7 +429,7 @@ func indexFunc(r rune) bool {
 }
 
 // NewView returns a new View
-func NewView(name string, x0, y0, x1, y1 int, showCursor bool, theme ColorTheme) *View {
+func NewView(name string, x0, y0, x1, y1 int, showCursor bool, theme *ColorTheme) *View {
 	v := &View{
 		name:  name,
 		x0:    x0,
@@ -449,7 +449,7 @@ func NewView(name string, x0, y0, x1, y1 int, showCursor bool, theme ColorTheme)
 }
 
 // NewMarkupView returns a new View with markup support
-func NewMarkupView(name string, x0, y0, x1, y1 int, showCursor bool, theme ColorTheme) *View {
+func NewMarkupView(name string, x0, y0, x1, y1 int, showCursor bool, theme *ColorTheme) *View {
 	v := NewView(name, x0, y0, x1, y1, showCursor, theme)
 	v.markup = NewMarkup(theme)
 

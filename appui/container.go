@@ -14,12 +14,7 @@ const (
 	maxWidth = 80
 )
 
-//ContainerInfo is a Bufferer holding the list of container commands
-type ContainerInfo struct {
-	container types.Container
-}
-
-//NewContainerInfo returns detailed container information. The seconds parameter
+//NewContainerInfo returns detailed container information. Returned int value
 //is the number of lines.
 func NewContainerInfo(container types.Container) (string, int) {
 

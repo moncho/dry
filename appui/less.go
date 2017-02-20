@@ -13,7 +13,7 @@ func Less(renderer ui.Renderer, screen *ui.Screen, keyboardQueue chan termbox.Ev
 		closeView <- struct{}{}
 	}()
 	screen.Clear()
-	v := ui.NewLess(*DryTheme)
+	v := ui.NewLess(DryTheme)
 	v.MarkupSupport()
 	io.WriteString(v, renderer.Render())
 

@@ -19,7 +19,7 @@ type StatusBar struct {
 }
 
 // NewStatusBar creates a new StatusBar struct
-func NewStatusBar(screenPos, screenWidth int, theme ColorTheme) *StatusBar {
+func NewStatusBar(screenPos, screenWidth int, theme *ColorTheme) *StatusBar {
 	markup := NewMarkup(theme)
 	return &StatusBar{
 		screenPos:   screenPos,

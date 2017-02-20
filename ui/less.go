@@ -24,7 +24,7 @@ type Less struct {
 }
 
 //NewLess creates a view that partially simulates less.
-func NewLess(theme ColorTheme) *Less {
+func NewLess(theme *ColorTheme) *Less {
 	width, height := termbox.Size()
 	view := NewView("", 0, 0, width, height, true, theme)
 	view.cursorY = height - 1 //Last line is at height -1

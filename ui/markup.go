@@ -68,12 +68,12 @@ type Markup struct {
 	Foreground   termbox.Attribute // Foreground color.
 	Background   termbox.Attribute // Background color (so far always termbox.ColorDefault).
 	RightAligned bool              // True when the string is right aligned.
-	theme        ColorTheme
+	theme        *ColorTheme
 }
 
 // NewMarkup creates a markup to define tag to Termbox translation rules and store default
 // colors and column alignments.
-func NewMarkup(theme ColorTheme) *Markup {
+func NewMarkup(theme *ColorTheme) *Markup {
 	markup := &Markup{}
 	markup.Foreground = termbox.Attribute(theme.Fg)
 	markup.Background = termbox.Attribute(theme.Bg)
