@@ -104,7 +104,6 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 						} else {
 							statusBar.Render()
 						}
-						screen.Flush()
 					} else {
 						//stop the status bar until the focus is retrieved
 						statusBar.Stop()
