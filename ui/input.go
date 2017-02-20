@@ -199,11 +199,6 @@ func (eb *InputBox) String() string {
 }
 
 func (eb *InputBox) redrawAll() {
-	//	termbox.Clear(coldef, coldef)
-	//	w, h := termbox.Size()
-
-	//	midy := h / 2
-	//	midx := (w - editBoxWidth) / 2
 
 	eb.Draw(eb.x, eb.y, editBoxWidth, 1)
 	termbox.SetCursor(eb.x+eb.CursorX(), eb.y)

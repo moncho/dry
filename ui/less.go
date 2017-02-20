@@ -24,9 +24,9 @@ type Less struct {
 }
 
 //NewLess creates a view that partially simulates less.
-func NewLess() *Less {
+func NewLess(theme ColorTheme) *Less {
 	width, height := termbox.Size()
-	view := NewView("", 0, 0, width, height, true)
+	view := NewView("", 0, 0, width, height, true, theme)
 	view.cursorY = height - 1 //Last line is at height -1
 
 	return &Less{
@@ -69,7 +69,7 @@ loop:
 		case input := <-inputBoxOuput:
 			inputMode = false
 			less.Search(input)
-			clear()
+			clear(termbox.Attribute(less.View.theme.Fg), termbox.Attribute(less.View.theme.Bg))
 			if err := less.Render(); err != nil {
 				return err
 			}
@@ -109,7 +109,7 @@ loop:
 					}
 
 					if less.tainted {
-						clear()
+						clear(termbox.Attribute(less.View.theme.Fg), termbox.Attribute(less.View.theme.Bg))
 						if err := less.Render(); err != nil {
 							return err
 						}
@@ -281,11 +281,11 @@ func (less *Less) renderLine(x int, y int, line string) (int, error) {
 					for _, char := range token {
 						start = x + column
 						column++
-						termbox.SetCell(start, y, char, termbox.ColorYellow, termbox.ColorDefault)
+						termbox.SetCell(start, y, char, termbox.ColorYellow, termbox.Attribute(less.View.theme.Bg))
 					}
 				}
 			} else {
-				_, lines = renderString(x, y, maxWidth, line, termbox.ColorYellow, termbox.ColorDefault)
+				_, lines = renderString(x, y, maxWidth, line, termbox.ColorYellow, termbox.Attribute(less.View.theme.Bg))
 			}
 		} else if !less.filtering {
 			return less.View.renderLine(x, y, line)
@@ -335,17 +335,17 @@ func (less *Less) renderMessage() {
 	switch {
 	case less.searchResult != nil:
 		{
-			renderString(0, maxLength, maxWidth, less.searchResult.String(), termbox.ColorWhite, termbox.ColorDefault)
+			renderString(0, maxLength, maxWidth, less.searchResult.String(), termbox.Attribute(less.View.theme.Fg), termbox.Attribute(less.View.theme.Bg))
 			cursorX = len(less.searchResult.String())
 		}
 	case !less.atTheEndOfBuffer() && !less.atTheStartOfBuffer():
-		termbox.SetCell(0, maxLength, ':', termbox.ColorDefault, termbox.ColorDefault)
+		termbox.SetCell(0, maxLength, ':', termbox.Attribute(less.View.theme.Fg), termbox.Attribute(less.View.theme.Bg))
 	case less.atTheStartOfBuffer():
-		renderString(0, maxLength, maxWidth, starttext, termbox.ColorWhite, termbox.ColorDefault)
+		renderString(0, maxLength, maxWidth, starttext, termbox.ColorWhite, termbox.Attribute(less.View.theme.Bg))
 		cursorX = len(starttext)
 	default:
 		{
-			renderString(0, maxLength, maxWidth, endtext, termbox.ColorWhite, termbox.ColorDefault)
+			renderString(0, maxLength, maxWidth, endtext, termbox.ColorWhite, termbox.Attribute(less.View.theme.Bg))
 			cursorX = len(endtext)
 		}
 	}
@@ -358,6 +358,6 @@ func (less *Less) drawCursor() {
 	termbox.SetCursor(x, y)
 }
 
-func clear() {
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+func clear(fg, bg termbox.Attribute) {
+	termbox.Clear(fg, bg)
 }

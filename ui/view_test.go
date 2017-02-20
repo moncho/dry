@@ -6,7 +6,7 @@ import (
 )
 
 func TestCursorScrolling(t *testing.T) {
-	view := NewView("test", 0, 0, 10, 10, true)
+	view := NewView("test", 0, 0, 10, 10, true, ColorTheme{})
 	testCursor(t, view, 0, 0)
 	//
 	view.CursorToBottom()
@@ -29,7 +29,7 @@ func TestCursorScrolling(t *testing.T) {
 }
 
 func TestViewBufferPosition(t *testing.T) {
-	view := NewView("test", 0, 0, 10, 10, true)
+	view := NewView("test", 0, 0, 10, 10, true, ColorTheme{})
 	numberOfLinesToWrite := 20
 
 	for i := 0; i < numberOfLinesToWrite; i++ {

@@ -23,8 +23,8 @@ type View struct {
 	showCursor       bool
 
 	tainted bool // marks if the viewBuffer must be updated
-
-	markup *Markup
+	theme   ColorTheme
+	markup  *Markup
 }
 
 // ViewSize returns the width and the height of the View.
@@ -175,7 +175,7 @@ func (v *View) renderLine(x int, y int, line string) (int, error) {
 		// Methods receives a single line, so just the first element
 		// returned by the cleaner is considered
 		if len(ansiClean) > 0 {
-			_, lines = renderString(x, y, maxWidth, string(ansiClean[0]), termbox.ColorDefault, termbox.ColorDefault)
+			_, lines = renderString(x, y, maxWidth, string(ansiClean[0]), termbox.Attribute(v.theme.Fg), termbox.Attribute(v.theme.Bg))
 		}
 	}
 	return lines, nil
@@ -194,7 +194,7 @@ func (v *View) clearRunes() {
 	for x := 0; x < maxX; x++ {
 		for y := 0; y < maxY; y++ {
 			termbox.SetCell(v.x0+x+1, v.y0+y+1, ' ',
-				termbox.ColorDefault, termbox.ColorDefault)
+				termbox.Attribute(v.theme.Fg), termbox.Attribute(v.theme.Bg))
 		}
 	}
 }
@@ -301,18 +301,6 @@ func (v *View) breakLine(x, y int) error {
 	copy(lines[y+2:], v.lines[y+1:])
 	v.lines = lines
 	return nil
-}
-
-// ViewBuffer returns a string with the contents of the view's buffer that is
-// showed to the user
-func (v *View) ViewBuffer() string {
-	result := make([]string, 0, len(v.lines))
-	for _, l := range v.lines {
-		line := string(l)
-		strings.Replace(line, "\x00", " ", -1)
-		result = append(result, line)
-	}
-	return strings.Join(result, "\n")
 }
 
 // Line returns a string with the line of the view's internal buffer
@@ -431,7 +419,7 @@ func (v *View) CursorToTop() {
 
 //MarkupSupport sets markup support in the view
 func (v *View) MarkupSupport() {
-	v.markup = NewMarkup()
+	v.markup = NewMarkup(v.theme)
 }
 
 // indexFunc allows to split lines by words taking into account spaces
@@ -441,7 +429,7 @@ func indexFunc(r rune) bool {
 }
 
 // NewView returns a new View
-func NewView(name string, x0, y0, x1, y1 int, showCursor bool) *View {
+func NewView(name string, x0, y0, x1, y1 int, showCursor bool, theme ColorTheme) *View {
 	v := &View{
 		name:  name,
 		x0:    x0,
@@ -454,15 +442,16 @@ func NewView(name string, x0, y0, x1, y1 int, showCursor bool) *View {
 		height:     y1 - y0 - 1,
 		tainted:    true,
 		showCursor: showCursor,
+		theme:      theme,
 	}
 
 	return v
 }
 
 // NewMarkupView returns a new View with markup support
-func NewMarkupView(name string, x0, y0, x1, y1 int, showCursor bool) *View {
-	v := NewView(name, x0, y0, x1, y1, showCursor)
-	v.markup = NewMarkup()
+func NewMarkupView(name string, x0, y0, x1, y1 int, showCursor bool, theme ColorTheme) *View {
+	v := NewView(name, x0, y0, x1, y1, showCursor, theme)
+	v.markup = NewMarkup(theme)
 
 	return v
 }

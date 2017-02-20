@@ -10,7 +10,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/gizak/termui"
 	"github.com/moncho/dry/ui"
-	"github.com/nsf/termbox-go"
 )
 
 const (
@@ -60,7 +59,7 @@ func NewDockerTopBufferer(processList *types.ContainerProcessList, x, y, height,
 		lines := minimumHeight // title + borders
 
 		fmt.Fprintln(w,
-			fmt.Sprintf("[%s](fg-blue)",
+			fmt.Sprintf("[%s](fg-red)",
 				strings.Join(processList.Titles, "\t")))
 
 		//Commented because process list does not always includes
@@ -77,14 +76,12 @@ func NewDockerTopBufferer(processList *types.ContainerProcessList, x, y, height,
 			lines++
 		}
 		w.Flush()
-		p := termui.NewPar(buf.String())
+		p := ui.NewPar(buf.String(), DryTheme)
 		p.X = x
 		p.Y = y
 		p.Height = height - minimumHeight
 		p.Width = width
-		p.TextFgColor = termui.Attribute(termbox.ColorYellow)
 		p.BorderLabel = " PROCESS LIST "
-		p.BorderLabelFg = termui.Attribute(termbox.ColorYellow)
 		p.Border = true
 		p.BorderBottom = false
 		p.BorderLeft = false
@@ -97,7 +94,7 @@ func NewDockerTopBufferer(processList *types.ContainerProcessList, x, y, height,
 
 		return p, lines
 	}
-	return termui.NewPar(""), 0
+	return ui.NewPar("", DryTheme), 0
 }
 
 type sortByPID [][]string

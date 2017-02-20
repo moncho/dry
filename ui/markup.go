@@ -23,18 +23,25 @@ func supportedTagsRegexp() *regexp.Regexp {
 // tags returns regular expression that matches all possible tags
 // supported by the markup, i.e. </?black>|</?red>| ... |<?b>| ... |</?right>
 func tags() map[string]termbox.Attribute {
+	//Due to how markup is currently being used, the tag character lengh must be
+	//the same for all color tags (the magic number is 5, because white) to avoid,
+	//text alignment problems, hence the strange tag names.
+
+	//TODO Figure out a way to use markups and the ColorTheme. Right now a tag
+	//value corresponds to an specific color, and there are cases might now even
+	//fit the description (so green is not really green but something that fits the DarkTheme).
 	tags := make(map[string]termbox.Attribute)
-	tags[`/`] = termbox.ColorDefault
+	tags[`/`] = termbox.Attribute(ColorWhite)
 	tags[`black`] = termbox.ColorBlack
 	tags[`red`] = termbox.ColorRed
 	tags[`red00`] = termbox.ColorRed
-	tags[`green`] = termbox.ColorGreen
+	tags[`green`] = termbox.Attribute(Color190)
 	tags[`yellow`] = termbox.ColorYellow
-	tags[`blue`] = termbox.ColorBlue
+	tags[`blue`] = termbox.Attribute(Color188)
 	tags[`magenta`] = termbox.ColorMagenta
 	tags[`cyan`] = termbox.ColorCyan
-	tags[`cyan0`] = termbox.ColorCyan
-	tags[`white`] = termbox.ColorWhite
+	tags[`cyan0`] = termbox.Attribute(Color181)
+	tags[`white`] = termbox.Attribute(Color255)
 	tags[`grey`] = termbox.Attribute(Grey)
 	tags[`grey2`] = termbox.Attribute(Grey2)
 	tags[`darkgrey`] = termbox.Attribute(Darkgrey)
@@ -61,18 +68,16 @@ type Markup struct {
 	Foreground   termbox.Attribute // Foreground color.
 	Background   termbox.Attribute // Background color (so far always termbox.ColorDefault).
 	RightAligned bool              // True when the string is right aligned.
+	theme        ColorTheme
 }
 
 // NewMarkup creates a markup to define tag to Termbox translation rules and store default
 // colors and column alignments.
-func NewMarkup() *Markup {
-	//Due to how markup is currently being used, the tag character lengh must be
-	//the same for all color tags (the magic number is 5, because white) to avoid,
-	//text alignment problems, hence the strange tag names.
-
+func NewMarkup(theme ColorTheme) *Markup {
 	markup := &Markup{}
-	markup.Foreground = termbox.ColorDefault
-	markup.Background = termbox.ColorDefault
+	markup.Foreground = termbox.Attribute(theme.Fg)
+	markup.Background = termbox.Attribute(theme.Bg)
+	markup.theme = theme
 	markup.RightAligned = false
 	return markup
 }
@@ -90,7 +95,6 @@ func (markup *Markup) IsTag(str string) bool {
 	return markup.process(tag, open)
 }
 
-//-----------------------------------------------------------------------------
 func (markup *Markup) process(tag string, open bool) bool {
 	if attribute, ok := tagsToAttributeMap[tag]; ok {
 		switch tag {
@@ -98,17 +102,9 @@ func (markup *Markup) process(tag string, open bool) bool {
 			markup.RightAligned = open // On for <right>, off for </right>.
 		default:
 			if open {
-				if attribute >= termbox.AttrBold {
-					markup.Foreground |= attribute // Set the Termbox attribute.
-				} else {
-					markup.Foreground = attribute // Set the Termbox color.
-				}
+				markup.Foreground = attribute // Set the Termbox color.
 			} else {
-				if attribute >= termbox.AttrBold {
-					markup.Foreground &= ^attribute // Clear the Termbox attribute.
-				} else {
-					markup.Foreground = termbox.ColorDefault
-				}
+				markup.Foreground = termbox.Attribute(markup.theme.Fg)
 			}
 		}
 	}
@@ -116,7 +112,6 @@ func (markup *Markup) process(tag string, open bool) bool {
 	return true
 }
 
-//-----------------------------------------------------------------------------
 func probeForTag(str string) (string, bool) {
 	if len(str) > 2 && str[0:1] == `<` && str[len(str)-1:] == `>` {
 		return extractTagName(str), str[1:2] != "/"

@@ -19,30 +19,29 @@ type Screen struct {
 	pausedAt     *time.Time
 	Cursor       *Cursor // Pointer to cursor (gets created by screen).
 	termboxMutex sync.Locker
+	theme        ColorTheme
 }
 
 //Cursor represents the cursor position on the screen
 type Cursor struct {
-	line  int
-	Fg    termbox.Attribute
-	Bg    termbox.Attribute
-	Ch    rune
-	mutex sync.RWMutex
+	line int
+	sync.RWMutex
 }
 
 //NewScreen initializes Termbox, creates screen along with layout and markup, and
 //calculates current screen dimensions. Once initialized the screen is
 //ready for display.
-func NewScreen() *Screen {
+func NewScreen(theme ColorTheme) *Screen {
 
 	if err := termbox.Init(); err != nil {
 		panic(err)
 	}
 	termbox.SetOutputMode(termbox.Output256)
 	screen := &Screen{}
-	screen.markup = NewMarkup()
-	screen.Cursor = &Cursor{line: 0, Fg: termbox.ColorRed, Ch: '옷', Bg: termbox.Attribute(0x18)}
+	screen.markup = NewMarkup(theme)
+	screen.Cursor = &Cursor{line: 0}
 	screen.termboxMutex = &sync.Mutex{}
+	screen.theme = theme
 	return screen.Resize()
 }
 
@@ -64,7 +63,7 @@ func (screen *Screen) Resize() *Screen {
 func (screen *Screen) Clear() *Screen {
 	screen.termboxMutex.Lock()
 	defer screen.termboxMutex.Unlock()
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	termbox.Clear(termbox.Attribute(screen.theme.Fg), termbox.Attribute(screen.theme.Bg))
 	screen.cleared = true
 	return screen
 }
@@ -90,7 +89,7 @@ func (screen *Screen) ClearLine(x int, y int) *Screen {
 	screen.termboxMutex.Lock()
 	defer screen.termboxMutex.Unlock()
 	for i := x; i < screen.Width; i++ {
-		termbox.SetCell(i, y, ' ', termbox.ColorDefault, termbox.ColorDefault)
+		termbox.SetCell(i, y, ' ', termbox.Attribute(screen.theme.Fg), termbox.Attribute(screen.theme.Bg))
 	}
 	screen.Flush()
 
@@ -107,8 +106,8 @@ func (screen *Screen) Flush() *Screen {
 
 //Position tells on which screen line the cursor is
 func (cursor *Cursor) Position() int {
-	cursor.mutex.RLock()
-	defer cursor.mutex.RUnlock()
+	cursor.RLock()
+	defer cursor.RUnlock()
 	return cursor.line
 }
 
@@ -208,22 +207,22 @@ func (screen *Screen) RenderRenderer(row int, renderer Renderer) {
 
 //Reset sets the cursor in the initial position
 func (cursor *Cursor) Reset() {
-	cursor.mutex.Lock()
-	defer cursor.mutex.Unlock()
+	cursor.Lock()
+	defer cursor.Unlock()
 	cursor.line = 0
 }
 
 //ScrollCursorDown moves the cursor to the line below the current one
 func (cursor *Cursor) ScrollCursorDown() {
-	cursor.mutex.Lock()
-	defer cursor.mutex.Unlock()
+	cursor.Lock()
+	defer cursor.Unlock()
 	cursor.line = cursor.line + 1
 }
 
 //ScrollCursorUp moves the cursor to the line above the current one
 func (cursor *Cursor) ScrollCursorUp() {
-	cursor.mutex.Lock()
-	defer cursor.mutex.Unlock()
+	cursor.Lock()
+	defer cursor.Unlock()
 	if cursor.line > 0 {
 		cursor.line = cursor.line - 1
 	} else {
@@ -233,8 +232,8 @@ func (cursor *Cursor) ScrollCursorUp() {
 
 //ScrollTo moves the cursor to the given line
 func (cursor *Cursor) ScrollTo(pos int) {
-	cursor.mutex.Lock()
-	defer cursor.mutex.Unlock()
+	cursor.Lock()
+	defer cursor.Unlock()
 	cursor.line = pos
 
 }

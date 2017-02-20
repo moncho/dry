@@ -35,15 +35,13 @@ func decodeEvents(
 	input io.Reader,
 	processors ...eventProcessor) error {
 	dec := json.NewDecoder(input)
-	for {
-		var event events.Message
-		err := dec.Decode(&event)
-		if err != nil && err == io.EOF {
-			break
-		}
-		return handleEvent(ctx, event, processors...)
+	var event events.Message
+	err := dec.Decode(&event)
+	if err != nil && err == io.EOF {
+		return nil
 	}
-	return nil
+	return handleEvent(ctx, event, processors...)
+
 }
 
 func handleEvent(

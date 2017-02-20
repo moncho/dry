@@ -5,6 +5,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
 	"github.com/nsf/termbox-go"
 )
@@ -49,7 +50,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 
 	keyboardQueueForView := make(chan termbox.Event)
 	dryOutputChan := dry.OuputChannel()
-	statusBar := ui.NewStatusBar(0, screen.Width)
+	statusBar := ui.NewStatusBar(0, screen.Width, *appui.DryTheme)
 	eventHandlerFactory := &eventHandlerFactory{
 		dry:                  dry,
 		screen:               screen,

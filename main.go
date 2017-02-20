@@ -11,6 +11,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/moncho/dry/app"
+	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/version"
@@ -175,7 +176,7 @@ func main() {
 			log.Info(http.ListenAndServe("localhost:6060", nil))
 		}()
 	}
-	screen := ui.NewScreen()
+	screen := ui.NewScreen(*appui.DryTheme)
 	running = true
 
 	//Loading screen

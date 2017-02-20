@@ -6,7 +6,6 @@ import (
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/mocks"
 	"github.com/moncho/dry/ui"
-	"github.com/nsf/termbox-go"
 )
 
 func TestImagesToShowSmallScreen(t *testing.T) {
@@ -17,7 +16,7 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 		t.Errorf("Daemon has %d images, expected %d", imagesLen, 3)
 	}
 
-	cursor := &ui.Cursor{Fg: termbox.ColorDefault, Ch: ' ', Bg: termbox.ColorDefault}
+	cursor := &ui.Cursor{}
 	renderer := NewDockerImagesRenderer(daemon, 14)
 	imagesFromDaemon, _ := daemon.Images()
 	renderer.PrepareForRender(NewDockerImageRenderData(
@@ -58,7 +57,7 @@ func TestImagesToShow(t *testing.T) {
 		t.Errorf("Daemon has %d images, expected %d", imagesLen, 3)
 	}
 
-	cursor := &ui.Cursor{Fg: termbox.ColorDefault, Ch: ' ', Bg: termbox.ColorDefault}
+	cursor := &ui.Cursor{}
 	renderer := NewDockerImagesRenderer(daemon, 20)
 
 	imagesFromDaemon, _ := daemon.Images()

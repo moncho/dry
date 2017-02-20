@@ -19,8 +19,8 @@ type StatusBar struct {
 }
 
 // NewStatusBar creates a new StatusBar struct
-func NewStatusBar(screenPos, screenWidth int) *StatusBar {
-	markup := NewMarkup()
+func NewStatusBar(screenPos, screenWidth int, theme ColorTheme) *StatusBar {
+	markup := NewMarkup(theme)
 	return &StatusBar{
 		screenPos:   screenPos,
 		screenWidth: screenWidth,
@@ -57,7 +57,7 @@ func (s *StatusBar) StatusMessage(msg string, clearDelay time.Duration) {
 		s.setClearTimer(time.AfterFunc(clearDelay, func() {
 			clearMessage := strings.Repeat(" ", len(msg))
 			s.lastMessage = ""
-			renderString(0, s.screenPos, s.screenWidth, string(clearMessage), termbox.ColorDefault, termbox.ColorDefault)
+			renderString(0, s.screenPos, s.screenWidth, string(clearMessage), termbox.Attribute(s.markup.theme.Fg), termbox.Attribute(s.markup.theme.Bg))
 		}))
 	}
 }
