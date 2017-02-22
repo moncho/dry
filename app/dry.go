@@ -536,13 +536,13 @@ func (d *Dry) SortNetworks() {
 func (d *Dry) startDry() {
 	go func() {
 		//The event is not relevant, dry must refresh
-		for _ = range d.dockerEvents {
+		for range d.dockerEvents {
 			d.Refresh()
 		}
 	}()
 
 	go func() {
-		for _ = range time.Tick(TimeBetweenRefresh) {
+		for range time.Tick(TimeBetweenRefresh) {
 			d.tryRefresh()
 		}
 	}()

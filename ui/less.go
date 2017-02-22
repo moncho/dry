@@ -217,20 +217,14 @@ func (less *Less) ScrollToTop() {
 
 func (less *Less) atTheStartOfBuffer() bool {
 	_, y := less.Position()
-	if y == 0 {
-		return true
-	}
-	return false
+	return y == 0
 }
 
 func (less *Less) atTheEndOfBuffer() bool {
 	viewLength := less.bufferSize()
 	_, y := less.Position()
 	_, height := less.ViewSize()
-	if y+height >= viewLength-1 {
-		return true
-	}
-	return false
+	return y+height >= viewLength-1
 }
 
 func (less *Less) bufferSize() int {

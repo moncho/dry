@@ -213,43 +213,40 @@ func (eb *InputBox) Focus() {
 
 	eb.redrawAll()
 mainloop:
-	for {
-		select {
-		case ev := <-eb.eventQueue:
-			switch ev.Type {
-			case termbox.EventKey:
-				switch ev.Key {
-				case termbox.KeyEnter:
-					break mainloop
-				case termbox.KeyEsc:
-					eb.Delete()
-					break mainloop
-				case termbox.KeyArrowLeft, termbox.KeyCtrlB:
-					eb.MoveCursorOneRuneBackward()
-				case termbox.KeyArrowRight, termbox.KeyCtrlF:
-					eb.MoveCursorOneRuneForward()
-				case termbox.KeyBackspace, termbox.KeyBackspace2:
-					eb.DeleteRuneBackward()
-				case termbox.KeyDelete, termbox.KeyCtrlD:
-					eb.DeleteRuneForward()
-				case termbox.KeyTab:
-					eb.InsertRune('\t')
-				case termbox.KeySpace:
-					eb.InsertRune(' ')
-				case termbox.KeyCtrlK:
-					eb.DeleteTheRestOfTheLine()
-				case termbox.KeyHome, termbox.KeyCtrlA:
-					eb.MoveCursorToBeginningOfTheLine()
-				case termbox.KeyEnd, termbox.KeyCtrlE:
-					eb.MoveCursorToEndOfTheLine()
-				default:
-					if ev.Ch != 0 {
-						eb.InsertRune(ev.Ch)
-					}
+	for ev := range eb.eventQueue {
+		switch ev.Type {
+		case termbox.EventKey:
+			switch ev.Key {
+			case termbox.KeyEnter:
+				break mainloop
+			case termbox.KeyEsc:
+				eb.Delete()
+				break mainloop
+			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
+				eb.MoveCursorOneRuneBackward()
+			case termbox.KeyArrowRight, termbox.KeyCtrlF:
+				eb.MoveCursorOneRuneForward()
+			case termbox.KeyBackspace, termbox.KeyBackspace2:
+				eb.DeleteRuneBackward()
+			case termbox.KeyDelete, termbox.KeyCtrlD:
+				eb.DeleteRuneForward()
+			case termbox.KeyTab:
+				eb.InsertRune('\t')
+			case termbox.KeySpace:
+				eb.InsertRune(' ')
+			case termbox.KeyCtrlK:
+				eb.DeleteTheRestOfTheLine()
+			case termbox.KeyHome, termbox.KeyCtrlA:
+				eb.MoveCursorToBeginningOfTheLine()
+			case termbox.KeyEnd, termbox.KeyCtrlE:
+				eb.MoveCursorToEndOfTheLine()
+			default:
+				if ev.Ch != 0 {
+					eb.InsertRune(ev.Ch)
 				}
 			}
-			eb.redrawAll()
 		}
+		eb.redrawAll()
 	}
 	eb.output <- eb.String()
 }

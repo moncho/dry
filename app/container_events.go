@@ -267,29 +267,26 @@ func showContainerOptions(h *containersScreenEventHandler, dry *Dry, screen *ui.
 		}()
 
 	loop:
-		for {
-			select {
-			case event := <-keyboardQueue:
-				switch event.Type {
-				case termbox.EventKey:
-					if event.Key == termbox.KeyEsc {
-						close(refreshChan)
-						break loop
-					} else if event.Key == termbox.KeyArrowUp { //cursor up
-						if screen.Cursor.Position() > 0 {
-							screen.Cursor.ScrollCursorUp()
-							refreshChan <- struct{}{}
-						}
-					} else if event.Key == termbox.KeyArrowDown { // cursor down
-						if screen.Cursor.Position() < commandsLen-1 {
-							screen.Cursor.ScrollCursorDown()
-							refreshChan <- struct{}{}
-						}
-					} else if event.Key == termbox.KeyEnter { // execute command
-						command = docker.ContainerCommands[screen.Cursor.Position()]
-						close(refreshChan)
-						break loop
+		for event := range keyboardQueue {
+			switch event.Type {
+			case termbox.EventKey:
+				if event.Key == termbox.KeyEsc {
+					close(refreshChan)
+					break loop
+				} else if event.Key == termbox.KeyArrowUp { //cursor up
+					if screen.Cursor.Position() > 0 {
+						screen.Cursor.ScrollCursorUp()
+						refreshChan <- struct{}{}
 					}
+				} else if event.Key == termbox.KeyArrowDown { // cursor down
+					if screen.Cursor.Position() < commandsLen-1 {
+						screen.Cursor.ScrollCursorDown()
+						refreshChan <- struct{}{}
+					}
+				} else if event.Key == termbox.KeyEnter { // execute command
+					command = docker.ContainerCommands[screen.Cursor.Position()]
+					close(refreshChan)
+					break loop
 				}
 			}
 		}
