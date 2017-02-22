@@ -56,11 +56,11 @@ type dryOptions struct {
 
 //-----------------------------------------------------------------------------
 
-func newApp(screen *ui.Screen, dockerEnv *docker.DockerEnv) (*app.Dry, error) {
+func newApp(screen *ui.Screen, dockerEnv *docker.Env) (*app.Dry, error) {
 	return app.NewDry(screen, dockerEnv)
 }
 
-func newDockerEnv(opts dryOptions) *docker.DockerEnv {
+func newDockerEnv(opts dryOptions) *docker.Env {
 	dockerEnv := docker.NewEnv()
 	if opts.DockerHost == "" {
 		if os.Getenv("DOCKER_HOST") == "" {
@@ -82,7 +82,7 @@ func newDockerEnv(opts dryOptions) *docker.DockerEnv {
 	return dockerEnv
 }
 
-func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.DockerEnv, stop <-chan struct{}) {
+func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env, stop <-chan struct{}) {
 	midscreen := screen.Width / 2
 	height := screen.Height
 	screen.RenderAtColumn(midscreen-len(connecting)/2, 1, ui.White(connecting))

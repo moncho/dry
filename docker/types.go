@@ -11,7 +11,7 @@ import (
 type ContainerDaemon interface {
 	ContainerStore() *ContainerStore
 	DiskUsage() (types.DiskUsage, error)
-	DockerEnv() *DockerEnv
+	DockerEnv() *Env
 	Events() (<-chan events.Message, chan<- struct{}, error)
 	EventLog() *EventLog
 	History(id string) ([]types.ImageHistory, error)

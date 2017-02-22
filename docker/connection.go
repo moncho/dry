@@ -30,7 +30,7 @@ var headers = map[string]string{
 func init() {
 	defaultDockerPath, _ = homedir.Expand("~/.docker")
 }
-func connect(client client.APIClient, env *DockerEnv) (*DockerDaemon, error) {
+func connect(client client.APIClient, env *Env) (*DockerDaemon, error) {
 	containers, err := containers(client, false)
 	if err == nil {
 		images, errI := images(client, defaultImageListOptions)
@@ -54,7 +54,7 @@ func connect(client client.APIClient, env *DockerEnv) (*DockerDaemon, error) {
 	return nil, err
 }
 
-func getServerHost(env *DockerEnv) (string, error) {
+func getServerHost(env *Env) (string, error) {
 
 	host := env.DockerHost
 	if host == "" {
@@ -90,7 +90,7 @@ func newHTTPClient(host string, config *tls.Config) (*http.Client, error) {
 }
 
 //ConnectToDaemon connects to a Docker daemon using the given properties.
-func ConnectToDaemon(env *DockerEnv) (*DockerDaemon, error) {
+func ConnectToDaemon(env *Env) (*DockerDaemon, error) {
 
 	host, err := getServerHost(env)
 	if err != nil {

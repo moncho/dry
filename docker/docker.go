@@ -43,7 +43,7 @@ type DockerDaemon struct {
 	networks       []dockerTypes.NetworkResource
 	err            error // Errors, if any.
 	connected      bool
-	dockerEnv      *DockerEnv
+	dockerEnv      *Env
 	version        *dockerTypes.Version
 	refreshLock    sync.Mutex
 	eventLog       *EventLog
@@ -99,7 +99,7 @@ func (daemon *DockerDaemon) DiskUsage() (dockerTypes.DiskUsage, error) {
 }
 
 //DockerEnv returns Docker-related environment variables
-func (daemon *DockerDaemon) DockerEnv() *DockerEnv {
+func (daemon *DockerDaemon) DockerEnv() *Env {
 	return daemon.dockerEnv
 }
 

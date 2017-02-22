@@ -24,8 +24,8 @@ func (_m *ContainerDaemonMock) DiskUsage() (types.DiskUsage, error) {
 }
 
 // DockerEnv provides a mock function with given fields:
-func (_m *ContainerDaemonMock) DockerEnv() *drydocker.DockerEnv {
-	return &drydocker.DockerEnv{DockerHost: "dry.io", DockerTLSVerify: false, DockerCertPath: ""}
+func (_m *ContainerDaemonMock) DockerEnv() *drydocker.Env {
+	return &drydocker.Env{DockerHost: "dry.io", DockerTLSVerify: false, DockerCertPath: ""}
 }
 
 // Events provides a mock function with given fields:
