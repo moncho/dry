@@ -6,7 +6,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/moncho/dry)](https://goreportcard.com/report/github.com/moncho/dry)
 [![codecov](https://codecov.io/gh/moncho/dry/branch/master/graph/badge.svg)](https://codecov.io/gh/moncho/dry)
 
-
 **dry** is a terminal application to manage **Docker** containers and images. It aims to be an alternative to the official **Docker CLI** when it is needed to repeatedly execute commands on existing containers and images, and also as a tool to monitor **Docker** containers from a terminal.
 
 The demo below shows a **dry** session.
@@ -21,12 +20,13 @@ Besides this, it:
 
 * Shows real-time information about containers.
 * Can sort the container, image and network lists.
-* Can navigate and search the output of ***info***, ***inspect*** and ***logs*** commands.  
+* Can navigate and search the output of ***info***, ***inspect*** and ***logs*** commands.
 * Makes easier to cleanup old images and containers.
 
-### **dry** keybinds
+## **dry** keybinds
 
-#### Global
+### Global
+
 ```
 [F1]        sort list
 [F5]        refresh list
@@ -42,6 +42,7 @@ Besides this, it:
 ```
 
 #### Container commands
+
 ```
 [Enter]     show container command menu
 [F2]        toggle on/off showing stopped containers
@@ -57,6 +58,7 @@ Besides this, it:
 ```
 
 #### Image commands
+
 ```
 [i]         history
 [Ctrl]+[d]    remove dangling images
@@ -64,12 +66,16 @@ Besides this, it:
 [Ctrl]+[f]    remove image (force)
 [Enter]     inspect
 ```
+
 #### Network commands
+
 ```
+[Ctrl]+[e]    remove network
 [Enter]     inspect
 ```
 
 #### Moving around buffers
+
 ```
 [ArrowUp]   move the cursor one line up
 [ArrowDown] move the cursor one line down
@@ -80,34 +86,31 @@ Besides this, it:
 [s]         search
 [pg up]     move the cursor "screen size" lines up
 [pg down]   move the cursor "screen size" lines down
- ```
+```
 
 ## Installation
 
 The easiest way to install the latest binaries for Linux and Mac is to run this in your shell:
 
-```
-$ curl -sSf https://moncho.github.io/dry/dryup.sh | sh
-```
+```$ curl -sSf https://moncho.github.io/dry/dryup.sh | sh```
 
 Most likely you will have to sudo it:
 
-```
-$ curl -sSf https://moncho.github.io/dry/dryup.sh | sudo sh
-```
+```$ curl -sSf https://moncho.github.io/dry/dryup.sh | sudo sh```
 
-#### Binaries
+### Binaries
 
 If you dont like to **curl | sh**, binaries are provided.
 
-- **darwin** [386](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-darwin-amd64)
-- **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-freebsd-amd64)
-- **linux** [386](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-linux-amd64)
-- **windows** [386](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-windows-amd64)
+* **darwin** [386](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-darwin-amd64)
+* **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-freebsd-amd64)
+* **linux** [386](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-linux-amd64)
+* **windows** [386](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.6-beta.1/dry-windows-amd64)
 
 #### Mac OS X / Homebrew
 
 If you're on OS X and want to use homebrew:
+
 ```
 brew tap moncho/dry
 brew install dry
@@ -115,14 +118,12 @@ brew install dry
 
 #### Arch Linux
 
-```
-yaourt -S dry-bin
-```
-
+```yaourt -S dry-bin```
 
 ### Usage
 
 Open a console, type ```dry```. It will try to connect to:
+
 * A Docker host given as a parameter (**-H**).
 * if none given, a Docker host defined in the **$DOCKER_HOST** environment variable.
 * if not defined, to **unix:///var/run/docker.sock**.
@@ -132,6 +133,7 @@ If no connection with a Docker host succeeds, **dry** will exit immediately.
 ```dry -p``` launches dry with [pprof](https://golang.org/pkg/net/http/pprof/) package active.
 
 ### Contributing
+
 All contributions are welcome.
 
 * Fork the project.
@@ -146,6 +148,7 @@ Code released under the MIT license. See
 ## Credits
 
 Built on top of:
+
 * [termbox](https://github.com/nsf/termbox-go)
 * [termui](https://github.com/gizak/termui)
 * [Docker engine-api](https://github.com/docker/engine-api)
