@@ -18,11 +18,12 @@ func (h *diskUsageScreenEventHandler) handle(event termbox.Event) {
 	ignored := false
 	switch event.Key {
 	case termbox.KeyArrowUp | termbox.KeyArrowDown:
-		//To avoid that the base handler handles this
+		//To avoid the base handler handling this
 		ignored = true
 		handled = true
-
-	case termbox.KeyCtrlP: //prune
+	}
+	switch event.Ch {
+	case 'p', 'P':
 		handled = true
 		if confirmation, err := appui.ReadLine(confirmation); err == nil {
 			h.screen.ClearAndFlush()
