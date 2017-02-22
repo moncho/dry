@@ -139,8 +139,7 @@ func (r *DockerImagesRenderer) imagesToShow() []types.ImageSummary {
 		return images
 	}
 
-	start := 0
-	end := len(images)
+	start, end := 0, 0
 
 	if cursorPos > linesForImages {
 		start = cursorPos + 1 - linesForImages

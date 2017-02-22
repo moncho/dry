@@ -125,8 +125,7 @@ func (r *DockerNetworksRenderer) networksToShow() []types.NetworkResource {
 		return networks
 	}
 
-	start := 0
-	end := len(networks)
+	start, end := 0, 0
 
 	if cursorPos > linesForNetworks {
 		start = cursorPos + 1 - linesForNetworks

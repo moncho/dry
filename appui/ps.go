@@ -147,8 +147,7 @@ func (r *DockerPs) containersToShow() []*types.Container {
 		return containers
 	}
 
-	start := 0
-	end := len(containers)
+	start, end := 0, 0
 
 	if cursorPos > availableLines {
 		start = cursorPos + 1 - availableLines
