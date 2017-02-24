@@ -83,6 +83,7 @@ func newDockerEnv(opts dryOptions) *docker.Env {
 }
 
 func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env, stop <-chan struct{}) {
+	screen.Clear()
 	midscreen := screen.Width / 2
 	height := screen.Height
 	screen.RenderAtColumn(midscreen-len(connecting)/2, 1, ui.White(connecting))
