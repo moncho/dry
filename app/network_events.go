@@ -32,7 +32,6 @@ func (h *networksScreenEventHandler) handle(event termbox.Event) {
 			network, err := dry.NetworkAt(cursorPos)
 			if err == nil {
 				dry.RemoveNetwork(network.ID)
-				cursor.ScrollCursorDown()
 			} else {
 				ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeViewChan, err)
 			}
