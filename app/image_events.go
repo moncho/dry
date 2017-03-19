@@ -25,10 +25,8 @@ func (h *imagesScreenEventHandler) handle(event termbox.Event) {
 		dry.RemoveDanglingImages()
 	case termbox.KeyCtrlE: //remove image
 		dry.RemoveImageAt(cursorPos, false)
-		cursor.ScrollCursorDown()
 	case termbox.KeyCtrlF: //force remove image
 		dry.RemoveImageAt(cursorPos, true)
-		cursor.ScrollCursorDown()
 	case termbox.KeyEnter: //inspect image
 		dry.InspectImageAt(cursorPos)
 		focus = false
