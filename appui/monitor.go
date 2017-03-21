@@ -23,7 +23,7 @@ type Monitor struct {
 func NewMonitor(screen *ui.Screen, daemon docker.ContainerDaemon, y int) *Monitor {
 	height := screen.Height - MainScreenHeaderSize - MainScreenFooterSize - 2
 	g := termui.NewGrid(0, y, height, screen.Width)
-	containers := daemon.ContainerStore().List()
+	containers := daemon.ContainerStore().Filter(docker.ContainerFilters.ByRunningState(true))
 	g.AddRows(DefaultMonitorTableHeader)
 	var channels []*docker.StatsChannel
 	for _, c := range containers {

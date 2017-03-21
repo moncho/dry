@@ -10,6 +10,8 @@ import (
 	"github.com/docker/docker/api/types"
 )
 
+//StatsChannel is a container and its stats channel.
+//If the container is not running stats and done channel are nil.
 type StatsChannel struct {
 	Container *types.Container
 	Stats     <-chan *Stats
@@ -18,7 +20,7 @@ type StatsChannel struct {
 
 //NewStatsChannel creates a channel on which to receive the runtime stats of the given container
 func NewStatsChannel(daemon *DockerDaemon, container *types.Container) *StatsChannel {
-	if IsContainerRunning(*container) {
+	if IsContainerRunning(container) {
 		stats := make(chan *Stats)
 		done := make(chan struct{})
 

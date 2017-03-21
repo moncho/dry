@@ -54,7 +54,7 @@ func NewContainerStatsRow(s *docker.StatsChannel) *ContainerStatsRow {
 		row.Block,
 		row.Pids,
 	}
-	if docker.IsContainerRunning(*c) {
+	if docker.IsContainerRunning(c) {
 		go func() {
 			for stat := range s.Stats {
 				row.setNet(stat.NetworkRx, stat.NetworkTx)

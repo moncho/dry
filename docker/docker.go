@@ -206,7 +206,7 @@ func (daemon *DockerDaemon) InspectImage(name string) (dockerTypes.ImageInspect,
 
 //IsContainerRunning returns true if the container with the given  is running
 func (daemon *DockerDaemon) IsContainerRunning(id string) bool {
-	return IsContainerRunning(*daemon.containerStore.Get(id))
+	return IsContainerRunning(daemon.containerStore.Get(id))
 }
 
 //Kill the container with the given id
@@ -361,7 +361,7 @@ func (daemon *DockerDaemon) RemoveAllStoppedContainers() (int, error) {
 	if err == nil {
 		var wg sync.WaitGroup
 		for _, container := range containers {
-			if !IsContainerRunning(*container) {
+			if !IsContainerRunning(container) {
 				wg.Add(1)
 				go func(id string) {
 					defer atomic.AddUint32(&count, 1)
@@ -563,6 +563,6 @@ func GetBool(key string) (value bool) {
 }
 
 //IsContainerRunning returns true if the given container is running
-func IsContainerRunning(container dockerTypes.Container) bool {
+func IsContainerRunning(container *dockerTypes.Container) bool {
 	return strings.Contains(container.Status, "Up")
 }

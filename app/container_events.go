@@ -12,7 +12,7 @@ import (
 
 type commandToExecute struct {
 	command   docker.Command
-	container types.Container
+	container *types.Container
 }
 type containersScreenEventHandler struct {
 	baseEventHandler
@@ -24,7 +24,7 @@ func (h *containersScreenEventHandler) handle(event termbox.Event) {
 	screen := h.screen
 	cursor := screen.Cursor
 	cursorPos := cursor.Position()
-	//Controls if the event has been handled by the first switch statement
+	//Controls if the event has been handled by the first¡ switch statement
 	handled := true
 	switch event.Key {
 	case termbox.KeyF1: //sort
@@ -69,7 +69,7 @@ func (h *containersScreenEventHandler) handle(event termbox.Event) {
 				focus = false
 				h.handleCommand(commandToExecute{
 					docker.RM,
-					*container,
+					container,
 				})
 			}
 		case 'i', 'I': //inspect
@@ -82,7 +82,7 @@ func (h *containersScreenEventHandler) handle(event termbox.Event) {
 
 					h.handleCommand(commandToExecute{
 						docker.INSPECT,
-						*container,
+						container,
 					})
 				}
 			}
@@ -96,7 +96,7 @@ func (h *containersScreenEventHandler) handle(event termbox.Event) {
 
 					h.handleCommand(commandToExecute{
 						docker.LOGS,
-						*container,
+						container,
 					})
 				}
 			}
@@ -108,7 +108,7 @@ func (h *containersScreenEventHandler) handle(event termbox.Event) {
 					focus = false
 					h.handleCommand(commandToExecute{
 						docker.STATS,
-						*container,
+						container,
 					})
 				}
 			}
@@ -164,7 +164,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 
 //statsScreen shows container stats on the screen
 //TODO move to appui
-func statsScreen(container types.Container, screen *ui.Screen, dry *Dry, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
+func statsScreen(container *types.Container, screen *ui.Screen, dry *Dry, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
 	closeViewOnExit := true
 	screen.Clear()
 
@@ -236,7 +236,7 @@ func showContainerOptions(h *containersScreenEventHandler, dry *Dry, screen *ui.
 		screen.Sync()
 		screen.Cursor.Reset()
 
-		info, infoLines := appui.NewContainerInfo(*container)
+		info, infoLines := appui.NewContainerInfo(container)
 		screen.RenderLineWithBackGround(0, screen.Height-1, commandsMenuBar, appui.DryTheme.Footer)
 		screen.Render(1, info)
 		l := appui.NewContainerCommands(*container,
@@ -295,7 +295,7 @@ func showContainerOptions(h *containersScreenEventHandler, dry *Dry, screen *ui.
 			h.handleCommand(
 				commandToExecute{
 					command.Command,
-					*container,
+					container,
 				})
 		} else {
 			//view is closed here if there is not a command to execute
