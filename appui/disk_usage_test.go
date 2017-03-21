@@ -8,15 +8,7 @@ import (
 )
 
 const (
-	dockerInfoValue = `
-Docker Host: test
-`
-	diskUsageOutput = `
-Docker Host: test
-
-
-
-<green>TYPE           TOTAL                 ACTIVE                SIZE                  RECLAIMABLE</>
+	diskUsageOutput = `<green>TYPE           TOTAL                 ACTIVE                SIZE                  RECLAIMABLE</>
 
 Images              0                   0                   0 B                 0 B
 Containers          0                   0                   0 B                 0 B
@@ -36,19 +28,19 @@ Total reclaimed space: 0 B
 
 func TestDiskUsageRendererCreation(t *testing.T) {
 
-	r := NewDockerDiskUsageRenderer(dockerInfoValue, screenHeight)
+	r := NewDockerDiskUsageRenderer(screenHeight)
 
 	if r == nil {
 		t.Error("DiskUsageRenderer was not created")
 	}
 
-	if r.dockerInfo != dockerInfoValue || r.height != screenHeight {
+	if r.height != screenHeight {
 		t.Errorf("DiskUsageRenderer was not initialized correctly: %v", r)
 	}
 }
 
 func TestDiskUsageRendererRendering(t *testing.T) {
-	r := NewDockerDiskUsageRenderer(dockerInfoValue, screenHeight)
+	r := NewDockerDiskUsageRenderer(screenHeight)
 
 	du := &types.DiskUsage{}
 	pr := &docker.PruneReport{}

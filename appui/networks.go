@@ -42,9 +42,7 @@ func NewDockerNetworksRenderer(daemon docker.ContainerDaemon, screenHeight int, 
 		{`Scope`, `SCOPE`, docker.NoSortNetworks},
 	}
 
-	di := dockerInfo(daemon)
-
-	r.networksTableTemplate = buildNetworkTableTemplate(di)
+	r.networksTableTemplate = buildNetworkTableTemplate()
 	r.networksTemplate = buildNetworksTemplate()
 	r.cursor = cursor
 	r.daemon = daemon
@@ -141,13 +139,8 @@ func (r *DockerNetworksRenderer) networksToShow() []types.NetworkResource {
 	return networks[start:end]
 }
 
-func buildNetworkTableTemplate(dockerInfo string) *template.Template {
-	markup := dockerInfo +
-		`
-
-
-{{.NetworkTable}}
-`
+func buildNetworkTableTemplate() *template.Template {
+	markup := `{{.NetworkTable}}`
 	return template.Must(template.New(`networks`).Parse(markup))
 }
 

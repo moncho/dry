@@ -25,15 +25,12 @@ type DockerDiskUsageRenderer struct {
 	diskUsageTableTemplate *template.Template
 	diskUsage              *types.DiskUsage
 	pruneReport            *docker.PruneReport
-	dockerInfo             string // Docker environment information
-
-	height int
-
+	height                 int
 	sync.RWMutex
 }
 
 //NewDockerDiskUsageRenderer creates a DockerDiskUsageRenderer
-func NewDockerDiskUsageRenderer(dockerInfo string, screenHeight int) *DockerDiskUsageRenderer {
+func NewDockerDiskUsageRenderer(screenHeight int) *DockerDiskUsageRenderer {
 	r := &DockerDiskUsageRenderer{}
 
 	r.columns = []diskUsageColumn{
@@ -44,9 +41,7 @@ func NewDockerDiskUsageRenderer(dockerInfo string, screenHeight int) *DockerDisk
 		{`Reclaimable`, `RECLAIMABLE`},
 	}
 
-	r.dockerInfo = dockerInfo
-
-	r.diskUsageTableTemplate = buildDiskUsageTableTemplate(dockerInfo)
+	r.diskUsageTableTemplate = buildDiskUsageTableTemplate()
 	r.height = screenHeight
 	return r
 }
@@ -133,12 +128,9 @@ func (r *DockerDiskUsageRenderer) formattedDiskUsage() string {
 	return duTable
 }
 
-func buildDiskUsageTableTemplate(dockerInfo string) *template.Template {
-	markup := dockerInfo +
-		`
-
-
-{{.DiskUsageTable}}
+func buildDiskUsageTableTemplate() *template.Template {
+	markup :=
+		`{{.DiskUsageTable}}
 
 {{.PruneTable}}
 `
