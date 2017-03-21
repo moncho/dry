@@ -29,6 +29,7 @@ type ContainerDaemon interface {
 	NetworksCount() int
 	NetworkInspect(id string) (types.NetworkResource, error)
 	Ok() (bool, error)
+	OpenChannel(container *types.Container) *StatsChannel
 	Prune() (*PruneReport, error)
 	RestartContainer(id string) error
 	Rm(id string) error

@@ -273,6 +273,10 @@ func (daemon *DockerDaemon) Ok() (bool, error) {
 	return daemon.err == nil, daemon.err
 }
 
+func (daemon *DockerDaemon) OpenChannel(container *dockerTypes.Container) *StatsChannel {
+	return NewStatsChannel(daemon, container)
+}
+
 //Prune requests the Docker daemon to prune unused containers, images
 //networks and volumes
 func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
@@ -461,7 +465,8 @@ func (daemon *DockerDaemon) Rmi(name string, force bool) ([]dockerTypes.ImageDel
 
 //Stats shows resource usage statistics of the container with the given id
 func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- struct{}) {
-	return StatsChannel(daemon, daemon.containerStore.Get(id), true)
+	stream := NewStatsChannel(daemon, daemon.containerStore.Get(id))
+	return stream.Stats, stream.Done
 }
 
 //StopContainer stops the container with the given id
