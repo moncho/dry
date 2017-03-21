@@ -166,6 +166,11 @@ func (_m *ContainerDaemonMock) Ok() (bool, error) {
 	return false, nil
 }
 
+//OpenChannel mocks OpenChannel
+func (_m *ContainerDaemonMock) OpenChannel(container *types.Container) *drydocker.StatsChannel {
+	return nil
+}
+
 // Prune mocks prune command
 func (_m *ContainerDaemonMock) Prune() (*drydocker.PruneReport, error) {
 	return nil, nil
