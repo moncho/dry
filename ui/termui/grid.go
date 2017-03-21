@@ -1,24 +1,23 @@
 package termui
 
-import (
-	ui "github.com/gizak/termui"
-)
+import ui "github.com/gizak/termui"
 
 //Grid is a custom termui.Grid which expects rows as GridBufferer(s).
 type Grid struct {
 	ui.GridBufferer
-	rows   []ui.GridBufferer
-	X, Y   int
-	Width  int
-	Offset int
+	rows          []ui.GridBufferer
+	X, Y          int
+	Height, Width int
+	Offset        int
 }
 
 //NewGrid creates a new Grid
-func NewGrid(x, y, width int) *Grid {
+func NewGrid(x, y, height, width int) *Grid {
 	return &Grid{
-		X:     x,
-		Y:     y,
-		Width: width,
+		X:      x,
+		Y:      y,
+		Width:  width,
+		Height: height,
 	}
 }
 
@@ -40,7 +39,9 @@ func (g *Grid) Align() {
 func (g *Grid) Clear() { g.rows = []ui.GridBufferer{} }
 
 //GetHeight return this Grid height
-func (g *Grid) GetHeight() int { return len(g.rows) }
+func (g *Grid) GetHeight() int {
+	return g.Height
+}
 
 //SetX sets the X pos of this Grid
 func (g *Grid) SetX(x int) { g.X = x }
@@ -50,14 +51,6 @@ func (g *Grid) SetY(y int) { g.Y = y }
 
 //SetWidth sets the width of this Grid
 func (g *Grid) SetWidth(w int) { g.Width = w }
-
-//MaxRows returns the max number of visible rows of this Grid
-func (g *Grid) MaxRows() int { return ui.TermHeight() - g.Y - 1 }
-
-func (g *Grid) pageRows() (rows []ui.GridBufferer) {
-	rows = append(rows, g.rows[g.Offset:]...)
-	return rows
-}
 
 //Buffer returns the content of this Grid as a Buffer
 func (g *Grid) Buffer() ui.Buffer {
@@ -73,4 +66,27 @@ func (g *Grid) AddRows(rows ...ui.GridBufferer) {
 	for _, r := range rows {
 		g.rows = append(g.rows, r)
 	}
+}
+
+func (g *Grid) pageRows() []ui.GridBufferer {
+	rows := g.rows
+	availableLines := g.GetHeight() - 1
+
+	if len(rows) < availableLines {
+		return rows
+	}
+
+	start, end := 0, 0
+	cursorPos := g.Offset
+	if cursorPos > availableLines {
+		start = cursorPos + 1 - availableLines
+		end = cursorPos + 1
+	} else if cursorPos == availableLines {
+		start = 1
+		end = availableLines + 1
+	} else {
+		start = 0
+		end = availableLines
+	}
+	return rows[start:end]
 }
