@@ -25,7 +25,6 @@ func NewGaugeColumn() *GaugeColumn {
 	g.Border = false
 	g.Percent = 0
 	g.PaddingBottom = 0
-	g.LabelAlign = termui.AlignLeft
 
 	return &GaugeColumn{*g}
 }
