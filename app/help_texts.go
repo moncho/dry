@@ -29,6 +29,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>1</>         To container list
 	<white>2</>         To image list
 	<white>3</>         To network list
+	<white>m</>         To container monitor mode	
 	<white>h</>         Shows this help screen
 	<white>Crtl+c</>    Quits <white>dry</> inmediately
 	<white>q</>         Quits <white>dry</>
@@ -81,7 +82,10 @@ const (
 	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "
 	keyMappings    = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F3]:<darkgrey>Filter(By Name)</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
-		"<b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
+		"<b>[m]:<darkgrey>Monitor mode</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
+
+	monitorMapping = commonMappings +
+		"<b>[1]:<darkgrey>Container List</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <blue>"
 
 	imagesKeyMappings = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +

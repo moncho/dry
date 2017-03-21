@@ -127,7 +127,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			monitor := appui.NewMonitor(screen, d.dockerDaemon, viewStartingLine)
 			ctx, cancel := context.WithCancel(context.Background())
 			monitor.RenderLoop(ctx)
-			keymap = keyMappings
+			keymap = monitorMapping
 			what = "Containers"
 			count = monitor.ContainerCount()
 			cancelMonitorWidget = cancel
