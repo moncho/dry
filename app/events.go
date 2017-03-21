@@ -92,6 +92,9 @@ func (b *baseEventHandler) handle(event termbox.Event) {
 	case '3':
 		cursor.Reset()
 		dry.ShowNetworks()
+	case 'm', 'M': //monitor mode
+		cursor.Reset()
+		dry.ShowMonitor()
 	}
 
 	b.setFocus(focus)
@@ -132,6 +135,10 @@ func (eh *eventHandlerFactory) handlerFor(view viewMode) eventHandler {
 		cHandler := &containersScreenEventHandler{}
 		cHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
 		eh.handlers[Main] = cHandler
+
+		mHandler := &monitorScreenEventHandler{}
+		mHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
+		eh.handlers[Monitor] = mHandler
 
 	})
 

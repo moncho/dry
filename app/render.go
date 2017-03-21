@@ -1,11 +1,14 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"time"
 
+	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
+	"github.com/moncho/dry/ui/termui"
 )
 
 //ViewMode represents dry possible views
@@ -16,6 +19,7 @@ const (
 	Main viewMode = iota //This is the container list view
 	DiskUsage
 	Images
+	Monitor
 	Networks
 	EventsMode
 	HelpMode
@@ -26,13 +30,27 @@ const (
 	InspectMode
 )
 
+const (
+	viewStartingLine = appui.MainScreenHeaderSize + 2
+)
+
+var cancelMonitorWidget context.CancelFunc
+
 //Render renders dry in the given screen
 func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
+	var bufferers []gizaktermui.Bufferer
+
 	var what string
 	var count int
+	var titleInfo string
 	var keymap string
-	statusBar.Render()
-	screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
+	var viewRenderer ui.Renderer
+	di := d.ui.DockerInfo
+	bufferers = append(bufferers, di)
+	//if the monitor widget is active it is now cancelled since (most likely) the view is going to change now
+	if cancelMonitorWidget != nil {
+		cancelMonitorWidget()
+	}
 	switch d.viewMode() {
 	case Main:
 		{
@@ -47,17 +65,15 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 				screen.Cursor.Position(),
 				sortMode)
 			d.ui.ContainerComponent.PrepareToRender(data)
-			screen.RenderRenderer(1, d.ui.ContainerComponent)
+			viewRenderer = d.ui.ContainerComponent
 
 			keymap = keyMappings
-			title := fmt.Sprintf(
-				"<b><blue>Containers: </><yellow>%d</></>", count)
-			if d.state.filterPattern != "" {
-				title = title + fmt.Sprintf(
-					"<b><blue> | Showing containers named: </><yellow>%s</></> ", d.state.filterPattern)
-			}
 
-			screen.RenderLine(0, appui.MainScreenHeaderSize, title)
+			if d.state.filterPattern != "" {
+				titleInfo = titleInfo + fmt.Sprintf(
+					"<b><blue> | Container name filter: </><yellow>%s</></> ", d.state.filterPattern)
+			}
+			what = "Containers"
 
 		}
 	case Images:
@@ -76,34 +92,29 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 					sortMode)
 
 				renderer.PrepareForRender(data)
-				screen.RenderRenderer(1,
-					renderer)
+				viewRenderer = renderer
 			} else {
 				screen.Render(1, err.Error())
 			}
 
 			what = "Images"
 			keymap = imagesKeyMappings
-			renderViewTitle(screen, what, count)
 
 		}
 	case Networks:
 		{
-			screen.RenderRenderer(1,
-				appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.state.SortNetworksMode))
+			viewRenderer = appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.state.SortNetworksMode)
 			what = "Networks"
 			count = d.dockerDaemon.NetworksCount()
 			updateCursorPosition(screen.Cursor, count)
 			keymap = networkKeyMappings
-			renderViewTitle(screen, what, count)
 
 		}
 	case DiskUsage:
 		{
 			if du, err := d.dockerDaemon.DiskUsage(); err == nil {
 				d.ui.DiskUsageComponet.PrepareToRender(&du, d.PruneReport())
-				screen.RenderRenderer(1,
-					d.ui.DiskUsageComponet)
+				viewRenderer = d.ui.DiskUsageComponet
 
 			} else {
 				screen.Render(1,
@@ -111,9 +122,32 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			}
 			keymap = diskUsageKeyMappings
 		}
+	case Monitor:
+		{
+			monitor := appui.NewMonitor(screen, d.dockerDaemon, viewStartingLine)
+			ctx, cancel := context.WithCancel(context.Background())
+			monitor.RenderLoop(ctx)
+			keymap = keyMappings
+			what = "Containers"
+			count = monitor.ContainerCount()
+			cancelMonitorWidget = cancel
 
+		}
 	}
-	screen.RenderLineWithBackGround(0, screen.Height-1, keymap, appui.DryTheme.Footer)
+
+	if what != "" {
+		bufferers = append(bufferers, tableHeader(screen, what, count, titleInfo))
+	}
+
+	bufferers = append(bufferers, footer(screen, keymap))
+
+	statusBar.Render()
+	screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
+	screen.RenderBufferer(bufferers...)
+	if viewRenderer != nil {
+		screen.RenderRenderer(viewStartingLine, viewRenderer)
+	}
+
 	d.setChanged(false)
 
 	screen.Flush()
@@ -145,10 +179,32 @@ func renderDry(d *Dry) ui.Renderer {
 	return output
 }
 
-func renderViewTitle(screen *ui.Screen, what string, howMany int) {
-	screen.RenderLine(0, appui.MainScreenHeaderSize,
+func tableHeader(screen *ui.Screen, what string, howMany int, info string) *termui.MarkupPar {
+	par := termui.NewParFromMarkupText(appui.DryTheme,
 		fmt.Sprintf(
-			"<b><blue>%s: </><yellow>%d</></>", what, howMany))
+			"<b><blue>%s: </><yellow>%d</></>", what, howMany)+" "+info)
+
+	par.SetX(0)
+	par.SetY(appui.MainScreenHeaderSize)
+	par.Border = false
+	par.Width = screen.Width
+	par.TextBgColor = gizaktermui.Attribute(appui.DryTheme.Bg)
+	par.Bg = gizaktermui.Attribute(appui.DryTheme.Bg)
+
+	return par
+}
+
+func footer(screen *ui.Screen, mapping string) *termui.MarkupPar {
+
+	par := termui.NewParFromMarkupText(appui.DryTheme, mapping)
+	par.SetX(0)
+	par.SetY(screen.Height - 1)
+	par.Border = false
+	par.Width = screen.Width
+	par.TextBgColor = gizaktermui.Attribute(appui.DryTheme.Footer)
+	par.Bg = gizaktermui.Attribute(appui.DryTheme.Footer)
+
+	return par
 }
 
 //Updates the cursor position in case it is out of bounds

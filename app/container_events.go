@@ -59,17 +59,18 @@ func (h *containersScreenEventHandler) handle(event termbox.Event) {
 	if !handled {
 
 		switch event.Ch {
-		case 's', 'S': //stats
+		case 'e', 'E': //remove
 			handled = true
-			if cursorPos >= 0 {
-				container := dry.ContainerAt(cursorPos)
-				if container != nil {
-					focus = false
-					h.handleCommand(commandToExecute{
-						docker.STATS,
-						*container,
-					})
-				}
+
+			container := dry.ContainerAt(cursorPos)
+			if container != nil {
+				//Since a command is created the focus is handled by handleCommand
+				//Fixes #24
+				focus = false
+				h.handleCommand(commandToExecute{
+					docker.RM,
+					*container,
+				})
 			}
 		case 'i', 'I': //inspect
 			handled = true
@@ -99,21 +100,17 @@ func (h *containersScreenEventHandler) handle(event termbox.Event) {
 					})
 				}
 			}
-		case '1':
-			//already in container screen
+		case 's', 'S': //stats
 			handled = true
-		case 'e', 'E': //remove
-			handled = true
-
-			container := dry.ContainerAt(cursorPos)
-			if container != nil {
-				//Since a command is created the focus is handled by handleCommand
-				//Fixes #24
-				focus = false
-				h.handleCommand(commandToExecute{
-					docker.RM,
-					*container,
-				})
+			if cursorPos >= 0 {
+				container := dry.ContainerAt(cursorPos)
+				if container != nil {
+					focus = false
+					h.handleCommand(commandToExecute{
+						docker.STATS,
+						*container,
+					})
+				}
 			}
 		}
 	}
