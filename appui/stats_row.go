@@ -144,7 +144,9 @@ func (row *ContainerStatsRow) setPids(pids uint64) {
 func (row *ContainerStatsRow) setCPU(val float64) {
 	row.CPU.Label = fmt.Sprintf("%.2f%%", val)
 	cpu := int(val)
-	if cpu > 100 {
+	if cpu < 5 {
+		cpu = 5
+	} else if cpu > 100 {
 		cpu = 100
 	}
 	row.CPU.Percent = cpu
@@ -154,6 +156,11 @@ func (row *ContainerStatsRow) setCPU(val float64) {
 func (row *ContainerStatsRow) setMem(val float64, limit float64, percent float64) {
 	row.Memory.Label = fmt.Sprintf("%s / %s", units.BytesSize(val), units.BytesSize(limit))
 	mem := int(percent)
+	if mem < 5 {
+		mem = 5
+	} else if mem > 100 {
+		mem = 100
+	}
 	row.Memory.Percent = mem
 	row.Memory.BarColor = percentileToColor(mem)
 }
