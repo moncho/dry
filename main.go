@@ -45,6 +45,7 @@ var loadMessage = []string{docker.Whale0,
 //dryOptions represents command line flags variables
 type dryOptions struct {
 	Description bool `short:"d" long:"description" description:"Dry description"`
+	MonitorMode bool `short:"m" long:"monitor" description:"Starts dry in monitor mode"`
 	// enable profiling
 	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
 	Version bool `short:"v" long:"version" description:"Dry version"`
@@ -188,6 +189,9 @@ func main() {
 	dry, err := newApp(screen, dockerEnv)
 	//dry has loaded, loading screen should not be shown
 	close(stopLoadScreen)
+	if opts.MonitorMode {
+		dry.ShowMonitor()
+	}
 	if err == nil {
 		app.RenderLoop(dry, screen)
 		dry.Close()
