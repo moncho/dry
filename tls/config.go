@@ -53,11 +53,13 @@ var clientCipherSuites = []uint16{
 // known weak algorithms removed.
 var DefaultServerAcceptedCiphers = append(clientCipherSuites, acceptedCBCCiphers...)
 
-// ClientDefault is a secure-enough TLS configuration for the client TLS configuration.
-var ClientDefault = tls.Config{
-	// Prefer TLS1.2 as the client minimum
-	MinVersion:   tls.VersionTLS12,
-	CipherSuites: clientCipherSuites,
+// ClientDefault returns a secure-enough TLS configuration for the client TLS configuration.
+func clientDefault() *tls.Config {
+	return &tls.Config{
+		// Prefer TLS1.2 as the client minimum
+		MinVersion:   tls.VersionTLS12,
+		CipherSuites: clientCipherSuites,
+	}
 }
 
 // certPool returns an X.509 certificate pool from `caFile`, the certificate file.
@@ -77,7 +79,7 @@ func certPool(caFile string) (*x509.CertPool, error) {
 
 // Client returns a TLS configuration meant to be used by a client.
 func Client(options Options) (*tls.Config, error) {
-	tlsConfig := ClientDefault
+	tlsConfig := clientDefault()
 	tlsConfig.InsecureSkipVerify = options.InsecureSkipVerify
 	if !options.InsecureSkipVerify && options.CAFile != "" {
 		CAs, err := certPool(options.CAFile)
@@ -95,5 +97,5 @@ func Client(options Options) (*tls.Config, error) {
 		tlsConfig.Certificates = []tls.Certificate{tlsCert}
 	}
 
-	return &tlsConfig, nil
+	return tlsConfig, nil
 }
