@@ -148,7 +148,6 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 		}
 	case docker.RM:
 		dry.Rm(id)
-		screen.Cursor.ScrollCursorDown()
 	case docker.STATS:
 		focus = false
 		go statsScreen(command.container, screen, dry, h.keyboardQueueForView, h.closeViewChan)
