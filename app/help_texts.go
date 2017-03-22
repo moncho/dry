@@ -71,7 +71,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>G</>         Moves the cursor until the end
 	<white>n</>         After a search, it moves forwards to the next search hit
 	<white>N</>         After a search, it moves backwards to the previous search hit
-	<white>s</>         Searchs in the text being shown
+	<white>s</>         Searches in the text being shown
 	<white>pg up</>     Moves the cursor "screen size" lines up
 	<white>pg down</>   Moves the cursor "screen size" lines down
 

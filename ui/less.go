@@ -124,7 +124,7 @@ loop:
 	return nil
 }
 
-//Search searchs in the view buffer for the given pattern
+//Search searches in the view buffer for the given pattern
 func (less *Less) Search(pattern string) error {
 	if pattern != "" {
 		less.tainted = true
