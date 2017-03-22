@@ -178,11 +178,11 @@ func (row *ContainerStatsRow) markAsNotRunning() {
 }
 
 func percentileToColor(n int) termui.Attribute {
+	c := ui.Color23
 	if n > 90 {
-		return termui.ColorRed
+		c = ui.Color161
+	} else if n > 70 {
+		c = ui.Color131
 	}
-	if n > 70 {
-		return termui.ColorYellow
-	}
-	return termui.ColorGreen
+	return termui.Attribute(c)
 }
