@@ -1,4 +1,4 @@
-// Copyright 2016 Zack Guo <gizak@icloud.com>. All rights reserved.
+// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 
@@ -9,7 +9,7 @@ package termui
   par := termui.NewPar("Simple Text")
   par.Height = 3
   par.Width = 17
-  par.Border.Label = "Label"
+  par.BorderLabel = "Label"
 */
 type Par struct {
 	Block

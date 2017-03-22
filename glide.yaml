@@ -42,7 +42,7 @@ import:
 - package: github.com/docker/go-units
   version: 0bbddae09c5a5419a8c6dcdd7ff90da3d450393b
 - package: github.com/gizak/termui
-  version: 202925a536c7febe22698792a2b6de68edb2726d
+  version: master
 - package: github.com/gosuri/uitable
   version: 62e40473eadf9579716227a0033cd8db16e1c500
   subpackages:

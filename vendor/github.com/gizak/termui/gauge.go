@@ -1,4 +1,4 @@
-// Copyright 2016 Zack Guo <gizak@icloud.com>. All rights reserved.
+// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 
@@ -16,7 +16,7 @@ import (
   g.Percent = 40
   g.Width = 50
   g.Height = 3
-  g.Border.Label = "Slim Gauge"
+  g.BorderLabel = "Slim Gauge"
   g.BarColor = termui.ColorRed
   g.PercentColor = termui.ColorBlue
 */
