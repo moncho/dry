@@ -10,7 +10,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 )
 
 type column struct {
@@ -43,7 +42,6 @@ type DockerPs struct {
 	containerTemplate      *template.Template
 	dockerInfo             string // Docker environment information
 	height                 int
-	layout                 *ui.Layout
 	data                   *DockerPsRenderData
 	renderLock             sync.RWMutex
 }
@@ -60,8 +58,6 @@ func NewDockerPsRenderer(screenHeight int) *DockerPs {
 		{`Ports`, `PORTS`, docker.NoSort},
 		{`Names`, `NAMES`, docker.SortByName},
 	}
-	r.layout = ui.NewLayout()
-	//r.layout.Header = appHeader
 	r.containerTableTemplate = buildContainerTableTemplate()
 	r.containerTemplate = buildContainerTemplate()
 	r.height = screenHeight
