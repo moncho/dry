@@ -15,13 +15,13 @@ func TestNewList(t *testing.T) {
 	}
 
 	if l.Bg != termui.Attribute(theme.Bg) {
-		t.Errorf("List Bg does not have expected value. Expected:%s, got: %s ", theme.Bg, l.Bg)
+		t.Errorf("List Bg does not have expected value. Expected:%v, got: %v ", theme.Bg, l.Bg)
 	}
 	if l.ItemBgColor != termui.Attribute(theme.Bg) {
-		t.Errorf("List ItemBgColor does not have expected value. Expected:%s, got: %s ", theme.Bg, l.ItemBgColor)
+		t.Errorf("List ItemBgColor does not have expected value. Expected:%v, got: %v ", theme.Bg, l.ItemBgColor)
 	}
 	if l.ItemFgColor != termui.Attribute(theme.Fg) {
-		t.Errorf("List Bg does not have expected value. Expected:%s, got: %s ", theme.Bg, l.ItemFgColor)
+		t.Errorf("List Bg does not have expected value. Expected:%v, got: %v ", theme.Bg, l.ItemFgColor)
 	}
 
 }

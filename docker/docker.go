@@ -206,7 +206,7 @@ func (daemon *DockerDaemon) InspectImage(name string) (dockerTypes.ImageInspect,
 
 //IsContainerRunning returns true if the container with the given  is running
 func (daemon *DockerDaemon) IsContainerRunning(id string) bool {
-	return IsContainerRunning(*daemon.containerStore.Get(id))
+	return IsContainerRunning(daemon.containerStore.Get(id))
 }
 
 //Kill the container with the given id
@@ -271,6 +271,10 @@ func (daemon *DockerDaemon) NetworkInspect(id string) (dockerTypes.NetworkResour
 //Ok is true if connecting to the Docker daemon went fine
 func (daemon *DockerDaemon) Ok() (bool, error) {
 	return daemon.err == nil, daemon.err
+}
+
+func (daemon *DockerDaemon) OpenChannel(container *dockerTypes.Container) *StatsChannel {
+	return NewStatsChannel(daemon, container)
 }
 
 //Prune requests the Docker daemon to prune unused containers, images
@@ -357,7 +361,7 @@ func (daemon *DockerDaemon) RemoveAllStoppedContainers() (int, error) {
 	if err == nil {
 		var wg sync.WaitGroup
 		for _, container := range containers {
-			if !IsContainerRunning(*container) {
+			if !IsContainerRunning(container) {
 				wg.Add(1)
 				go func(id string) {
 					defer atomic.AddUint32(&count, 1)
@@ -461,7 +465,8 @@ func (daemon *DockerDaemon) Rmi(name string, force bool) ([]dockerTypes.ImageDel
 
 //Stats shows resource usage statistics of the container with the given id
 func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- struct{}) {
-	return StatsChannel(daemon, daemon.containerStore.Get(id), true)
+	stream := NewStatsChannel(daemon, daemon.containerStore.Get(id))
+	return stream.Stats, stream.Done
 }
 
 //StopContainer stops the container with the given id
@@ -558,6 +563,6 @@ func GetBool(key string) (value bool) {
 }
 
 //IsContainerRunning returns true if the given container is running
-func IsContainerRunning(container dockerTypes.Container) bool {
+func IsContainerRunning(container *dockerTypes.Container) bool {
 	return strings.Contains(container.Status, "Up")
 }

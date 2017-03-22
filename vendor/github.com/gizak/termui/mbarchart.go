@@ -1,4 +1,4 @@
-// Copyright 2016 Zack Guo <gizak@icloud.com>. All rights reserved.
+// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 
@@ -16,7 +16,7 @@ import (
    data[0] := []int{3, 2, 5, 7, 9, 4}
    data[1] := []int{7, 8, 5, 3, 1, 6}
    bclabels := []string{"S0", "S1", "S2", "S3", "S4", "S5"}
-   bc.Border.Label = "Bar Chart"
+   bc.BorderLabel = "Bar Chart"
    bc.Data = data
    bc.Width = 26
    bc.Height = 10

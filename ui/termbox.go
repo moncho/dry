@@ -58,7 +58,7 @@ func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) int {
 
 	availableWidth := maxWidth
 
-	for _, token := range Tokenize(str, supportedTags) {
+	for _, token := range Tokenize(str, SupportedTags) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
 		if markup.IsTag(token) {
 			continue

@@ -1,5 +1,5 @@
-hash: e8a00d93db3b9d873cc317009d31cead552b3f5ebc226206c61d210a13dd26c6
-updated: 2017-02-18T13:53:13.389930609+01:00
+hash: 3a5b41cf04c7d3cf551fb4870fd97ff227d6abe7ccd8db794747d56d5b104799
+updated: 2017-03-22T09:07:21.984243429+01:00
 imports:
 - name: github.com/chzyer/readline
   version: c914be64f07d9998f52bf0d598ec26d457168c0f
@@ -53,7 +53,7 @@ imports:
 - name: github.com/docker/libtrust
   version: fa567046d9b14f6aa788882a950d69651d230b21
 - name: github.com/gizak/termui
-  version: 202925a536c7febe22698792a2b6de68edb2726d
+  version: 991cd3d3809135dc24daf6188dc6edcaf3d7d2d9
 - name: github.com/gosuri/uitable
   version: 62e40473eadf9579716227a0033cd8db16e1c500
   subpackages:
@@ -89,7 +89,7 @@ imports:
 - name: github.com/pkg/errors
   version: 494e70f7620561491c2ca11e185bbef4b70060da
 - name: github.com/Sirupsen/logrus
-  version: c078b1e43f58d563c74cebe63c85789e76ddb627
+  version: ba1b36c82c5e05c4f912a88eab0dcd91a171688f
 - name: github.com/spf13/cobra
   version: 312092086bed4968099259622145a0c9ae280064
 - name: github.com/spf13/pflag

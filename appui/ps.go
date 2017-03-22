@@ -10,7 +10,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 )
 
 type column struct {
@@ -43,13 +42,12 @@ type DockerPs struct {
 	containerTemplate      *template.Template
 	dockerInfo             string // Docker environment information
 	height                 int
-	layout                 *ui.Layout
 	data                   *DockerPsRenderData
 	renderLock             sync.RWMutex
 }
 
 //NewDockerPsRenderer creates a renderer for a container list
-func NewDockerPsRenderer(dockerInfo string, screenHeight int) *DockerPs {
+func NewDockerPsRenderer(screenHeight int) *DockerPs {
 	r := &DockerPs{}
 
 	r.columns = []column{
@@ -60,10 +58,7 @@ func NewDockerPsRenderer(dockerInfo string, screenHeight int) *DockerPs {
 		{`Ports`, `PORTS`, docker.NoSort},
 		{`Names`, `NAMES`, docker.SortByName},
 	}
-	di := dockerInfo
-	r.layout = ui.NewLayout()
-	//r.layout.Header = appHeader
-	r.containerTableTemplate = buildContainerTableTemplate(di)
+	r.containerTableTemplate = buildContainerTableTemplate()
 	r.containerTemplate = buildContainerTemplate()
 	r.height = screenHeight
 
@@ -163,13 +158,8 @@ func (r *DockerPs) containersToShow() []*types.Container {
 	return containers[start:end]
 }
 
-func buildContainerTableTemplate(dockerInfo string) *template.Template {
-	markup := dockerInfo +
-		`
-
-
-{{.ContainerTable}}
-`
+func buildContainerTableTemplate() *template.Template {
+	markup := `{{.ContainerTable}}`
 	return template.Must(template.New(`containers`).Parse(markup))
 }
 

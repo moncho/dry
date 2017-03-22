@@ -4,10 +4,27 @@ import (
 	"bytes"
 	"strconv"
 
+	termui "github.com/gizak/termui"
+	drytermui "github.com/moncho/dry/ui/termui"
+
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/olekukonko/tablewriter"
 )
+
+type DockerInfo struct {
+	drytermui.SizableBufferer
+}
+
+func NewDockerInfoBufferer(daemon docker.ContainerDaemon) *DockerInfo {
+	di := drytermui.NewParFromMarkupText(DryTheme, dockerInfo(daemon))
+	di.Border = false
+	di.Height = 3
+	di.Bg = termui.Attribute(DryTheme.Bg)
+	di.TextBgColor = termui.Attribute(DryTheme.Bg)
+	di.Display = false
+	return &DockerInfo{di}
+}
 
 func dockerInfo(daemon docker.ContainerDaemon) string {
 	version, _ := daemon.Version()

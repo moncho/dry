@@ -16,19 +16,19 @@ GO_LDFLAGS_STATIC=-ldflags "-w $(CTIMEVAR) -extldflags -static"
 GOOSES = darwin freebsd linux windows
 GOARCHS = amd64 386 arm
 
-run:
+run: ## Runs dry
 	go run ./main.go
 
-build:
+build: ## Builds dry
 	go build .
 
-install:
+install: ## Installs dry
 	go install $(PKG)
 
-test:
+test: ## Run tests
 	go test $(shell go list ./... | grep -v /vendor/ | grep -v mock)
 
-benchmark:
+benchmark: ## Run benchmarks
 	go test -bench $(shell go list ./... | grep -v /vendor/ | grep -v mock) 
 
 define buildpretty
@@ -38,7 +38,7 @@ $(if $(and $(filter-out darwin_arm,$(1)_$(2)), $(filter-out windows_arm,$(1)_$(2
 )
 endef
 
-cross: *.go VERSION
+cross: *.go VERSION ## Cross compiles dry
 	$(foreach GOARCH,$(GOARCHS),$(foreach GOOS,$(GOOSES),$(call buildpretty,$(GOOS),$(GOARCH))))
 
 define buildrelease
@@ -48,11 +48,15 @@ $(if $(and $(filter-out darwin_arm,$(1)_$(2)), $(filter-out windows_arm,$(1)_$(2
 )
 endef
 
-release: *.go VERSION
+release: *.go VERSION ## Prepares a dry release
 	$(foreach GOARCH,$(GOARCHS),$(foreach GOOS,$(GOOSES),$(call buildrelease,$(GOOS),$(GOARCH))))
 
 clean:
 	rm -rf ${PREFIX}/cross
 
+.PHONY: help
 
-#.PHONY run build install test cross release clean
+# Magic as explained here: http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
+
+help: ## Shows help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

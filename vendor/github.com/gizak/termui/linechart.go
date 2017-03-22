@@ -1,4 +1,4 @@
-// Copyright 2016 Zack Guo <gizak@icloud.com>. All rights reserved.
+// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 
@@ -39,7 +39,7 @@ var rSingleBraille = [4]rune{'\u2880', '⠠', '⠐', '⠈'}
 // because one braille char can represent two data points.
 /*
   lc := termui.NewLineChart()
-  lc.Border.Label = "braille-mode Line Chart"
+  lc.BorderLabel = "braille-mode Line Chart"
   lc.Data = [1.2, 1.3, 1.5, 1.7, 1.5, 1.6, 1.8, 2.0]
   lc.Width = 50
   lc.Height = 12
@@ -69,6 +69,7 @@ type LineChart struct {
 	labelYSpace   int
 	maxY          float64
 	minY          float64
+	autoLabels    bool
 }
 
 // NewLineChart returns a new LineChart with current theme.
@@ -211,7 +212,8 @@ func (lc *LineChart) calcLabelY() {
 
 func (lc *LineChart) calcLayout() {
 	// set datalabels if it is not provided
-	if lc.DataLabels == nil || len(lc.DataLabels) == 0 {
+	if (lc.DataLabels == nil || len(lc.DataLabels) == 0) || lc.autoLabels {
+		lc.autoLabels = true
 		lc.DataLabels = make([]string, len(lc.Data))
 		for i := range lc.Data {
 			lc.DataLabels[i] = fmt.Sprint(i)

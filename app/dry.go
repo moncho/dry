@@ -448,6 +448,11 @@ func (d *Dry) ShowImages() {
 	}
 }
 
+//ShowMonitor changes the state of dry to show the containers monitor
+func (d *Dry) ShowMonitor() {
+	d.changeViewMode(Monitor)
+}
+
 //ShowNetworks changes the state of dry to show the list of Docker networks reported
 //by the daemon
 func (d *Dry) ShowNetworks() {
@@ -667,7 +672,7 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 		d.SortImages(state.SortImagesMode)
 		d.SortNetworks(state.SortNetworksMode)
 		app := &Dry{}
-		app.ui = appui.NewAppUI(d, screen.Height)
+		app.ui = appui.NewAppUI(d, screen.Height, screen.Width)
 		app.state = state
 		app.dockerDaemon = d
 		app.output = make(chan string)

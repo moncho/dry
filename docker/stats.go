@@ -10,48 +10,61 @@ import (
 	"github.com/docker/docker/api/types"
 )
 
-//StatsChannel creates a channel on which to receive the stats of the given container
-func StatsChannel(daemon *DockerDaemon, container *types.Container, streamStats bool) (<-chan *Stats, chan<- struct{}) {
-	stats := make(chan *Stats)
-	done := make(chan struct{})
+//StatsChannel is a container and its stats channel.
+//If the container is not running stats and done channel are nil.
+type StatsChannel struct {
+	Container *types.Container
+	Stats     <-chan *Stats
+	Done      chan<- struct{}
+}
 
-	go func() {
-		cli := daemon.client
-		ctx, cancel := context.WithCancel(context.Background())
-		containerStats, err := cli.ContainerStats(ctx, container.Names[0], streamStats)
-		responseBody := containerStats.Body
-		defer responseBody.Close()
-		defer close(stats)
-		if err != nil {
-			return
-		}
+//NewStatsChannel creates a channel on which to receive the runtime stats of the given container
+func NewStatsChannel(daemon *DockerDaemon, container *types.Container) *StatsChannel {
+	if IsContainerRunning(container) {
+		stats := make(chan *Stats)
+		done := make(chan struct{})
 
-		var statsJSON *types.StatsJSON
-		dec := json.NewDecoder(responseBody)
-
-		if err := dec.Decode(&statsJSON); err != nil {
-			return
-		}
-		timer := time.NewTicker(1000 * time.Millisecond)
-		for {
-			select {
-			case <-timer.C:
-				if err := dec.Decode(&statsJSON); err != nil {
-					return
-				}
-				if statsJSON != nil {
-					top, _ := daemon.Top(container.ID)
-					stats <- buildStats(container, statsJSON, &top)
-				}
-			case <-ctx.Done():
-				return
-			case <-done:
-				cancel()
+		go func() {
+			cli := daemon.client
+			ctx, cancel := context.WithCancel(context.Background())
+			containerStats, err := cli.ContainerStats(ctx, container.Names[0], true)
+			responseBody := containerStats.Body
+			defer responseBody.Close()
+			defer close(stats)
+			if err != nil {
 				return
 			}
-		}
-	}()
-	return stats, done
+
+			var statsJSON *types.StatsJSON
+			dec := json.NewDecoder(responseBody)
+
+			if err := dec.Decode(&statsJSON); err != nil {
+				return
+			}
+			timer := time.NewTicker(1000 * time.Millisecond)
+			for {
+				select {
+				case <-timer.C:
+					if err := dec.Decode(&statsJSON); err != nil {
+						return
+					}
+					if statsJSON != nil {
+						top, _ := daemon.Top(container.ID)
+						stats <- buildStats(container, statsJSON, &top)
+					}
+				case <-ctx.Done():
+					return
+				case <-done:
+					cancel()
+					return
+				}
+			}
+		}()
+
+		return &StatsChannel{container, stats, done}
+	}
+	return &StatsChannel{Container: container}
+
 }
 
 //buildStats builds Stats with the given information

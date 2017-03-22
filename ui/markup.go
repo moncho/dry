@@ -7,7 +7,7 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-var supportedTags = supportedTagsRegexp()
+var SupportedTags = supportedTagsRegexp()
 var tagsToAttributeMap = tags()
 
 func supportedTagsRegexp() *regexp.Regexp {

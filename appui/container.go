@@ -16,7 +16,7 @@ const (
 
 //NewContainerInfo returns detailed container information. Returned int value
 //is the number of lines.
-func NewContainerInfo(container types.Container) (string, int) {
+func NewContainerInfo(container *types.Container) (string, int) {
 
 	buffer := new(bytes.Buffer)
 	var status string

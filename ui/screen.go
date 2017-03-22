@@ -130,7 +130,6 @@ func (screen *Screen) RenderBufferer(bs ...termui.Bufferer) {
 			}
 		}
 	}
-	termbox.Flush()
 }
 
 // RenderLine takes the incoming string, tokenizes it to extract markup
@@ -140,7 +139,7 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 	defer screen.Unlock()
 
 	start, column := 0, 0
-	for _, token := range Tokenize(str, supportedTags) {
+	for _, token := range Tokenize(str, SupportedTags) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
 		if screen.markup.IsTag(token) {
 			continue
@@ -168,7 +167,7 @@ func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor
 	if x > 0 {
 		fill(0, y, x, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
 	}
-	for _, token := range Tokenize(str, supportedTags) {
+	for _, token := range Tokenize(str, SupportedTags) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
 		if screen.markup.IsTag(token) {
 			continue

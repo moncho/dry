@@ -59,7 +59,7 @@ func tableFormat(ctx FormattingContext, containers []*types.Container) {
 		if index == ctx.Selected {
 			buffer.WriteString("<white>")
 		} else {
-			if IsContainerRunning(*container) {
+			if IsContainerRunning(container) {
 				buffer.WriteString("<cyan0>")
 			} else {
 				buffer.WriteString("<grey2>")

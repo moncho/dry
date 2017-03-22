@@ -38,3 +38,10 @@ func (c ContainerFilter) ByID(id string) ContainerFilter {
 		return strings.Contains(c.ID, id)
 	}
 }
+
+//ByRunningState filters containers by its running state
+func (c ContainerFilter) ByRunningState(running bool) ContainerFilter {
+	return func(c *types.Container) bool {
+		return IsContainerRunning(c) == running
+	}
+}

@@ -40,7 +40,6 @@ type DockerImagesRenderer struct {
 	columns             []imagesColumn // List of columns.
 	imagesTableTemplate *template.Template
 	imagesTemplate      *template.Template
-	dockerInfo          string // Docker environment information
 	height              int
 	data                *DockerImageRenderData
 	renderLock          sync.Mutex
@@ -58,9 +57,7 @@ func NewDockerImagesRenderer(daemon docker.ContainerDaemon, screenHeight int) *D
 		{`Size`, `Size`, docker.SortImagesBySize},
 	}
 
-	di := dockerInfo(daemon)
-
-	r.imagesTableTemplate = buildImageTableTemplate(di)
+	r.imagesTableTemplate = buildImageTableTemplate()
 	r.imagesTemplate = buildImagesTemplate()
 	r.height = screenHeight
 	return r
@@ -155,13 +152,8 @@ func (r *DockerImagesRenderer) imagesToShow() []types.ImageSummary {
 	return images[start:end]
 }
 
-func buildImageTableTemplate(dockerInfo string) *template.Template {
-	markup := dockerInfo +
-		`
-
-
-{{.ImageTable}}
-`
+func buildImageTableTemplate() *template.Template {
+	markup := `{{.ImageTable}}`
 	return template.Must(template.New(`images`).Parse(markup))
 }
 

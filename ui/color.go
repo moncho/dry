@@ -5,10 +5,9 @@ type Color uint32
 
 //Colors
 const (
-	MenuBarBackgroundColor Color = Color25
-	Grey                   Color = Color233
-	Grey2                  Color = 0xF4
-	Darkgrey               Color = 0xE8
+	Grey     Color = Color233
+	Grey2    Color = Color244
+	Darkgrey Color = Color232
 )
 
 // First 256 entries corresponde to Colors from the color palette as defined by the standard

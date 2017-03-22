@@ -32,6 +32,11 @@ type ContainerFormatter struct {
 	c      *types.Container
 }
 
+//NewContainerFormatter creates a new container formatter
+func NewContainerFormatter(c *types.Container, trunc bool) *ContainerFormatter {
+	return &ContainerFormatter{trunc: trunc, c: c}
+}
+
 //ID prettifies the id
 func (c *ContainerFormatter) ID() string {
 	c.addHeader(idHeader)
