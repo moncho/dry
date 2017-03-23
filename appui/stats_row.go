@@ -107,11 +107,16 @@ func (row *ContainerStatsRow) SetWidth(width int) {
 	}
 	row.Width = width
 	x := row.X
-	rw := calcItemWidth(width, len(row.columns))
+	rw := calcItemWidth(width, len(row.columns)-1)
 	for _, col := range row.columns {
 		col.SetX(x)
-		col.SetWidth(rw)
-		x += rw + columnSpacing
+		if col != row.ID {
+			col.SetWidth(rw)
+			x += rw + columnSpacing
+		} else {
+			col.SetWidth(containerColumnWidth)
+			x += containerColumnWidth + columnSpacing
+		}
 	}
 }
 
@@ -181,7 +186,7 @@ func percentileToColor(n int) termui.Attribute {
 	c := ui.Color23
 	if n > 90 {
 		c = ui.Color161
-	} else if n > 70 {
+	} else if n > 60 {
 		c = ui.Color131
 	}
 	return termui.Attribute(c)

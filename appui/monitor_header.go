@@ -3,11 +3,12 @@ package appui
 import ui "github.com/gizak/termui"
 
 const (
-	columnSpacing = 1
+	columnSpacing        = 1
+	containerColumnWidth = 12
 )
 
 //DefaultMonitorTableHeader is the default header for the container monitor table
-var DefaultMonitorTableHeader ui.GridBufferer = newMonitorTableHeader()
+var DefaultMonitorTableHeader = newMonitorTableHeader()
 
 type monitorTableHeader struct {
 	x, y          int
@@ -33,11 +34,18 @@ func (ch *monitorTableHeader) SetWidth(w int) {
 	x := ch.x
 	ch.width = w
 	//Set width on each par
-	iw := calcItemWidth(w, len(ch.pars))
+	iw := calcItemWidth(w, len(ch.pars)-1)
 	for _, col := range ch.pars {
 		col.SetX(x)
-		col.SetWidth(iw)
-		x += iw + columnSpacing
+		if col.Text != "CONTAINER" {
+			col.SetWidth(iw)
+			x += iw + columnSpacing
+
+		} else {
+			col.SetWidth(containerColumnWidth)
+			x += containerColumnWidth + columnSpacing
+		}
+
 	}
 }
 

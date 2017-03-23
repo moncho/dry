@@ -4,40 +4,71 @@ import (
 	"context"
 	"time"
 
+	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
-	"github.com/moncho/dry/ui/termui"
 )
 
 //Monitor is a self-refreshing ui component that shows monitoring information about docker
 //containers.
 type Monitor struct {
-	*termui.Grid
-	screen         *ui.Screen
-	containerCount int
-	openChannels   []*docker.StatsChannel
+	header        *monitorTableHeader
+	rows          []*ContainerStatsRow
+	screen        *ui.Screen
+	openChannels  []*docker.StatsChannel
+	x, y          int
+	height, width int
 }
 
 //NewMonitor creates a new Monitor component that will render itself on the given screen
 //at the given position and with the given width.
 func NewMonitor(screen *ui.Screen, daemon docker.ContainerDaemon, y int) *Monitor {
 	height := screen.Height - MainScreenHeaderSize - MainScreenFooterSize - 2
-	g := termui.NewGrid(0, y, height, screen.Width)
 	containers := daemon.ContainerStore().Filter(docker.ContainerFilters.ByRunningState(true))
-	g.AddRows(DefaultMonitorTableHeader)
+	var rows []*ContainerStatsRow
 	var channels []*docker.StatsChannel
 	for _, c := range containers {
 		statsChan := daemon.OpenChannel(c)
-		g.AddRows(NewContainerStatsRow(statsChan))
+		rows = append(rows, NewContainerStatsRow(statsChan))
 		channels = append(channels, statsChan)
 	}
-	g.Align()
-	return &Monitor{g, screen, len(containers), channels}
+	m := &Monitor{DefaultMonitorTableHeader, rows, screen, channels, 0, y, height, screen.Width}
+	m.align()
+	return m
 }
 
 //ContainerCount returns the number of containers known by this Monitor.
 func (m *Monitor) ContainerCount() int {
-	return m.containerCount
+	return len(m.rows)
+}
+
+//Align aligns rows
+func (m *Monitor) align() {
+	y := m.y
+	x := m.x
+	width := m.width
+
+	m.header.SetWidth(width)
+	m.header.SetY(y)
+	m.header.SetX(x)
+	y += m.header.GetHeight()
+
+	for _, r := range m.rows {
+		r.SetY(y)
+		r.SetX(x)
+		y += r.GetHeight()
+		r.SetWidth(width)
+	}
+}
+
+//Buffer returns the content of this monitor as a termui.Buffer
+func (m *Monitor) Buffer() gizaktermui.Buffer {
+	buf := gizaktermui.NewBuffer()
+	buf.Merge(DefaultMonitorTableHeader.Buffer())
+	for _, r := range m.rows {
+		buf.Merge(r.Buffer())
+	}
+	return buf
 }
 
 //RenderLoop makes this monitor to render itself until stopped.
