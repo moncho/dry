@@ -34,35 +34,26 @@
 <a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span class="octicon octicon-link"></span></a>Description
 </h3>
 
-<p><b>dry</b> is a terminal application to manage <b>Docker</b> containers and images.  It aims to be an alternative to the official <b>Docker CLI</b> when it is needed to repeatedly execute commands on existing containers and images, and also, as a tool to monitor <b>Docker</b> containers from a terminal.</p>
+<p><b>dry</b> is a terminal application to manage and monitor <b>Docker</b> containers.</p>
 
 <p>
 The demo below shows a <b>dry</b> session.
 </p>
 <script type="text/javascript" src="https://asciinema.org/a/35825.js" id="asciicast-35825" async data-autoplay="true" data-size="small" data-theme="solarized-dark"></script>
-
+ 
 <p>
-Upon connecting to a <b>Docker</b> host (local or remote), the main screen will show the list of containers and version information reported by the <b>Docker Engine</b> At all times, information about containers and images shown by <b>dry</b> is up-to-date, even if commands are executed from outside the tool.
+And below a monitoring session.
 </p>
-<p>
-From the main screen, commands to start, stop, remove and several others (all functioning like the equivalent command from the official <b>Docker CLI</b>). There is a detailed list of available commands below, command information can also be read while running <b>dry</b> by showing the help screen <b>[H]</b>.
-</p>
-
+<img src="dry-m.gif"/>
 <h3>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation
 </h3>
-<p>An easy way to install the latest binaries for Linux and Mac is to run this in your shell:</p>
-<pre><code>$ curl -sSf https://moncho.github.io/dry/dryup.sh | sh</code></pre>
-<p>The installer downloads the right binary for your architecture and will try to move it to <code>$/usr/local/bin</code>
-   (the destination can be changed, check the script parameters), so you probably will have to run the installer as sudo. If this is the case, run
-   this command instead:
-</p>
-<pre><code>$ curl -sSf https://moncho.github.io/dry/dryup.sh | sudo sh</code></pre>
-<p>If everything goes well, the binary should be present in your <b>/usr/local/bin</b> directory. Since the installer does not set the binary permissions, it has to be done manually.</p>
-<pre><code># chmod 755 /usr/local/bin/dry</code></pre>
+        <p>Install the latest release for your platform by running:</p>
+        <pre><code>$ curl -sSf https://moncho.github.io/dry/dryup.sh | sudo sh</code></pre> 
+        and
+        <pre><code># chmod 755 /usr/local/bin/dry</code></pre>
 
-<p><a href="https://github.com/moncho/dry/releases/latest">Binaries</a> are provided as well.</p>
-
+        <p><a href="https://github.com/moncho/dry/releases/latest">Binaries</a> are provided as well.</p>
 
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Authors and Contributors
