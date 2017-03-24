@@ -7,18 +7,21 @@ import (
 
 	termui "github.com/gizak/termui"
 	"github.com/nsf/termbox-go"
+	pkgError "github.com/pkg/errors"
 )
+
+//ActiveScreen is the currently active screen
+var ActiveScreen *Screen
 
 // Screen is thin wrapper aroung Termbox library to provide basic display
 // capabilities as required by dry.
 type Screen struct {
-	Width    int     // Current number of columns.
-	Height   int     // Current number of rows.
 	markup   *Markup // Pointer to markup processor (gets created by screen).
 	pausedAt *time.Time
 	Cursor   *Cursor // Pointer to cursor (gets created by screen).
 	sync.RWMutex
-	theme *ColorTheme
+	theme      *ColorTheme
+	Dimensions *ScreenDimension
 }
 
 //Cursor represents the cursor position on the screen
@@ -28,19 +31,28 @@ type Cursor struct {
 }
 
 //NewScreen initializes Termbox, creates screen along with layout and markup, and
-//calculates current screen dimensions. Once initialized the screen is
+//calculates current screen dimensions. Once created, the screen is
 //ready for display.
-func NewScreen(theme *ColorTheme) *Screen {
+func NewScreen(theme *ColorTheme) (*Screen, error) {
 
 	if err := termbox.Init(); err != nil {
-		panic(err)
+		return nil, pkgError.Wrap(err, "There was an error initializing termbox")
 	}
+	sd := screenDimensions()
+
 	termbox.SetOutputMode(termbox.Output256)
 	screen := &Screen{}
 	screen.markup = NewMarkup(theme)
 	screen.Cursor = &Cursor{line: 0}
 	screen.theme = theme
-	return screen.Resize()
+	screen.Dimensions = sd
+	ActiveScreen = screen
+	return screen, nil
+}
+
+func screenDimensions() *ScreenDimension {
+	w, h := termbox.Size()
+	return &ScreenDimension{Width: w, Height: h}
 }
 
 // Close gets called upon program termination to close the Termbox.
@@ -49,11 +61,13 @@ func (screen *Screen) Close() *Screen {
 	return screen
 }
 
-// Resize gets called when the screen is being resized. It recalculates screen
-// dimensions and requests to clear the screen on next update.
-func (screen *Screen) Resize() *Screen {
-	screen.Width, screen.Height = termbox.Size()
-	return screen
+// Resize recalculates active screen dimensions.
+func Resize() {
+	termbox.Sync()
+	w, h := termbox.Size()
+	if w > 0 && h > 0 {
+		ActiveScreen.Dimensions.Width, ActiveScreen.Dimensions.Height = termbox.Size()
+	}
 }
 
 //Clear makes the entire screen blank using default background color.
@@ -84,7 +98,7 @@ func (screen *Screen) Sync() *Screen {
 func (screen *Screen) ClearLine(x int, y int) *Screen {
 	screen.RLock()
 	defer screen.RUnlock()
-	for i := x; i < screen.Width; i++ {
+	for i := x; i < ActiveScreen.Dimensions.Width; i++ {
 		termbox.SetCell(i, y, ' ', termbox.Attribute(screen.theme.Fg), termbox.Attribute(screen.theme.Bg))
 	}
 	screen.Flush()
@@ -151,7 +165,7 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 				start = x + column
 				column++
 			} else {
-				start = screen.Width - len(token) + i
+				start = ActiveScreen.Dimensions.Width - len(token) + i
 			}
 			termbox.SetCell(start, y, char, screen.markup.Foreground, screen.markup.Background)
 		}
@@ -179,12 +193,12 @@ func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor
 				start = x + column
 				column++
 			} else {
-				start = screen.Width - len(token) + i
+				start = ActiveScreen.Dimensions.Width - len(token) + i
 			}
 			termbox.SetCell(start, y, char, screen.markup.Foreground, termbox.Attribute(bgColor))
 		}
 	}
-	fill(start+1, y, screen.Width, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
+	fill(start+1, y, ActiveScreen.Dimensions.Width, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
 }
 
 //Render renders the given content starting from the given row
