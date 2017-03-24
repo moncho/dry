@@ -1,6 +1,9 @@
 package appui
 
-import "github.com/moncho/dry/docker"
+import (
+	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/ui"
+)
 
 //AppUI holds initialized UI componets
 type AppUI struct {
@@ -10,14 +13,14 @@ type AppUI struct {
 }
 
 //NewAppUI creates AppUI
-func NewAppUI(daemon docker.ContainerDaemon, screenHeight, screenWidth int) *AppUI {
+func NewAppUI(daemon docker.ContainerDaemon) *AppUI {
 	di := NewDockerInfoBufferer(daemon)
 	di.SetX(0)
 	di.SetY(1)
-	di.SetWidth(screenWidth)
+	di.SetWidth(ui.ActiveScreen.Dimensions.Width)
 	return &AppUI{
 		di,
-		NewDockerPsRenderer(screenHeight),
-		NewDockerDiskUsageRenderer(screenHeight),
+		NewDockerPsRenderer(),
+		NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
 	}
 }

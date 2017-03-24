@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/ui"
 )
 
 type column struct {
@@ -41,13 +42,12 @@ type DockerPs struct {
 	containerTableTemplate *template.Template
 	containerTemplate      *template.Template
 	dockerInfo             string // Docker environment information
-	height                 int
 	data                   *DockerPsRenderData
 	renderLock             sync.RWMutex
 }
 
 //NewDockerPsRenderer creates a renderer for a container list
-func NewDockerPsRenderer(screenHeight int) *DockerPs {
+func NewDockerPsRenderer() *DockerPs {
 	r := &DockerPs{}
 
 	r.columns = []column{
@@ -60,7 +60,6 @@ func NewDockerPsRenderer(screenHeight int) *DockerPs {
 	}
 	r.containerTableTemplate = buildContainerTableTemplate()
 	r.containerTemplate = buildContainerTemplate()
-	r.height = screenHeight
 
 	return r
 }
@@ -136,7 +135,11 @@ func (r *DockerPs) containerInformation() string {
 func (r *DockerPs) containersToShow() []*types.Container {
 	containers := r.data.containers
 	cursorPos := r.data.selectedContainer
-	availableLines := r.height - containerTableStartPos - 1
+	availableLines := ui.ActiveScreen.Dimensions.Height - containerTableStartPos - 1
+
+	if availableLines < 0 {
+		return nil
+	}
 
 	if len(containers) < availableLines {
 		return containers

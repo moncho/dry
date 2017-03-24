@@ -85,8 +85,8 @@ func newDockerEnv(opts dryOptions) *docker.Env {
 
 func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env, stop <-chan struct{}) {
 	screen.Clear()
-	midscreen := screen.Width / 2
-	height := screen.Height
+	midscreen := ui.ActiveScreen.Dimensions.Width / 2
+	height := ui.ActiveScreen.Dimensions.Height
 	screen.RenderAtColumn(midscreen-len(connecting)/2, 1, ui.White(connecting))
 	screen.RenderLine(2, height-2, fmt.Sprintf("<blue>Dry Version:</> %s", ui.White(version.VERSION)))
 	if dockerEnv != nil {
@@ -96,7 +96,7 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env, stop <-chan str
 	}
 
 	//20 is a safe aproximation for the length of interpreted characters from the message
-	screen.RenderLine(screen.Width-len(cheese)+20, height-1, cheese)
+	screen.RenderLine(ui.ActiveScreen.Dimensions.Width-len(cheese)+20, height-1, cheese)
 	screen.Flush()
 	go func() {
 		rotorPos := 0
@@ -178,7 +178,13 @@ func main() {
 			log.Info(http.ListenAndServe("localhost:6060", nil))
 		}()
 	}
-	screen := ui.NewScreen(appui.DryTheme)
+	screen, err := ui.NewScreen(appui.DryTheme)
+	if err != nil {
+		log.WithField("error", err).Error(
+			"There was an error launching dry")
+		return
+	}
+
 	running = true
 
 	//Loading screen
@@ -201,5 +207,6 @@ func main() {
 		screen.Close()
 		log.WithField("error", err).Error(
 			"There was an error launching dry")
+		return
 	}
 }

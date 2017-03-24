@@ -209,7 +209,7 @@ loop:
 				mutex.Lock()
 				screen.RenderBufferer(
 					appui.NewDockerStatsBufferer(
-						s, 0, infoLines+3, screen.Height-infoLines-3, screen.Width)...)
+						s, 0, infoLines+3, ui.ActiveScreen.Dimensions.Height-infoLines-3, ui.ActiveScreen.Dimensions.Width)...)
 				screen.Flush()
 				mutex.Unlock()
 			}
@@ -237,13 +237,13 @@ func showContainerOptions(h *containersScreenEventHandler, dry *Dry, screen *ui.
 		screen.Cursor.Reset()
 
 		info, infoLines := appui.NewContainerInfo(container)
-		screen.RenderLineWithBackGround(0, screen.Height-1, commandsMenuBar, appui.DryTheme.Footer)
+		screen.RenderLineWithBackGround(0, ui.ActiveScreen.Dimensions.Height-1, commandsMenuBar, appui.DryTheme.Footer)
 		screen.Render(1, info)
 		l := appui.NewContainerCommands(*container,
 			0,
 			infoLines+1,
-			screen.Height-appui.MainScreenFooterSize-infoLines-1,
-			screen.Width)
+			ui.ActiveScreen.Dimensions.Height-appui.MainScreenFooterSize-infoLines-1,
+			ui.ActiveScreen.Dimensions.Width)
 		commandsLen := len(l.Commands)
 		refreshChan := make(chan struct{}, 1)
 		var command docker.CommandDescription

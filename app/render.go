@@ -47,11 +47,13 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	var viewRenderer ui.Renderer
 	di := d.ui.DockerInfo
 	bufferers = append(bufferers, di)
+
+	viewMode := d.viewMode()
 	//if the monitor widget is active it is now cancelled since (most likely) the view is going to change now
 	if cancelMonitorWidget != nil {
 		cancelMonitorWidget()
 	}
-	switch d.viewMode() {
+	switch viewMode {
 	case Main:
 		{
 			//after a refresh, sorting is needed
@@ -80,7 +82,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		{
 			//after a refresh, sorting is needed
 			sortMode := d.state.SortImagesMode
-			renderer := appui.NewDockerImagesRenderer(d.dockerDaemon, screen.Height)
+			renderer := appui.NewDockerImagesRenderer(d.dockerDaemon)
 
 			images, err := d.dockerDaemon.Images()
 			if err == nil {
@@ -103,7 +105,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Networks:
 		{
-			viewRenderer = appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Height, screen.Cursor, d.state.SortNetworksMode)
+			viewRenderer = appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Cursor, d.state.SortNetworksMode)
 			what = "Networks"
 			count = d.dockerDaemon.NetworksCount()
 			updateCursorPosition(screen.Cursor, count)
@@ -124,7 +126,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Monitor:
 		{
-			monitor := appui.NewMonitor(screen, d.dockerDaemon, viewStartingLine)
+			monitor := appui.NewMonitor(d.dockerDaemon, viewStartingLine)
 			ctx, cancel := context.WithCancel(context.Background())
 			monitor.RenderLoop(ctx)
 			keymap = monitorMapping
@@ -187,7 +189,7 @@ func tableHeader(screen *ui.Screen, what string, howMany int, info string) *term
 	par.SetX(0)
 	par.SetY(appui.MainScreenHeaderSize)
 	par.Border = false
-	par.Width = screen.Width
+	par.Width = ui.ActiveScreen.Dimensions.Width
 	par.TextBgColor = gizaktermui.Attribute(appui.DryTheme.Bg)
 	par.Bg = gizaktermui.Attribute(appui.DryTheme.Bg)
 
@@ -198,9 +200,9 @@ func footer(screen *ui.Screen, mapping string) *termui.MarkupPar {
 
 	par := termui.NewParFromMarkupText(appui.DryTheme, mapping)
 	par.SetX(0)
-	par.SetY(screen.Height - 1)
+	par.SetY(ui.ActiveScreen.Dimensions.Height - 1)
 	par.Border = false
-	par.Width = screen.Width
+	par.Width = ui.ActiveScreen.Dimensions.Width
 	par.TextBgColor = gizaktermui.Attribute(appui.DryTheme.Footer)
 	par.Bg = gizaktermui.Attribute(appui.DryTheme.Footer)
 

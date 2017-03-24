@@ -14,7 +14,6 @@ import (
 type Monitor struct {
 	header        *monitorTableHeader
 	rows          []*ContainerStatsRow
-	screen        *ui.Screen
 	openChannels  []*docker.StatsChannel
 	x, y          int
 	height, width int
@@ -22,8 +21,8 @@ type Monitor struct {
 
 //NewMonitor creates a new Monitor component that will render itself on the given screen
 //at the given position and with the given width.
-func NewMonitor(screen *ui.Screen, daemon docker.ContainerDaemon, y int) *Monitor {
-	height := screen.Height - MainScreenHeaderSize - MainScreenFooterSize - 2
+func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
+	height := ui.ActiveScreen.Dimensions.Height - MainScreenHeaderSize - MainScreenFooterSize - 2
 	containers := daemon.ContainerStore().Filter(docker.ContainerFilters.ByRunningState(true))
 	var rows []*ContainerStatsRow
 	var channels []*docker.StatsChannel
@@ -32,7 +31,7 @@ func NewMonitor(screen *ui.Screen, daemon docker.ContainerDaemon, y int) *Monito
 		rows = append(rows, NewContainerStatsRow(statsChan))
 		channels = append(channels, statsChan)
 	}
-	m := &Monitor{DefaultMonitorTableHeader, rows, screen, channels, 0, y, height, screen.Width}
+	m := &Monitor{DefaultMonitorTableHeader, rows, channels, 0, y, height, ui.ActiveScreen.Dimensions.Width}
 	m.align()
 	return m
 }
@@ -87,8 +86,8 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case <-refreshTimer.C:
-				m.screen.RenderBufferer(m)
-				m.screen.Flush()
+				ui.ActiveScreen.RenderBufferer(m)
+				ui.ActiveScreen.Flush()
 			}
 		}
 	}()

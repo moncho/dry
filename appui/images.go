@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/ui"
 )
 
 type imagesColumn struct {
@@ -40,13 +41,12 @@ type DockerImagesRenderer struct {
 	columns             []imagesColumn // List of columns.
 	imagesTableTemplate *template.Template
 	imagesTemplate      *template.Template
-	height              int
 	data                *DockerImageRenderData
 	renderLock          sync.Mutex
 }
 
 //NewDockerImagesRenderer creates a renderer for a container list
-func NewDockerImagesRenderer(daemon docker.ContainerDaemon, screenHeight int) *DockerImagesRenderer {
+func NewDockerImagesRenderer(daemon docker.ContainerDaemon) *DockerImagesRenderer {
 	r := &DockerImagesRenderer{}
 
 	r.columns = []imagesColumn{
@@ -59,7 +59,6 @@ func NewDockerImagesRenderer(daemon docker.ContainerDaemon, screenHeight int) *D
 
 	r.imagesTableTemplate = buildImageTableTemplate()
 	r.imagesTemplate = buildImagesTemplate()
-	r.height = screenHeight
 	return r
 }
 
@@ -130,9 +129,11 @@ func (r *DockerImagesRenderer) imageInformation() string {
 func (r *DockerImagesRenderer) imagesToShow() []types.ImageSummary {
 	images := r.data.images
 	cursorPos := r.data.selectedImage
-	linesForImages := r.height - imageTableStartPos - 1
+	linesForImages := ui.ActiveScreen.Dimensions.Height - imageTableStartPos - 1
 
-	if len(images) < linesForImages {
+	if linesForImages < 0 {
+		return nil
+	} else if len(images) < linesForImages {
 		return images
 	}
 

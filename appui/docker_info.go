@@ -12,10 +12,12 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+//DockerInfo is a bufferer for Docker info
 type DockerInfo struct {
 	drytermui.SizableBufferer
 }
 
+//NewDockerInfoBufferer creates a new DockerInfo
 func NewDockerInfoBufferer(daemon docker.ContainerDaemon) *DockerInfo {
 	di := drytermui.NewParFromMarkupText(DryTheme, dockerInfo(daemon))
 	di.Border = false

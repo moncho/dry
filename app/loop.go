@@ -50,7 +50,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 
 	keyboardQueueForView := make(chan termbox.Event)
 	dryOutputChan := dry.OuputChannel()
-	statusBar := ui.NewStatusBar(0, screen.Width, appui.DryTheme)
+	statusBar := ui.NewStatusBar(0, ui.ActiveScreen.Dimensions.Width, appui.DryTheme)
 	eventHandlerFactory := &eventHandlerFactory{
 		dry:                  dry,
 		screen:               screen,
@@ -160,7 +160,9 @@ loop:
 				}
 			}
 		case termbox.EventResize:
-			screen.Resize()
+			ui.Resize()
+			//Reload dry ui elements
+			dry.ui = appui.NewAppUI(dry.dockerDaemon)
 		}
 	}
 

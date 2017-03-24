@@ -27,11 +27,10 @@ type DockerNetworksRenderer struct {
 	daemon                docker.ContainerDaemon
 	dockerInfo            string // Docker environment information
 	sortMode              docker.SortNetworksMode
-	height                int
 }
 
 //NewDockerNetworksRenderer creates a renderer for a container list
-func NewDockerNetworksRenderer(daemon docker.ContainerDaemon, screenHeight int, cursor *ui.Cursor, sortMode docker.SortNetworksMode) *DockerNetworksRenderer {
+func NewDockerNetworksRenderer(daemon docker.ContainerDaemon, cursor *ui.Cursor, sortMode docker.SortNetworksMode) *DockerNetworksRenderer {
 	r := &DockerNetworksRenderer{}
 
 	r.columns = []networksColumn{
@@ -47,7 +46,6 @@ func NewDockerNetworksRenderer(daemon docker.ContainerDaemon, screenHeight int, 
 	r.cursor = cursor
 	r.daemon = daemon
 	r.sortMode = sortMode
-	r.height = screenHeight
 	return r
 }
 
@@ -117,9 +115,11 @@ func (r *DockerNetworksRenderer) networkInformation() string {
 func (r *DockerNetworksRenderer) networksToShow() []types.NetworkResource {
 	networks, _ := r.daemon.Networks()
 	cursorPos := r.cursor.Position()
-	linesForNetworks := r.height - networkTableStartPos - 1
+	linesForNetworks := ui.ActiveScreen.Dimensions.Height - networkTableStartPos - 1
 
-	if len(networks) < linesForNetworks {
+	if linesForNetworks < 0 {
+		return nil
+	} else if len(networks) < linesForNetworks {
 		return networks
 	}
 
