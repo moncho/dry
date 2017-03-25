@@ -555,27 +555,25 @@ func (d *Dry) startDry() {
 
 //StatsAt get stats of container in the given position until a
 //message is sent to the done channel
-func (d *Dry) StatsAt(position int) (<-chan *drydocker.Stats, chan<- struct{}, error) {
+func (d *Dry) StatsAt(position int) (*drydocker.StatsChannel, error) {
 	id, _ := d.ContainerIDAt(position)
 	if id != "" {
 		return d.Stats(id)
 	}
-	return nil, nil, fmt.Errorf("Container not found at position %d", position)
+	return nil, fmt.Errorf("Container not found at position %d", position)
 }
 
 //Stats get stats of container with the given id until a
 //message is sent to the done channel
-func (d *Dry) Stats(id string) (<-chan *drydocker.Stats, chan<- struct{}, error) {
+func (d *Dry) Stats(id string) (*drydocker.StatsChannel, error) {
 
 	if d.dockerDaemon.IsContainerRunning(id) {
-		statsC, dockerDoneChannel := d.dockerDaemon.Stats(id)
-		return statsC, dockerDoneChannel, nil
-
+		return d.dockerDaemon.OpenChannel(d.dockerDaemon.ContainerStore().Get(id)), nil
 	}
 	d.appmessage(
 		fmt.Sprintf("<red>Cannot run stats on stopped container. Id: </><white>%s</>", id))
 
-	return nil, nil, errors.New("Cannot run stats on stopped container.")
+	return nil, errors.New("Cannot run stats on stopped container.")
 }
 
 //StopContainerAt stops the container at the given position

@@ -223,12 +223,6 @@ func (_m *ContainerDaemonMock) RemoveNetwork(id string) error {
 	return nil
 }
 
-// Stats provides a mock function with given fields: id
-func (_m *ContainerDaemonMock) Stats(id string) (<-chan *drydocker.Stats, chan<- struct{}) {
-
-	return nil, nil
-}
-
 // StopContainer provides a mock function with given fields: id
 func (_m *ContainerDaemonMock) StopContainer(id string) error {
 	return nil

@@ -1,6 +1,9 @@
 package appui
 
-import ui "github.com/gizak/termui"
+import (
+	"github.com/gizak/termui"
+	"github.com/moncho/dry/ui"
+)
 
 const (
 	columnSpacing        = 1
@@ -8,15 +11,15 @@ const (
 )
 
 //DefaultMonitorTableHeader is the default header for the container monitor table
-var DefaultMonitorTableHeader = newMonitorTableHeader()
+var DefaultMonitorTableHeader = NewMonitorTableHeader()
 
 type monitorTableHeader struct {
-	x, y          int
+	X, Y          int
 	height, width int
-	pars          []*ui.Par
+	pars          []*termui.Par
 }
 
-func newMonitorTableHeader() *monitorTableHeader {
+func NewMonitorTableHeader() *monitorTableHeader {
 	fields := []string{"CONTAINER", "NAME", "CPU", "MEM", "NET RX/TX", "BLOCK I/O", "PIDS"}
 	ch := &monitorTableHeader{}
 	ch.height = 1
@@ -31,7 +34,7 @@ func (ch *monitorTableHeader) GetHeight() int {
 }
 
 func (ch *monitorTableHeader) SetWidth(w int) {
-	x := ch.x
+	x := ch.X
 	ch.width = w
 	//Set width on each par
 	iw := calcItemWidth(w, len(ch.pars)-1)
@@ -50,18 +53,18 @@ func (ch *monitorTableHeader) SetWidth(w int) {
 }
 
 func (ch *monitorTableHeader) SetX(x int) {
-	ch.x = x
+	ch.X = x
 }
 
 func (ch *monitorTableHeader) SetY(y int) {
 	for _, p := range ch.pars {
 		p.SetY(y)
 	}
-	ch.y = y
+	ch.Y = y
 }
 
-func (ch *monitorTableHeader) Buffer() ui.Buffer {
-	buf := ui.NewBuffer()
+func (ch *monitorTableHeader) Buffer() termui.Buffer {
+	buf := termui.NewBuffer()
 	for _, p := range ch.pars {
 		buf.Merge(p.Buffer())
 	}
@@ -69,12 +72,12 @@ func (ch *monitorTableHeader) Buffer() ui.Buffer {
 }
 
 func (ch *monitorTableHeader) addPar(s string) {
-	p := ui.NewPar(s)
+	p := termui.NewPar(s)
 	p.Height = ch.height
 	p.Border = false
-	p.Bg = ui.Attribute(DryTheme.Bg)
-	p.TextBgColor = ui.Attribute(DryTheme.Bg)
-	p.TextFgColor = ui.Attribute(ui.ColorWhite)
+	p.Bg = termui.Attribute(DryTheme.Bg)
+	p.TextBgColor = termui.Attribute(DryTheme.Bg)
+	p.TextFgColor = termui.Attribute(ui.ColorWhite)
 	ch.pars = append(ch.pars, p)
 }
 

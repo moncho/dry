@@ -178,7 +178,7 @@ func statsScreen(container *types.Container, screen *ui.Screen, dry *Dry, keyboa
 		return
 	}
 
-	stats, done, err := dry.Stats(container.ID)
+	stats, err := dry.Stats(container.ID)
 	if err != nil {
 		closeViewOnExit = false
 		ui.ShowErrorMessage(screen, keyboardQueue, closeView, err)
@@ -190,6 +190,18 @@ func statsScreen(container *types.Container, screen *ui.Screen, dry *Dry, keyboa
 	var mutex = &sync.Mutex{}
 	screen.Flush()
 
+	s := stats.Stats
+
+	header := appui.NewMonitorTableHeader()
+	header.SetX(0)
+	header.SetWidth(ui.ActiveScreen.Dimensions.Width)
+	header.SetY(infoLines + 2)
+
+	statsRow := appui.NewContainerStatsRow(container)
+	statsRow.SetX(0)
+	statsRow.SetY(header.Y + 1)
+	statsRow.SetWidth(ui.ActiveScreen.Dimensions.Width)
+
 loop:
 	for {
 		select {
@@ -199,22 +211,27 @@ loop:
 				if event.Key == termbox.KeyEsc {
 					//the lock is acquired before breaking the loop
 					mutex.Lock()
-					stats = nil
+					s = nil
 				}
 			}
-		case s := <-stats:
+		case stat := <-s:
 			{
-				//Magic number 3 is the separations between container info
-				//and stats
 				mutex.Lock()
+				statsRow.Update(stat)
+				top, _ := appui.NewDockerTop(
+					stat.ProcessList,
+					0, statsRow.Y+2,
+					ui.ActiveScreen.Dimensions.Height-infoLines-statsRow.GetHeight(),
+					ui.ActiveScreen.Dimensions.Width)
 				screen.RenderBufferer(
-					appui.NewDockerStatsBufferer(
-						s, 0, infoLines+3, ui.ActiveScreen.Dimensions.Height-infoLines-3, ui.ActiveScreen.Dimensions.Width)...)
+					header,
+					top,
+					statsRow)
 				screen.Flush()
 				mutex.Unlock()
 			}
 		}
-		if stats == nil {
+		if s == nil {
 			break loop
 		}
 	}
@@ -222,7 +239,7 @@ loop:
 	screen.Clear()
 	screen.Sync()
 	mutex.Unlock()
-	close(done)
+	close(stats.Done)
 }
 
 //statsScreen shows container stats on the screen

@@ -28,12 +28,11 @@ type ContainerStatsRow struct {
 	columns   []termui.GridBufferer
 }
 
-//NewContainerStatsRow creates a ContainerStatsRow for the given container
-func NewContainerStatsRow(s *docker.StatsChannel) *ContainerStatsRow {
-	c := s.Container
-	cf := docker.NewContainerFormatter(c, true)
+//NewContainerStatsRow creats a new ContainerStatsRow widget
+func NewContainerStatsRow(container *types.Container) *ContainerStatsRow {
+	cf := docker.NewContainerFormatter(container, true)
 	row := &ContainerStatsRow{
-		container: c,
+		container: container,
 		Name:      drytermui.NewThemedParColumn(DryTheme, cf.Names()),
 		ID:        drytermui.NewThemedParColumn(DryTheme, cf.ID()),
 		CPU:       drytermui.NewThemedGaugeColumn(DryTheme),
@@ -41,8 +40,7 @@ func NewContainerStatsRow(s *docker.StatsChannel) *ContainerStatsRow {
 		Net:       drytermui.NewThemedParColumn(DryTheme, "-"),
 		Block:     drytermui.NewThemedParColumn(DryTheme, "-"),
 		Pids:      drytermui.NewThemedParColumn(DryTheme, "-"),
-
-		Height: 1,
+		Height:    1,
 	}
 	//Columns are rendered following the slice order
 	row.columns = []termui.GridBufferer{
@@ -54,18 +52,26 @@ func NewContainerStatsRow(s *docker.StatsChannel) *ContainerStatsRow {
 		row.Block,
 		row.Pids,
 	}
+	if !docker.IsContainerRunning(container) {
+		row.markAsNotRunning()
+	}
+	return row
+
+}
+
+//NewSelfUpdatedContainerStatsRow creates a ContainerStatsRow that updates
+//itself on stats message sent on the given channel
+func NewSelfUpdatedContainerStatsRow(s *docker.StatsChannel) *ContainerStatsRow {
+	c := s.Container
+	row := NewContainerStatsRow(c)
+
 	if docker.IsContainerRunning(c) {
 		go func() {
 			for stat := range s.Stats {
-				row.setNet(stat.NetworkRx, stat.NetworkTx)
-				row.setCPU(stat.CPUPercentage)
-				row.setMem(stat.Memory, stat.MemoryLimit, stat.MemoryPercentage)
-				row.setBlockIO(stat.BlockRead, stat.BlockWrite)
-				row.setPids(stat.PidsCurrent)
+				row.Update(stat)
 			}
+			row.markAsNotRunning()
 		}()
-	} else {
-		row.markAsNotRunning()
 	}
 	return row
 }
@@ -135,6 +141,15 @@ func (row *ContainerStatsRow) Buffer() termui.Buffer {
 	return buf
 }
 
+//Update updates the content of this row with the given stats
+func (row *ContainerStatsRow) Update(stat *docker.Stats) {
+	row.setNet(stat.NetworkRx, stat.NetworkTx)
+	row.setCPU(stat.CPUPercentage)
+	row.setMem(stat.Memory, stat.MemoryLimit, stat.MemoryPercentage)
+	row.setBlockIO(stat.BlockRead, stat.BlockWrite)
+	row.setPids(stat.PidsCurrent)
+}
+
 func (row *ContainerStatsRow) setNet(rx float64, tx float64) {
 	row.Net.Text = fmt.Sprintf("%s / %s", units.BytesSize(rx), units.BytesSize(tx))
 }
@@ -176,10 +191,13 @@ func (row *ContainerStatsRow) markAsNotRunning() {
 	row.Name.TextFgColor = c
 	row.ID.TextFgColor = c
 	row.CPU.PercentColor = c
+	row.CPU.Percent = 0
 	row.CPU.Label = "-"
 	row.Memory.PercentColor = c
+	row.Memory.Percent = 0
 	row.Memory.Label = "-"
 	row.Net.TextFgColor = c
+	row.Pids.Text = "0"
 }
 
 func percentileToColor(n int) termui.Attribute {

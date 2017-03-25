@@ -38,9 +38,6 @@ func NewStatsChannel(daemon *DockerDaemon, container *types.Container) *StatsCha
 			var statsJSON *types.StatsJSON
 			dec := json.NewDecoder(responseBody)
 
-			if err := dec.Decode(&statsJSON); err != nil {
-				return
-			}
 			timer := time.NewTicker(1000 * time.Millisecond)
 			for {
 				select {

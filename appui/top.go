@@ -50,8 +50,8 @@ func (r *topRenderer) Render() string {
 	return buf.String()
 }
 
-//NewDockerTopBufferer creates termui bufferer for docker top
-func NewDockerTopBufferer(processList *types.ContainerProcessList, x, y, height, width int) (termui.Bufferer, int) {
+//NewDockerTop creates termui bufferer for docker top
+func NewDockerTop(processList *types.ContainerProcessList, x, y, height, width int) (termui.Bufferer, int) {
 
 	if processList != nil {
 		buf := bytes.NewBufferString("")

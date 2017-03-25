@@ -28,7 +28,7 @@ func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
 	var channels []*docker.StatsChannel
 	for _, c := range containers {
 		statsChan := daemon.OpenChannel(c)
-		rows = append(rows, NewContainerStatsRow(statsChan))
+		rows = append(rows, NewSelfUpdatedContainerStatsRow(statsChan))
 		channels = append(channels, statsChan)
 	}
 	m := &Monitor{DefaultMonitorTableHeader, rows, channels, 0, y, height, ui.ActiveScreen.Dimensions.Width}

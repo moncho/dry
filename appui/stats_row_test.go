@@ -4,14 +4,12 @@ import (
 	"testing"
 
 	"github.com/docker/docker/api/types"
-	"github.com/moncho/dry/docker"
 )
 
 func TestStatsRow(t *testing.T) {
 	container := &types.Container{ID: "CID", Names: []string{"Name"}, Status: "Never worked"}
-	sc := &docker.StatsChannel{Container: container}
 
-	row := NewContainerStatsRow(sc)
+	row := NewContainerStatsRow(container)
 	if row == nil {
 		t.Error("Stats row was not created")
 	}
@@ -38,12 +36,12 @@ func TestStatsRow(t *testing.T) {
 		t.Errorf("Memory widget does not contain the default value. Expected: %s, got: %s.", "-", row.Memory.Label)
 	}
 	if row.Net.Text != "-" {
-		t.Errorf("CPU widget does not contain the default value. Expected: %s, got: %s.", "-", row.Net.Text)
+		t.Errorf("Net widget does not contain the default value. Expected: %s, got: %s.", "-", row.Net.Text)
 	}
 	if row.Block.Text != "-" {
 		t.Errorf("Block widget does not contain the default value. Expected: %s, got: %s.", "-", row.Block.Text)
 	}
-	if row.Pids.Text != "-" {
-		t.Errorf("CPU widget does not contain the default value. Expected: %s, got: %s.", "-", row.Pids.Text)
+	if row.Pids.Text != "0" {
+		t.Errorf("Pids widget does not contain the default value. Expected: %s, got: %s.", "-", row.Pids.Text)
 	}
 }

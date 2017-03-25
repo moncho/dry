@@ -16,8 +16,9 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 		t.Errorf("Daemon has %d images, expected %d", imagesLen, 3)
 	}
 
+	ui.ActiveScreen = &ui.Screen{Dimensions: &ui.ScreenDimension{14, 100}}
 	cursor := &ui.Cursor{}
-	renderer := NewDockerImagesRenderer(daemon, 14)
+	renderer := NewDockerImagesRenderer(daemon)
 	imagesFromDaemon, _ := daemon.Images()
 	renderer.PrepareForRender(NewDockerImageRenderData(
 		imagesFromDaemon, cursor.Position(), docker.NoSortImages))
@@ -58,7 +59,8 @@ func TestImagesToShow(t *testing.T) {
 	}
 
 	cursor := &ui.Cursor{}
-	renderer := NewDockerImagesRenderer(daemon, 20)
+	ui.ActiveScreen = &ui.Screen{Dimensions: &ui.ScreenDimension{20, 100}}
+	renderer := NewDockerImagesRenderer(daemon)
 
 	imagesFromDaemon, _ := daemon.Images()
 	renderer.PrepareForRender(NewDockerImageRenderData(
