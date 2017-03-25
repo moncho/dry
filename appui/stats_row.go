@@ -12,6 +12,8 @@ import (
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
+var inactiveRowColor = termui.Attribute(ui.Color244)
+
 //ContainerStatsRow is a Grid row showing runtime information about a container
 type ContainerStatsRow struct {
 	container *types.Container
@@ -187,17 +189,22 @@ func (row *ContainerStatsRow) setMem(val float64, limit float64, percent float64
 
 //markAsNotRunning
 func (row *ContainerStatsRow) markAsNotRunning() {
-	c := termui.Attribute(ui.Color244)
-	row.Name.TextFgColor = c
-	row.ID.TextFgColor = c
-	row.CPU.PercentColor = c
+
+	row.Name.TextFgColor = inactiveRowColor
+	row.ID.TextFgColor = inactiveRowColor
+	row.CPU.PercentColor = inactiveRowColor
 	row.CPU.Percent = 0
 	row.CPU.Label = "-"
-	row.Memory.PercentColor = c
+	row.Memory.PercentColor = inactiveRowColor
 	row.Memory.Percent = 0
 	row.Memory.Label = "-"
-	row.Net.TextFgColor = c
+	row.Net.TextFgColor = inactiveRowColor
+	row.Net.Text = "-"
+	row.Block.TextFgColor = inactiveRowColor
+	row.Block.Text = "-"
 	row.Pids.Text = "0"
+	row.Pids.TextFgColor = inactiveRowColor
+
 }
 
 func percentileToColor(n int) termui.Attribute {
