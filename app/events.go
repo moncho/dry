@@ -65,6 +65,7 @@ func (b *baseEventHandler) handle(event termbox.Event) {
 		cursor.ScrollCursorUp()
 	case termbox.KeyArrowDown: // cursor down
 		cursor.ScrollCursorDown()
+
 	case termbox.KeyF5: // refresh
 		dry.Refresh()
 	case termbox.KeyF8: // docker events
@@ -95,6 +96,10 @@ func (b *baseEventHandler) handle(event termbox.Event) {
 	case 'm', 'M': //monitor mode
 		cursor.Reset()
 		dry.ShowMonitor()
+	case 'g': //Cursor to the top
+		cursor.Reset()
+	case 'G': //Cursor to the bottom
+		cursor.ScrollTo(ui.ActiveScreen.Dimensions.Height)
 	}
 
 	b.setFocus(focus)

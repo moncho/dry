@@ -65,6 +65,8 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 <yellow>Move around in container/image/network lists</>
 	<white>ArrowUp</>   Moves the cursor one line up
 	<white>ArrowDown</> Moves the cursor one line down
+	<white>g</>         Moves the cursor to the beginning of the list
+	<white>G</>         Moves the cursor to the end of the list
 
 <yellow>Move around in logs/inspect buffers</>
 	<white>g</>         Moves the cursor to the beginning
