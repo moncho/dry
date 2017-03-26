@@ -10,7 +10,7 @@ import (
 )
 
 func TestContainerListRetrieval(t *testing.T) {
-	c, _ := containers(createClient(), true)
+	c, _ := containers(createClient())
 
 	for i, container := range c {
 		if container.ID != strconv.Itoa(i) {
@@ -38,6 +38,6 @@ func TestContainerConversionToPointerList(t *testing.T) {
 		}
 	}
 }
-func createClient() dockerAPI.APIClient {
-	return mock.APIClientMock{}
+func createClient() dockerAPI.ContainerAPIClient {
+	return mock.ContainerAPIClientMock{}
 }

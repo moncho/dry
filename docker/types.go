@@ -9,7 +9,7 @@ import (
 
 //ContainerDaemon describes what is expected from the container daemon
 type ContainerDaemon interface {
-	ContainerStore() *ContainerStore
+	ContainerAPI
 	DiskUsage() (types.DiskUsage, error)
 	DockerEnv() *Env
 	Events() (<-chan events.Message, chan<- struct{}, error)
@@ -19,33 +19,38 @@ type ContainerDaemon interface {
 	Images() ([]types.ImageSummary, error)
 	ImagesCount() int
 	Info() (types.Info, error)
-	Inspect(id string) (types.ContainerJSON, error)
 	InspectImage(id string) (types.ImageInspect, error)
-	IsContainerRunning(id string) bool
-	Kill(id string) error
-	Logs(id string) io.ReadCloser
 	Networks() ([]types.NetworkResource, error)
 	NetworkAt(pos int) (*types.NetworkResource, error)
 	NetworksCount() int
 	NetworkInspect(id string) (types.NetworkResource, error)
 	Ok() (bool, error)
-	OpenChannel(container *types.Container) *StatsChannel
 	Prune() (*PruneReport, error)
-	RestartContainer(id string) error
 	Rm(id string) error
 	Rmi(id string, force bool) ([]types.ImageDelete, error)
-	Refresh(allContainers bool) error
+	Refresh(notify func(error))
 	RefreshImages() error
 	RefreshNetworks() error
-	RemoveAllStoppedContainers() (int, error)
 	RemoveDanglingImages() (int, error)
 	RemoveNetwork(id string) error
-	StopContainer(id string) error
-	Sort(sortMode SortMode)
 	SortImages(sortMode SortImagesMode)
 	SortNetworks(sortMode SortNetworksMode)
-	Top(id string) (types.ContainerProcessList, error)
 	Version() (*types.Version, error)
+}
+
+//ContainerAPI defines the API for containers
+type ContainerAPI interface {
+	ContainerByID(id string) *types.Container
+	Containers(filter ContainerFilter, mode SortMode) []*types.Container
+	Inspect(id string) (types.ContainerJSON, error)
+	IsContainerRunning(id string) bool
+	Kill(id string) error
+	Logs(id string) io.ReadCloser
+	OpenChannel(container *types.Container) *StatsChannel
+	RemoveAllStoppedContainers() (int, error)
+	RestartContainer(id string) error
+	StopContainer(id string) error
+	Top(id string) (types.ContainerProcessList, error)
 }
 
 //Stats holds runtime stats for a container

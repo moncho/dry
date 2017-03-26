@@ -13,8 +13,13 @@ import (
 type ContainerDaemonMock struct {
 }
 
-//ContainerStore mock
-func (_m *ContainerDaemonMock) ContainerStore() *drydocker.ContainerStore {
+//ContainerByID mock
+func (_m *ContainerDaemonMock) ContainerByID(id string) *types.Container {
+	return nil
+}
+
+//Containers mock
+func (_m *ContainerDaemonMock) Containers(filter drydocker.ContainerFilter, mode drydocker.SortMode) []*types.Container {
 	return nil
 }
 
@@ -193,8 +198,8 @@ func (_m *ContainerDaemonMock) Rmi(id string, force bool) ([]types.ImageDelete, 
 }
 
 // Refresh provides a mock function with given fields: allContainers
-func (_m *ContainerDaemonMock) Refresh(allContainers bool) error {
-	return nil
+func (_m *ContainerDaemonMock) Refresh(notify func(err error)) {
+	notify(nil)
 }
 
 //RefreshImages mock

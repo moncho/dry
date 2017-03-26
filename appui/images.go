@@ -129,25 +129,26 @@ func (r *DockerImagesRenderer) imageInformation() string {
 func (r *DockerImagesRenderer) imagesToShow() []types.ImageSummary {
 	images := r.data.images
 	cursorPos := r.data.selectedImage
-	linesForImages := ui.ActiveScreen.Dimensions.Height - imageTableStartPos - 1
+	//number of lines from the screen that can be used to render images
+	lines := ui.ActiveScreen.Dimensions.Height - imageTableStartPos - 1
 
-	if linesForImages < 0 {
+	if lines < 0 {
 		return nil
-	} else if len(images) < linesForImages {
+	} else if len(images) < lines {
 		return images
 	}
 
 	start, end := 0, 0
 
-	if cursorPos > linesForImages {
-		start = cursorPos + 1 - linesForImages
+	if cursorPos > lines {
+		start = cursorPos + 1 - lines
 		end = cursorPos + 1
-	} else if cursorPos == linesForImages {
+	} else if cursorPos == lines {
 		start = 1
-		end = linesForImages + 1
+		end = lines + 1
 	} else {
 		start = 0
-		end = linesForImages
+		end = lines
 	}
 
 	return images[start:end]

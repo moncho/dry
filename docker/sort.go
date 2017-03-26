@@ -62,6 +62,7 @@ func (a byName) Less(i, j int) bool {
 //SortContainers sorts the given containers slice using the given mode
 func SortContainers(containers []*types.Container, mode SortMode) {
 	switch mode {
+	case NoSort:
 	case SortByContainerID:
 		sort.Sort(byContainerID{containers})
 	case SortByImage:

@@ -15,13 +15,27 @@ import (
 //directory of the vendor tool of dry, so:
 //rm -rf vendor/github.com/docker/docker/vendor/golang.org/x/
 
-//APIClientMock mocks docker APIClient
-type APIClientMock struct {
-	dockerAPI.APIClient
+//ContainerAPIClientMock mocks docker ContainerAPIClient
+type ContainerAPIClientMock struct {
+	dockerAPI.ContainerAPIClient
+	Containers []types.Container
+}
+
+//NetworkAPIClientMock mocks docker NetworkAPIClient
+type NetworkAPIClientMock struct {
+	dockerAPI.NetworkAPIClient
+}
+
+//ImageAPIClientMock mocks docker ImageAPIClient
+type ImageAPIClientMock struct {
+	dockerAPI.ImageAPIClient
 }
 
 //ContainerList returns a list with 10 container with IDs from 0 to 9.
-func (m APIClientMock) ContainerList(ctx context.Context, options types.ContainerListOptions) ([]types.Container, error) {
+func (m ContainerAPIClientMock) ContainerList(ctx context.Context, options types.ContainerListOptions) ([]types.Container, error) {
+	if len(m.Containers) > 0 {
+		return m.Containers, nil
+	}
 	var containers []types.Container
 
 	for i := 0; i < 10; i++ {

@@ -31,27 +31,29 @@ func init() {
 	defaultDockerPath, _ = homedir.Expand("~/.docker")
 }
 func connect(client client.APIClient, env *Env) (*DockerDaemon, error) {
-	containers, err := containers(client, false)
-	if err == nil {
-		images, errI := images(client, defaultImageListOptions)
-		if errI == nil {
-			networks, errN := networks(client)
-			if errN == nil {
-				d := &DockerDaemon{
-					client:         client,
-					err:            err,
-					containerStore: NewMemoryStoreWithContainers(containers),
-					images:         images,
-					networks:       networks,
-					dockerEnv:      env,
-				}
-				d.eventLog = NewEventLog()
-				d.Version()
-				return d, nil
-			}
-		}
+	store, err := NewDockerContainerStore(client)
+	if err != nil {
+		return nil, err
 	}
-	return nil, err
+	images, err := images(client, defaultImageListOptions)
+	if err != nil {
+		return nil, err
+	}
+	networks, err := networks(client)
+	if err != nil {
+		return nil, err
+	}
+	d := &DockerDaemon{
+		client:    client,
+		err:       err,
+		s:         store,
+		images:    images,
+		networks:  networks,
+		dockerEnv: env,
+	}
+	d.eventLog = NewEventLog()
+	d.Version()
+	return d, nil
 }
 
 func getServerHost(env *Env) (string, error) {

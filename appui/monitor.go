@@ -23,7 +23,7 @@ type Monitor struct {
 //at the given position and with the given width.
 func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
 	height := ui.ActiveScreen.Dimensions.Height - MainScreenHeaderSize - MainScreenFooterSize - 2
-	containers := daemon.ContainerStore().Filter(docker.ContainerFilters.ByRunningState(true))
+	containers := daemon.Containers(docker.ContainerFilters.Running(), docker.SortByName)
 	var rows []*ContainerStatsRow
 	var channels []*docker.StatsChannel
 	for _, c := range containers {
