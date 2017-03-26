@@ -106,12 +106,14 @@ func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct
 		for {
 			select {
 			case event := <-events:
-				if err := handleEvent(
-					ctx,
-					event,
-					streamEvents(eventC),
-					logEvents(daemon.eventLog)); err != nil {
-					return
+				if event.Action != "top" {
+					if err := handleEvent(
+						ctx,
+						event,
+						streamEvents(eventC),
+						logEvents(daemon.eventLog)); err != nil {
+						return
+					}
 				}
 			case <-err:
 				return
@@ -198,10 +200,12 @@ func (daemon *DockerDaemon) IsContainerRunning(id string) bool {
 func (daemon *DockerDaemon) Kill(id string) error {
 	//TODO use cancel function
 	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
-
-	//TODO Sends the right signal
-
-	return daemon.client.ContainerKill(ctx, id, "")
+	//TODO Send signal?
+	err := daemon.client.ContainerKill(ctx, id, "")
+	if err != nil {
+		return err
+	}
+	return daemon.refreshAndWait()
 }
 
 //Logs shows the logs of the container with the given id
@@ -303,15 +307,8 @@ func (daemon *DockerDaemon) RestartContainer(id string) error {
 	if err := daemon.client.ContainerRestart(ctx, id, &containerOpTimeout); err != nil {
 		return err
 	}
-	var wg sync.WaitGroup
-	var refreshError error
-	wg.Add(1)
-	daemon.Refresh(func(err error) {
-		refreshError = err
-		wg.Done()
-	})
-	wg.Wait()
-	return refreshError
+
+	return daemon.refreshAndWait()
 }
 
 //Refresh the container list asynchronously, using the given notifier to signal
@@ -324,6 +321,18 @@ func (daemon *DockerDaemon) Refresh(notify func(error)) {
 		}
 		notify(err)
 	}()
+}
+
+func (daemon *DockerDaemon) refreshAndWait() error {
+	var wg sync.WaitGroup
+	var refreshError error
+	wg.Add(1)
+	daemon.Refresh(func(err error) {
+		refreshError = err
+		wg.Done()
+	})
+	wg.Wait()
+	return refreshError
 }
 
 //RefreshImages refreshes the image list
@@ -384,7 +393,8 @@ func (daemon *DockerDaemon) RemoveAllStoppedContainers() (int, error) {
 				fmt.Sprintf("There were errors removing stopped containers. Containers: %d, removed: %d", len(containers), removed))
 	default:
 	}
-	return removed, nil
+	err := daemon.refreshAndWait()
+	return removed, err
 }
 
 //RemoveDanglingImages removes dangling images
@@ -420,6 +430,7 @@ func (daemon *DockerDaemon) RemoveDanglingImages() (int, error) {
 		default:
 		}
 	}
+	daemon.Refresh(nil)
 	return int(atomic.LoadUint32(&count)), err
 }
 
@@ -434,23 +445,18 @@ func (daemon *DockerDaemon) RemoveNetwork(id string) error {
 //Rm removes the container with the given id
 func (daemon *DockerDaemon) Rm(id string) error {
 
-	go func() {
-		opts := dockerTypes.ContainerRemoveOptions{
-			RemoveVolumes: false,
-			RemoveLinks:   false,
-			Force:         true,
-		}
-		//TODO use cancel function
-		ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
-		err := daemon.client.ContainerRemove(ctx, id, opts)
-		if err != nil {
-			daemon.Refresh(nil)
-		} else {
-			daemon.store().Remove(id)
-		}
-
-	}()
-	return nil
+	opts := dockerTypes.ContainerRemoveOptions{
+		RemoveVolumes: false,
+		RemoveLinks:   false,
+		Force:         true,
+	}
+	//TODO use cancel function
+	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	err := daemon.client.ContainerRemove(ctx, id, opts)
+	if err == nil {
+		daemon.store().Remove(id)
+	}
+	return err
 }
 
 //Rmi removes the image with the given name
@@ -487,7 +493,12 @@ func (daemon *DockerDaemon) StopContainer(id string) error {
 	//TODO use cancel function
 	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
 
-	return daemon.client.ContainerStop(ctx, id, &containerOpTimeout)
+	err := daemon.client.ContainerStop(ctx, id, &containerOpTimeout)
+	if err != nil {
+		return err
+	}
+
+	return daemon.refreshAndWait()
 }
 
 //SortImages sorts the list of images by the given mode
