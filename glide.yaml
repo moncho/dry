@@ -60,7 +60,7 @@ import:
 - package: github.com/mitchellh/go-wordwrap
   version: ad45545899c7b13c020ea92b2072220eefad42b8
 - package: github.com/nsf/termbox-go
-  version: 362329b0aa6447eadd52edd8d660ec1dff470295
+  version: master
 - package: github.com/olekukonko/tablewriter
   version: cca8bbc0798408af109aaaa239cbd2634846b340
 - package: github.com/opencontainers/runc

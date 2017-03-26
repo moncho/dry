@@ -1,5 +1,5 @@
-hash: 3a5b41cf04c7d3cf551fb4870fd97ff227d6abe7ccd8db794747d56d5b104799
-updated: 2017-03-22T09:07:21.984243429+01:00
+hash: 24ffa6480695a5edad1240965b2b555175cc03d28e1c945159920886b4cdf056
+updated: 2017-03-26T22:19:07.463359795+02:00
 imports:
 - name: github.com/chzyer/readline
   version: c914be64f07d9998f52bf0d598ec26d457168c0f
@@ -53,7 +53,7 @@ imports:
 - name: github.com/docker/libtrust
   version: fa567046d9b14f6aa788882a950d69651d230b21
 - name: github.com/gizak/termui
-  version: 991cd3d3809135dc24daf6188dc6edcaf3d7d2d9
+  version: 798ffb9cbbe4073ef1f88e6069ca4a2c6aa6676b
 - name: github.com/gosuri/uitable
   version: 62e40473eadf9579716227a0033cd8db16e1c500
   subpackages:
@@ -75,7 +75,7 @@ imports:
 - name: github.com/mitchellh/go-wordwrap
   version: ad45545899c7b13c020ea92b2072220eefad42b8
 - name: github.com/nsf/termbox-go
-  version: 362329b0aa6447eadd52edd8d660ec1dff470295
+  version: abe82ce5fb7a42fbd6784a5ceb71aff977e09ed8
 - name: github.com/olekukonko/tablewriter
   version: cca8bbc0798408af109aaaa239cbd2634846b340
 - name: github.com/opencontainers/go-digest
