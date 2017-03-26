@@ -45,3 +45,24 @@ func (c ContainerFilter) ByRunningState(running bool) ContainerFilter {
 		return IsContainerRunning(c) == running
 	}
 }
+
+//Running filters out container that are not running
+func (c ContainerFilter) Running() ContainerFilter {
+	return c.ByRunningState(true)
+}
+
+//NotRunning filters out container that are running
+func (c ContainerFilter) NotRunning() ContainerFilter {
+	return c.ByRunningState(false)
+}
+
+//Filter applies the given filter to the given slice of containers
+func Filter(c []*types.Container, filter ContainerFilter) []*types.Container {
+	var containers []*types.Container
+	for _, cont := range c {
+		if filter == nil || filter(cont) {
+			containers = append(containers, cont)
+		}
+	}
+	return containers
+}

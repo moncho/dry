@@ -91,7 +91,7 @@ func (d *Dry) ContainerAt(position int) *types.Container {
 		}
 		return nil
 	}
-	return d.dockerDaemon.ContainerStore().At(position)
+	return d.containerList()[position]
 }
 
 //ContainerIDAt returns the id of the container at the given position
@@ -103,13 +103,14 @@ func (d *Dry) ContainerIDAt(position int) (string, string) {
 	return "", ""
 }
 func (d *Dry) containerList() []*types.Container {
-	var containers []*types.Container
-	if d.state.filter != nil {
-		containers = d.dockerDaemon.ContainerStore().Filter(d.state.filter)
+	var filter drydocker.ContainerFilter
+	if d.state.showingAllContainers {
+		filter = drydocker.ContainerFilters.Unfiltered()
 	} else {
-		containers = d.dockerDaemon.ContainerStore().List()
+		filter = drydocker.ContainerFilters.Running()
 	}
-	return containers
+	containers := d.dockerDaemon.Containers(filter, d.state.SortMode)
+	return drydocker.Filter(containers, d.state.filter)
 }
 
 //HistoryAt prepares dry to show image history of image at the given positions
@@ -272,12 +273,17 @@ func (d *Dry) Refresh() {
 func (d *Dry) doRefresh() {
 	d.state.Lock()
 	defer d.state.Unlock()
-	d.state.changed = true
 	var err error
 	switch d.state.viewMode {
 	case Main:
-		err = d.dockerDaemon.Refresh(d.state.showingAllContainers)
-		d.dockerDaemon.Sort(d.state.SortMode)
+		f := func(err error) {
+			if err == nil {
+				d.state.changed = true
+			} else {
+				d.appmessage("There was an error refreshing: " + err.Error())
+			}
+		}
+		d.dockerDaemon.Refresh(f)
 	case Images:
 		err = d.dockerDaemon.RefreshImages()
 		d.dockerDaemon.SortImages(d.state.SortImagesMode)
@@ -494,7 +500,6 @@ func (d *Dry) Sort() {
 		d.state.SortMode = drydocker.SortByContainerID
 	default:
 	}
-	d.dockerDaemon.Sort(d.state.SortMode)
 	d.state.changed = true
 }
 
@@ -567,8 +572,10 @@ func (d *Dry) StatsAt(position int) (*drydocker.StatsChannel, error) {
 //message is sent to the done channel
 func (d *Dry) Stats(id string) (*drydocker.StatsChannel, error) {
 
-	if d.dockerDaemon.IsContainerRunning(id) {
-		return d.dockerDaemon.OpenChannel(d.dockerDaemon.ContainerStore().Get(id)), nil
+	c := d.dockerDaemon.ContainerByID(id)
+
+	if c != nil && drydocker.IsContainerRunning(c) {
+		return d.dockerDaemon.OpenChannel(c), nil
 	}
 	d.appmessage(
 		fmt.Sprintf("<red>Cannot run stats on stopped container. Id: </><white>%s</>", id))
@@ -601,7 +608,6 @@ func (d *Dry) StopContainer(id string) {
 //showing running and stopped containers.
 func (d *Dry) ToggleShowAllContainers() {
 	d.state.showingAllContainers = !d.state.showingAllContainers
-	d.Refresh()
 	if d.state.showingAllContainers {
 		d.appmessage("<white>Showing all containers</>")
 	} else {
@@ -666,7 +672,6 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 			viewMode:             Main,
 			previousViewMode:     Main,
 		}
-		d.Sort(state.SortMode)
 		d.SortImages(state.SortImagesMode)
 		d.SortNetworks(state.SortNetworksMode)
 		app := &Dry{}
