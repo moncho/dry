@@ -7,7 +7,6 @@ import (
 
 	termui "github.com/gizak/termui"
 	"github.com/nsf/termbox-go"
-	pkgError "github.com/pkg/errors"
 )
 
 //ActiveScreen is the currently active screen
@@ -35,9 +34,6 @@ type Cursor struct {
 //ready for display.
 func NewScreen(theme *ColorTheme) (*Screen, error) {
 
-	if err := termbox.Init(); err != nil {
-		return nil, pkgError.Wrap(err, "There was an error initializing termbox")
-	}
 	sd := screenDimensions()
 
 	termbox.SetOutputMode(termbox.Output256)

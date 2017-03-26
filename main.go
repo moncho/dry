@@ -16,6 +16,7 @@ import (
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/version"
 	"github.com/nsf/termbox-go"
+	pkgError "github.com/pkg/errors"
 )
 
 const (
@@ -134,6 +135,7 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env, stop <-chan str
 }
 func main() {
 	running := false
+
 	defer func() {
 		if r := recover(); r != nil {
 			termbox.Close()
@@ -170,6 +172,10 @@ func main() {
 		return
 	}
 	log.Info("Launching dry")
+	if err := termbox.Init(); err != nil {
+		log.Error(pkgError.Wrap(err, "There was an error initializing termbox"))
+		return
+	}
 	dockerEnv := newDockerEnv(opts)
 
 	// Start profiling (if required)
