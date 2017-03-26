@@ -546,8 +546,9 @@ func (d *Dry) SortNetworks() {
 func (d *Dry) startDry() {
 	go func() {
 		//The event is not relevant, dry must refresh
-		for range d.dockerEvents {
-			d.Refresh()
+		for message := range d.dockerEvents {
+			d.doRefresh()
+			d.appmessage(fmt.Sprintf("Received message from Docker daemon:%s %s", message.Action, message.ID))
 		}
 	}()
 
