@@ -99,7 +99,10 @@ func (b *baseEventHandler) handle(event termbox.Event) {
 	case 'g': //Cursor to the top
 		cursor.Reset()
 	case 'G': //Cursor to the bottom
-		cursor.ScrollTo(ui.ActiveScreen.Dimensions.Height)
+		//This is an ugly workaround to ensure that the cursor goes to the end
+		//of whatever list is being shown without having the list size.
+		//It will not work if the list has more than 200 elements
+		cursor.ScrollTo(200)
 	}
 
 	b.setFocus(focus)

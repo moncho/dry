@@ -7,23 +7,17 @@ type monitorScreenEventHandler struct {
 }
 
 func (h *monitorScreenEventHandler) handle(event termbox.Event) {
-	ignored := false
-
+	handled := false
+	cursor := h.screen.Cursor
 	switch event.Key {
-	case termbox.KeyArrowUp:
-		//To avoid the base handler handling this
-		ignored = true
-	case termbox.KeyArrowDown:
-		//To avoid the base handler handling this
-		ignored = true
-	case termbox.KeyArrowLeft:
-		//To avoid the base handler handling this
-		ignored = true
-	case termbox.KeyArrowRight:
-		//To avoid the base handler handling this
-		ignored = true
+	case termbox.KeyArrowUp: //cursor up
+		cursor.ScrollCursorUp()
+		handled = true
+	case termbox.KeyArrowDown: // cursor down
+		cursor.ScrollCursorDown()
+		handled = true
 	}
-	if !ignored {
+	if !handled {
 		h.baseEventHandler.handle(event)
 	} else {
 		h.setFocus(true)
