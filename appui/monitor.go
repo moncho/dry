@@ -72,8 +72,7 @@ func (m *Monitor) align() {
 
 //Buffer returns the content of this monitor as a termui.Buffer
 func (m *Monitor) Buffer() gizaktermui.Buffer {
-	m.Lock()
-	defer m.Unlock()
+
 	buf := gizaktermui.NewBuffer()
 	buf.Merge(DefaultMonitorTableHeader.Buffer())
 	y := m.y
@@ -116,8 +115,11 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 }
 func (m *Monitor) highlightSelectedRow() {
 	m.rows[m.selectedIndex].NotHighlighted()
-	cursorPos := retrieveCursorPosition(ui.ActiveScreen.Cursor, m.ContainerCount())
-	m.selectedIndex = cursorPos
+	index := ui.ActiveScreen.Cursor.Position()
+	if index > m.ContainerCount() {
+		index = m.ContainerCount() - 1
+	}
+	m.selectedIndex = index
 	m.rows[m.selectedIndex].Highlighted()
 }
 
@@ -128,7 +130,7 @@ func (m *Monitor) visibleRows() []*ContainerStatsRow {
 		return nil
 	}
 	rows := m.rows
-	rowCount := len(rows)
+	rowCount := m.ContainerCount()
 	if rowCount < availableLines {
 		return rows
 	}
@@ -142,44 +144,6 @@ func (m *Monitor) visibleRows() []*ContainerStatsRow {
 	}
 	return m.rows[m.offset : m.offset+availableLines]
 }
-
-/*
-func (m *Monitor) visibleRows() []*ContainerStatsRow {
-
-	availableLines := m.height
-
-	if availableLines < 0 {
-		return nil
-	}
-	rows := m.rows
-	rowCount := len(rows)
-	if rowCount < availableLines {
-		return rows
-	}
-
-	cursor := ui.ActiveScreen.Cursor
-	cursorPos := retrieveCursorPosition(cursor, rowCount)
-
-	start, end := 0, 0
-
-	if cursorPos > availableLines {
-		if cursor.MovingDown() {
-			start = cursorPos + 1 - availableLines
-			end = cursorPos + 1
-		} else {
-			start = cursorPos - availableLines
-			end = cursorPos + 1
-		}
-	} else if cursorPos == availableLines {
-		start = 1
-		end = availableLines + 1
-	} else {
-		start = 0
-		end = availableLines
-	}
-
-	return rows[start:end]
-}*/
 
 //Updates the cursor position in case it is out of bounds
 func retrieveCursorPosition(cursor *ui.Cursor, noOfElements int) int {

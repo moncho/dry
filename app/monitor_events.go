@@ -17,6 +17,18 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event) {
 		cursor.ScrollCursorDown()
 		handled = true
 	}
+	switch event.Ch {
+	case 'g': //Cursor to the top
+		cursor.Reset()
+		handled = true
+	case 'G': //Cursor to the bottom
+		cursor.Bottom()
+		handled = true
+	case 'H', 'h', 'q', '1', '2', '3':
+		handled = false
+	default:
+		handled = true
+	}
 	if !handled {
 		h.baseEventHandler.handle(event)
 	} else {
