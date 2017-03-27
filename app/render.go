@@ -133,7 +133,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			what = "Containers"
 			count = monitor.ContainerCount()
 			cancelMonitorWidget = cancel
-
+			updateCursorPosition(screen.Cursor, count)
 		}
 	}
 
@@ -211,8 +211,9 @@ func footer(screen *ui.Screen, mapping string) *termui.MarkupPar {
 
 //Updates the cursor position in case it is out of bounds
 func updateCursorPosition(cursor *ui.Cursor, noOfElements int) {
+	cursor.Max(noOfElements - 1)
 	if cursor.Position() >= noOfElements {
-		cursor.ScrollTo(noOfElements - 1)
+		cursor.Bottom()
 	} else if cursor.Position() < 0 {
 		cursor.Reset()
 	}
