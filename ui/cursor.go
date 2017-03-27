@@ -6,11 +6,11 @@ import "sync"
 type Cursor struct {
 	pos       int
 	downwards bool
+	max       int
 	sync.RWMutex
 }
 
-//MovingDown returns true if the cursor is moving downwards or not
-//after the last movement.
+//MovingDown returns true if the cursor is moving downwards after the last movement.
 func (cursor *Cursor) MovingDown() bool {
 	return cursor.downwards
 }
@@ -27,7 +27,7 @@ func (cursor *Cursor) Reset() {
 	cursor.Lock()
 	defer cursor.Unlock()
 	cursor.pos = 0
-	cursor.downwards = true
+	cursor.downwards = false
 
 }
 
@@ -61,4 +61,21 @@ func (cursor *Cursor) ScrollTo(pos int) {
 		cursor.downwards = false
 	}
 	cursor.pos = pos
+}
+
+//Bottom sets the cursor to the bottom
+func (cursor *Cursor) Bottom() {
+	cursor.Lock()
+	defer cursor.Unlock()
+	if cursor.max > 0 {
+		cursor.pos = cursor.max
+		cursor.downwards = true
+	}
+}
+
+//Max sets the max position allowed to this cursor
+func (cursor *Cursor) Max(max int) {
+	cursor.Lock()
+	defer cursor.Unlock()
+	cursor.max = max
 }
