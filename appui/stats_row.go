@@ -79,12 +79,10 @@ func NewSelfUpdatedContainerStatsRow(s *docker.StatsChannel) *ContainerStatsRow 
 }
 
 func (row *ContainerStatsRow) Highlighted() {
-	row.ID.Bg = termui.Attribute(DryTheme.CurrentMatch)
 	row.ID.TextBgColor = termui.Attribute(DryTheme.CurrentMatch)
 }
 
 func (row *ContainerStatsRow) NotHighlighted() {
-	row.ID.Bg = termui.Attribute(DryTheme.Bg)
 	row.ID.TextBgColor = termui.Attribute(DryTheme.Bg)
 
 }
