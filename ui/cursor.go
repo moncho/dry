@@ -22,12 +22,12 @@ func (cursor *Cursor) Position() int {
 	return cursor.pos
 }
 
-//Reset sets the cursor in the initial position
+//Reset sets the cursor to its initial state (position 0, direction downwards).
 func (cursor *Cursor) Reset() {
 	cursor.Lock()
 	defer cursor.Unlock()
 	cursor.pos = 0
-	cursor.downwards = false
+	cursor.downwards = true
 
 }
 
@@ -63,14 +63,26 @@ func (cursor *Cursor) ScrollTo(pos int) {
 	cursor.pos = pos
 }
 
-//Bottom sets the cursor to the bottom
+//Bottom moves the cursor to the bottom
 func (cursor *Cursor) Bottom() {
 	cursor.Lock()
 	defer cursor.Unlock()
 	if cursor.max > 0 {
 		cursor.pos = cursor.max
-		cursor.downwards = true
+	} else {
+		cursor.pos = 200
 	}
+	cursor.downwards = true
+
+}
+
+//Top moves the cursor to the top
+func (cursor *Cursor) Top() {
+	cursor.Lock()
+	defer cursor.Unlock()
+	cursor.pos = 0
+	cursor.downwards = false
+
 }
 
 //Max sets the max position allowed to this cursor
