@@ -13,20 +13,21 @@ import (
 //Monitor is a self-refreshing ui component that shows monitoring information about docker
 //containers.
 type Monitor struct {
-	header        *MonitorTableHeader
-	rows          []*ContainerStatsRow
-	openChannels  []*docker.StatsChannel
-	selectedIndex int
-	offset        int
-	x, y          int
-	height, width int
+	header               *MonitorTableHeader
+	rows                 []*ContainerStatsRow
+	openChannels         []*docker.StatsChannel
+	selectedIndex        int
+	offset               int
+	x, y                 int
+	height, width        int
+	startIndex, endIndex int
 	sync.RWMutex
 }
 
 //NewMonitor creates a new Monitor component that will render itself on the given screen
 //at the given position and with the given width.
 func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
-	height := ui.ActiveScreen.Dimensions.Height - MainScreenHeaderSize - MainScreenFooterSize - 4
+	height := ui.ActiveScreen.Dimensions.Height - MainScreenHeaderSize - MainScreenFooterSize - 5
 	containers := daemon.Containers(docker.ContainerFilters.Running(), docker.SortByName)
 	var rows []*ContainerStatsRow
 	var channels []*docker.StatsChannel
@@ -129,29 +130,41 @@ func (m *Monitor) highlightSelectedRow() {
 
 func (m *Monitor) visibleRows() []*ContainerStatsRow {
 
-	availableLines := m.height
-	if availableLines < 0 {
+	//no screen
+	if m.height < 0 {
 		return nil
 	}
 	rows := m.rows
-	rowCount := m.ContainerCount()
-	if rowCount < availableLines {
+	count := len(rows)
+	cursor := ui.ActiveScreen.Cursor
+	selected := cursor.Position()
+	//everything fits
+	if count <= m.height {
 		return rows
 	}
-	// downwards
-	if m.selectedIndex >= m.offset+availableLines {
-		m.offset++
-	} else if m.selectedIndex < m.offset {
-		m.offset--
+	//at the the start
+	if selected == 0 {
+		//internal state is reset
+		m.startIndex = 0
+		m.endIndex = m.height
+		return rows[m.startIndex : m.endIndex+1]
 	}
 
-	if m.offset < 0 {
-		m.offset = 0
-	} else if m.offset > rowCount-1 {
-		m.offset = rowCount - 1
+	if selected >= m.endIndex {
+		if selected-m.height >= 0 {
+			m.startIndex = selected - m.height
+		}
+		m.endIndex = selected
 	}
-
-	return m.rows[m.offset : m.offset+availableLines]
+	if selected <= m.startIndex {
+		m.startIndex = m.startIndex - 1
+		if selected+m.height < count {
+			m.endIndex = m.startIndex + m.height
+		}
+	}
+	start := m.startIndex
+	end := m.endIndex + 1
+	return rows[start:end]
 }
 
 //Updates the cursor position in case it is out of bounds
