@@ -45,7 +45,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	var titleInfo string
 	var keymap string
 	var viewRenderer ui.Renderer
-	di := d.ui.DockerInfo
+	di := d.ui.DockerInfoWidget
 	bufferers = append(bufferers, di)
 
 	viewMode := d.viewMode()
@@ -66,8 +66,8 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 				containers,
 				screen.Cursor.Position(),
 				sortMode)
-			d.ui.ContainerComponent.PrepareToRender(data)
-			viewRenderer = d.ui.ContainerComponent
+			d.ui.ContainerListWidget.PrepareToRender(data)
+			viewRenderer = d.ui.ContainerListWidget
 
 			keymap = keyMappings
 
@@ -82,7 +82,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		{
 			//after a refresh, sorting is needed
 			sortMode := d.state.SortImagesMode
-			renderer := appui.NewDockerImagesRenderer(d.dockerDaemon)
+			renderer := d.ui.ImageListWidget
 
 			images, err := d.dockerDaemon.Images()
 			if err == nil {
@@ -115,8 +115,8 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	case DiskUsage:
 		{
 			if du, err := d.dockerDaemon.DiskUsage(); err == nil {
-				d.ui.DiskUsageComponet.PrepareToRender(&du, d.PruneReport())
-				viewRenderer = d.ui.DiskUsageComponet
+				d.ui.DiskUsageWidget.PrepareToRender(&du, d.PruneReport())
+				viewRenderer = d.ui.DiskUsageWidget
 
 			} else {
 				screen.Render(1,
@@ -133,7 +133,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			what = "Containers"
 			count = monitor.ContainerCount()
 			cancelMonitorWidget = cancel
-
+			updateCursorPosition(screen.Cursor, count)
 		}
 	}
 
@@ -211,8 +211,9 @@ func footer(screen *ui.Screen, mapping string) *termui.MarkupPar {
 
 //Updates the cursor position in case it is out of bounds
 func updateCursorPosition(cursor *ui.Cursor, noOfElements int) {
+	cursor.Max(noOfElements - 1)
 	if cursor.Position() >= noOfElements {
-		cursor.ScrollTo(noOfElements - 1)
+		cursor.Bottom()
 	} else if cursor.Position() < 0 {
 		cursor.Reset()
 	}

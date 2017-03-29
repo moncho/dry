@@ -99,7 +99,7 @@ func (b *baseEventHandler) handle(event termbox.Event) {
 	case 'g': //Cursor to the top
 		cursor.Reset()
 	case 'G': //Cursor to the bottom
-		cursor.ScrollTo(ui.ActiveScreen.Dimensions.Height)
+		cursor.Bottom()
 	}
 
 	b.setFocus(focus)

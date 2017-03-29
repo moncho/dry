@@ -78,6 +78,16 @@ func NewSelfUpdatedContainerStatsRow(s *docker.StatsChannel) *ContainerStatsRow 
 	return row
 }
 
+//Highlighted marks this rows as being highlighted
+func (row *ContainerStatsRow) Highlighted() {
+	row.ID.TextBgColor = termui.Attribute(DryTheme.CurrentMatch)
+}
+
+//NotHighlighted marks this rows as being not highlighted
+func (row *ContainerStatsRow) NotHighlighted() {
+	row.ID.TextBgColor = termui.Attribute(DryTheme.Bg)
+}
+
 //Reset resets row content
 func (row *ContainerStatsRow) Reset() {
 	row.CPU.Reset()

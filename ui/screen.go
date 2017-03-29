@@ -23,12 +23,6 @@ type Screen struct {
 	Dimensions *ScreenDimension
 }
 
-//Cursor represents the cursor position on the screen
-type Cursor struct {
-	line int
-	sync.RWMutex
-}
-
 //NewScreen initializes Termbox, creates screen along with layout and markup, and
 //calculates current screen dimensions. Once created, the screen is
 //ready for display.
@@ -39,7 +33,7 @@ func NewScreen(theme *ColorTheme) (*Screen, error) {
 	termbox.SetOutputMode(termbox.Output256)
 	screen := &Screen{}
 	screen.markup = NewMarkup(theme)
-	screen.Cursor = &Cursor{line: 0}
+	screen.Cursor = &Cursor{pos: 0, downwards: true}
 	screen.theme = theme
 	screen.Dimensions = sd
 	ActiveScreen = screen
@@ -116,13 +110,6 @@ func (screen *Screen) Flush() *Screen {
 	defer screen.Unlock()
 	termbox.Flush()
 	return screen
-}
-
-//Position tells on which screen line the cursor is
-func (cursor *Cursor) Position() int {
-	cursor.RLock()
-	defer cursor.RUnlock()
-	return cursor.line
 }
 
 // RenderBufferer renders all Bufferer in the given order from left to right,
@@ -213,39 +200,6 @@ func (screen *Screen) RenderAtColumn(column, initialRow int, str string) {
 //RenderRenderer renders the given renderer starting from the given row
 func (screen *Screen) RenderRenderer(row int, renderer Renderer) {
 	screen.Render(row, renderer.Render())
-}
-
-//Reset sets the cursor in the initial position
-func (cursor *Cursor) Reset() {
-	cursor.Lock()
-	defer cursor.Unlock()
-	cursor.line = 0
-}
-
-//ScrollCursorDown moves the cursor to the line below the current one
-func (cursor *Cursor) ScrollCursorDown() {
-	cursor.Lock()
-	defer cursor.Unlock()
-	cursor.line = cursor.line + 1
-}
-
-//ScrollCursorUp moves the cursor to the line above the current one
-func (cursor *Cursor) ScrollCursorUp() {
-	cursor.Lock()
-	defer cursor.Unlock()
-	if cursor.line > 0 {
-		cursor.line = cursor.line - 1
-	} else {
-		cursor.line = 0
-	}
-}
-
-//ScrollTo moves the cursor to the given line
-func (cursor *Cursor) ScrollTo(pos int) {
-	cursor.Lock()
-	defer cursor.Unlock()
-	cursor.line = pos
-
 }
 
 func toTmAttr(x termui.Attribute) termbox.Attribute {

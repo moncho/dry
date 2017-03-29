@@ -16,15 +16,18 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 		t.Errorf("Daemon has %d images, expected %d", imagesLen, 3)
 	}
 
-	ui.ActiveScreen = &ui.Screen{Dimensions: &ui.ScreenDimension{14, 100}}
-	cursor := &ui.Cursor{}
-	renderer := NewDockerImagesRenderer(daemon)
+	cursor := ui.NewCursor()
+	ui.ActiveScreen = &ui.Screen{
+		Dimensions: &ui.ScreenDimension{Height: 14, Width: 100},
+		Cursor:     cursor}
+
+	renderer := NewDockerImagesRenderer()
 	imagesFromDaemon, _ := daemon.Images()
 	renderer.PrepareForRender(NewDockerImageRenderData(
 		imagesFromDaemon, cursor.Position(), docker.NoSortImages))
 
-	images := renderer.imagesToShow()
-	if len(images) != 3 {
+	images, selected := renderer.imagesToShow()
+	if len(images) != 4 || selected != 0 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 3)
 	}
 	if images[0].ID != "8dfafdbc3a40" {
@@ -34,11 +37,11 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 	if images[2].ID != "26380e1ca356" {
 		t.Errorf("Last image rendered is %s, expected %s. Cursor: %d", images[2].ID, "26380e1ca356", cursor.Position())
 	}
-	cursor.ScrollTo(3)
+	cursor.ScrollTo(4)
 	renderer.PrepareForRender(NewDockerImageRenderData(
 		imagesFromDaemon, cursor.Position(), docker.NoSortImages))
-	images = renderer.imagesToShow()
-	if len(images) != 3 {
+	images, selected = renderer.imagesToShow()
+	if len(images) != 4 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 3)
 	}
 	if images[0].ID != "541a0f4efc6f" {
@@ -58,20 +61,22 @@ func TestImagesToShow(t *testing.T) {
 		t.Errorf("Daemon has %d images, expected %d", imagesLen, 3)
 	}
 
-	cursor := &ui.Cursor{}
-	ui.ActiveScreen = &ui.Screen{Dimensions: &ui.ScreenDimension{20, 100}}
-	renderer := NewDockerImagesRenderer(daemon)
+	cursor := ui.NewCursor()
+
+	ui.ActiveScreen = &ui.Screen{Dimensions: &ui.ScreenDimension{Height: 20, Width: 100},
+		Cursor: cursor}
+	renderer := NewDockerImagesRenderer()
 
 	imagesFromDaemon, _ := daemon.Images()
 	renderer.PrepareForRender(NewDockerImageRenderData(
 		imagesFromDaemon, cursor.Position(), docker.NoSortImages))
 
-	images := renderer.imagesToShow()
-	if len(images) != 5 {
+	images, selected := renderer.imagesToShow()
+	if len(images) != 5 || selected != 0 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 5)
 	}
 	cursor.ScrollTo(3)
-	images = renderer.imagesToShow()
+	images, selected = renderer.imagesToShow()
 	if len(images) != 5 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 5)
 	}

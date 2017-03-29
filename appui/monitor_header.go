@@ -10,18 +10,20 @@ const (
 	containerColumnWidth = 12
 )
 
-//DefaultMonitorTableHeader is the default header for the container monitor table
-var DefaultMonitorTableHeader = NewMonitorTableHeader()
+//defaultMonitorTableHeader is the default header for the container monitor table
+var defaultMonitorTableHeader = NewMonitorTableHeader()
 
-type monitorTableHeader struct {
+//MonitorTableHeader is the header for container monitor tables
+type MonitorTableHeader struct {
 	X, Y          int
 	height, width int
 	pars          []*termui.Par
 }
 
-func NewMonitorTableHeader() *monitorTableHeader {
+//NewMonitorTableHeader creates a table header for the monitor screen
+func NewMonitorTableHeader() *MonitorTableHeader {
 	fields := []string{"CONTAINER", "NAME", "CPU", "MEM", "NET RX/TX", "BLOCK I/O", "PIDS"}
-	ch := &monitorTableHeader{}
+	ch := &MonitorTableHeader{}
 	ch.height = 1
 	for _, f := range fields {
 		ch.addPar(f)
@@ -29,11 +31,13 @@ func NewMonitorTableHeader() *monitorTableHeader {
 	return ch
 }
 
-func (ch *monitorTableHeader) GetHeight() int {
+//GetHeight return this header's height
+func (ch *MonitorTableHeader) GetHeight() int {
 	return ch.height
 }
 
-func (ch *monitorTableHeader) SetWidth(w int) {
+//SetWidth set the width of this header
+func (ch *MonitorTableHeader) SetWidth(w int) {
 	x := ch.X
 	ch.width = w
 	//Set width on each par
@@ -52,18 +56,21 @@ func (ch *monitorTableHeader) SetWidth(w int) {
 	}
 }
 
-func (ch *monitorTableHeader) SetX(x int) {
+//SetX sets the X position of this header
+func (ch *MonitorTableHeader) SetX(x int) {
 	ch.X = x
 }
 
-func (ch *monitorTableHeader) SetY(y int) {
+//SetY sets the Y position of this header
+func (ch *MonitorTableHeader) SetY(y int) {
 	for _, p := range ch.pars {
 		p.SetY(y)
 	}
 	ch.Y = y
 }
 
-func (ch *monitorTableHeader) Buffer() termui.Buffer {
+//Buffer returns the content of this header as a buffer
+func (ch *MonitorTableHeader) Buffer() termui.Buffer {
 	buf := termui.NewBuffer()
 	for _, p := range ch.pars {
 		buf.Merge(p.Buffer())
@@ -71,7 +78,7 @@ func (ch *monitorTableHeader) Buffer() termui.Buffer {
 	return buf
 }
 
-func (ch *monitorTableHeader) addPar(s string) {
+func (ch *MonitorTableHeader) addPar(s string) {
 	p := termui.NewPar(s)
 	p.Height = ch.height
 	p.Border = false
