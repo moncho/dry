@@ -13,7 +13,7 @@ import (
 //Monitor is a self-refreshing ui component that shows monitoring information about docker
 //containers.
 type Monitor struct {
-	header        *monitorTableHeader
+	header        *MonitorTableHeader
 	rows          []*ContainerStatsRow
 	openChannels  []*docker.StatsChannel
 	selectedIndex int
@@ -36,7 +36,7 @@ func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
 		channels = append(channels, statsChan)
 	}
 	m := &Monitor{
-		header:        DefaultMonitorTableHeader,
+		header:        defaultMonitorTableHeader,
 		rows:          rows,
 		openChannels:  channels,
 		selectedIndex: 0,
@@ -72,9 +72,11 @@ func (m *Monitor) align() {
 
 //Buffer returns the content of this monitor as a termui.Buffer
 func (m *Monitor) Buffer() gizaktermui.Buffer {
+	m.Lock()
+	defer m.Unlock()
 
 	buf := gizaktermui.NewBuffer()
-	buf.Merge(DefaultMonitorTableHeader.Buffer())
+	buf.Merge(defaultMonitorTableHeader.Buffer())
 	y := m.y
 	y += m.header.GetHeight()
 
@@ -104,21 +106,20 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case <-refreshTimer.C:
-				m.RLock()
+
 				ui.ActiveScreen.RenderBufferer(m)
 				ui.ActiveScreen.Flush()
-				m.RUnlock()
 			}
 		}
 	}()
 
 }
 func (m *Monitor) highlightSelectedRow() {
-	m.rows[m.selectedIndex].NotHighlighted()
 	index := ui.ActiveScreen.Cursor.Position()
 	if index > m.ContainerCount() {
 		index = m.ContainerCount() - 1
 	}
+	m.rows[m.selectedIndex].NotHighlighted()
 	m.selectedIndex = index
 	m.rows[m.selectedIndex].Highlighted()
 }
@@ -134,14 +135,19 @@ func (m *Monitor) visibleRows() []*ContainerStatsRow {
 	if rowCount < availableLines {
 		return rows
 	}
-	// page down
+	// downwards
 	if m.selectedIndex >= m.offset+availableLines {
 		m.offset++
-	}
-	// page up
-	if m.selectedIndex < m.offset {
+	} else if m.selectedIndex < m.offset {
 		m.offset--
 	}
+
+	if m.offset < 0 {
+		m.offset = 0
+	} else if m.offset > rowCount-1 {
+		m.offset = rowCount - 1
+	}
+
 	return m.rows[m.offset : m.offset+availableLines]
 }
 
