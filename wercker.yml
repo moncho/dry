@@ -24,3 +24,8 @@ build:
         name: go test
         code: |
           go test $(go list ./... | grep -v /vendor/)
+    - script:
+        name: Coveralls.io
+        code: |-
+            go get github.com/mattn/goveralls
+            goveralls -package="./..." -service='wercker.com' $COVERALLS_TOKEN
