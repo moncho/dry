@@ -115,6 +115,9 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 
 }
 func (m *Monitor) highlightSelectedRow() {
+	if m.ContainerCount() == 0 {
+		return
+	}
 	index := ui.ActiveScreen.Cursor.Position()
 	if index > m.ContainerCount() {
 		index = m.ContainerCount() - 1
