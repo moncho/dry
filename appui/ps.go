@@ -38,12 +38,12 @@ func NewDockerPsRenderData(containers []*types.Container, selectedContainer int,
 
 //DockerPs knows how render a container list
 type DockerPs struct {
-	columns                []column // List of columns.
-	containerTableTemplate *template.Template
-	containerTemplate      *template.Template
-	dockerInfo             string // Docker environment information
-	data                   *DockerPsRenderData
-	renderLock             sync.RWMutex
+	columns                  []column // List of columns.
+	containerTemplate        *template.Template
+	data                     *DockerPsRenderData
+	renderLock               sync.RWMutex
+	visibleStart, visibleEnd int
+	renderableRows           int
 }
 
 //NewDockerPsRenderer creates a renderer for a container list
@@ -58,8 +58,8 @@ func NewDockerPsRenderer() *DockerPs {
 		{`Ports`, `PORTS`, docker.NoSort},
 		{`Names`, `NAMES`, docker.SortByName},
 	}
-	r.containerTableTemplate = buildContainerTableTemplate()
 	r.containerTemplate = buildContainerTemplate()
+	r.renderableRows = ui.ActiveScreen.Dimensions.Height - containerTableStartPos - 1
 
 	return r
 }
@@ -76,17 +76,7 @@ func (r *DockerPs) PrepareToRender(data *DockerPsRenderData) {
 func (r *DockerPs) Render() string {
 	r.renderLock.RLock()
 	defer r.renderLock.RUnlock()
-
-	vars := struct {
-		ContainerTable string
-	}{
-		r.containerTable(),
-	}
-
-	buffer := new(bytes.Buffer)
-	r.containerTableTemplate.Execute(buffer, vars)
-
-	return buffer.String()
+	return r.containerTable()
 }
 func (r *DockerPs) containerTable() string {
 	buffer := new(bytes.Buffer)
@@ -111,14 +101,11 @@ func (r *DockerPs) tableHeader() string {
 
 func (r *DockerPs) containerInformation() string {
 	buf := bytes.NewBufferString("")
-	containers := r.containersToShow()
-
-	//From the containers-to-show list
-	//decide which one is selected
-	selected := len(containers) - 1
-	if r.data.selectedContainer < selected {
-		selected = r.data.selectedContainer
+	containers, selected := r.containersToShow()
+	if selected == -1 {
+		return "<red>There was an error rendering the container list, please refresh.</>"
 	}
+
 	context := docker.FormattingContext{
 		Output:   buf,
 		Template: r.containerTemplate,
@@ -132,38 +119,58 @@ func (r *DockerPs) containerInformation() string {
 	return buf.String()
 }
 
-func (r *DockerPs) containersToShow() []*types.Container {
+func (r *DockerPs) containersToShow() ([]*types.Container, int) {
+
+	//no screen
+	if r.renderableRows < 0 {
+		return nil, 0
+	}
 	containers := r.data.containers
-	cursorPos := r.data.selectedContainer
-	availableLines := ui.ActiveScreen.Dimensions.Height - containerTableStartPos - 1
-
-	if availableLines < 0 {
-		return nil
+	count := len(containers)
+	cursor := ui.ActiveScreen.Cursor
+	selected := cursor.Position()
+	//everything fits
+	if count <= r.renderableRows {
+		return containers, selected
+	}
+	//at the the start
+	if selected == 0 {
+		//internal state is reset
+		r.visibleStart = 0
+		r.visibleEnd = r.renderableRows
+		return containers[r.visibleStart : r.visibleEnd+1], selected
 	}
 
-	if len(containers) < availableLines {
-		return containers
+	if selected >= r.visibleEnd {
+		if selected-r.renderableRows >= 0 {
+			r.visibleStart = selected - r.renderableRows
+		}
+		r.visibleEnd = selected
 	}
-
-	start, end := 0, 0
-
-	if cursorPos > availableLines {
-		start = cursorPos + 1 - availableLines
-		end = cursorPos + 1
-	} else if cursorPos == availableLines {
-		start = 1
-		end = availableLines + 1
-	} else {
-		start = 0
-		end = availableLines
+	if selected <= r.visibleStart {
+		r.visibleStart = r.visibleStart - 1
+		if selected+r.renderableRows < count {
+			r.visibleEnd = r.visibleStart + r.renderableRows
+		}
 	}
+	start := r.visibleStart
+	end := r.visibleEnd + 1
+	visibleContainers := containers[start:end]
+	selected = find(visibleContainers, containers[selected])
 
-	return containers[start:end]
+	/*ui.ActiveScreen.Render(0, fmt.Sprintf("Page size: %d, vStart:%d, vEnd:%d, viewIndex :%d, globalIndex :%d", r.renderableRows, r.visibleStart, r.visibleEnd, selected, cursor.Position()))*/
+	return visibleContainers, selected
+
 }
 
-func buildContainerTableTemplate() *template.Template {
-	markup := `{{.ContainerTable}}`
-	return template.Must(template.New(`containers`).Parse(markup))
+//find gets the index of the given container in the given slice
+func find(containers []*types.Container, c *types.Container) int {
+	for i, container := range containers {
+		if c.ID == container.ID {
+			return i
+		}
+	}
+	return -1
 }
 
 func buildContainerTemplate() *template.Template {
