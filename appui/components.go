@@ -7,9 +7,10 @@ import (
 
 //AppUI holds initialized UI componets
 type AppUI struct {
-	DockerInfo         *DockerInfo
-	ContainerComponent *DockerPs
-	DiskUsageComponet  *DockerDiskUsageRenderer
+	DockerInfoWidget    *DockerInfo
+	ContainerListWidget *DockerPs
+	ImageListWidget     *DockerImagesRenderer
+	DiskUsageWidget     *DockerDiskUsageRenderer
 }
 
 //NewAppUI creates AppUI
@@ -21,6 +22,7 @@ func NewAppUI(daemon docker.ContainerDaemon) *AppUI {
 	return &AppUI{
 		di,
 		NewDockerPsRenderer(),
+		NewDockerImagesRenderer(),
 		NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
 	}
 }

@@ -38,15 +38,17 @@ func NewDockerImageRenderData(images []types.ImageSummary, selectedImage int, so
 
 //DockerImagesRenderer knows how render a container list
 type DockerImagesRenderer struct {
-	columns             []imagesColumn // List of columns.
-	imagesTableTemplate *template.Template
-	imagesTemplate      *template.Template
-	data                *DockerImageRenderData
-	renderLock          sync.Mutex
+	columns        []imagesColumn // List of columns.
+	imagesTemplate *template.Template
+	data           *DockerImageRenderData
+	renderLock     sync.Mutex
+	renderableRows int
+	startIndex     int
+	endIndex       int
 }
 
 //NewDockerImagesRenderer creates a renderer for a container list
-func NewDockerImagesRenderer(daemon docker.ContainerDaemon) *DockerImagesRenderer {
+func NewDockerImagesRenderer() *DockerImagesRenderer {
 	r := &DockerImagesRenderer{}
 
 	r.columns = []imagesColumn{
@@ -57,8 +59,9 @@ func NewDockerImagesRenderer(daemon docker.ContainerDaemon) *DockerImagesRendere
 		{`Size`, `Size`, docker.SortImagesBySize},
 	}
 
-	r.imagesTableTemplate = buildImageTableTemplate()
 	r.imagesTemplate = buildImagesTemplate()
+	r.renderableRows = ui.ActiveScreen.Dimensions.Height - networkTableStartPos - 1
+
 	return r
 }
 
@@ -73,17 +76,8 @@ func (r *DockerImagesRenderer) PrepareForRender(data *DockerImageRenderData) {
 func (r *DockerImagesRenderer) Render() string {
 	r.renderLock.Lock()
 	defer r.renderLock.Unlock()
+	return r.imagesTable()
 
-	vars := struct {
-		ImageTable string
-	}{
-		r.imagesTable(),
-	}
-
-	buffer := new(bytes.Buffer)
-	r.imagesTableTemplate.Execute(buffer, vars)
-
-	return buffer.String()
 }
 func (r *DockerImagesRenderer) imagesTable() string {
 	buffer := new(bytes.Buffer)
@@ -108,11 +102,8 @@ func (r *DockerImagesRenderer) tableHeader() string {
 
 func (r *DockerImagesRenderer) imageInformation() string {
 	buf := bytes.NewBufferString("")
-	images := r.imagesToShow()
-	selected := len(images) - 1
-	if r.data.selectedImage < selected {
-		selected = r.data.selectedImage
-	}
+	images, selected := r.imagesToShow()
+
 	context := docker.FormattingContext{
 		Output:   buf,
 		Template: r.imagesTemplate,
@@ -126,40 +117,59 @@ func (r *DockerImagesRenderer) imageInformation() string {
 	return buf.String()
 }
 
-func (r *DockerImagesRenderer) imagesToShow() []types.ImageSummary {
+func (r *DockerImagesRenderer) imagesToShow() ([]types.ImageSummary, int) {
+
+	//no screen
+	if r.renderableRows < 0 {
+		return nil, 0
+	}
 	images := r.data.images
-	cursorPos := r.data.selectedImage
-	//number of lines from the screen that can be used to render images
-	lines := ui.ActiveScreen.Dimensions.Height - imageTableStartPos - 1
-
-	if lines < 0 {
-		return nil
-	} else if len(images) < lines {
-		return images
+	count := len(images)
+	cursor := ui.ActiveScreen.Cursor
+	selected := cursor.Position()
+	//everything fits
+	if count <= r.renderableRows {
+		return images, selected
+	}
+	//at the the start
+	if selected == 0 {
+		//internal state is reset
+		r.startIndex = 0
+		r.endIndex = r.renderableRows
+		return images[r.startIndex : r.endIndex+1], selected
 	}
 
-	start, end := 0, 0
-
-	if cursorPos > lines {
-		start = cursorPos + 1 - lines
-		end = cursorPos + 1
-	} else if cursorPos == lines {
-		start = 1
-		end = lines + 1
-	} else {
-		start = 0
-		end = lines
+	if selected >= r.endIndex {
+		if selected-r.renderableRows >= 0 {
+			r.startIndex = selected - r.renderableRows
+		}
+		r.endIndex = selected
 	}
+	if selected <= r.startIndex {
+		r.startIndex = r.startIndex - 1
+		if selected+r.renderableRows < count {
+			r.endIndex = r.startIndex + r.renderableRows
+		}
+	}
+	start := r.startIndex
+	end := r.endIndex + 1
+	visibleImages := images[start:end]
+	selected = findImageIndex(visibleImages, images[selected])
 
-	return images[start:end]
-}
-
-func buildImageTableTemplate() *template.Template {
-	markup := `{{.ImageTable}}`
-	return template.Must(template.New(`images`).Parse(markup))
+	return visibleImages, selected
 }
 
 func buildImagesTemplate() *template.Template {
 
 	return template.Must(template.New(`image`).Parse(docker.DefaultImageTableFormat))
+}
+
+//find gets the index of the given network in the given slice
+func findImageIndex(networks []types.ImageSummary, n types.ImageSummary) int {
+	for i, network := range networks {
+		if n.ID == network.ID {
+			return i
+		}
+	}
+	return -1
 }

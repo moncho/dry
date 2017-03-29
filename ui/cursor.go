@@ -10,6 +10,11 @@ type Cursor struct {
 	sync.RWMutex
 }
 
+//NewCursor creates a new cursor
+func NewCursor() *Cursor {
+	return &Cursor{pos: 0, downwards: true}
+}
+
 //MovingDown returns true if the cursor is moving downwards after the last movement.
 func (cursor *Cursor) MovingDown() bool {
 	return cursor.downwards

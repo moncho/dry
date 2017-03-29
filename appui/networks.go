@@ -20,16 +20,17 @@ type networksColumn struct {
 
 //DockerNetworksRenderer knows how render a container list
 type DockerNetworksRenderer struct {
-	columns               []networksColumn // List of columns.
-	networksTableTemplate *template.Template
-	networksTemplate      *template.Template
-	cursor                *ui.Cursor
-	daemon                docker.ContainerDaemon
-	dockerInfo            string // Docker environment information
-	sortMode              docker.SortNetworksMode
+	columns          []networksColumn // List of columns.
+	networksTemplate *template.Template
+	cursor           *ui.Cursor
+	daemon           docker.ContainerDaemon
+	sortMode         docker.SortNetworksMode
+	renderableRows   int
+	startIndex       int
+	endIndex         int
 }
 
-//NewDockerNetworksRenderer creates a renderer for a container list
+//NewDockerNetworksRenderer creates a renderer for a network list
 func NewDockerNetworksRenderer(daemon docker.ContainerDaemon, cursor *ui.Cursor, sortMode docker.SortNetworksMode) *DockerNetworksRenderer {
 	r := &DockerNetworksRenderer{}
 
@@ -41,11 +42,11 @@ func NewDockerNetworksRenderer(daemon docker.ContainerDaemon, cursor *ui.Cursor,
 		{`Scope`, `SCOPE`, docker.NoSortNetworks},
 	}
 
-	r.networksTableTemplate = buildNetworkTableTemplate()
 	r.networksTemplate = buildNetworksTemplate()
 	r.cursor = cursor
 	r.daemon = daemon
 	r.sortMode = sortMode
+	r.renderableRows = ui.ActiveScreen.Dimensions.Height - networkTableStartPos - 1
 	return r
 }
 
@@ -59,17 +60,7 @@ func (r *DockerNetworksRenderer) Render() string {
 	if ok, err := r.daemon.Ok(); !ok { // If there was an error connecting to the Docker host...
 		return err.Error() // then simply return the error string.
 	}
-
-	vars := struct {
-		NetworkTable string
-	}{
-		r.networksTable(),
-	}
-
-	buffer := new(bytes.Buffer)
-	r.networksTableTemplate.Execute(buffer, vars)
-
-	return buffer.String()
+	return r.networksTable()
 }
 func (r *DockerNetworksRenderer) networksTable() string {
 	buffer := new(bytes.Buffer)
@@ -94,11 +85,8 @@ func (r *DockerNetworksRenderer) tableHeader() string {
 
 func (r *DockerNetworksRenderer) networkInformation() string {
 	buf := bytes.NewBufferString("")
-	networks := r.networksToShow()
-	selected := len(networks) - 1
-	if r.cursor.Position() < selected {
-		selected = r.cursor.Position()
-	}
+	networks, selected := r.networksToShow()
+
 	context := docker.FormattingContext{
 		Output:   buf,
 		Template: r.networksTemplate,
@@ -112,39 +100,59 @@ func (r *DockerNetworksRenderer) networkInformation() string {
 	return buf.String()
 }
 
-func (r *DockerNetworksRenderer) networksToShow() []types.NetworkResource {
+func (r *DockerNetworksRenderer) networksToShow() ([]types.NetworkResource, int) {
+
+	//no screen
+	if r.renderableRows < 0 {
+		return nil, 0
+	}
 	networks, _ := r.daemon.Networks()
-	cursorPos := r.cursor.Position()
-	linesForNetworks := ui.ActiveScreen.Dimensions.Height - networkTableStartPos - 1
-
-	if linesForNetworks < 0 {
-		return nil
-	} else if len(networks) < linesForNetworks {
-		return networks
+	count := len(networks)
+	cursor := ui.ActiveScreen.Cursor
+	selected := cursor.Position()
+	//everything fits
+	if count <= r.renderableRows {
+		return networks, selected
+	}
+	//at the the start
+	if selected == 0 {
+		//internal state is reset
+		r.startIndex = 0
+		r.endIndex = r.renderableRows
+		return networks[r.startIndex : r.endIndex+1], selected
 	}
 
-	start, end := 0, 0
-
-	if cursorPos > linesForNetworks {
-		start = cursorPos + 1 - linesForNetworks
-		end = cursorPos + 1
-	} else if cursorPos == linesForNetworks {
-		start = 1
-		end = linesForNetworks + 1
-	} else {
-		start = 0
-		end = linesForNetworks
+	if selected >= r.endIndex {
+		if selected-r.renderableRows >= 0 {
+			r.startIndex = selected - r.renderableRows
+		}
+		r.endIndex = selected
 	}
+	if selected <= r.startIndex {
+		r.startIndex = r.startIndex - 1
+		if selected+r.renderableRows < count {
+			r.endIndex = r.startIndex + r.renderableRows
+		}
+	}
+	start := r.startIndex
+	end := r.endIndex + 1
+	visibleNetworks := networks[start:end]
+	selected = findNetworkIndex(visibleNetworks, networks[selected])
 
-	return networks[start:end]
-}
-
-func buildNetworkTableTemplate() *template.Template {
-	markup := `{{.NetworkTable}}`
-	return template.Must(template.New(`networks`).Parse(markup))
+	return visibleNetworks, selected
 }
 
 func buildNetworksTemplate() *template.Template {
 
 	return template.Must(template.New(`network`).Parse(docker.DefaultNetworkTableFormat))
+}
+
+//find gets the index of the given network in the given slice
+func findNetworkIndex(networks []types.NetworkResource, n types.NetworkResource) int {
+	for i, network := range networks {
+		if n.ID == network.ID {
+			return i
+		}
+	}
+	return -1
 }

@@ -163,6 +163,11 @@ func (r *DockerPs) containersToShow() ([]*types.Container, int) {
 
 }
 
+func buildContainerTemplate() *template.Template {
+
+	return template.Must(template.New(`container`).Parse(docker.DefaultTableFormat))
+}
+
 //find gets the index of the given container in the given slice
 func find(containers []*types.Container, c *types.Container) int {
 	for i, container := range containers {
@@ -171,9 +176,4 @@ func find(containers []*types.Container, c *types.Container) int {
 		}
 	}
 	return -1
-}
-
-func buildContainerTemplate() *template.Template {
-
-	return template.Must(template.New(`container`).Parse(docker.DefaultTableFormat))
 }
