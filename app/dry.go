@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -545,10 +546,13 @@ func (d *Dry) SortNetworks() {
 
 func (d *Dry) startDry() {
 	go func() {
-		//The event is not relevant, dry must refresh
-		for message := range d.dockerEvents {
-			d.doRefresh()
-			d.appmessage(fmt.Sprintf("Received message from Docker daemon:%s %s", message.Action, message.ID))
+		for event := range d.dockerEvents {
+			//exec_ messages are sent continously if docker is checking
+			//a container health, this events are not shown to the user
+			if !strings.Contains(event.Action, "exec_") {
+				d.doRefresh()
+				d.appmessage(fmt.Sprintf("Docker daemon: %s %s", event.Action, event.ID))
+			}
 		}
 	}()
 
