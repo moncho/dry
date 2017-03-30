@@ -1,5 +1,6 @@
 package ui
 
-type ScreenDimension struct {
+//Dimensions is a representation of the dimensions of a ui widget
+type Dimensions struct {
 	Height, Width int
 }

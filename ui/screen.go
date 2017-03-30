@@ -20,7 +20,7 @@ type Screen struct {
 	Cursor   *Cursor // Pointer to cursor (gets created by screen).
 	sync.RWMutex
 	theme      *ColorTheme
-	Dimensions *ScreenDimension
+	Dimensions *Dimensions
 }
 
 //NewScreen initializes Termbox, creates screen along with layout and markup, and
@@ -40,9 +40,9 @@ func NewScreen(theme *ColorTheme) (*Screen, error) {
 	return screen, nil
 }
 
-func screenDimensions() *ScreenDimension {
+func screenDimensions() *Dimensions {
 	w, h := termbox.Size()
-	return &ScreenDimension{Width: w, Height: h}
+	return &Dimensions{Width: w, Height: h}
 }
 
 // Close gets called upon program termination to close the Termbox.

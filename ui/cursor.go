@@ -1,6 +1,9 @@
 package ui
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 //Cursor represents the cursor position on the screen
 type Cursor struct {
@@ -95,4 +98,8 @@ func (cursor *Cursor) Max(max int) {
 	cursor.Lock()
 	defer cursor.Unlock()
 	cursor.max = max
+}
+
+func (cursor *Cursor) String() string {
+	return fmt.Sprintf("[%d, %t, %d]", cursor.pos, cursor.downwards, cursor.max)
 }

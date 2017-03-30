@@ -7,6 +7,7 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+//SupportedTags maps supported tags to a termbox.Attribute
 var SupportedTags = supportedTagsRegexp()
 var tagsToAttributeMap = tags()
 

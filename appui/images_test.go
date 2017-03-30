@@ -18,7 +18,7 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 
 	cursor := ui.NewCursor()
 	ui.ActiveScreen = &ui.Screen{
-		Dimensions: &ui.ScreenDimension{Height: 14, Width: 100},
+		Dimensions: &ui.Dimensions{Height: 14, Width: 100},
 		Cursor:     cursor}
 
 	renderer := NewDockerImagesRenderer()
@@ -28,7 +28,7 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 
 	images, selected := renderer.imagesToShow()
 	if len(images) != 4 || selected != 0 {
-		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 3)
+		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 4)
 	}
 	if images[0].ID != "8dfafdbc3a40" {
 		t.Errorf("First image rendered is %s, expected %s. Cursor: %d", images[0].ID, "8dfafdbc3a40", cursor.Position())
@@ -41,8 +41,8 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 	renderer.PrepareForRender(NewDockerImageRenderData(
 		imagesFromDaemon, cursor.Position(), docker.NoSortImages))
 	images, selected = renderer.imagesToShow()
-	if len(images) != 4 {
-		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 3)
+	if len(images) != 4 || selected != 3 {
+		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 4)
 	}
 	if images[0].ID != "541a0f4efc6f" {
 		t.Errorf("First image rendered is %s, expected %s. Cursor: %d", images[0].ID, "541a0f4efc6f", cursor.Position())
@@ -63,7 +63,7 @@ func TestImagesToShow(t *testing.T) {
 
 	cursor := ui.NewCursor()
 
-	ui.ActiveScreen = &ui.Screen{Dimensions: &ui.ScreenDimension{Height: 20, Width: 100},
+	ui.ActiveScreen = &ui.Screen{Dimensions: &ui.Dimensions{Height: 20, Width: 100},
 		Cursor: cursor}
 	renderer := NewDockerImagesRenderer()
 
@@ -77,7 +77,7 @@ func TestImagesToShow(t *testing.T) {
 	}
 	cursor.ScrollTo(3)
 	images, selected = renderer.imagesToShow()
-	if len(images) != 5 {
+	if len(images) != 5 || selected != 3 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 5)
 	}
 	if images[0].ID != "8dfafdbc3a40" {
