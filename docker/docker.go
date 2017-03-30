@@ -319,7 +319,9 @@ func (daemon *DockerDaemon) Refresh(notify func(error)) {
 		if err == nil {
 			daemon.setStore(store)
 		}
-		notify(err)
+		if notify != nil {
+			notify(err)
+		}
 	}()
 }
 
