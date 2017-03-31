@@ -9,13 +9,14 @@ import (
 type Cursor struct {
 	pos       int
 	downwards bool
+	unlimited bool
 	max       int
 	sync.RWMutex
 }
 
-//NewCursor creates a new cursor
+//NewCursor creates a new unlimited cursor at position 0.
 func NewCursor() *Cursor {
-	return &Cursor{pos: 0, downwards: true}
+	return &Cursor{pos: 0, downwards: true, unlimited: true}
 }
 
 //MovingDown returns true if the cursor is moving downwards after the last movement.
@@ -43,7 +44,9 @@ func (cursor *Cursor) Reset() {
 func (cursor *Cursor) ScrollCursorDown() {
 	cursor.Lock()
 	defer cursor.Unlock()
-	cursor.pos = cursor.pos + 1
+	if cursor.unlimited || cursor.pos < cursor.max {
+		cursor.pos = cursor.pos + 1
+	}
 	cursor.downwards = true
 }
 
@@ -98,6 +101,7 @@ func (cursor *Cursor) Max(max int) {
 	cursor.Lock()
 	defer cursor.Unlock()
 	cursor.max = max
+	cursor.unlimited = false
 }
 
 func (cursor *Cursor) String() string {
