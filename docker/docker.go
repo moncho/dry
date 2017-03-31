@@ -584,5 +584,8 @@ func GetBool(key string) (value bool) {
 
 //IsContainerRunning returns true if the given container is running
 func IsContainerRunning(container *dockerTypes.Container) bool {
-	return strings.Contains(container.Status, "Up")
+	if container != nil {
+		return strings.Contains(container.Status, "Up")
+	}
+	return false
 }

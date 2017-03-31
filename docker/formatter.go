@@ -49,30 +49,33 @@ func tableFormat(ctx FormattingContext, containers []*types.Container) {
 	)
 
 	for index, container := range containers {
-		containerCtx := &ContainerFormatter{
-			trunc: ctx.Trunc,
-			c:     container,
-		}
-		//Ugly!!
-		//The lengh of both tags must be the same or the column will be displaced
-		//because template execution happens before markup interpretation.
-		if index == ctx.Selected {
-			buffer.WriteString("<white>")
-		} else {
-			if IsContainerRunning(container) {
-				buffer.WriteString("<cyan0>")
-			} else {
-				buffer.WriteString("<grey2>")
+		//Sanity check
+		if container != nil {
+			containerCtx := &ContainerFormatter{
+				trunc: ctx.Trunc,
+				c:     container,
 			}
-		}
-		if err := tmpl.Execute(buffer, containerCtx); err != nil {
-			buffer = bytes.NewBufferString(fmt.Sprintf("Template parsing error: %v\n", err))
-			buffer.WriteTo(ctx.Output)
-			return
-		}
+			//Ugly!!
+			//The lengh of both tags must be the same or the column will be displaced
+			//because template execution happens before markup interpretation.
+			if index == ctx.Selected {
+				buffer.WriteString("<white>")
+			} else {
+				if IsContainerRunning(container) {
+					buffer.WriteString("<cyan0>")
+				} else {
+					buffer.WriteString("<grey2>")
+				}
+			}
+			if err := tmpl.Execute(buffer, containerCtx); err != nil {
+				buffer = bytes.NewBufferString(fmt.Sprintf("Template parsing error: %v\n", err))
+				buffer.WriteTo(ctx.Output)
+				return
+			}
 
-		buffer.WriteString("</>")
-		buffer.WriteString("\n")
+			buffer.WriteString("</>")
+			buffer.WriteString("\n")
+		}
 	}
 	buffer.WriteTo(ctx.Output)
 }
