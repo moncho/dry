@@ -105,10 +105,10 @@ Most likely you will have to sudo it:
 
 If you dont like to **curl | sh**, binaries are provided.
 
-* **darwin** [386](https://github.com/moncho/dry/releases/download/v0.7-beta.2/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.7-beta.2/dry-darwin-amd64)
-* **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.7-beta.2/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.7-beta.2/dry-freebsd-amd64)
-* **linux** [386](https://github.com/moncho/dry/releases/download/v0.7-beta.2/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.7-beta.2/dry-linux-amd64)
-* **windows** [386](https://github.com/moncho/dry/releases/download/v0.7-beta.2/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.7-beta.2/dry-windows-amd64)
+* **darwin** [386](https://github.com/moncho/dry/releases/download/v0.7-beta.3/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.7-beta.3/dry-darwin-amd64)
+* **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.7-beta.3/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.7-beta.3/dry-freebsd-amd64)
+* **linux** [386](https://github.com/moncho/dry/releases/download/v0.7-beta.3/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.7-beta.3/dry-linux-amd64)
+* **windows** [386](https://github.com/moncho/dry/releases/download/v0.7-beta.3/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.7-beta.3/dry-windows-amd64)
 
 #### Mac OS X / Homebrew
 
