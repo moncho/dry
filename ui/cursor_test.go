@@ -65,7 +65,7 @@ func TestScrolling(t *testing.T) {
 
 	c.ScrollCursorUp()
 	if c.Position() != 0 {
-		t.Errorf("Invalid cursor state after moving up too many times. %s", c)
+		t.Errorf("Invalid cursor state after moving up too many times. %s", c.String())
 	}
 
 	c.ScrollCursorDown()
@@ -73,18 +73,18 @@ func TestScrolling(t *testing.T) {
 	c.ScrollCursorDown()
 
 	if c.Position() != 3 || !c.MovingDown() {
-		t.Errorf("Invalid cursor state after moving down 3 times. %s", c)
+		t.Errorf("Invalid cursor state after moving down 3 times. %s", c.String())
 	}
 
 	c.ScrollTo(5)
 
 	if c.Position() != 5 || !c.MovingDown() {
-		t.Errorf("Invalid cursor state after scrolling to position 5. %s", c)
+		t.Errorf("Invalid cursor state after scrolling to position 5. %s", c.String())
 	}
 
 	c.ScrollTo(3)
 
 	if c.Position() != 3 || c.MovingDown() {
-		t.Errorf("Invalid cursor state after scrolling back to position 3 from pos 5. %s", c)
+		t.Errorf("Invalid cursor state after scrolling back to position 3 from pos 5. %s", c.String())
 	}
 }

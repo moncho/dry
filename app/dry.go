@@ -547,7 +547,7 @@ func (d *Dry) SortNetworks() {
 func (d *Dry) startDry() {
 	go func() {
 		for event := range d.dockerEvents {
-			//exec_ messages are sent continously if docker is checking
+			//exec_ messages are sent continuously if docker is checking
 			//a container health, this events are not shown to the user
 			if !strings.Contains(event.Action, "exec_") {
 				d.doRefresh()

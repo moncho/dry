@@ -4,7 +4,6 @@ package docker
 type Command int
 
 const (
-
 	//HISTORY Image history command
 	HISTORY Command = iota
 	//INSPECT Inspect command

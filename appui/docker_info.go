@@ -30,7 +30,6 @@ func NewDockerInfoBufferer(daemon docker.ContainerDaemon) *DockerInfo {
 
 func dockerInfo(daemon docker.ContainerDaemon) string {
 	version, _ := daemon.Version()
-
 	buffer := new(bytes.Buffer)
 
 	data := [][]string{
