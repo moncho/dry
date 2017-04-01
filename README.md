@@ -95,10 +95,6 @@ Besides this, it:
 
 The easiest way to install the latest binaries for Linux and Mac is to run this in your shell:
 
-```$ curl -sSf https://moncho.github.io/dry/dryup.sh | sh```
-
-Most likely you will have to sudo it:
-
 ```$ curl -sSf https://moncho.github.io/dry/dryup.sh | sudo sh```
 
 ### Binaries
@@ -118,6 +114,10 @@ If you're on OS X and want to use homebrew:
 brew tap moncho/dry
 brew install dry
 ```
+
+#### Docker
+
+```docker run -it -v  /var/run/docker.sock:/var/run/docker.sock moncho/dry ```
 
 #### Arch Linux
 
