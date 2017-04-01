@@ -74,14 +74,12 @@ func (cursor *Cursor) ScrollTo(pos int) {
 	cursor.pos = pos
 }
 
-//Bottom moves the cursor to the bottom
+//Bottom moves the cursor to the bottom, if max is not set this a noop
 func (cursor *Cursor) Bottom() {
 	cursor.Lock()
 	defer cursor.Unlock()
-	if cursor.max > 0 {
+	if !cursor.unlimited {
 		cursor.pos = cursor.max
-	} else {
-		cursor.pos = 200
 	}
 	cursor.downwards = true
 

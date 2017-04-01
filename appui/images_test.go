@@ -24,7 +24,7 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 	renderer := NewDockerImagesRenderer()
 	imagesFromDaemon, _ := daemon.Images()
 	renderer.PrepareForRender(NewDockerImageRenderData(
-		imagesFromDaemon, cursor.Position(), docker.NoSortImages))
+		imagesFromDaemon, docker.NoSortImages))
 
 	images, selected := renderer.imagesToShow()
 	if len(images) != 4 || selected != 0 {
@@ -39,7 +39,7 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 	}
 	cursor.ScrollTo(4)
 	renderer.PrepareForRender(NewDockerImageRenderData(
-		imagesFromDaemon, cursor.Position(), docker.NoSortImages))
+		imagesFromDaemon, docker.NoSortImages))
 	images, selected = renderer.imagesToShow()
 	if len(images) != 4 || selected != 3 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 4)
@@ -69,7 +69,7 @@ func TestImagesToShow(t *testing.T) {
 
 	imagesFromDaemon, _ := daemon.Images()
 	renderer.PrepareForRender(NewDockerImageRenderData(
-		imagesFromDaemon, cursor.Position(), docker.NoSortImages))
+		imagesFromDaemon, docker.NoSortImages))
 
 	images, selected := renderer.imagesToShow()
 	if len(images) != 5 || selected != 0 {
@@ -87,4 +87,17 @@ func TestImagesToShow(t *testing.T) {
 	if images[4].ID != "03b4557ad7b9" {
 		t.Errorf("Last image rendered is %s, expected %s", images[4].ID, "03b4557ad7b9")
 	}
+}
+
+func TestImagesToShowNoImages(t *testing.T) {
+	renderer := NewDockerImagesRenderer()
+
+	renderer.PrepareForRender(NewDockerImageRenderData(
+		nil, docker.NoSortImages))
+
+	images := renderer.imageInformation()
+	if images != "" {
+		t.Error("Unexpected image information, it should be empty")
+	}
+
 }

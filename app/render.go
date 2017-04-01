@@ -64,7 +64,6 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			updateCursorPosition(screen.Cursor, count)
 			data := appui.NewDockerPsRenderData(
 				containers,
-				screen.Cursor.Position(),
 				sortMode)
 			d.ui.ContainerListWidget.PrepareToRender(data)
 			viewRenderer = d.ui.ContainerListWidget
@@ -90,7 +89,6 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 				updateCursorPosition(screen.Cursor, count)
 				data := appui.NewDockerImageRenderData(
 					images,
-					screen.Cursor.Position(),
 					sortMode)
 
 				renderer.PrepareForRender(data)

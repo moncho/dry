@@ -22,17 +22,15 @@ type column struct {
 //DockerPsRenderData holds information that might be
 //used during ps rendering
 type DockerPsRenderData struct {
-	containers        []*types.Container
-	selectedContainer int
-	sortMode          docker.SortMode
+	containers []*types.Container
+	sortMode   docker.SortMode
 }
 
 //NewDockerPsRenderData creates render data structs
-func NewDockerPsRenderData(containers []*types.Container, selectedContainer int, sortMode docker.SortMode) *DockerPsRenderData {
+func NewDockerPsRenderData(containers []*types.Container, sortMode docker.SortMode) *DockerPsRenderData {
 	return &DockerPsRenderData{
-		containers:        containers,
-		selectedContainer: selectedContainer,
-		sortMode:          sortMode,
+		containers: containers,
+		sortMode:   sortMode,
 	}
 }
 
@@ -100,6 +98,9 @@ func (r *DockerPs) tableHeader() string {
 }
 
 func (r *DockerPs) containerInformation() string {
+	if len(r.data.containers) == 0 {
+		return ""
+	}
 	buf := bytes.NewBufferString("")
 	containers, selected := r.containersToShow()
 	if selected == -1 {

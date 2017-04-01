@@ -254,6 +254,7 @@ func showContainerOptions(h *containersScreenEventHandler, dry *Dry, screen *ui.
 		screen.Cursor.Reset()
 
 		info, infoLines := appui.NewContainerInfo(container)
+		screen.Cursor.Max(infoLines)
 		screen.RenderLineWithBackGround(0, ui.ActiveScreen.Dimensions.Height-1, commandsMenuBar, appui.DryTheme.Footer)
 		screen.Render(1, info)
 		l := appui.NewContainerCommands(*container,

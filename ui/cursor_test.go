@@ -58,6 +58,11 @@ func TestScrolling(t *testing.T) {
 		t.Errorf("Invalid cursor state after moving down. %s", c.String())
 	}
 
+	c.Bottom()
+
+	if c.Position() != 1 || !c.MovingDown() {
+		t.Errorf("Invalid cursor state after scrolling to bottom a scroll with no max. %s", c.String())
+	}
 	c.ScrollCursorUp()
 	if c.Position() != 0 || c.MovingDown() {
 		t.Errorf("Invalid cursor state after moving up. %s", c.String())

@@ -85,14 +85,15 @@ func (d *Dry) Close() {
 
 //ContainerAt returns the container at the given position
 func (d *Dry) ContainerAt(position int) *types.Container {
-	if d.state.filter != nil && position >= 0 {
+
+	if position >= 0 {
 		containers := d.containerList()
 		if len(containers) > position {
 			return containers[position]
 		}
 		return nil
 	}
-	return d.containerList()[position]
+	return nil
 }
 
 //ContainerIDAt returns the id of the container at the given position

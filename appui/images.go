@@ -22,17 +22,15 @@ type imagesColumn struct {
 //DockerImageRenderData holds information that might be
 //used during image list rendering
 type DockerImageRenderData struct {
-	images        []types.ImageSummary
-	selectedImage int
-	sortMode      docker.SortImagesMode
+	images   []types.ImageSummary
+	sortMode docker.SortImagesMode
 }
 
 //NewDockerImageRenderData creates render data structs
-func NewDockerImageRenderData(images []types.ImageSummary, selectedImage int, sortMode docker.SortImagesMode) *DockerImageRenderData {
+func NewDockerImageRenderData(images []types.ImageSummary, sortMode docker.SortImagesMode) *DockerImageRenderData {
 	return &DockerImageRenderData{
-		images:        images,
-		selectedImage: selectedImage,
-		sortMode:      sortMode,
+		images:   images,
+		sortMode: sortMode,
 	}
 }
 
@@ -101,6 +99,9 @@ func (r *DockerImagesRenderer) tableHeader() string {
 }
 
 func (r *DockerImagesRenderer) imageInformation() string {
+	if len(r.data.images) == 0 {
+		return ""
+	}
 	buf := bytes.NewBufferString("")
 	images, selected := r.imagesToShow()
 
