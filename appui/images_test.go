@@ -10,7 +10,7 @@ import (
 
 func TestImagesToShowSmallScreen(t *testing.T) {
 	_ = "breakpoint"
-	daemon := &mocks.ContainerDaemonMock{}
+	daemon := &mocks.DockerDaemonMock{}
 	imagesLen := daemon.ImagesCount()
 	if imagesLen != 5 {
 		t.Errorf("Daemon has %d images, expected %d", imagesLen, 3)
@@ -55,7 +55,7 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 
 func TestImagesToShow(t *testing.T) {
 	_ = "breakpoint"
-	daemon := &mocks.ContainerDaemonMock{}
+	daemon := &mocks.DockerDaemonMock{}
 	imagesLen := daemon.ImagesCount()
 	if imagesLen != 5 {
 		t.Errorf("Daemon has %d images, expected %d", imagesLen, 3)
