@@ -41,7 +41,7 @@ func newDryForTest() *Dry {
 		SortMode:             docker.SortByContainerID,
 		viewMode:             Main,
 	}
-	dry.dockerDaemon = new(mocks.ContainerDaemonMock)
+	dry.dockerDaemon = new(mocks.DockerDaemonMock)
 	dry.refreshTimerMutex = &sync.Mutex{}
 
 	dry.resetTimer()

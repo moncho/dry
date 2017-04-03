@@ -6,56 +6,57 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/swarm"
 	drydocker "github.com/moncho/dry/docker"
 )
 
-//ContainerDaemonMock mocks a ContainerDaemonMock
-type ContainerDaemonMock struct {
+//DockerDaemonMock mocks a DockerDaemon
+type DockerDaemonMock struct {
 }
 
 //ContainerByID mock
-func (_m *ContainerDaemonMock) ContainerByID(id string) *types.Container {
+func (_m *DockerDaemonMock) ContainerByID(id string) *types.Container {
 	return nil
 }
 
 //Containers mock
-func (_m *ContainerDaemonMock) Containers(filter drydocker.ContainerFilter, mode drydocker.SortMode) []*types.Container {
+func (_m *DockerDaemonMock) Containers(filter drydocker.ContainerFilter, mode drydocker.SortMode) []*types.Container {
 	return nil
 }
 
 //DiskUsage mock
-func (_m *ContainerDaemonMock) DiskUsage() (types.DiskUsage, error) {
+func (_m *DockerDaemonMock) DiskUsage() (types.DiskUsage, error) {
 	return types.DiskUsage{}, nil
 }
 
 // DockerEnv provides a mock function with given fields:
-func (_m *ContainerDaemonMock) DockerEnv() *drydocker.Env {
+func (_m *DockerDaemonMock) DockerEnv() *drydocker.Env {
 	return &drydocker.Env{DockerHost: "dry.io", DockerTLSVerify: false, DockerCertPath: ""}
 }
 
 // Events provides a mock function with given fields:
-func (_m *ContainerDaemonMock) Events() (<-chan events.Message, chan<- struct{}, error) {
+func (_m *DockerDaemonMock) Events() (<-chan events.Message, chan<- struct{}, error) {
 
 	return nil, nil, nil
 }
 
 //EventLog mock
-func (_m *ContainerDaemonMock) EventLog() *drydocker.EventLog {
+func (_m *DockerDaemonMock) EventLog() *drydocker.EventLog {
 	return nil
 }
 
 //History mock
-func (_m *ContainerDaemonMock) History(id string) ([]types.ImageHistory, error) {
+func (_m *DockerDaemonMock) History(id string) ([]types.ImageHistory, error) {
 	return nil, nil
 }
 
 //ImageAt mock
-func (_m *ContainerDaemonMock) ImageAt(pos int) (*types.ImageSummary, error) {
+func (_m *DockerDaemonMock) ImageAt(pos int) (*types.ImageSummary, error) {
 	return nil, nil
 }
 
 //Images mock
-func (_m *ContainerDaemonMock) Images() ([]types.ImageSummary, error) {
+func (_m *DockerDaemonMock) Images() ([]types.ImageSummary, error) {
 
 	imagesJSON := `[
 		 {
@@ -110,150 +111,157 @@ func (_m *ContainerDaemonMock) Images() ([]types.ImageSummary, error) {
 }
 
 //ImagesCount mock
-func (_m *ContainerDaemonMock) ImagesCount() int {
+func (_m *DockerDaemonMock) ImagesCount() int {
 	i, _ := _m.Images()
 	return len(i)
 }
 
 // Info provides a mock function with given fields:
-func (_m *ContainerDaemonMock) Info() (types.Info, error) {
-	return types.Info{}, nil
+func (_m *DockerDaemonMock) Info() (types.Info, error) {
+	swarmInfo := swarm.Info{LocalNodeState: swarm.LocalNodeStateInactive}
+	return types.Info{Swarm: swarmInfo}, nil
 }
 
 // Inspect provides a mock function with given fields: id
-func (_m *ContainerDaemonMock) Inspect(id string) (types.ContainerJSON, error) {
+func (_m *DockerDaemonMock) Inspect(id string) (types.ContainerJSON, error) {
 	return types.ContainerJSON{}, nil
 }
 
 // InspectImage mock
-func (_m *ContainerDaemonMock) InspectImage(name string) (types.ImageInspect, error) {
+func (_m *DockerDaemonMock) InspectImage(name string) (types.ImageInspect, error) {
 	return types.ImageInspect{}, nil
 }
 
 // IsContainerRunning provides a mock function with given fields: id
-func (_m *ContainerDaemonMock) IsContainerRunning(id string) bool {
+func (_m *DockerDaemonMock) IsContainerRunning(id string) bool {
 	return false
 }
 
 // Kill provides a mock function with given fields: id
-func (_m *ContainerDaemonMock) Kill(id string) error {
+func (_m *DockerDaemonMock) Kill(id string) error {
 	return nil
 }
 
 // Logs provides a mock function with given fields: id
-func (_m *ContainerDaemonMock) Logs(id string) io.ReadCloser {
+func (_m *DockerDaemonMock) Logs(id string) io.ReadCloser {
 	return nil
 }
 
 //Networks mock
-func (_m *ContainerDaemonMock) Networks() ([]types.NetworkResource, error) {
+func (_m *DockerDaemonMock) Networks() ([]types.NetworkResource, error) {
 	return nil, nil
 }
 
 //NetworkAt mock
-func (_m *ContainerDaemonMock) NetworkAt(position int) (*types.NetworkResource, error) {
+func (_m *DockerDaemonMock) NetworkAt(position int) (*types.NetworkResource, error) {
 	return nil, nil
 }
 
 //NetworksCount mock
-func (_m *ContainerDaemonMock) NetworksCount() int {
+func (_m *DockerDaemonMock) NetworksCount() int {
 	return 0
 }
 
 //NetworkInspect mock
-func (_m *ContainerDaemonMock) NetworkInspect(id string) (types.NetworkResource, error) {
+func (_m *DockerDaemonMock) NetworkInspect(id string) (types.NetworkResource, error) {
 	return types.NetworkResource{}, nil
 }
 
 // Ok mocks OK
-func (_m *ContainerDaemonMock) Ok() (bool, error) {
+func (_m *DockerDaemonMock) Ok() (bool, error) {
 
 	return false, nil
 }
 
 //OpenChannel mocks OpenChannel
-func (_m *ContainerDaemonMock) OpenChannel(container *types.Container) *drydocker.StatsChannel {
+func (_m *DockerDaemonMock) OpenChannel(container *types.Container) *drydocker.StatsChannel {
 	return nil
 }
 
 // Prune mocks prune command
-func (_m *ContainerDaemonMock) Prune() (*drydocker.PruneReport, error) {
+func (_m *DockerDaemonMock) Prune() (*drydocker.PruneReport, error) {
 	return nil, nil
 }
 
 // RestartContainer provides a mock function with given fields: id
-func (_m *ContainerDaemonMock) RestartContainer(id string) error {
+func (_m *DockerDaemonMock) RestartContainer(id string) error {
 
 	return nil
 }
 
 // Rm provides a mock function with given fields: id
-func (_m *ContainerDaemonMock) Rm(id string) error {
+func (_m *DockerDaemonMock) Rm(id string) error {
 	return nil
 }
 
 // Rmi mock
-func (_m *ContainerDaemonMock) Rmi(id string, force bool) ([]types.ImageDelete, error) {
+func (_m *DockerDaemonMock) Rmi(id string, force bool) ([]types.ImageDelete, error) {
 	return nil, nil
 }
 
 // Refresh provides a mock function with given fields: allContainers
-func (_m *ContainerDaemonMock) Refresh(notify func(err error)) {
+func (_m *DockerDaemonMock) Refresh(notify func(err error)) {
 	notify(nil)
 }
 
 //RefreshImages mock
-func (_m *ContainerDaemonMock) RefreshImages() error {
+func (_m *DockerDaemonMock) RefreshImages() error {
 	return nil
 }
 
 //RefreshNetworks mock
-func (_m *ContainerDaemonMock) RefreshNetworks() error {
+func (_m *DockerDaemonMock) RefreshNetworks() error {
 	return nil
 }
 
 // RemoveAllStoppedContainers provides a mock function with given fields:
-func (_m *ContainerDaemonMock) RemoveAllStoppedContainers() (int, error) {
+func (_m *DockerDaemonMock) RemoveAllStoppedContainers() (int, error) {
 	return 0, nil
 
 }
 
 //RemoveDanglingImages mock
-func (_m *ContainerDaemonMock) RemoveDanglingImages() (int, error) {
+func (_m *DockerDaemonMock) RemoveDanglingImages() (int, error) {
 	return 0, nil
 }
 
 //RemoveNetwork mock
-func (_m *ContainerDaemonMock) RemoveNetwork(id string) error {
+func (_m *DockerDaemonMock) RemoveNetwork(id string) error {
 	return nil
 }
 
 // StopContainer provides a mock function with given fields: id
-func (_m *ContainerDaemonMock) StopContainer(id string) error {
+func (_m *DockerDaemonMock) StopContainer(id string) error {
 	return nil
 }
 
 // Sort provides a mock function with given fields: sortMode
-func (_m *ContainerDaemonMock) Sort(sortMode drydocker.SortMode) {
+func (_m *DockerDaemonMock) Sort(sortMode drydocker.SortMode) {
 
 }
 
 //SortImages mock
-func (_m *ContainerDaemonMock) SortImages(sortMode drydocker.SortImagesMode) {
+func (_m *DockerDaemonMock) SortImages(sortMode drydocker.SortImagesMode) {
 }
 
 //SortNetworks mock
-func (_m *ContainerDaemonMock) SortNetworks(sortMode drydocker.SortNetworksMode) {
+func (_m *DockerDaemonMock) SortNetworks(sortMode drydocker.SortNetworksMode) {
 }
 
 //Top function mock
-func (_m *ContainerDaemonMock) Top(id string) (types.ContainerProcessList, error) {
+func (_m *DockerDaemonMock) Top(id string) (types.ContainerProcessList, error) {
 
 	return types.ContainerProcessList{}, nil
 }
 
 // Version provides a mock function with given fields:
-func (_m *ContainerDaemonMock) Version() (*types.Version, error) {
+func (_m *DockerDaemonMock) Version() (*types.Version, error) {
 
-	return &types.Version{}, nil
+	return &types.Version{
+		Version:       "1.0",
+		APIVersion:    "1.27",
+		Os:            "dry",
+		Arch:          "amd64",
+		KernelVersion: "42",
+	}, nil
 }

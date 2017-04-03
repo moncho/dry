@@ -15,7 +15,7 @@ type AppUI struct {
 
 //NewAppUI creates AppUI
 func NewAppUI(daemon docker.ContainerDaemon) *AppUI {
-	di := NewDockerInfoBufferer(daemon)
+	di := NewDockerInfo(daemon)
 	di.SetX(0)
 	di.SetY(1)
 	di.SetWidth(ui.ActiveScreen.Dimensions.Width)
