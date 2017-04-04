@@ -6,7 +6,7 @@ import (
 	"github.com/moncho/dry/mocks"
 )
 
-var expectedDockerInfoWithSwarm = `  <blue>Docker Host:</>         <yellow>dry.io</>    <blue>Docker Version:</>  <yellow>1.0</>           <blue>Swarm:</>       <yellow>active</>       
+var expectedDockerInfoWithSwarm = `  <blue>Docker Host:</>         <yellow>dry.io</>    <blue>Docker Version:</>  <yellow>1.0</>           <blue>Swarm:</>       <yellow>active</>       <blue>Is Manager:</>  <yellow>false</>  
   <blue>Cert Path:</>           <yellow></>          <blue>APIVersion:</>      <yellow>1.27</>          <blue>Cluster ID:</>  <yellow>MyClusterID</>  
   <blue>Verify Certificate:</>  <yellow>false</>     <blue>OS/Arch/Kernel:</>  <yellow>dry/amd64/42</>  <blue>Node ID:</>     <yellow>ThisNodeID</>   
 `

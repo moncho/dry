@@ -38,13 +38,13 @@ func dockerInfo(daemon docker.ContainerDaemon) string {
 	buffer := new(bytes.Buffer)
 
 	rows := [][]string{
-		[]string{
+		{
 			ui.Blue("Docker Host:"), ui.Yellow(daemon.DockerEnv().DockerHost), "",
 			ui.Blue("Docker Version:"), ui.Yellow(version.Version)},
-		[]string{
+		{
 			ui.Blue("Cert Path:"), ui.Yellow(daemon.DockerEnv().DockerCertPath), "",
 			ui.Blue("APIVersion:"), ui.Yellow(version.APIVersion)},
-		[]string{
+		{
 			ui.Blue("Verify Certificate:"), ui.Yellow(strconv.FormatBool(daemon.DockerEnv().DockerTLSVerify)), "",
 			ui.Blue("OS/Arch/Kernel:"), ui.Yellow(version.Os + "/" + version.Arch + "/" + version.KernelVersion)},
 	}
@@ -67,7 +67,12 @@ func addSwarmInfo(rows [][]string, info swarm.Info) [][]string {
 	firstRow = append(firstRow,
 		ui.Blue("Swarm:"),
 		ui.Yellow(string(info.LocalNodeState)))
+
 	if info.LocalNodeState != swarm.LocalNodeStateInactive {
+
+		firstRow = append(firstRow,
+			ui.Blue("Is Manager:"),
+			ui.Yellow(strconv.FormatBool(info.ControlAvailable)))
 
 		secondRow = append(secondRow,
 			ui.Blue("Cluster ID:"),
