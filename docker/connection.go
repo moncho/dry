@@ -51,8 +51,7 @@ func connect(client client.APIClient, env *Env) (*DockerDaemon, error) {
 		networks:  networks,
 		dockerEnv: env,
 	}
-	d.eventLog = NewEventLog()
-	d.Version()
+	d.init()
 	return d, nil
 }
 

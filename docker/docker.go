@@ -14,6 +14,7 @@ import (
 	dockerTypes "github.com/docker/docker/api/types"
 	dockerEvents "github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/swarm"
 	dockerAPI "github.com/docker/docker/client"
 	pkgError "github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -45,6 +46,7 @@ type DockerDaemon struct {
 	connected    bool
 	dockerEnv    *Env
 	version      *dockerTypes.Version
+	swarmMode    bool
 	storeLock    sync.RWMutex
 	imagesLock   sync.RWMutex
 	networksLock sync.RWMutex
@@ -525,7 +527,7 @@ func (daemon *DockerDaemon) Top(id string) (dockerTypes.ContainerProcessList, er
 	return daemon.client.ContainerTop(ctx, id, nil)
 }
 
-//Version returns  version information about the Docker Engine
+//Version returns version information about the Docker Engine
 func (daemon *DockerDaemon) Version() (*dockerTypes.Version, error) {
 	if daemon.version == nil {
 		//TODO use cancel function
@@ -539,6 +541,15 @@ func (daemon *DockerDaemon) Version() (*dockerTypes.Version, error) {
 		return nil, err
 	}
 	return daemon.version, nil
+}
+
+//init initializes the internals of the docker daemon.
+func (daemon *DockerDaemon) init() {
+	daemon.eventLog = NewEventLog()
+	daemon.Version()
+	if info, err := daemon.Info(); err == nil {
+		daemon.swarmMode = info.Swarm.LocalNodeState == swarm.LocalNodeStateActive
+	}
 }
 
 func containers(client dockerAPI.ContainerAPIClient) ([]*dockerTypes.Container, error) {
