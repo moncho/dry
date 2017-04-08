@@ -13,13 +13,13 @@ import (
 //StatsChannel is a container and its stats channel.
 //If the container is not running stats and done channel are nil.
 type StatsChannel struct {
-	Container *types.Container
+	Container *Container
 	Stats     <-chan *Stats
 	Done      chan<- struct{}
 }
 
 //NewStatsChannel creates a channel on which to receive the runtime stats of the given container
-func NewStatsChannel(daemon *DockerDaemon, container *types.Container) *StatsChannel {
+func NewStatsChannel(daemon *DockerDaemon, container *Container) *StatsChannel {
 	if IsContainerRunning(container) {
 		stats := make(chan *Stats)
 		done := make(chan struct{})
@@ -65,7 +65,7 @@ func NewStatsChannel(daemon *DockerDaemon, container *types.Container) *StatsCha
 }
 
 //buildStats builds Stats with the given information
-func buildStats(container *types.Container, stats *types.StatsJSON, topResult *types.ContainerProcessList) *Stats {
+func buildStats(container *Container, stats *types.StatsJSON, topResult *types.ContainerProcessList) *Stats {
 	s := &Stats{
 		CID:         TruncateID(container.ID),
 		Command:     container.Command,

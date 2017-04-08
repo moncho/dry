@@ -37,11 +37,11 @@ type FormattingContext struct {
 }
 
 // Format helps to format the output using the parameters set in the FormattingContext.
-func Format(ctx FormattingContext, containers []*types.Container) {
+func Format(ctx FormattingContext, containers []*Container) {
 	tableFormat(ctx, containers)
 }
 
-func tableFormat(ctx FormattingContext, containers []*types.Container) {
+func tableFormat(ctx FormattingContext, containers []*Container) {
 
 	var (
 		buffer = bytes.NewBufferString("")

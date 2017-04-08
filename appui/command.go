@@ -1,7 +1,6 @@
 package appui
 
 import (
-	"github.com/docker/docker/api/types"
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -14,7 +13,7 @@ type ContainerCommandList struct {
 }
 
 //NewContainerCommands creates a Bufferer with the list of container commands
-func NewContainerCommands(container types.Container, x, y, height, width int) *ContainerCommandList {
+func NewContainerCommands(container *docker.Container, x, y, height, width int) *ContainerCommandList {
 	l := ui.NewList(DryTheme)
 
 	commandsLen := len(docker.CommandDescriptions)

@@ -7,6 +7,12 @@ import (
 	"github.com/docker/docker/api/types/events"
 )
 
+//Container holds a detailed view of a container
+type Container struct {
+	types.Container
+	types.ContainerJSON
+}
+
 //ContainerDaemon describes what is expected from the container daemon
 type ContainerDaemon interface {
 	ContainerAPI
@@ -40,13 +46,13 @@ type ContainerDaemon interface {
 
 //ContainerAPI defines the API for containers
 type ContainerAPI interface {
-	ContainerByID(id string) *types.Container
-	Containers(filter ContainerFilter, mode SortMode) []*types.Container
+	ContainerByID(id string) *Container
+	Containers(filter ContainerFilter, mode SortMode) []*Container
 	Inspect(id string) (types.ContainerJSON, error)
 	IsContainerRunning(id string) bool
 	Kill(id string) error
 	Logs(id string) io.ReadCloser
-	OpenChannel(container *types.Container) *StatsChannel
+	OpenChannel(container *Container) *StatsChannel
 	RemoveAllStoppedContainers() (int, error)
 	RestartContainer(id string) error
 	StopContainer(id string) error

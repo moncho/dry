@@ -1,10 +1,6 @@
 package docker
 
-import (
-	"sort"
-
-	"github.com/docker/docker/api/types"
-)
+import "sort"
 
 //Allowed sort methods
 const (
@@ -18,7 +14,7 @@ const (
 //SortMode represents allowed modes to sort a container slice
 type SortMode uint16
 
-type apiContainers []*types.Container
+type apiContainers []*Container
 
 func (a apiContainers) Len() int      { return len(a) }
 func (a apiContainers) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
@@ -60,7 +56,7 @@ func (a byName) Less(i, j int) bool {
 }
 
 //SortContainers sorts the given containers slice using the given mode
-func SortContainers(containers []*types.Container, mode SortMode) {
+func SortContainers(containers []*Container, mode SortMode) {
 	switch mode {
 	case NoSort:
 	case SortByContainerID:

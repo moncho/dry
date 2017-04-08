@@ -1,13 +1,9 @@
 package docker
 
-import (
-	"strings"
-
-	"github.com/docker/docker/api/types"
-)
+import "strings"
 
 //ContainerFilter defines a function to filter container
-type ContainerFilter func(*types.Container) bool
+type ContainerFilter func(*Container) bool
 
 //ContainerFilters is a holder of predefined ContainerFilter(s)
 //The intentions is that something like 'ContainerFilters.ByName("name")'
@@ -16,12 +12,12 @@ var ContainerFilters ContainerFilter
 
 //Unfiltered does not filter containers
 func (c ContainerFilter) Unfiltered() ContainerFilter {
-	return func(c *types.Container) bool { return true }
+	return func(c *Container) bool { return true }
 }
 
 //ByName filters containers by name
 func (c ContainerFilter) ByName(name string) ContainerFilter {
-	return func(c *types.Container) bool {
+	return func(c *Container) bool {
 		for _, containerName := range c.Names {
 
 			if strings.Contains(containerName, name) {
@@ -34,14 +30,14 @@ func (c ContainerFilter) ByName(name string) ContainerFilter {
 
 //ByID filters containers by ID
 func (c ContainerFilter) ByID(id string) ContainerFilter {
-	return func(c *types.Container) bool {
+	return func(c *Container) bool {
 		return strings.Contains(c.ID, id)
 	}
 }
 
 //ByRunningState filters containers by its running state
 func (c ContainerFilter) ByRunningState(running bool) ContainerFilter {
-	return func(c *types.Container) bool {
+	return func(c *Container) bool {
 		return IsContainerRunning(c) == running
 	}
 }
@@ -57,8 +53,8 @@ func (c ContainerFilter) NotRunning() ContainerFilter {
 }
 
 //Filter applies the given filter to the given slice of containers
-func Filter(c []*types.Container, filter ContainerFilter) []*types.Container {
-	var containers []*types.Container
+func Filter(c []*Container, filter ContainerFilter) []*Container {
+	var containers []*Container
 	for _, cont := range c {
 		if filter == nil || filter(cont) {
 			containers = append(containers, cont)

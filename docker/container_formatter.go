@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/go-units"
@@ -29,11 +30,11 @@ const (
 type ContainerFormatter struct {
 	trunc  bool
 	header []string
-	c      *types.Container
+	c      *Container
 }
 
 //NewContainerFormatter creates a new container formatter
-func NewContainerFormatter(c *types.Container, trunc bool) *ContainerFormatter {
+func NewContainerFormatter(c *Container, trunc bool) *ContainerFormatter {
 	return &ContainerFormatter{trunc: trunc, c: c}
 }
 
@@ -97,7 +98,10 @@ func (c *ContainerFormatter) CreatedAt() string {
 //RunningFor prettifies the  that starts the container
 func (c *ContainerFormatter) RunningFor() string {
 	c.addHeader(runningForHeader)
-	return DurationForHumans(c.c.Created)
+	if createdAt, err := time.Parse(time.RFC3339, c.c.ContainerJSON.State.StartedAt); err == nil {
+		return units.HumanDuration(time.Now().UTC().Sub(createdAt))
+	}
+	return ""
 }
 
 //Ports prettifies the container port information

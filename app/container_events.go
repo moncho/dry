@@ -3,7 +3,6 @@ package app
 import (
 	"sync"
 
-	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -12,7 +11,7 @@ import (
 
 type commandToExecute struct {
 	command   docker.Command
-	container *types.Container
+	container *docker.Container
 }
 type containersScreenEventHandler struct {
 	baseEventHandler
@@ -164,7 +163,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 
 //statsScreen shows container stats on the screen
 //TODO move to appui
-func statsScreen(container *types.Container, screen *ui.Screen, dry *Dry, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
+func statsScreen(container *docker.Container, screen *ui.Screen, dry *Dry, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
 	closeViewOnExit := true
 	screen.Clear()
 
@@ -217,7 +216,7 @@ loop:
 		case stat := <-s:
 			{
 				mutex.Lock()
-				statsRow.Update(stat)
+				statsRow.Update(container, stat)
 				top, _ := appui.NewDockerTop(
 					stat.ProcessList,
 					0, statsRow.Y+2,
@@ -257,7 +256,7 @@ func showContainerOptions(h *containersScreenEventHandler, dry *Dry, screen *ui.
 		screen.Cursor.Max(infoLines)
 		screen.RenderLineWithBackGround(0, ui.ActiveScreen.Dimensions.Height-1, commandsMenuBar, appui.DryTheme.Footer)
 		screen.Render(1, info)
-		l := appui.NewContainerCommands(*container,
+		l := appui.NewContainerCommands(container,
 			0,
 			infoLines+1,
 			ui.ActiveScreen.Dimensions.Height-appui.MainScreenFooterSize-infoLines-1,

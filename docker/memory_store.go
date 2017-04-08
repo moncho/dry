@@ -3,22 +3,21 @@ package docker
 import (
 	"sync"
 
-	"github.com/docker/docker/api/types"
 	dockerAPI "github.com/docker/docker/client"
 )
 
 //ContainerStore defines a container storage.
 type ContainerStore interface {
-	Get(id string) *types.Container
-	List() []*types.Container
+	Get(id string) *Container
+	List() []*Container
 	Remove(id string)
 	Size() int
 }
 
 // InMemoryContainerStore is an in-memory container store backed up by a Docker daemon.
 type InMemoryContainerStore struct {
-	s      map[string]*types.Container
-	c      []*types.Container
+	s      map[string]*Container
+	c      []*Container
 	client dockerAPI.ContainerAPIClient
 	sync.RWMutex
 }
@@ -31,7 +30,7 @@ func NewDockerContainerStore(client dockerAPI.ContainerAPIClient) (ContainerStor
 		return nil, err
 	}
 	store := &InMemoryContainerStore{
-		s:      make(map[string]*types.Container),
+		s:      make(map[string]*Container),
 		client: client,
 	}
 	for _, container := range containers {
@@ -40,7 +39,7 @@ func NewDockerContainerStore(client dockerAPI.ContainerAPIClient) (ContainerStor
 	return store, nil
 }
 
-func (c *InMemoryContainerStore) add(cont *types.Container) {
+func (c *InMemoryContainerStore) add(cont *Container) {
 	c.Lock()
 	//If a container with the given ID exists already it is replaced
 	if _, ok := c.s[cont.ID]; ok {
@@ -59,7 +58,7 @@ func (c *InMemoryContainerStore) add(cont *types.Container) {
 }
 
 // Get returns a container from the store by id.
-func (c *InMemoryContainerStore) Get(id string) *types.Container {
+func (c *InMemoryContainerStore) Get(id string) *Container {
 	c.RLock()
 	res := c.s[id]
 	c.RUnlock()
@@ -67,7 +66,7 @@ func (c *InMemoryContainerStore) Get(id string) *types.Container {
 }
 
 // List returns a list of containers from the store.
-func (c *InMemoryContainerStore) List() []*types.Container {
+func (c *InMemoryContainerStore) List() []*Container {
 	return c.all(nil)
 }
 
@@ -85,7 +84,7 @@ func (c *InMemoryContainerStore) Remove(id string) {
 }
 
 // Sort sorts the store
-func (c *InMemoryContainerStore) Sort(mode SortMode) []*types.Container {
+func (c *InMemoryContainerStore) Sort(mode SortMode) []*Container {
 	c.RLock()
 	defer c.RUnlock()
 	containers := c.List()
@@ -101,13 +100,13 @@ func (c *InMemoryContainerStore) Size() int {
 }
 
 // Filter returns containers found in the store by the given filter.
-func (c *InMemoryContainerStore) Filter(filter ContainerFilter) []*types.Container {
+func (c *InMemoryContainerStore) Filter(filter ContainerFilter) []*Container {
 	return c.all(filter)
 }
 
-func (c *InMemoryContainerStore) all(filter ContainerFilter) []*types.Container {
+func (c *InMemoryContainerStore) all(filter ContainerFilter) []*Container {
 	c.RLock()
-	var containers []*types.Container
+	var containers []*Container
 	for _, cont := range c.c {
 		if filter == nil || filter(cont) {
 			containers = append(containers, cont)

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"strconv"
 
-	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/olekukonko/tablewriter"
@@ -16,7 +15,7 @@ const (
 
 //NewContainerInfo returns detailed container information. Returned int value
 //is the number of lines.
-func NewContainerInfo(container *types.Container) (string, int) {
+func NewContainerInfo(container *docker.Container) (string, int) {
 	buffer := new(bytes.Buffer)
 	var status string
 	if docker.IsContainerRunning(container) {
@@ -33,7 +32,7 @@ func NewContainerInfo(container *types.Container) (string, int) {
 	}
 	var networkNames []string
 	var networkIps []string
-	for k, v := range container.NetworkSettings.Networks {
+	for k, v := range container.Container.NetworkSettings.Networks {
 		networkNames = append(networkNames, ui.Blue("Network Name: "))
 		networkNames = append(networkNames, ui.Yellow(k))
 		networkIps = append(networkIps, ui.Blue("\tIP Address:"))

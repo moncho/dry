@@ -59,7 +59,7 @@ func init() {
 }
 
 //Containers returns the containers known by the daemon
-func (daemon *DockerDaemon) Containers(filter ContainerFilter, mode SortMode) []*dockerTypes.Container {
+func (daemon *DockerDaemon) Containers(filter ContainerFilter, mode SortMode) []*Container {
 	c := daemon.store().List()
 	if filter != nil {
 		c = Filter(c, filter)
@@ -74,7 +74,7 @@ func (daemon *DockerDaemon) ContainerCount() int {
 }
 
 //ContainerByID returns the container with the given ID
-func (daemon *DockerDaemon) ContainerByID(cid string) *dockerTypes.Container {
+func (daemon *DockerDaemon) ContainerByID(cid string) *Container {
 	return daemon.store().Get(cid)
 }
 
@@ -265,7 +265,7 @@ func (daemon *DockerDaemon) Ok() (bool, error) {
 }
 
 //OpenChannel creates a channel with the runtime stats of the given container
-func (daemon *DockerDaemon) OpenChannel(container *dockerTypes.Container) *StatsChannel {
+func (daemon *DockerDaemon) OpenChannel(container *Container) *StatsChannel {
 	return NewStatsChannel(daemon, container)
 }
 
@@ -552,7 +552,7 @@ func (daemon *DockerDaemon) init() {
 	}
 }
 
-func containers(client dockerAPI.ContainerAPIClient) ([]*dockerTypes.Container, error) {
+func containers(client dockerAPI.ContainerAPIClient) ([]*Container, error) {
 	//TODO use cancel function
 	//Since this is how dry fist connects to the Docker daemon
 	//a different (longer) timeout is used.
@@ -560,9 +560,10 @@ func containers(client dockerAPI.ContainerAPIClient) ([]*dockerTypes.Container, 
 
 	containers, err := client.ContainerList(ctx, dockerTypes.ContainerListOptions{All: true, Size: true})
 	if err == nil {
-		var cPointers []*dockerTypes.Container
-		for i := range containers {
-			cPointers = append(cPointers, &containers[i])
+		var cPointers []*Container
+		for i, c := range containers {
+			details, _ := client.ContainerInspect(ctx, c.ID)
+			cPointers = append(cPointers, &Container{containers[i], details})
 		}
 		return cPointers, nil
 	}
@@ -594,7 +595,7 @@ func GetBool(key string) (value bool) {
 }
 
 //IsContainerRunning returns true if the given container is running
-func IsContainerRunning(container *dockerTypes.Container) bool {
+func IsContainerRunning(container *Container) bool {
 	if container != nil {
 		return strings.Contains(container.Status, "Up")
 	}

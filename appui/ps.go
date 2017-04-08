@@ -8,7 +8,6 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 )
@@ -22,12 +21,12 @@ type column struct {
 //DockerPsRenderData holds information that might be
 //used during ps rendering
 type DockerPsRenderData struct {
-	containers []*types.Container
+	containers []*docker.Container
 	sortMode   docker.SortMode
 }
 
 //NewDockerPsRenderData creates render data structs
-func NewDockerPsRenderData(containers []*types.Container, sortMode docker.SortMode) *DockerPsRenderData {
+func NewDockerPsRenderData(containers []*docker.Container, sortMode docker.SortMode) *DockerPsRenderData {
 	return &DockerPsRenderData{
 		containers: containers,
 		sortMode:   sortMode,
@@ -120,7 +119,7 @@ func (r *DockerPs) containerInformation() string {
 	return buf.String()
 }
 
-func (r *DockerPs) containersToShow() ([]*types.Container, int) {
+func (r *DockerPs) containersToShow() ([]*docker.Container, int) {
 
 	//no screen
 	if r.renderableRows < 0 {
@@ -170,7 +169,7 @@ func buildContainerTemplate() *template.Template {
 }
 
 //find gets the index of the given container in the given slice
-func find(containers []*types.Container, c *types.Container) int {
+func find(containers []*docker.Container, c *docker.Container) int {
 	for i, container := range containers {
 		if c.ID == container.ID {
 			return i

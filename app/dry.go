@@ -84,7 +84,7 @@ func (d *Dry) Close() {
 }
 
 //ContainerAt returns the container at the given position
-func (d *Dry) ContainerAt(position int) *types.Container {
+func (d *Dry) ContainerAt(position int) *drydocker.Container {
 
 	if position >= 0 {
 		containers := d.containerList()
@@ -104,7 +104,7 @@ func (d *Dry) ContainerIDAt(position int) (string, string) {
 	}
 	return "", ""
 }
-func (d *Dry) containerList() []*types.Container {
+func (d *Dry) containerList() []*drydocker.Container {
 	var filter drydocker.ContainerFilter
 	if d.state.showingAllContainers {
 		filter = drydocker.ContainerFilters.Unfiltered()
