@@ -3,8 +3,8 @@ package appui
 import (
 	"fmt"
 	"strconv"
+	"time"
 
-	"github.com/docker/docker/api/types"
 	units "github.com/docker/go-units"
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
@@ -16,7 +16,7 @@ var inactiveRowColor = termui.Attribute(ui.Color244)
 
 //ContainerStatsRow is a Grid row showing runtime information about a container
 type ContainerStatsRow struct {
-	container *types.Container
+	container *docker.Container
 	Name      *drytermui.ParColumn
 	ID        *drytermui.ParColumn
 	CPU       *drytermui.GaugeColumn
@@ -24,14 +24,16 @@ type ContainerStatsRow struct {
 	Net       *drytermui.ParColumn
 	Block     *drytermui.ParColumn
 	Pids      *drytermui.ParColumn
-	X, Y      int
-	Width     int
-	Height    int
-	columns   []termui.GridBufferer
+	Uptime    *drytermui.ParColumn
+
+	X, Y    int
+	Width   int
+	Height  int
+	columns []termui.GridBufferer
 }
 
 //NewContainerStatsRow creats a new ContainerStatsRow widget
-func NewContainerStatsRow(container *types.Container) *ContainerStatsRow {
+func NewContainerStatsRow(container *docker.Container) *ContainerStatsRow {
 	cf := docker.NewContainerFormatter(container, true)
 	row := &ContainerStatsRow{
 		container: container,
@@ -42,6 +44,7 @@ func NewContainerStatsRow(container *types.Container) *ContainerStatsRow {
 		Net:       drytermui.NewThemedParColumn(DryTheme, "-"),
 		Block:     drytermui.NewThemedParColumn(DryTheme, "-"),
 		Pids:      drytermui.NewThemedParColumn(DryTheme, "-"),
+		Uptime:    drytermui.NewThemedParColumn(DryTheme, container.Status),
 		Height:    1,
 	}
 	//Columns are rendered following the slice order
@@ -53,6 +56,7 @@ func NewContainerStatsRow(container *types.Container) *ContainerStatsRow {
 		row.Net,
 		row.Block,
 		row.Pids,
+		row.Uptime,
 	}
 	if !docker.IsContainerRunning(container) {
 		row.markAsNotRunning()
@@ -70,7 +74,7 @@ func NewSelfUpdatedContainerStatsRow(s *docker.StatsChannel) *ContainerStatsRow 
 	if docker.IsContainerRunning(c) {
 		go func() {
 			for stat := range s.Stats {
-				row.Update(stat)
+				row.Update(c, stat)
 			}
 			row.markAsNotRunning()
 		}()
@@ -95,6 +99,7 @@ func (row *ContainerStatsRow) Reset() {
 	row.Net.Reset()
 	row.Pids.Reset()
 	row.Block.Reset()
+	row.Uptime.Reset()
 }
 
 //GetHeight returns this ContainerStatsRow heigth
@@ -149,17 +154,19 @@ func (row *ContainerStatsRow) Buffer() termui.Buffer {
 	buf.Merge(row.Net.Buffer())
 	buf.Merge(row.Block.Buffer())
 	buf.Merge(row.Pids.Buffer())
+	buf.Merge(row.Uptime.Buffer())
 
 	return buf
 }
 
 //Update updates the content of this row with the given stats
-func (row *ContainerStatsRow) Update(stat *docker.Stats) {
+func (row *ContainerStatsRow) Update(container *docker.Container, stat *docker.Stats) {
 	row.setNet(stat.NetworkRx, stat.NetworkTx)
 	row.setCPU(stat.CPUPercentage)
 	row.setMem(stat.Memory, stat.MemoryLimit, stat.MemoryPercentage)
 	row.setBlockIO(stat.BlockRead, stat.BlockWrite)
 	row.setPids(stat.PidsCurrent)
+	row.setUptime(container.ContainerJSON.State.StartedAt)
 }
 
 func (row *ContainerStatsRow) setNet(rx float64, tx float64) {
@@ -197,6 +204,14 @@ func (row *ContainerStatsRow) setMem(val float64, limit float64, percent float64
 	row.Memory.BarColor = percentileToColor(mem)
 }
 
+func (row *ContainerStatsRow) setUptime(startedAt string) {
+	if startTime, err := time.Parse(time.RFC3339, startedAt); err == nil {
+		row.Uptime.Text = units.HumanDuration(time.Now().UTC().Sub(startTime))
+	} else {
+		row.Uptime.Text = ""
+	}
+}
+
 //markAsNotRunning
 func (row *ContainerStatsRow) markAsNotRunning() {
 
@@ -213,6 +228,8 @@ func (row *ContainerStatsRow) markAsNotRunning() {
 	row.Block.TextFgColor = inactiveRowColor
 	row.Block.Text = "-"
 	row.Pids.Text = "0"
+	row.Pids.TextFgColor = inactiveRowColor
+	row.Uptime.Text = "-"
 	row.Pids.TextFgColor = inactiveRowColor
 
 }

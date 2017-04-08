@@ -22,7 +22,7 @@ type MonitorTableHeader struct {
 
 //NewMonitorTableHeader creates a table header for the monitor screen
 func NewMonitorTableHeader() *MonitorTableHeader {
-	fields := []string{"CONTAINER", "NAME", "CPU", "MEM", "NET RX/TX", "BLOCK I/O", "PIDS"}
+	fields := []string{"CONTAINER", "NAME", "CPU", "MEM", "NET RX/TX", "BLOCK I/O", "PIDS", "UPTIME"}
 	ch := &MonitorTableHeader{}
 	ch.height = 1
 	for _, f := range fields {
