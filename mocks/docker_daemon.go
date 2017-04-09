@@ -15,12 +15,12 @@ type DockerDaemonMock struct {
 }
 
 //ContainerByID mock
-func (_m *DockerDaemonMock) ContainerByID(id string) *types.Container {
+func (_m *DockerDaemonMock) ContainerByID(id string) *drydocker.Container {
 	return nil
 }
 
 //Containers mock
-func (_m *DockerDaemonMock) Containers(filter drydocker.ContainerFilter, mode drydocker.SortMode) []*types.Container {
+func (_m *DockerDaemonMock) Containers(filter drydocker.ContainerFilter, mode drydocker.SortMode) []*drydocker.Container {
 	return nil
 }
 
@@ -174,7 +174,7 @@ func (_m *DockerDaemonMock) Ok() (bool, error) {
 }
 
 //OpenChannel mocks OpenChannel
-func (_m *DockerDaemonMock) OpenChannel(container *types.Container) *drydocker.StatsChannel {
+func (_m *DockerDaemonMock) OpenChannel(container *drydocker.Container) *drydocker.StatsChannel {
 	return nil
 }
 

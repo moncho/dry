@@ -8,8 +8,8 @@ import (
 
 func TestFilterByName(t *testing.T) {
 
-	c := &dockerTypes.Container{
-		Names: []string{"bla"},
+	c := &Container{
+		Container: dockerTypes.Container{Names: []string{"bla"}},
 	}
 
 	filter := ContainerFilters.ByName("bla")
@@ -17,15 +17,15 @@ func TestFilterByName(t *testing.T) {
 		t.Error("Filter by name is filtering out when it should not")
 	}
 
-	c = &dockerTypes.Container{
-		Names: []string{"123"},
+	c = &Container{
+		Container: dockerTypes.Container{Names: []string{"123"}},
 	}
 	if filter(c) {
 		t.Error("Filter by name is not filtering")
 	}
 
-	c = &dockerTypes.Container{
-		Names: []string{"123bla123"},
+	c = &Container{
+		Container: dockerTypes.Container{Names: []string{"123bla123"}},
 	}
 	if !filter(c) {
 		t.Error("Filter by name is filtering out when it should not")
@@ -36,8 +36,8 @@ func TestFilterByName(t *testing.T) {
 
 func TestFilterByID(t *testing.T) {
 
-	c := &dockerTypes.Container{
-		ID: "bla",
+	c := &Container{
+		Container: dockerTypes.Container{ID: "bla"},
 	}
 
 	filter := ContainerFilters.ByID("bla")
@@ -45,15 +45,15 @@ func TestFilterByID(t *testing.T) {
 		t.Error("Filter by ID is filtering out when it should not")
 	}
 
-	c = &dockerTypes.Container{
-		ID: "123",
+	c = &Container{
+		Container: dockerTypes.Container{ID: "123"},
 	}
 	if filter(c) {
 		t.Error("Filter by ID is not filtering")
 	}
 
-	c = &dockerTypes.Container{
-		ID: "123bla123",
+	c = &Container{
+		Container: dockerTypes.Container{ID: "123bla123"},
 	}
 	if !filter(c) {
 		t.Error("Filter by ID is filtering out when it should not")

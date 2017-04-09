@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
-
-	"github.com/docker/docker/api/types"
 )
 
 func TestSortById(t *testing.T) {
@@ -66,7 +64,7 @@ func TestSortByStatus(t *testing.T) {
 	}
 }
 
-func containersToSort() ([]*types.Container, error) {
+func containersToSort() ([]*Container, error) {
 	jsonContainers := `[
      {
              "Id": "8dfafdbc3a40",
@@ -93,11 +91,11 @@ func containersToSort() ([]*types.Container, error) {
 						 "Names": ["6dfafdbc3a40"]
      }
 ]`
-	var containers []*types.Container
+	var containers []*Container
 	err := json.Unmarshal([]byte(jsonContainers), &containers)
 	return containers, err
 }
-func containersAsString(containers []*types.Container) []string {
+func containersAsString(containers []*Container) []string {
 	result := make([]string, len(containers))
 	for i, c := range containers {
 		result[i] = c.ID

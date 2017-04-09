@@ -4,10 +4,14 @@ import (
 	"testing"
 
 	"github.com/docker/docker/api/types"
+	"github.com/moncho/dry/docker"
 )
 
 func TestStatsRow(t *testing.T) {
-	container := &types.Container{ID: "CID", Names: []string{"Name"}, Status: "Never worked"}
+
+	container := &docker.Container{
+		Container:     types.Container{ID: "CID", Names: []string{"Name"}, Status: "Never worked"},
+		ContainerJSON: types.ContainerJSON{}}
 
 	row := NewContainerStatsRow(container)
 	if row == nil {
@@ -17,7 +21,7 @@ func TestStatsRow(t *testing.T) {
 		t.Error("Stats row does not hold a reference to the container.")
 	}
 
-	if len(row.columns) != 7 {
+	if len(row.columns) != 8 {
 		t.Errorf("Stats row does not have the expected number of columns: %d.", len(row.columns))
 	}
 
@@ -43,5 +47,8 @@ func TestStatsRow(t *testing.T) {
 	}
 	if row.Pids.Text != "0" {
 		t.Errorf("Pids widget does not contain the default value. Expected: %s, got: %s.", "-", row.Pids.Text)
+	}
+	if row.Uptime.Text != "-" {
+		t.Errorf("Uptime widget does not contain the default value. Expected: %s, got: %s.", "-", row.Uptime.Text)
 	}
 }
