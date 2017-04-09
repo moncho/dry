@@ -47,7 +47,7 @@ func (m ContainerAPIClientMock) ContainerList(ctx context.Context, options types
 	return containers, nil
 }
 
-//ContainerList returns a list with 10 container with IDs from 0 to 9.
+//ContainerInspect returns an empty inspection result.
 func (m ContainerAPIClientMock) ContainerInspect(ctx context.Context, container string) (types.ContainerJSON, error) {
 	return types.ContainerJSON{}, nil
 }
