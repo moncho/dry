@@ -5,6 +5,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/swarm"
 )
 
 //Container holds a detailed view of a container
@@ -57,6 +58,11 @@ type ContainerAPI interface {
 	RestartContainer(id string) error
 	StopContainer(id string) error
 	Top(id string) (types.ContainerProcessList, error)
+}
+
+//SwarmAPI defines the API for Docker Swarm
+type SwarmAPI interface {
+	SwarmNodes() ([]swarm.Node, error)
 }
 
 //Stats holds runtime stats for a container
