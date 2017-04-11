@@ -11,7 +11,9 @@ import (
 //SwarmNodes returns the nodes that are part of the Swarm
 func (daemon *DockerDaemon) SwarmNodes() ([]swarm.Node, error) {
 
-	nodes, err := daemon.client.NodeList(context.Background(), types.NodeListOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	nodes, err := daemon.client.NodeList(ctx, types.NodeListOptions{})
 	if err == nil {
 		return nodes, nil
 	}

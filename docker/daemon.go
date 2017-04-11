@@ -136,8 +136,9 @@ func (daemon *DockerDaemon) EventLog() *EventLog {
 
 //History returns image history
 func (daemon *DockerDaemon) History(id string) ([]dockerTypes.ImageHistory, error) {
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
+
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 
 	return daemon.client.ImageHistory(
 		ctx, id)
@@ -170,16 +171,16 @@ func (daemon *DockerDaemon) ImagesCount() int {
 
 //Info returns system-wide information about the Docker server.
 func (daemon *DockerDaemon) Info() (dockerTypes.Info, error) {
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 
 	return daemon.client.Info(ctx)
 }
 
 //Inspect the container with the given id
 func (daemon *DockerDaemon) Inspect(id string) (dockerTypes.ContainerJSON, error) {
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 
 	return daemon.client.ContainerInspect(ctx, id)
 }
@@ -252,8 +253,8 @@ func (daemon *DockerDaemon) NetworksCount() int {
 
 //NetworkInspect returns network detailed information
 func (daemon *DockerDaemon) NetworkInspect(id string) (dockerTypes.NetworkResource, error) {
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 
 	return daemon.client.NetworkInspect(
 		ctx, id)

@@ -167,6 +167,11 @@ func (_m *DockerDaemonMock) NetworkInspect(id string) (types.NetworkResource, er
 	return types.NetworkResource{}, nil
 }
 
+//SwarmNodes mock
+func (_m *DockerDaemonMock) SwarmNodes() ([]swarm.Node, error) {
+	return nil, nil
+}
+
 // Ok mocks OK
 func (_m *DockerDaemonMock) Ok() (bool, error) {
 

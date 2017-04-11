@@ -17,6 +17,7 @@ type Container struct {
 //ContainerDaemon describes what is expected from the container daemon
 type ContainerDaemon interface {
 	ContainerAPI
+	SwarmAPI
 	DiskUsage() (types.DiskUsage, error)
 	DockerEnv() *Env
 	Events() (<-chan events.Message, chan<- struct{}, error)
