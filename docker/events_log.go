@@ -4,7 +4,7 @@ import "github.com/docker/docker/api/types/events"
 
 const (
 	//DefaultCapacity of a new EventLog.
-	DefaultCapacity = 10
+	DefaultCapacity = 50
 )
 
 //EventLog keeps track of docker events. It has a limited capacity and
