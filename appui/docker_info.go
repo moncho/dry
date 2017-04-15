@@ -7,7 +7,10 @@ import (
 	termui "github.com/gizak/termui"
 	drytermui "github.com/moncho/dry/ui/termui"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/go-units"
+
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/olekukonko/tablewriter"
@@ -49,6 +52,7 @@ func dockerInfo(daemon docker.ContainerDaemon) string {
 			ui.Blue("OS/Arch/Kernel:"), ui.Yellow(version.Os + "/" + version.Arch + "/" + version.KernelVersion)},
 	}
 
+	rows = addHostInfo(rows, info)
 	rows = addSwarmInfo(rows, swarmInfo)
 	table := tablewriter.NewWriter(buffer)
 	table.SetBorder(false)
@@ -67,20 +71,32 @@ func addSwarmInfo(rows [][]string, info swarm.Info) [][]string {
 	firstRow = append(firstRow,
 		ui.Blue("Swarm:"),
 		ui.Yellow(string(info.LocalNodeState)))
-
 	if info.LocalNodeState != swarm.LocalNodeStateInactive {
-
-		firstRow = append(firstRow,
-			ui.Blue("Is Manager:"),
-			ui.Yellow(strconv.FormatBool(info.ControlAvailable)))
-
 		secondRow = append(secondRow,
-			ui.Blue("Cluster ID:"),
-			ui.Yellow(string(info.Cluster.ID)))
+			ui.Blue("Role:"),
+			ui.Yellow(string(swarm.NodeRoleManager)))
 		thirdRow = append(thirdRow,
-			ui.Blue("Node ID:"),
-			ui.Yellow(string(info.NodeID)))
+			ui.Blue("Nodes:"),
+			ui.Yellow(strconv.Itoa(info.Nodes)))
 	}
+
+	return [][]string{firstRow, secondRow, thirdRow}
+
+}
+func addHostInfo(rows [][]string, info types.Info) [][]string {
+	firstRow := rows[0]
+	secondRow := rows[1]
+	thirdRow := rows[2]
+
+	firstRow = append(firstRow,
+		ui.Blue("Name:"),
+		ui.Yellow(info.Name))
+	secondRow = append(secondRow,
+		ui.Blue("CPU:"),
+		ui.Yellow(strconv.Itoa(info.NCPU)))
+	thirdRow = append(thirdRow,
+		ui.Blue("Memory:"),
+		ui.Yellow(units.BytesSize(float64(info.MemTotal))))
 
 	return [][]string{firstRow, secondRow, thirdRow}
 

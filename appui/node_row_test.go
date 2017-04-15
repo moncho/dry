@@ -1,0 +1,58 @@
+package appui
+
+import (
+	"testing"
+
+	"github.com/docker/docker/api/types/swarm"
+)
+
+func TestNodeRow(t *testing.T) {
+	node := swarm.Node{
+		Description: swarm.NodeDescription{
+			Engine: swarm.EngineDescription{
+				EngineVersion: "1.0",
+			},
+			Hostname: "test.local",
+			Resources: swarm.Resources{
+				NanoCPUs:    2,
+				MemoryBytes: 1024 * 1024,
+			},
+		},
+		Spec: swarm.NodeSpec{
+			Annotations: swarm.Annotations{Name: "test"},
+			Role:        swarm.NodeRoleManager,
+		},
+		Status: swarm.NodeStatus{
+			State: swarm.NodeStateReady,
+		},
+	}
+
+	row := NewNodeRow(node)
+
+	if row == nil {
+		t.Error("NodeRow was not created")
+	}
+
+	if row.Name.Text != "test" {
+		t.Errorf("NodeRow name is not 'test', got %s", row.Name.Text)
+	}
+
+	if row.Role.Text != string(swarm.NodeRoleManager) {
+		t.Errorf("Unexpected NodeRow role, got %s, expected %s", row.Role.Text, swarm.NodeRoleManager)
+	}
+	if row.CPU.Text != "2" {
+		t.Error("NodeRow does not have 2 CPUs")
+	}
+	if row.Memory.Text != "1 MiB" {
+		t.Errorf("NodeRow does not have 1 MiB of memory, got %s", row.Memory.Text)
+	}
+	if row.Engine.Text != "1.0" {
+		t.Errorf("Unexpected NodeRow engine version, got %s, expected 1.0", row.Engine.Text)
+	}
+	if row.IPAddress.Text != node.Description.Hostname {
+		t.Errorf("Unexpected NodeRow IP address, got %s, expected %s", row.IPAddress.Text, node.Description.Hostname)
+	}
+	if row.Status.Text != string(node.Status.State) {
+		t.Errorf("Unexpected NodeRow state, got %s, expected %s", row.Status.Text, node.Status.State)
+	}
+}

@@ -3,7 +3,6 @@ package appui
 import (
 	"sync"
 
-	"github.com/docker/docker/api/types/swarm"
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
 )
@@ -11,7 +10,7 @@ import (
 //SwarmNodesWidget presents Docker swarm information
 type SwarmNodesWidget struct {
 	swarmClient docker.SwarmAPI
-	nodes       []swarm.Node
+	nodes       []*NodeRow
 	sync.RWMutex
 }
 
@@ -19,7 +18,9 @@ type SwarmNodesWidget struct {
 func NewSwarmNodesWidget(swarmClient docker.SwarmAPI) *SwarmNodesWidget {
 	w := &SwarmNodesWidget{swarmClient: swarmClient}
 	if nodes, err := swarmClient.SwarmNodes(); err == nil {
-		w.nodes = nodes
+		for _, node := range nodes {
+			w.nodes = append(w.nodes, NewNodeRow(node))
+		}
 	}
 
 	return w
