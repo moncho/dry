@@ -119,7 +119,11 @@ func (_m *DockerDaemonMock) ImagesCount() int {
 // Info provides a mock function with given fields:
 func (_m *DockerDaemonMock) Info() (types.Info, error) {
 	swarmInfo := swarm.Info{LocalNodeState: swarm.LocalNodeStateInactive}
-	return types.Info{Swarm: swarmInfo}, nil
+	return types.Info{
+		Name:     "test",
+		NCPU:     2,
+		MemTotal: 1024,
+		Swarm:    swarmInfo}, nil
 }
 
 // Inspect provides a mock function with given fields: id

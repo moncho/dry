@@ -14,7 +14,11 @@ type SwarmDockerDaemon struct {
 func (_m *SwarmDockerDaemon) Info() (types.Info, error) {
 	clusterInfo := swarm.ClusterInfo{ID: "MyClusterID"}
 	swarmInfo := swarm.Info{LocalNodeState: swarm.LocalNodeStateActive, NodeID: "ThisNodeID", Cluster: clusterInfo}
-	return types.Info{Swarm: swarmInfo}, nil
+	return types.Info{
+		Name:     "test",
+		NCPU:     2,
+		MemTotal: 1024,
+		Swarm:    swarmInfo}, nil
 }
 
 //SwarmNodes mock
