@@ -60,6 +60,8 @@ func NewContainerStatsRow(container *docker.Container) *ContainerStatsRow {
 	}
 	if !docker.IsContainerRunning(container) {
 		row.markAsNotRunning()
+	} else {
+		row.NotHighlighted()
 	}
 	return row
 
@@ -84,12 +86,23 @@ func NewSelfUpdatedContainerStatsRow(s *docker.StatsChannel) *ContainerStatsRow 
 
 //Highlighted marks this rows as being highlighted
 func (row *ContainerStatsRow) Highlighted() {
-	row.ID.TextBgColor = termui.Attribute(DryTheme.CurrentMatch)
+	row.changeTextColor(termui.Attribute(DryTheme.SelectedListItem))
 }
 
 //NotHighlighted marks this rows as being not highlighted
 func (row *ContainerStatsRow) NotHighlighted() {
-	row.ID.TextBgColor = termui.Attribute(DryTheme.Bg)
+	row.changeTextColor(termui.Attribute(DryTheme.ListItem))
+}
+
+func (row *ContainerStatsRow) changeTextColor(color termui.Attribute) {
+	row.Name.TextFgColor = color
+	row.ID.TextFgColor = color
+	row.CPU.PercentColor = color
+	row.Memory.PercentColor = color
+	row.Net.TextFgColor = color
+	row.Block.TextFgColor = color
+	row.Pids.TextFgColor = color
+	row.Uptime.TextFgColor = color
 }
 
 //Reset resets row content
@@ -135,10 +148,10 @@ func (row *ContainerStatsRow) SetWidth(width int) {
 		col.SetX(x)
 		if col != row.ID {
 			col.SetWidth(rw)
-			x += rw + columnSpacing
+			x += rw + defaultColumnSpacing
 		} else {
 			col.SetWidth(containerColumnWidth)
-			x += containerColumnWidth + columnSpacing
+			x += containerColumnWidth + defaultColumnSpacing
 		}
 	}
 }
