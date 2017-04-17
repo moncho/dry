@@ -1,5 +1,7 @@
 package appui
 
+import "github.com/moncho/dry/ui"
+
 const (
 	//DownArrow character
 	DownArrow = string('\U00002193')
@@ -14,4 +16,16 @@ const (
 	imageTableStartPos     = MainScreenHeaderSize + 5 //5 its the number of lines in the image table header
 	containerTableStartPos = MainScreenHeaderSize + 5
 	networkTableStartPos   = MainScreenHeaderSize + 5
+	defaultColumnSpacing   = 1
 )
+
+//calcItemWidth calculates the width of each item for the given total width and the given
+//item count
+func calcItemWidth(width, items int) int {
+	spacing := defaultColumnSpacing * items
+	return (width - spacing) / items
+}
+
+func mainScreenAvailableHeight() int {
+	return ui.ActiveScreen.Dimensions.Height - MainScreenHeaderSize - MainScreenFooterSize - 5
+}
