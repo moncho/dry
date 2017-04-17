@@ -14,16 +14,16 @@ func TestNodeRow(t *testing.T) {
 			},
 			Hostname: "test.local",
 			Resources: swarm.Resources{
-				NanoCPUs:    2,
+				NanoCPUs:    2 * 1e9,
 				MemoryBytes: 1024 * 1024,
 			},
 		},
 		Spec: swarm.NodeSpec{
-			Annotations: swarm.Annotations{Name: "test"},
-			Role:        swarm.NodeRoleManager,
+			Role: swarm.NodeRoleManager,
 		},
 		Status: swarm.NodeStatus{
 			State: swarm.NodeStateReady,
+			Addr:  "6.6.6.6",
 		},
 	}
 
@@ -33,7 +33,7 @@ func TestNodeRow(t *testing.T) {
 		t.Error("NodeRow was not created")
 	}
 
-	if row.Name.Text != "test" {
+	if row.Name.Text != node.Description.Hostname {
 		t.Errorf("NodeRow name is not 'test', got %s", row.Name.Text)
 	}
 
@@ -49,8 +49,8 @@ func TestNodeRow(t *testing.T) {
 	if row.Engine.Text != "1.0" {
 		t.Errorf("Unexpected NodeRow engine version, got %s, expected 1.0", row.Engine.Text)
 	}
-	if row.IPAddress.Text != node.Description.Hostname {
-		t.Errorf("Unexpected NodeRow IP address, got %s, expected %s", row.IPAddress.Text, node.Description.Hostname)
+	if row.IPAddress.Text != node.Status.Addr {
+		t.Errorf("Unexpected NodeRow IP address, got %s, expected %s", row.IPAddress.Text, node.Status.Addr)
 	}
 	if row.Status.Text != string(node.Status.State) {
 		t.Errorf("Unexpected NodeRow state, got %s, expected %s", row.Status.Text, node.Status.State)

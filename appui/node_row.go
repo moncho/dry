@@ -30,15 +30,16 @@ type NodeRow struct {
 func NewNodeRow(node swarm.Node) *NodeRow {
 	row := &NodeRow{
 		node:      node,
-		Name:      drytermui.NewThemedParColumn(DryTheme, node.Spec.Name),
+		Name:      drytermui.NewThemedParColumn(DryTheme, node.Description.Hostname),
 		Role:      drytermui.NewThemedParColumn(DryTheme, string(node.Spec.Role)),
-		CPU:       drytermui.NewThemedParColumn(DryTheme, strconv.Itoa(int(node.Description.Resources.NanoCPUs))),
+		CPU:       drytermui.NewThemedParColumn(DryTheme, cpus(node)),
 		Memory:    drytermui.NewThemedParColumn(DryTheme, units.BytesSize(float64(node.Description.Resources.MemoryBytes))),
 		Engine:    drytermui.NewThemedParColumn(DryTheme, node.Description.Engine.EngineVersion),
-		IPAddress: drytermui.NewThemedParColumn(DryTheme, node.Description.Hostname),
+		IPAddress: drytermui.NewThemedParColumn(DryTheme, node.Status.Addr),
 		Status:    drytermui.NewThemedParColumn(DryTheme, string(node.Status.State)),
 		Height:    1,
 	}
+	row.changeTextColor(termui.Attribute(DryTheme.ListItem))
 	//Columns are rendered following the slice order
 	row.columns = []termui.GridBufferer{
 		row.Name,
@@ -82,11 +83,11 @@ func (row *NodeRow) SetWidth(width int) {
 	}
 	row.Width = width
 	x := row.X
-	rw := calcItemWidth(width, len(row.columns)-1)
+	rw := calcItemWidth(width, len(row.columns))
 	for _, col := range row.columns {
 		col.SetX(x)
 		col.SetWidth(rw)
-		x += rw + columnSpacing
+		x += rw + defaultColumnSpacing
 	}
 }
 
@@ -102,4 +103,32 @@ func (row *NodeRow) Buffer() termui.Buffer {
 	buf.Merge(row.Status.Buffer())
 
 	return buf
+}
+
+//Highlighted marks this rows as being highlighted
+func (row *NodeRow) Highlighted() {
+	row.changeTextColor(termui.Attribute(DryTheme.SelectedListItem))
+}
+
+//NotHighlighted marks this rows as being not highlighted
+func (row *NodeRow) NotHighlighted() {
+	row.changeTextColor(termui.Attribute(DryTheme.ListItem))
+}
+
+func (row *NodeRow) changeTextColor(color termui.Attribute) {
+	row.Name.TextFgColor = color
+	row.Role.TextFgColor = color
+	row.CPU.TextFgColor = color
+	row.Memory.TextFgColor = color
+	row.Engine.TextFgColor = color
+	row.IPAddress.TextFgColor = color
+	row.Status.TextFgColor = color
+
+}
+
+func cpus(node swarm.Node) string {
+	//https://github.com/docker/docker/blob/v1.12.0-rc4/daemon/cluster/executor/container/container.go#L328-L332
+	nano := node.Description.Resources.NanoCPUs
+	nano = nano / 1e9
+	return strconv.Itoa(int(nano))
 }
