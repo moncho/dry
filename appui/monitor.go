@@ -27,7 +27,7 @@ type Monitor struct {
 //NewMonitor creates a new Monitor component that will render itself on the given screen
 //at the given position and with the given width.
 func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
-	height := ui.ActiveScreen.Dimensions.Height - MainScreenHeaderSize - MainScreenFooterSize - 5
+	height := mainScreenAvailableHeight()
 	containers := daemon.Containers(docker.ContainerFilters.Running(), docker.SortByName)
 	var rows []*ContainerStatsRow
 	var channels []*docker.StatsChannel
@@ -50,8 +50,8 @@ func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
 	return m
 }
 
-//ContainerCount returns the number of containers known by this Monitor.
-func (m *Monitor) ContainerCount() int {
+//RowCount returns the number of rowns of this Monitor.
+func (m *Monitor) RowCount() int {
 	return len(m.rows)
 }
 
@@ -116,12 +116,12 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 
 }
 func (m *Monitor) highlightSelectedRow() {
-	if m.ContainerCount() == 0 {
+	if m.RowCount() == 0 {
 		return
 	}
 	index := ui.ActiveScreen.Cursor.Position()
-	if index > m.ContainerCount() {
-		index = m.ContainerCount() - 1
+	if index > m.RowCount() {
+		index = m.RowCount() - 1
 	}
 	m.rows[m.selectedIndex].NotHighlighted()
 	m.selectedIndex = index
