@@ -456,6 +456,18 @@ func (d *Dry) ShowImages() {
 	}
 }
 
+//ShowInfo retrieves Docker Host info.
+func (d *Dry) ShowInfo() error {
+	info, err := d.dockerDaemon.Info()
+	if err == nil {
+		d.changeViewMode(InfoMode)
+		d.info = info
+		return nil
+	}
+	return err
+
+}
+
 //ShowMonitor changes the state of dry to show the containers monitor
 func (d *Dry) ShowMonitor() {
 	d.changeViewMode(Monitor)
@@ -474,16 +486,14 @@ func (d *Dry) ShowNetworks() {
 	}
 }
 
-//ShowInfo retrieves Docker Host info.
-func (d *Dry) ShowInfo() error {
-	info, err := d.dockerDaemon.Info()
-	if err == nil {
-		d.changeViewMode(InfoMode)
-		d.info = info
-		return nil
-	}
-	return err
+//ShowNodes changes the state of dry to show the node list
+func (d *Dry) ShowNodes() {
+	d.changeViewMode(Nodes)
+}
 
+//ShowServices changes the state of dry to show the service list
+func (d *Dry) ShowServices() {
+	d.changeViewMode(Services)
 }
 
 //Sort rotates to the next sort mode.

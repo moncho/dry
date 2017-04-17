@@ -24,7 +24,7 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event) {
 	case 'G': //Cursor to the bottom
 		cursor.Bottom()
 		handled = true
-	case 'H', 'h', 'q', '1', '2', '3':
+	case 'H', 'h', 'q', '1', '2', '3', '4', '5':
 		handled = false
 	default:
 		handled = true

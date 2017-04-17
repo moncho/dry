@@ -130,8 +130,6 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 				if handler != nil {
 					handler.handle(event)
 					focus.set(handler.hasFocus())
-				} else {
-					log.Panic("There is no event handler")
 				}
 			} else {
 				//Whoever has the focus, handles the event

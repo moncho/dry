@@ -29,6 +29,8 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>1</>         To container list
 	<white>2</>         To image list
 	<white>3</>         To network list
+	<white>4</>         To node list (in Swarm mode)
+	<white>5</>         To service list (in Swarm mode)
 	<white>m</>         To container monitor mode
 	<white>h</>         Shows this help screen
 	<white>Crtl+c</>    Quits <white>dry</> inmediately
@@ -84,23 +86,26 @@ const (
 	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "
 	keyMappings    = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F3]:<darkgrey>Filter(By Name)</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
-		"<b>[m]:<darkgrey>Monitor mode</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
+		"<b>[m]:<darkgrey>Monitor mode</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
 
 	monitorMapping = commonMappings +
-		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <blue>"
+		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</>"
+
+	swarmMapping = commonMappings +
+		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</>"
 
 	imagesKeyMappings = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
-		"<b>[1]:<darkgrey>Containers</> <b>[3]:<darkgrey>Networks</> <blue>|</>" +
+		"<b>[1]:<darkgrey>Containers</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <blue>|</>" +
 		"<b>[Crtl+D]:<darkgrey>Remove Dangling</> <b>[Crtl+E]:<darkgrey>Remove</> <b>[Crtl+F]:<darkgrey>Force Remove</> <b>[I]:<darkgrey>History</>"
 
 	networkKeyMappings = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
-		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</>" +
+		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <blue>|</>" +
 		"<b>[Crtl+E]:<darkgrey>Remove</> <b>[Enter]:<darkgrey>Inspect</>"
 
 	diskUsageKeyMappings = commonMappings +
-		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</> <b>[3]:<darkgrey>Networks</> <blue>|</>" +
+		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <blue>|</>" +
 		"<b>[p]:<darkgrey>Prune</>"
 
 	commandsMenuBar = "<b>[Esc]:<darkgrey>Back</> <b>[Up]:<darkgrey>Cursor Up</> <b>[Down]:<darkgrey>Cursor Down</> <b>[Intro]:<darkgrey>Execute Command</>"

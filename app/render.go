@@ -28,6 +28,8 @@ const (
 	InspectImageMode
 	InspectNetworkMode
 	InspectMode
+	Nodes
+	Services
 )
 
 const (
@@ -110,6 +112,26 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			keymap = networkKeyMappings
 
 		}
+	case Nodes:
+		{
+			nodes := appui.NewSwarmNodesWidget(d.dockerDaemon, viewStartingLine)
+			bufferers = append(bufferers, nodes)
+			what = "Nodes"
+			count = nodes.RowCount()
+			updateCursorPosition(screen.Cursor, count)
+			keymap = swarmMapping
+
+		}
+	case Services:
+		{
+			nodes := appui.NewSwarmNodesWidget(d.dockerDaemon, viewStartingLine)
+			bufferers = append(bufferers, nodes)
+			what = "Nodes"
+			count = nodes.RowCount()
+			updateCursorPosition(screen.Cursor, count)
+			keymap = swarmMapping
+
+		}
 	case DiskUsage:
 		{
 			if du, err := d.dockerDaemon.DiskUsage(); err == nil {
@@ -129,7 +151,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			monitor.RenderLoop(ctx)
 			keymap = monitorMapping
 			what = "Containers"
-			count = monitor.ContainerCount()
+			count = monitor.RowCount()
 			cancelMonitorWidget = cancel
 			updateCursorPosition(screen.Cursor, count)
 		}

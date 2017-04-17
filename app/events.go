@@ -8,6 +8,8 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+var defaultHandler eventHandler
+
 //eventHandler interface to handle termbox events
 type eventHandler interface {
 	//handle handles a termbox event
@@ -93,6 +95,12 @@ func (b *baseEventHandler) handle(event termbox.Event) {
 	case '3':
 		cursor.Reset()
 		dry.ShowNetworks()
+	case '4':
+		cursor.Reset()
+		dry.ShowNodes()
+	case '5':
+		cursor.Reset()
+		dry.ShowServices()
 	case 'm', 'M': //monitor mode
 		cursor.Reset()
 		dry.ShowMonitor()
@@ -122,6 +130,9 @@ type eventHandlerFactory struct {
 func (eh *eventHandlerFactory) handlerFor(view viewMode) eventHandler {
 
 	eh.once.Do(func() {
+		defaultHandler = &baseEventHandler{}
+		defaultHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
+
 		eh.handlers = make(map[viewMode]eventHandler)
 		handler := &imagesScreenEventHandler{}
 		handler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
@@ -145,7 +156,13 @@ func (eh *eventHandlerFactory) handlerFor(view viewMode) eventHandler {
 		mHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
 		eh.handlers[Monitor] = mHandler
 
-	})
+		nHandler := &nodesScreenEventHandler{}
+		nHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
+		eh.handlers[Nodes] = nHandler
 
-	return eh.handlers[view]
+	})
+	if handler, ok := eh.handlers[view]; ok {
+		return handler
+	}
+	return defaultHandler
 }
