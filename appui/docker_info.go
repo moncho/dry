@@ -72,9 +72,15 @@ func addSwarmInfo(rows [][]string, info swarm.Info) [][]string {
 		ui.Blue("Swarm:"),
 		ui.Yellow(string(info.LocalNodeState)))
 	if info.LocalNodeState != swarm.LocalNodeStateInactive {
-		secondRow = append(secondRow,
-			ui.Blue("Role:"),
-			ui.Yellow(string(swarm.NodeRoleManager)))
+		if info.ControlAvailable {
+			secondRow = append(secondRow,
+				ui.Blue("Role:"),
+				ui.Yellow(string(swarm.NodeRoleManager)))
+		} else {
+			secondRow = append(secondRow,
+				ui.Blue("Role:"),
+				ui.Yellow(string(swarm.NodeRoleWorker)))
+		}
 		thirdRow = append(thirdRow,
 			ui.Blue("Nodes:"),
 			ui.Yellow(strconv.Itoa(info.Nodes)))
