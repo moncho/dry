@@ -160,6 +160,10 @@ func (eh *eventHandlerFactory) handlerFor(view viewMode) eventHandler {
 		nHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
 		eh.handlers[Nodes] = nHandler
 
+		tHandler := &taskScreenEventHandler{}
+		tHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
+		eh.handlers[Tasks] = tHandler
+
 	})
 	if handler, ok := eh.handlers[view]; ok {
 		return handler

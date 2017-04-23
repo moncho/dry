@@ -25,3 +25,18 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 		h.setFocus(true)
 	}
 }
+
+type taskScreenEventHandler struct {
+	baseEventHandler
+}
+
+func (h *taskScreenEventHandler) handle(event termbox.Event) {
+
+	switch event.Key {
+	case termbox.KeyEsc:
+		h.dry.ShowNodes()
+	}
+
+	h.baseEventHandler.handle(event)
+
+}
