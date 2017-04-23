@@ -20,8 +20,7 @@ const (
 	DefaultColumnSpacing = 1
 )
 
-//CalcItemWidth calculates the width of each item for the given total width and the given
-//item count
+//CalcItemWidth calculates the width of each item for the given total width and item count
 func CalcItemWidth(width, items int) int {
 	spacing := DefaultColumnSpacing * items
 	return (width - spacing) / items

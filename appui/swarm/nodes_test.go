@@ -4,11 +4,14 @@ import (
 	"testing"
 
 	"github.com/moncho/dry/mocks"
+	"github.com/moncho/dry/ui"
 )
 
-func TestSwarmNodesWidget(t *testing.T) {
-
-	w := NewSwarmNodesWidget(&mocks.SwarmDockerDaemon{}, 1)
+func TestNodesWidget(t *testing.T) {
+	ui.ActiveScreen = &ui.Screen{
+		Dimensions: &ui.Dimensions{Height: 14, Width: 100},
+		Cursor:     ui.NewCursor()}
+	w := NewNodesWidget(&mocks.SwarmDockerDaemon{}, 1)
 	if w == nil {
 		t.Error("Swarm widget is nil")
 	}
