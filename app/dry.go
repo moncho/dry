@@ -40,7 +40,7 @@ type state struct {
 
 //Dry represents the application.
 type Dry struct {
-	ui                 *appui.AppUI
+	ui                 *Widgets
 	dockerDaemon       drydocker.ContainerDaemon
 	dockerEvents       <-chan events.Message
 	dockerEventsDone   chan<- struct{}
@@ -701,7 +701,7 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 		d.SortImages(state.sortImagesMode)
 		d.SortNetworks(state.sortNetworksMode)
 		app := &Dry{}
-		app.ui = appui.NewAppUI(d)
+		app.ui = NewAppUI(d)
 		app.state = state
 		app.dockerDaemon = d
 		app.output = make(chan string)

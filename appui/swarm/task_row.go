@@ -1,8 +1,9 @@
-package appui
+package swarm
 
 import (
 	"github.com/docker/docker/api/types/swarm"
 	termui "github.com/gizak/termui"
+	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker/formatter"
 	drytermui "github.com/moncho/dry/ui/termui"
 )
@@ -30,17 +31,17 @@ func NewTaskRow(task swarm.Task) *TaskRow {
 	ts := formatter.NewTaskStringer(task)
 	row := &TaskRow{
 		task:         task,
-		ID:           drytermui.NewThemedParColumn(DryTheme, ts.ID()),
-		Name:         drytermui.NewThemedParColumn(DryTheme, ts.Name()),
-		Image:        drytermui.NewThemedParColumn(DryTheme, ts.Image()),
-		Node:         drytermui.NewThemedParColumn(DryTheme, ts.NodeID()),
-		DesiredState: drytermui.NewThemedParColumn(DryTheme, ts.DesiredState()),
-		CurrentState: drytermui.NewThemedParColumn(DryTheme, ts.CurrentState()),
-		Error:        drytermui.NewThemedParColumn(DryTheme, ts.Error()),
-		Ports:        drytermui.NewThemedParColumn(DryTheme, ts.Ports()),
+		ID:           drytermui.NewThemedParColumn(appui.DryTheme, ts.ID()),
+		Name:         drytermui.NewThemedParColumn(appui.DryTheme, ts.Name()),
+		Image:        drytermui.NewThemedParColumn(appui.DryTheme, ts.Image()),
+		Node:         drytermui.NewThemedParColumn(appui.DryTheme, ts.NodeID()),
+		DesiredState: drytermui.NewThemedParColumn(appui.DryTheme, ts.DesiredState()),
+		CurrentState: drytermui.NewThemedParColumn(appui.DryTheme, ts.CurrentState()),
+		Error:        drytermui.NewThemedParColumn(appui.DryTheme, ts.Error()),
+		Ports:        drytermui.NewThemedParColumn(appui.DryTheme, ts.Ports()),
 		Height:       1,
 	}
-	row.changeTextColor(termui.Attribute(DryTheme.ListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
 	//Columns are rendered following the slice order
 	row.columns = []termui.GridBufferer{
 		row.ID,
@@ -85,11 +86,11 @@ func (row *TaskRow) SetWidth(width int) {
 	}
 	row.Width = width
 	x := row.X
-	rw := calcItemWidth(width, len(row.columns))
+	rw := appui.CalcItemWidth(width, len(row.columns))
 	for _, col := range row.columns {
 		col.SetX(x)
 		col.SetWidth(rw)
-		x += rw + defaultColumnSpacing
+		x += rw + appui.DefaultColumnSpacing
 	}
 }
 
@@ -110,12 +111,12 @@ func (row *TaskRow) Buffer() termui.Buffer {
 
 //Highlighted marks this rows as being highlighted
 func (row *TaskRow) Highlighted() {
-	row.changeTextColor(termui.Attribute(DryTheme.SelectedListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.SelectedListItem))
 }
 
 //NotHighlighted marks this rows as being not highlighted
 func (row *TaskRow) NotHighlighted() {
-	row.changeTextColor(termui.Attribute(DryTheme.ListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
 }
 
 func (row *TaskRow) changeTextColor(color termui.Attribute) {

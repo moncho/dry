@@ -27,7 +27,7 @@ type Monitor struct {
 //NewMonitor creates a new Monitor component that will render itself on the given screen
 //at the given position and with the given width.
 func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
-	height := mainScreenAvailableHeight()
+	height := MainScreenAvailableHeight()
 	containers := daemon.Containers(docker.ContainerFilters.Running(), docker.SortByName)
 	var rows []*ContainerStatsRow
 	var channels []*docker.StatsChannel

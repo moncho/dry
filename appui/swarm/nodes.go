@@ -1,9 +1,10 @@
-package appui
+package swarm
 
 import (
 	"sync"
 
 	gizaktermui "github.com/gizak/termui"
+	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
@@ -11,8 +12,8 @@ import (
 
 var defaultNodeTableHeader = nodeTableHeader()
 
-//SwarmNodesWidget presents Docker swarm information
-type SwarmNodesWidget struct {
+//NodesWidget presents Docker swarm information
+type NodesWidget struct {
 	swarmClient          docker.SwarmAPI
 	nodes                []*NodeRow
 	header               *termui.TableHeader
@@ -24,16 +25,16 @@ type SwarmNodesWidget struct {
 	sync.RWMutex
 }
 
-//NewSwarmNodesWidget creates a SwarmNodesWidget
-func NewSwarmNodesWidget(swarmClient docker.SwarmAPI, y int) *SwarmNodesWidget {
-	w := &SwarmNodesWidget{
+//NewNodesWidget creates a NodesWidget
+func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
+	w := &NodesWidget{
 		swarmClient:   swarmClient,
 		header:        defaultNodeTableHeader,
 		selectedIndex: 0,
 		offset:        0,
 		x:             0,
 		y:             y,
-		height:        mainScreenAvailableHeight(),
+		height:        appui.MainScreenAvailableHeight(),
 		width:         ui.ActiveScreen.Dimensions.Width}
 
 	if nodes, err := swarmClient.Nodes(); err == nil {
@@ -46,7 +47,7 @@ func NewSwarmNodesWidget(swarmClient docker.SwarmAPI, y int) *SwarmNodesWidget {
 }
 
 //Align aligns rows
-func (s *SwarmNodesWidget) align() {
+func (s *NodesWidget) align() {
 	y := s.y
 	x := s.x
 	width := s.width
@@ -62,7 +63,7 @@ func (s *SwarmNodesWidget) align() {
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
-func (s *SwarmNodesWidget) Buffer() gizaktermui.Buffer {
+func (s *NodesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
 
@@ -84,10 +85,10 @@ func (s *SwarmNodesWidget) Buffer() gizaktermui.Buffer {
 }
 
 //RowCount returns the number of rowns of this widget.
-func (s *SwarmNodesWidget) RowCount() int {
+func (s *NodesWidget) RowCount() int {
 	return len(s.nodes)
 }
-func (s *SwarmNodesWidget) highlightSelectedRow() {
+func (s *NodesWidget) highlightSelectedRow() {
 	if s.RowCount() == 0 {
 		return
 	}
@@ -101,11 +102,11 @@ func (s *SwarmNodesWidget) highlightSelectedRow() {
 }
 
 //OnEvent runs the given command
-func (s *SwarmNodesWidget) OnEvent(event EventCommand) error {
+func (s *NodesWidget) OnEvent(event appui.EventCommand) error {
 	return event(s.nodes[s.selectedIndex].node.ID)
 }
 
-func (s *SwarmNodesWidget) visibleRows() []*NodeRow {
+func (s *NodesWidget) visibleRows() []*NodeRow {
 
 	//no screen
 	if s.height < 0 {
@@ -148,8 +149,8 @@ func nodeTableHeader() *termui.TableHeader {
 	fields := []string{
 		"NAME", "ROLE", "CPU", "MEMORY", "DOCKER ENGINE", "IP ADDRESS", "STATUS"}
 
-	header := termui.NewHeader(DryTheme)
-	header.ColumnSpacing = defaultColumnSpacing
+	header := termui.NewHeader(appui.DryTheme)
+	header.ColumnSpacing = appui.DefaultColumnSpacing
 	for _, f := range fields {
 		header.AddColumn(f)
 	}

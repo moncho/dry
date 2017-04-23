@@ -19,7 +19,7 @@ func NewMonitorTableHeader() *MonitorTableHeader {
 	fields := []string{"CONTAINER", "NAME", "CPU", "MEM", "NET RX/TX", "BLOCK I/O", "PIDS", "UPTIME"}
 
 	header := termui.NewHeader(DryTheme)
-	header.ColumnSpacing = defaultColumnSpacing
+	header.ColumnSpacing = DefaultColumnSpacing
 	for _, f := range fields {
 		header.AddColumn(f)
 	}

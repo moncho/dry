@@ -1,4 +1,4 @@
-package appui
+package swarm
 
 import (
 	"strconv"
@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	units "github.com/docker/go-units"
 	termui "github.com/gizak/termui"
+	"github.com/moncho/dry/appui"
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
@@ -30,16 +31,16 @@ type NodeRow struct {
 func NewNodeRow(node swarm.Node) *NodeRow {
 	row := &NodeRow{
 		node:      node,
-		Name:      drytermui.NewThemedParColumn(DryTheme, node.Description.Hostname),
-		Role:      drytermui.NewThemedParColumn(DryTheme, string(node.Spec.Role)),
-		CPU:       drytermui.NewThemedParColumn(DryTheme, cpus(node)),
-		Memory:    drytermui.NewThemedParColumn(DryTheme, units.BytesSize(float64(node.Description.Resources.MemoryBytes))),
-		Engine:    drytermui.NewThemedParColumn(DryTheme, node.Description.Engine.EngineVersion),
-		IPAddress: drytermui.NewThemedParColumn(DryTheme, node.Status.Addr),
-		Status:    drytermui.NewThemedParColumn(DryTheme, string(node.Status.State)),
+		Name:      drytermui.NewThemedParColumn(appui.DryTheme, node.Description.Hostname),
+		Role:      drytermui.NewThemedParColumn(appui.DryTheme, string(node.Spec.Role)),
+		CPU:       drytermui.NewThemedParColumn(appui.DryTheme, cpus(node)),
+		Memory:    drytermui.NewThemedParColumn(appui.DryTheme, units.BytesSize(float64(node.Description.Resources.MemoryBytes))),
+		Engine:    drytermui.NewThemedParColumn(appui.DryTheme, node.Description.Engine.EngineVersion),
+		IPAddress: drytermui.NewThemedParColumn(appui.DryTheme, node.Status.Addr),
+		Status:    drytermui.NewThemedParColumn(appui.DryTheme, string(node.Status.State)),
 		Height:    1,
 	}
-	row.changeTextColor(termui.Attribute(DryTheme.ListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
 	//Columns are rendered following the slice order
 	row.columns = []termui.GridBufferer{
 		row.Name,
@@ -83,11 +84,11 @@ func (row *NodeRow) SetWidth(width int) {
 	}
 	row.Width = width
 	x := row.X
-	rw := calcItemWidth(width, len(row.columns))
+	rw := appui.CalcItemWidth(width, len(row.columns))
 	for _, col := range row.columns {
 		col.SetX(x)
 		col.SetWidth(rw)
-		x += rw + defaultColumnSpacing
+		x += rw + appui.DefaultColumnSpacing
 	}
 }
 
@@ -107,12 +108,12 @@ func (row *NodeRow) Buffer() termui.Buffer {
 
 //Highlighted marks this rows as being highlighted
 func (row *NodeRow) Highlighted() {
-	row.changeTextColor(termui.Attribute(DryTheme.SelectedListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.SelectedListItem))
 }
 
 //NotHighlighted marks this rows as being not highlighted
 func (row *NodeRow) NotHighlighted() {
-	row.changeTextColor(termui.Attribute(DryTheme.ListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
 }
 
 func (row *NodeRow) changeTextColor(color termui.Attribute) {

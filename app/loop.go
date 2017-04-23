@@ -160,7 +160,7 @@ loop:
 		case termbox.EventResize:
 			ui.Resize()
 			//Reload dry ui elements
-			dry.ui = appui.NewAppUI(dry.dockerDaemon)
+			dry.ui = NewAppUI(dry.dockerDaemon)
 		}
 	}
 

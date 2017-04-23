@@ -1,4 +1,4 @@
-package appui
+package swarm
 
 import (
 	"testing"

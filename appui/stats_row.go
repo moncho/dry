@@ -144,15 +144,15 @@ func (row *ContainerStatsRow) SetWidth(width int) {
 	}
 	row.Width = width
 	x := row.X
-	rw := calcItemWidth(width, len(row.columns)-1)
+	rw := CalcItemWidth(width, len(row.columns)-1)
 	for _, col := range row.columns {
 		col.SetX(x)
 		if col != row.ID {
 			col.SetWidth(rw)
-			x += rw + defaultColumnSpacing
+			x += rw + DefaultColumnSpacing
 		} else {
 			col.SetWidth(containerColumnWidth)
-			x += containerColumnWidth + defaultColumnSpacing
+			x += containerColumnWidth + DefaultColumnSpacing
 		}
 	}
 }

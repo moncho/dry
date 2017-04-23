@@ -7,6 +7,7 @@ import (
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
+	"github.com/moncho/dry/appui/swarm"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
 )
@@ -117,7 +118,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Nodes:
 		{
-			nodes := appui.NewSwarmNodesWidget(d.dockerDaemon, viewStartingLine)
+			nodes := swarm.NewNodesWidget(d.dockerDaemon, viewStartingLine)
 			d.state.activeWidget = nodes
 			bufferers = append(bufferers, nodes)
 			what = "Nodes"
@@ -128,7 +129,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Services:
 		{
-			nodes := appui.NewSwarmNodesWidget(d.dockerDaemon, viewStartingLine)
+			nodes := swarm.NewServicesWidget(d.dockerDaemon, viewStartingLine)
 			bufferers = append(bufferers, nodes)
 			what = "Services"
 			count = nodes.RowCount()
@@ -137,7 +138,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Tasks:
 		{
-			tasks := appui.NewTasksWidget(d.dockerDaemon, d.state.node, viewStartingLine)
+			tasks := swarm.NewTasksWidget(d.dockerDaemon, d.state.node, viewStartingLine)
 			bufferers = append(bufferers, tasks)
 			what = "Tasks"
 			count = tasks.RowCount()

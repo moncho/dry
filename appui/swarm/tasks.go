@@ -1,10 +1,11 @@
-package appui
+package swarm
 
 import (
 	"sync"
 
 	"github.com/docker/docker/api/types/swarm"
 	gizaktermui "github.com/gizak/termui"
+	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
@@ -38,7 +39,7 @@ func NewTasksWidget(swarmClient docker.SwarmAPI, nodeID string, y int) *NodeTask
 			offset:        0,
 			x:             0,
 			y:             y,
-			height:        mainScreenAvailableHeight(),
+			height:        appui.MainScreenAvailableHeight(),
 			width:         ui.ActiveScreen.Dimensions.Width}
 
 		if tasks, err := swarmClient.Tasks(node.ID); err == nil {
@@ -108,7 +109,7 @@ func (s *NodeTasksWidget) highlightSelectedRow() {
 }
 
 //OnEvent runs the given command
-func (s *NodeTasksWidget) OnEvent(event EventCommand) error {
+func (s *NodeTasksWidget) OnEvent(event appui.EventCommand) error {
 	return nil
 }
 
@@ -155,8 +156,8 @@ func taskTableHeader() *termui.TableHeader {
 	fields := []string{
 		"ID", "NAME", "NODE", "DESIRED STATE", "CURRENT STATE", "ERROR", "PORTS"}
 
-	header := termui.NewHeader(DryTheme)
-	header.ColumnSpacing = defaultColumnSpacing
+	header := termui.NewHeader(appui.DryTheme)
+	header.ColumnSpacing = appui.DefaultColumnSpacing
 	for _, f := range fields {
 		header.AddColumn(f)
 	}
