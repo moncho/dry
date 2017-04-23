@@ -10,10 +10,12 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/cli/internal/test"
+	"github.com/pkg/errors"
 	// Import builders to get the builder function as package function
 	. "github.com/docker/docker/cli/internal/test/builders"
-	"github.com/docker/docker/pkg/testutil/assert"
+	"github.com/docker/docker/pkg/testutil"
 	"github.com/docker/docker/pkg/testutil/golden"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSwarmUpdateErrors(t *testing.T) {
@@ -37,7 +39,7 @@ func TestSwarmUpdateErrors(t *testing.T) {
 				flagTaskHistoryLimit: "10",
 			},
 			swarmInspectFunc: func() (swarm.Swarm, error) {
-				return swarm.Swarm{}, fmt.Errorf("error inspecting the swarm")
+				return swarm.Swarm{}, errors.Errorf("error inspecting the swarm")
 			},
 			expectedError: "error inspecting the swarm",
 		},
@@ -47,7 +49,7 @@ func TestSwarmUpdateErrors(t *testing.T) {
 				flagTaskHistoryLimit: "10",
 			},
 			swarmUpdateFunc: func(swarm swarm.Spec, flags swarm.UpdateFlags) error {
-				return fmt.Errorf("error updating the swarm")
+				return errors.Errorf("error updating the swarm")
 			},
 			expectedError: "error updating the swarm",
 		},
@@ -60,7 +62,7 @@ func TestSwarmUpdateErrors(t *testing.T) {
 				return *Swarm(), nil
 			},
 			swarmGetUnlockKeyFunc: func() (types.SwarmUnlockKeyResponse, error) {
-				return types.SwarmUnlockKeyResponse{}, fmt.Errorf("error getting unlock key")
+				return types.SwarmUnlockKeyResponse{}, errors.Errorf("error getting unlock key")
 			},
 			expectedError: "error getting unlock key",
 		},
@@ -78,7 +80,7 @@ func TestSwarmUpdateErrors(t *testing.T) {
 			cmd.Flags().Set(key, value)
 		}
 		cmd.SetOutput(ioutil.Discard)
-		assert.Error(t, cmd.Execute(), tc.expectedError)
+		testutil.ErrorContains(t, cmd.Execute(), tc.expectedError)
 	}
 }
 
@@ -108,33 +110,33 @@ func TestSwarmUpdate(t *testing.T) {
 			},
 			swarmUpdateFunc: func(swarm swarm.Spec, flags swarm.UpdateFlags) error {
 				if *swarm.Orchestration.TaskHistoryRetentionLimit != 10 {
-					return fmt.Errorf("historyLimit not correctly set")
+					return errors.Errorf("historyLimit not correctly set")
 				}
 				heartbeatDuration, err := time.ParseDuration("10s")
 				if err != nil {
 					return err
 				}
 				if swarm.Dispatcher.HeartbeatPeriod != heartbeatDuration {
-					return fmt.Errorf("heartbeatPeriodLimit not correctly set")
+					return errors.Errorf("heartbeatPeriodLimit not correctly set")
 				}
 				certExpiryDuration, err := time.ParseDuration("20s")
 				if err != nil {
 					return err
 				}
 				if swarm.CAConfig.NodeCertExpiry != certExpiryDuration {
-					return fmt.Errorf("certExpiry not correctly set")
+					return errors.Errorf("certExpiry not correctly set")
 				}
 				if len(swarm.CAConfig.ExternalCAs) != 1 {
-					return fmt.Errorf("externalCA not correctly set")
+					return errors.Errorf("externalCA not correctly set")
 				}
 				if *swarm.Raft.KeepOldSnapshots != 10 {
-					return fmt.Errorf("keepOldSnapshots not correctly set")
+					return errors.Errorf("keepOldSnapshots not correctly set")
 				}
 				if swarm.Raft.SnapshotInterval != 100 {
-					return fmt.Errorf("snapshotInterval not correctly set")
+					return errors.Errorf("snapshotInterval not correctly set")
 				}
 				if !swarm.EncryptionConfig.AutoLockManagers {
-					return fmt.Errorf("autolock not correctly set")
+					return errors.Errorf("autolock not correctly set")
 				}
 				return nil
 			},
@@ -147,7 +149,7 @@ func TestSwarmUpdate(t *testing.T) {
 			},
 			swarmUpdateFunc: func(swarm swarm.Spec, flags swarm.UpdateFlags) error {
 				if *swarm.Orchestration.TaskHistoryRetentionLimit != 10 {
-					return fmt.Errorf("historyLimit not correctly set")
+					return errors.Errorf("historyLimit not correctly set")
 				}
 				return nil
 			},
@@ -174,9 +176,9 @@ func TestSwarmUpdate(t *testing.T) {
 			cmd.Flags().Set(key, value)
 		}
 		cmd.SetOutput(buf)
-		assert.NilError(t, cmd.Execute())
+		assert.NoError(t, cmd.Execute())
 		actual := buf.String()
 		expected := golden.Get(t, []byte(actual), fmt.Sprintf("update-%s.golden", tc.name))
-		assert.EqualNormalizedString(t, assert.RemoveSpace, actual, string(expected))
+		testutil.EqualNormalizedString(t, testutil.RemoveSpace, actual, string(expected))
 	}
 }

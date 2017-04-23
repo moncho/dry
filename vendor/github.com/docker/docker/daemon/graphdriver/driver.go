@@ -30,7 +30,7 @@ var (
 
 	// ErrNotSupported returned when driver is not supported.
 	ErrNotSupported = errors.New("driver not supported")
-	// ErrPrerequisites retuned when driver does not meet prerequisites.
+	// ErrPrerequisites returned when driver does not meet prerequisites.
 	ErrPrerequisites = errors.New("prerequisites for driver not satisfied (wrong filesystem?)")
 	// ErrIncompatibleFS returned when file system is not supported.
 	ErrIncompatibleFS = fmt.Errorf("backing file system is unsupported for this graph driver")
@@ -110,6 +110,23 @@ type DiffDriver interface {
 type Driver interface {
 	ProtoDriver
 	DiffDriver
+}
+
+// Capabilities defines a list of capabilities a driver may implement.
+// These capabilities are not required; however, they do determine how a
+// graphdriver can be used.
+type Capabilities struct {
+	// Flags that this driver is capable of reproducing exactly equivalent
+	// diffs for read-only layers. If set, clients can rely on the driver
+	// for consistent tar streams, and avoid extra processing to account
+	// for potential differences (eg: the layer store's use of tar-split).
+	ReproducesExactDiffs bool
+}
+
+// CapabilityDriver is the interface for layered file system drivers that
+// can report on their Capabilities.
+type CapabilityDriver interface {
+	Capabilities() Capabilities
 }
 
 // DiffGetterDriver is the interface for layered file system drivers that

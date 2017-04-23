@@ -22,7 +22,7 @@ func (s *DockerSuite) TestEventsAPIEmptyOutput(c *check.C) {
 	}
 	chResp := make(chan *apiResp)
 	go func() {
-		resp, body, err := request.SockRequestRaw("GET", "/events", nil, "", daemonHost())
+		resp, body, err := request.Get("/events")
 		body.Close()
 		chResp <- &apiResp{resp, err}
 	}()
@@ -40,14 +40,14 @@ func (s *DockerSuite) TestEventsAPIBackwardsCompatible(c *check.C) {
 	since := daemonTime(c).Unix()
 	ts := strconv.FormatInt(since, 10)
 
-	out, _ := runSleepingContainer(c, "--name=foo", "-d")
+	out := runSleepingContainer(c, "--name=foo", "-d")
 	containerID := strings.TrimSpace(out)
 	c.Assert(waitRun(containerID), checker.IsNil)
 
 	q := url.Values{}
 	q.Set("since", ts)
 
-	_, body, err := request.SockRequestRaw("GET", "/events?"+q.Encode(), nil, "", daemonHost())
+	_, body, err := request.Get("/events?" + q.Encode())
 	c.Assert(err, checker.IsNil)
 	defer body.Close()
 

@@ -154,11 +154,12 @@ func (d *driver) CreateNetwork(id string, option map[string]interface{}, nInfo d
 	if !n.secure {
 		for _, vni := range vnis {
 			programMangle(vni, false)
+			programInput(vni, false)
 		}
 	}
 
 	if nInfo != nil {
-		if err := nInfo.TableEventRegister(ovPeerTable); err != nil {
+		if err := nInfo.TableEventRegister(ovPeerTable, driverapi.EndpointObject); err != nil {
 			return err
 		}
 	}
@@ -204,6 +205,7 @@ func (d *driver) DeleteNetwork(nid string) error {
 	if n.secure {
 		for _, vni := range vnis {
 			programMangle(vni, false)
+			programInput(vni, false)
 		}
 	}
 
@@ -612,13 +614,13 @@ func (n *network) initSandbox(restore bool) error {
 	var nlSock *nl.NetlinkSocket
 	sbox.InvokeFunc(func() {
 		nlSock, err = nl.Subscribe(syscall.NETLINK_ROUTE, syscall.RTNLGRP_NEIGH)
-		if err != nil {
-			err = fmt.Errorf("failed to subscribe to neighbor group netlink messages")
-		}
 	})
 
-	if nlSock != nil {
+	if err == nil {
 		go n.watchMiss(nlSock)
+	} else {
+		logrus.Errorf("failed to subscribe to neighbor group netlink messages for overlay network %s in sbox %s: %v",
+			n.id, sbox.Key(), err)
 	}
 
 	return nil
@@ -643,16 +645,28 @@ func (n *network) watchMiss(nlSock *nl.NetlinkSocket) {
 				continue
 			}
 
-			if neigh.IP.To4() == nil {
+			var (
+				ip             net.IP
+				mac            net.HardwareAddr
+				l2Miss, l3Miss bool
+			)
+			if neigh.IP.To4() != nil {
+				ip = neigh.IP
+				l3Miss = true
+			} else if neigh.HardwareAddr != nil {
+				mac = []byte(neigh.HardwareAddr)
+				ip = net.IP(mac[2:])
+				l2Miss = true
+			} else {
 				continue
 			}
 
 			// Not any of the network's subnets. Ignore.
-			if !n.contains(neigh.IP) {
+			if !n.contains(ip) {
 				continue
 			}
 
-			logrus.Debugf("miss notification for dest IP, %v", neigh.IP.String())
+			logrus.Debugf("miss notification: dest IP %v, dest MAC %v", ip, mac)
 
 			if neigh.State&(netlink.NUD_STALE|netlink.NUD_INCOMPLETE) == 0 {
 				continue
@@ -662,14 +676,14 @@ func (n *network) watchMiss(nlSock *nl.NetlinkSocket) {
 				continue
 			}
 
-			mac, IPmask, vtep, err := n.driver.resolvePeer(n.id, neigh.IP)
+			mac, IPmask, vtep, err := n.driver.resolvePeer(n.id, ip)
 			if err != nil {
-				logrus.Errorf("could not resolve peer %q: %v", neigh.IP, err)
+				logrus.Errorf("could not resolve peer %q: %v", ip, err)
 				continue
 			}
 
-			if err := n.driver.peerAdd(n.id, "dummy", neigh.IP, IPmask, mac, vtep, true); err != nil {
-				logrus.Errorf("could not add neighbor entry for missed peer %q: %v", neigh.IP, err)
+			if err := n.driver.peerAdd(n.id, "dummy", ip, IPmask, mac, vtep, true, l2Miss, l3Miss); err != nil {
+				logrus.Errorf("could not add neighbor entry for missed peer %q: %v", ip, err)
 			}
 		}
 	}

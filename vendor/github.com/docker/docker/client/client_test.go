@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/docker/docker/api"
 	"github.com/docker/docker/api/types"
 	"golang.org/x/net/context"
 )
@@ -26,33 +27,33 @@ func TestNewEnvClient(t *testing.T) {
 	}{
 		{
 			envs:            map[string]string{},
-			expectedVersion: DefaultVersion,
+			expectedVersion: api.DefaultVersion,
 		},
 		{
 			envs: map[string]string{
 				"DOCKER_CERT_PATH": "invalid/path",
 			},
-			expectedError: "Could not load X509 key pair: open invalid/path/cert.pem: no such file or directory. Make sure the key is not encrypted",
+			expectedError: "Could not load X509 key pair: open invalid/path/cert.pem: no such file or directory",
 		},
 		{
 			envs: map[string]string{
 				"DOCKER_CERT_PATH": "testdata/",
 			},
-			expectedVersion: DefaultVersion,
+			expectedVersion: api.DefaultVersion,
 		},
 		{
 			envs: map[string]string{
 				"DOCKER_CERT_PATH":  "testdata/",
 				"DOCKER_TLS_VERIFY": "1",
 			},
-			expectedVersion: DefaultVersion,
+			expectedVersion: api.DefaultVersion,
 		},
 		{
 			envs: map[string]string{
 				"DOCKER_CERT_PATH": "testdata/",
 				"DOCKER_HOST":      "https://notaunixsocket",
 			},
-			expectedVersion: DefaultVersion,
+			expectedVersion: api.DefaultVersion,
 		},
 		{
 			envs: map[string]string{
@@ -64,7 +65,7 @@ func TestNewEnvClient(t *testing.T) {
 			envs: map[string]string{
 				"DOCKER_HOST": "invalid://url",
 			},
-			expectedVersion: DefaultVersion,
+			expectedVersion: api.DefaultVersion,
 		},
 		{
 			envs: map[string]string{
@@ -262,8 +263,8 @@ func TestNewEnvClientSetsDefaultVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if client.version != DefaultVersion {
-		t.Fatalf("Expected %s, got %s", DefaultVersion, client.version)
+	if client.version != api.DefaultVersion {
+		t.Fatalf("Expected %s, got %s", api.DefaultVersion, client.version)
 	}
 
 	expected := "1.22"

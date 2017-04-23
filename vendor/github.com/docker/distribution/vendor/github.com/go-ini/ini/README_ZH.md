@@ -23,11 +23,15 @@
 
 	go get github.com/go-ini/ini
 
+如需更新请添加 `-u` 选项。
+
 ### 测试安装
 
 如果您想要在自己的机器上运行测试，请使用 `-t` 标记：
 
 	go get -t gopkg.in/ini.v1
+
+如需更新请添加 `-u` 选项。
 
 ## 开始使用
 
@@ -50,6 +54,50 @@ cfg := ini.Empty()
 ```go
 err := cfg.Append("other file", []byte("other raw data"))
 ```
+
+当您想要加载一系列文件，但是不能够确定其中哪些文件是不存在的，可以通过调用函数 `LooseLoad` 来忽略它们（`Load` 会因为文件不存在而返回错误）：
+
+```go
+cfg, err := ini.LooseLoad("filename", "filename_404")
+```
+
+更牛逼的是，当那些之前不存在的文件在重新调用 `Reload` 方法的时候突然出现了，那么它们会被正常加载。
+
+#### 忽略键名的大小写
+
+有时候分区和键的名称大小写混合非常烦人，这个时候就可以通过 `InsensitiveLoad` 将所有分区和键名在读取里强制转换为小写：
+
+```go
+cfg, err := ini.InsensitiveLoad("filename")
+//...
+
+// sec1 和 sec2 指向同一个分区对象
+sec1, err := cfg.GetSection("Section")
+sec2, err := cfg.GetSection("SecTIOn")
+
+// key1 和 key2 指向同一个键对象
+key1, err := cfg.GetKey("Key")
+key2, err := cfg.GetKey("KeY")
+```
+
+#### 类似 MySQL 配置中的布尔值键
+
+MySQL 的配置文件中会出现没有具体值的布尔类型的键：
+
+```ini
+[mysqld]
+...
+skip-host-cache
+skip-name-resolve
+```
+
+默认情况下这被认为是缺失值而无法完成解析，但可以通过高级的加载选项对它们进行处理：
+
+```go
+cfg, err := LoadSources(LoadOptions{AllowBooleanKeys: true}, "my.cnf"))
+```
+
+这些键的值永远为 `true`，且在保存到文件时也只会输出键名。
 
 ### 操作分区（Section）
 
@@ -122,7 +170,7 @@ names := cfg.Section("").KeyStrings()
 获取分区下的所有键值对的克隆：
 
 ```go
-hash := cfg.GetSection("").KeysHash()
+hash := cfg.Section("").KeysHash()
 ```
 
 ### 操作键值（Value）
@@ -235,6 +283,16 @@ cfg.Section("advance").Key("two_lines").String() // how about continuation lines
 cfg.Section("advance").Key("lots_of_lines").String() // 1 2 3 4
 ```
 
+可是我有时候觉得两行连在一起特别没劲，怎么才能不自动连接两行呢？
+
+```go
+cfg, err := ini.LoadSources(ini.LoadOptions{
+	IgnoreContinuation: true,
+}, "filename")
+```
+
+哇靠给力啊！
+
 需要注意的是，值两侧的单引号会被自动剔除：
 
 ```ini
@@ -273,9 +331,13 @@ vals = cfg.Section("").Key("TIME").RangeTimeFormat(time.RFC3339, time.Now(), min
 vals = cfg.Section("").Key("TIME").RangeTime(time.Now(), minTime, maxTime) // RFC3339
 ```
 
-自动分割键值为切片（slice）：
+##### 自动分割键值到切片（slice）
+
+当存在无效输入时，使用零值代替：
 
 ```go
+// Input: 1.1, 2.2, 3.3, 4.4 -> [1.1 2.2 3.3 4.4]
+// Input: how, 2.2, are, you -> [0.0 2.2 0.0 0.0]
 vals = cfg.Section("").Key("STRINGS").Strings(",")
 vals = cfg.Section("").Key("FLOAT64S").Float64s(",")
 vals = cfg.Section("").Key("INTS").Ints(",")
@@ -283,6 +345,32 @@ vals = cfg.Section("").Key("INT64S").Int64s(",")
 vals = cfg.Section("").Key("UINTS").Uints(",")
 vals = cfg.Section("").Key("UINT64S").Uint64s(",")
 vals = cfg.Section("").Key("TIMES").Times(",")
+```
+
+从结果切片中剔除无效输入：
+
+```go
+// Input: 1.1, 2.2, 3.3, 4.4 -> [1.1 2.2 3.3 4.4]
+// Input: how, 2.2, are, you -> [2.2]
+vals = cfg.Section("").Key("FLOAT64S").ValidFloat64s(",")
+vals = cfg.Section("").Key("INTS").ValidInts(",")
+vals = cfg.Section("").Key("INT64S").ValidInt64s(",")
+vals = cfg.Section("").Key("UINTS").ValidUints(",")
+vals = cfg.Section("").Key("UINT64S").ValidUint64s(",")
+vals = cfg.Section("").Key("TIMES").ValidTimes(",")
+```
+
+当存在无效输入时，直接返回错误：
+
+```go
+// Input: 1.1, 2.2, 3.3, 4.4 -> [1.1 2.2 3.3 4.4]
+// Input: how, 2.2, are, you -> error
+vals = cfg.Section("").Key("FLOAT64S").StrictFloat64s(",")
+vals = cfg.Section("").Key("INTS").StrictInts(",")
+vals = cfg.Section("").Key("INT64S").StrictInt64s(",")
+vals = cfg.Section("").Key("UINTS").StrictUints(",")
+vals = cfg.Section("").Key("UINT64S").StrictUint64s(",")
+vals = cfg.Section("").Key("TIMES").StrictTimes(",")
 ```
 
 ### 保存配置
@@ -304,6 +392,12 @@ err = cfg.SaveToIndent("my.ini", "\t")
 cfg.WriteTo(writer)
 cfg.WriteToIndent(writer, "\t")
 ```
+
+默认情况下，空格将被用于对齐键值之间的等号以美化输出结果，以下代码可以禁用该功能：
+
+```go
+ini.PrettyFormat = false
+``` 
 
 ### 高级用法
 
@@ -344,6 +438,12 @@ CLONE_URL = https://%(IMPORT_PATH)s
 
 ```go
 cfg.Section("package.sub").Key("CLONE_URL").String()	// https://gopkg.in/ini.v1
+```
+
+#### 获取上级父分区下的所有键名
+
+```go
+cfg.Section("package.sub").ParentKeys() // ["CLONE_URL"]
 ```
 
 #### 读取自增键名
@@ -428,8 +528,8 @@ p := &Person{
 ```go
 type Embeded struct {
 	Dates  []time.Time `delim:"|"`
-	Places []string
-	None   []int
+	Places []string    `ini:"places,omitempty"`
+	None   []int       `ini:",omitempty"`
 }
 
 type Author struct {
@@ -464,8 +564,7 @@ GPA = 2.8
 
 [Embeded]
 Dates = 2015-08-07T22:14:22+08:00|2015-08-07T22:14:22+08:00
-Places = HangZhou,Boston
-None =
+places = HangZhou,Boston
 ```
 
 #### 名称映射器（Name Mapper）
@@ -498,6 +597,26 @@ func main() {
 ```
 
 使用函数 `ini.ReflectFromWithMapper` 时也可应用相同的规则。
+
+#### 值映射器（Value Mapper）
+
+值映射器允许使用一个自定义函数自动展开值的具体内容，例如：运行时获取环境变量：
+
+```go
+type Env struct {
+	Foo string `ini:"foo"`
+}
+
+func main() {
+	cfg, err := ini.Load([]byte("[env]\nfoo = ${MY_VAR}\n")
+	cfg.ValueMapper = os.ExpandEnv
+	// ...
+	env := &Env{}
+	err = cfg.Section("env").MapTo(env)
+}
+```
+
+本例中，`env.Foo` 将会是运行时所获取到环境变量 `MY_VAR` 的值。
 
 #### 映射/反射的其它说明
 

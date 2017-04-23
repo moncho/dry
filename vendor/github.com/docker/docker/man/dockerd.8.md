@@ -17,10 +17,12 @@ dockerd - Enable daemon mode
 [**--cluster-store-opt**[=*map[]*]]
 [**--config-file**[=*/etc/docker/daemon.json*]]
 [**--containerd**[=*SOCKET-PATH*]]
+[**--data-root**[=*/var/lib/docker*]]
 [**-D**|**--debug**]
 [**--default-gateway**[=*DEFAULT-GATEWAY*]]
 [**--default-gateway-v6**[=*DEFAULT-GATEWAY-V6*]]
 [**--default-runtime**[=*runc*]]
+[**--default-shm-size**[=*64MiB*]]
 [**--default-ulimit**[=*[]*]]
 [**--disable-legacy-registry**]
 [**--dns**[=*[]*]]
@@ -32,7 +34,6 @@ dockerd - Enable daemon mode
 [**--fixed-cidr**[=*FIXED-CIDR*]]
 [**--fixed-cidr-v6**[=*FIXED-CIDR-V6*]]
 [**-G**|**--group**[=*docker*]]
-[**-g**|**--graph**[=*/var/lib/docker*]]
 [**-H**|**--host**[=*[]*]]
 [**--help**]
 [**--icc**[=*true*]]
@@ -151,6 +152,11 @@ $ sudo dockerd --add-runtime runc=runc --add-runtime custom=/usr/local/bin/my-ru
 **--containerd**=""
   Path to containerd socket.
 
+**--data-root**=""
+  Path to the directory used to store persisted Docker data such as
+  configuration for resources, swarm cluster state, and filesystem data for
+  images, containers, and local volumes. Default is `/var/lib/docker`.
+
 **-D**, **--debug**=*true*|*false*
   Enable debug mode. Default is false.
 
@@ -163,6 +169,9 @@ $ sudo dockerd --add-runtime runc=runc --add-runtime custom=/usr/local/bin/my-ru
 
 **--default-runtime**="runc"
   Set default runtime if there're more than one specified by `--add-runtime`.
+
+**--default-shm-size**=*64MiB*
+  Set the daemon-wide default shm size for containers. Default is `64MiB`.
 
 **--default-ulimit**=[]
   Default ulimits for containers.
@@ -199,9 +208,6 @@ $ sudo dockerd --add-runtime runc=runc --add-runtime custom=/usr/local/bin/my-ru
 **-G**, **--group**=""
   Group to assign the unix socket specified by -H when running in daemon mode.
   use '' (the empty string) to disable setting of a group. Default is `docker`.
-
-**-g**, **--graph**=""
-  Path to use as the root of the Docker runtime. Default is `/var/lib/docker`.
 
 **-H**, **--host**=[*unix:///var/run/docker.sock*]: tcp://[host:port] to bind or
 unix://[/path/to/socket] to use.
@@ -649,7 +655,7 @@ Example use: `dockerd -s zfs --storage-opt zfs.fsname=zroot/docker`
 
 #### btrfs.min_space
 
-Specifies the mininum size to use when creating the subvolume which is used for
+Specifies the minimum size to use when creating the subvolume which is used for
 containers. If user uses disk quota for btrfs when creating or running a
 container with **--storage-opt size** option, docker should ensure the **size**
 cannot be smaller than **btrfs.min_space**.

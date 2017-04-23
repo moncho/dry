@@ -9,10 +9,12 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/cli/internal/test"
+	"github.com/pkg/errors"
 	// Import builders to get the builder function as package function
 	. "github.com/docker/docker/cli/internal/test/builders"
-	"github.com/docker/docker/pkg/testutil/assert"
+	"github.com/docker/docker/pkg/testutil"
 	"github.com/docker/docker/pkg/testutil/golden"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSwarmUnlockKeyErrors(t *testing.T) {
@@ -36,7 +38,7 @@ func TestSwarmUnlockKeyErrors(t *testing.T) {
 				flagRotate: "true",
 			},
 			swarmInspectFunc: func() (swarm.Swarm, error) {
-				return swarm.Swarm{}, fmt.Errorf("error inspecting the swarm")
+				return swarm.Swarm{}, errors.Errorf("error inspecting the swarm")
 			},
 			expectedError: "error inspecting the swarm",
 		},
@@ -59,14 +61,14 @@ func TestSwarmUnlockKeyErrors(t *testing.T) {
 				return *Swarm(Autolock()), nil
 			},
 			swarmUpdateFunc: func(swarm swarm.Spec, flags swarm.UpdateFlags) error {
-				return fmt.Errorf("error updating the swarm")
+				return errors.Errorf("error updating the swarm")
 			},
 			expectedError: "error updating the swarm",
 		},
 		{
 			name: "swarm-get-unlock-key-failed",
 			swarmGetUnlockKeyFunc: func() (types.SwarmUnlockKeyResponse, error) {
-				return types.SwarmUnlockKeyResponse{}, fmt.Errorf("error getting unlock key")
+				return types.SwarmUnlockKeyResponse{}, errors.Errorf("error getting unlock key")
 			},
 			expectedError: "error getting unlock key",
 		},
@@ -93,7 +95,7 @@ func TestSwarmUnlockKeyErrors(t *testing.T) {
 			cmd.Flags().Set(key, value)
 		}
 		cmd.SetOutput(ioutil.Discard)
-		assert.Error(t, cmd.Execute(), tc.expectedError)
+		testutil.ErrorContains(t, cmd.Execute(), tc.expectedError)
 	}
 }
 
@@ -167,9 +169,9 @@ func TestSwarmUnlockKey(t *testing.T) {
 		for key, value := range tc.flags {
 			cmd.Flags().Set(key, value)
 		}
-		assert.NilError(t, cmd.Execute())
+		assert.NoError(t, cmd.Execute())
 		actual := buf.String()
 		expected := golden.Get(t, []byte(actual), fmt.Sprintf("unlockkeys-%s.golden", tc.name))
-		assert.EqualNormalizedString(t, assert.RemoveSpace, actual, string(expected))
+		testutil.EqualNormalizedString(t, testutil.RemoveSpace, actual, string(expected))
 	}
 }

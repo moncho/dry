@@ -269,7 +269,39 @@ func (pa *portAllocator) serviceDeallocatePorts(s *api.Service) {
 	s.Endpoint.Ports = nil
 }
 
+func (pa *portAllocator) portsAllocatedInHostPublishMode(s *api.Service) bool {
+	if s.Endpoint == nil && s.Spec.Endpoint == nil {
+		return true
+	}
+
+	portStates := allocatedPorts{}
+	if s.Endpoint != nil {
+		for _, portState := range s.Endpoint.Ports {
+			if portState.PublishMode == api.PublishModeHost {
+				portStates.addState(portState)
+			}
+		}
+	}
+
+	if s.Spec.Endpoint != nil {
+		for _, portConfig := range s.Spec.Endpoint.Ports {
+			if portConfig.PublishMode == api.PublishModeHost &&
+				portConfig.PublishedPort != 0 {
+				if portStates.delState(portConfig) == nil {
+					return false
+				}
+			}
+		}
+	}
+
+	return true
+}
+
 func (pa *portAllocator) isPortsAllocated(s *api.Service) bool {
+	return pa.isPortsAllocatedOnInit(s, false)
+}
+
+func (pa *portAllocator) isPortsAllocatedOnInit(s *api.Service, onInit bool) bool {
 	// If service has no user-defined endpoint and allocated endpoint,
 	// we assume it is allocated and return true.
 	if s.Endpoint == nil && s.Spec.Endpoint == nil {
@@ -316,6 +348,13 @@ func (pa *portAllocator) isPortsAllocated(s *api.Service) bool {
 			continue
 		}
 		if portConfig.PublishedPort == 0 && portStates.delState(portConfig) == nil {
+			return false
+		}
+
+		// If SwarmPort was not defined by user and the func
+		// is called during allocator initialization state then
+		// we are not allocated.
+		if portConfig.PublishedPort == 0 && onInit {
 			return false
 		}
 	}

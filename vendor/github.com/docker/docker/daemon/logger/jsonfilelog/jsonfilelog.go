@@ -67,7 +67,11 @@ func New(info logger.Info) (logger.Logger, error) {
 	}
 
 	var extra []byte
-	if attrs := info.ExtraAttributes(nil); len(attrs) > 0 {
+	attrs, err := info.ExtraAttributes(nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(attrs) > 0 {
 		var err error
 		extra, err = json.Marshal(attrs)
 		if err != nil {
@@ -100,6 +104,7 @@ func (l *JSONFileLogger) Log(msg *logger.Message) error {
 		Created:  timestamp,
 		RawAttrs: l.extra,
 	}).MarshalJSONBuf(l.buf)
+	logger.PutMessage(msg)
 	if err != nil {
 		l.mu.Unlock()
 		return err
@@ -121,6 +126,7 @@ func ValidateLogOpt(cfg map[string]string) error {
 		case "max-size":
 		case "labels":
 		case "env":
+		case "env-regex":
 		default:
 			return fmt.Errorf("unknown log opt '%s' for json-file log driver", key)
 		}

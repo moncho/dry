@@ -1,6 +1,7 @@
 package convert
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -9,24 +10,26 @@ import (
 	mounttypes "github.com/docker/docker/api/types/mount"
 	types "github.com/docker/docker/api/types/swarm"
 	swarmapi "github.com/docker/swarmkit/api"
-	"github.com/docker/swarmkit/protobuf/ptypes"
+	gogotypes "github.com/gogo/protobuf/types"
 )
 
 func containerSpecFromGRPC(c *swarmapi.ContainerSpec) types.ContainerSpec {
 	containerSpec := types.ContainerSpec{
-		Image:     c.Image,
-		Labels:    c.Labels,
-		Command:   c.Command,
-		Args:      c.Args,
-		Hostname:  c.Hostname,
-		Env:       c.Env,
-		Dir:       c.Dir,
-		User:      c.User,
-		Groups:    c.Groups,
-		TTY:       c.TTY,
-		OpenStdin: c.OpenStdin,
-		Hosts:     c.Hosts,
-		Secrets:   secretReferencesFromGRPC(c.Secrets),
+		Image:      c.Image,
+		Labels:     c.Labels,
+		Command:    c.Command,
+		Args:       c.Args,
+		Hostname:   c.Hostname,
+		Env:        c.Env,
+		Dir:        c.Dir,
+		User:       c.User,
+		Groups:     c.Groups,
+		StopSignal: c.StopSignal,
+		TTY:        c.TTY,
+		OpenStdin:  c.OpenStdin,
+		ReadOnly:   c.ReadOnly,
+		Hosts:      c.Hosts,
+		Secrets:    secretReferencesFromGRPC(c.Secrets),
 	}
 
 	if c.DNSConfig != nil {
@@ -34,6 +37,31 @@ func containerSpecFromGRPC(c *swarmapi.ContainerSpec) types.ContainerSpec {
 			Nameservers: c.DNSConfig.Nameservers,
 			Search:      c.DNSConfig.Search,
 			Options:     c.DNSConfig.Options,
+		}
+	}
+
+	// Privileges
+	if c.Privileges != nil {
+		containerSpec.Privileges = &types.Privileges{}
+
+		if c.Privileges.CredentialSpec != nil {
+			containerSpec.Privileges.CredentialSpec = &types.CredentialSpec{}
+			switch c.Privileges.CredentialSpec.Source.(type) {
+			case *swarmapi.Privileges_CredentialSpec_File:
+				containerSpec.Privileges.CredentialSpec.File = c.Privileges.CredentialSpec.GetFile()
+			case *swarmapi.Privileges_CredentialSpec_Registry:
+				containerSpec.Privileges.CredentialSpec.Registry = c.Privileges.CredentialSpec.GetRegistry()
+			}
+		}
+
+		if c.Privileges.SELinuxContext != nil {
+			containerSpec.Privileges.SELinuxContext = &types.SELinuxContext{
+				Disable: c.Privileges.SELinuxContext.Disable,
+				User:    c.Privileges.SELinuxContext.User,
+				Type:    c.Privileges.SELinuxContext.Type,
+				Role:    c.Privileges.SELinuxContext.Role,
+				Level:   c.Privileges.SELinuxContext.Level,
+			}
 		}
 	}
 
@@ -75,7 +103,7 @@ func containerSpecFromGRPC(c *swarmapi.ContainerSpec) types.ContainerSpec {
 	}
 
 	if c.StopGracePeriod != nil {
-		grace, _ := ptypes.Duration(c.StopGracePeriod)
+		grace, _ := gogotypes.DurationFromProto(c.StopGracePeriod)
 		containerSpec.StopGracePeriod = &grace
 	}
 
@@ -95,7 +123,7 @@ func secretReferencesToGRPC(sr []*types.SecretReference) []*swarmapi.SecretRefer
 		}
 		if s.File != nil {
 			ref.Target = &swarmapi.SecretReference_File{
-				File: &swarmapi.SecretReference_FileTarget{
+				File: &swarmapi.FileTarget{
 					Name: s.File.Name,
 					UID:  s.File.UID,
 					GID:  s.File.GID,
@@ -135,19 +163,21 @@ func secretReferencesFromGRPC(sr []*swarmapi.SecretReference) []*types.SecretRef
 
 func containerToGRPC(c types.ContainerSpec) (*swarmapi.ContainerSpec, error) {
 	containerSpec := &swarmapi.ContainerSpec{
-		Image:     c.Image,
-		Labels:    c.Labels,
-		Command:   c.Command,
-		Args:      c.Args,
-		Hostname:  c.Hostname,
-		Env:       c.Env,
-		Dir:       c.Dir,
-		User:      c.User,
-		Groups:    c.Groups,
-		TTY:       c.TTY,
-		OpenStdin: c.OpenStdin,
-		Hosts:     c.Hosts,
-		Secrets:   secretReferencesToGRPC(c.Secrets),
+		Image:      c.Image,
+		Labels:     c.Labels,
+		Command:    c.Command,
+		Args:       c.Args,
+		Hostname:   c.Hostname,
+		Env:        c.Env,
+		Dir:        c.Dir,
+		User:       c.User,
+		Groups:     c.Groups,
+		StopSignal: c.StopSignal,
+		TTY:        c.TTY,
+		OpenStdin:  c.OpenStdin,
+		ReadOnly:   c.ReadOnly,
+		Hosts:      c.Hosts,
+		Secrets:    secretReferencesToGRPC(c.Secrets),
 	}
 
 	if c.DNSConfig != nil {
@@ -159,7 +189,41 @@ func containerToGRPC(c types.ContainerSpec) (*swarmapi.ContainerSpec, error) {
 	}
 
 	if c.StopGracePeriod != nil {
-		containerSpec.StopGracePeriod = ptypes.DurationProto(*c.StopGracePeriod)
+		containerSpec.StopGracePeriod = gogotypes.DurationProto(*c.StopGracePeriod)
+	}
+
+	// Privileges
+	if c.Privileges != nil {
+		containerSpec.Privileges = &swarmapi.Privileges{}
+
+		if c.Privileges.CredentialSpec != nil {
+			containerSpec.Privileges.CredentialSpec = &swarmapi.Privileges_CredentialSpec{}
+
+			if c.Privileges.CredentialSpec.File != "" && c.Privileges.CredentialSpec.Registry != "" {
+				return nil, errors.New("cannot specify both \"file\" and \"registry\" credential specs")
+			}
+			if c.Privileges.CredentialSpec.File != "" {
+				containerSpec.Privileges.CredentialSpec.Source = &swarmapi.Privileges_CredentialSpec_File{
+					File: c.Privileges.CredentialSpec.File,
+				}
+			} else if c.Privileges.CredentialSpec.Registry != "" {
+				containerSpec.Privileges.CredentialSpec.Source = &swarmapi.Privileges_CredentialSpec_Registry{
+					Registry: c.Privileges.CredentialSpec.Registry,
+				}
+			} else {
+				return nil, errors.New("must either provide \"file\" or \"registry\" for credential spec")
+			}
+		}
+
+		if c.Privileges.SELinuxContext != nil {
+			containerSpec.Privileges.SELinuxContext = &swarmapi.Privileges_SELinuxContext{
+				Disable: c.Privileges.SELinuxContext.Disable,
+				User:    c.Privileges.SELinuxContext.User,
+				Type:    c.Privileges.SELinuxContext.Type,
+				Role:    c.Privileges.SELinuxContext.Role,
+				Level:   c.Privileges.SELinuxContext.Level,
+			}
+		}
 	}
 
 	// Mounts
@@ -215,21 +279,24 @@ func containerToGRPC(c types.ContainerSpec) (*swarmapi.ContainerSpec, error) {
 }
 
 func healthConfigFromGRPC(h *swarmapi.HealthConfig) *container.HealthConfig {
-	interval, _ := ptypes.Duration(h.Interval)
-	timeout, _ := ptypes.Duration(h.Timeout)
+	interval, _ := gogotypes.DurationFromProto(h.Interval)
+	timeout, _ := gogotypes.DurationFromProto(h.Timeout)
+	startPeriod, _ := gogotypes.DurationFromProto(h.StartPeriod)
 	return &container.HealthConfig{
-		Test:     h.Test,
-		Interval: interval,
-		Timeout:  timeout,
-		Retries:  int(h.Retries),
+		Test:        h.Test,
+		Interval:    interval,
+		Timeout:     timeout,
+		Retries:     int(h.Retries),
+		StartPeriod: startPeriod,
 	}
 }
 
 func healthConfigToGRPC(h *container.HealthConfig) *swarmapi.HealthConfig {
 	return &swarmapi.HealthConfig{
-		Test:     h.Test,
-		Interval: ptypes.DurationProto(h.Interval),
-		Timeout:  ptypes.DurationProto(h.Timeout),
-		Retries:  int32(h.Retries),
+		Test:        h.Test,
+		Interval:    gogotypes.DurationProto(h.Interval),
+		Timeout:     gogotypes.DurationProto(h.Timeout),
+		Retries:     int32(h.Retries),
+		StartPeriod: gogotypes.DurationProto(h.StartPeriod),
 	}
 }

@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/net/context"
-
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	"github.com/docker/docker/cli/command/inspect"
 	apiclient "github.com/docker/docker/client"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 type inspectOptions struct {
@@ -45,10 +46,10 @@ func NewInspectCommand(dockerCli *command.DockerCli) *cobra.Command {
 func runInspect(dockerCli *command.DockerCli, opts inspectOptions) error {
 	var elementSearcher inspect.GetRefFunc
 	switch opts.inspectType {
-	case "", "container", "image", "node", "network", "service", "volume", "task", "plugin":
+	case "", "container", "image", "node", "network", "service", "volume", "task", "plugin", "secret":
 		elementSearcher = inspectAll(context.Background(), dockerCli, opts.size, opts.inspectType)
 	default:
-		return fmt.Errorf("%q is not a valid value for --type", opts.inspectType)
+		return errors.Errorf("%q is not a valid value for --type", opts.inspectType)
 	}
 	return inspect.Inspect(dockerCli.Out(), opts.ids, opts.format, elementSearcher)
 }
@@ -67,7 +68,7 @@ func inspectImages(ctx context.Context, dockerCli *command.DockerCli) inspect.Ge
 
 func inspectNetwork(ctx context.Context, dockerCli *command.DockerCli) inspect.GetRefFunc {
 	return func(ref string) (interface{}, []byte, error) {
-		return dockerCli.Client().NetworkInspectWithRaw(ctx, ref)
+		return dockerCli.Client().NetworkInspectWithRaw(ctx, ref, false)
 	}
 }
 
@@ -79,7 +80,8 @@ func inspectNode(ctx context.Context, dockerCli *command.DockerCli) inspect.GetR
 
 func inspectService(ctx context.Context, dockerCli *command.DockerCli) inspect.GetRefFunc {
 	return func(ref string) (interface{}, []byte, error) {
-		return dockerCli.Client().ServiceInspectWithRaw(ctx, ref)
+		// Service inspect shows defaults values in empty fields.
+		return dockerCli.Client().ServiceInspectWithRaw(ctx, ref, types.ServiceInspectOptions{InsertDefaults: true})
 	}
 }
 
@@ -98,6 +100,12 @@ func inspectVolume(ctx context.Context, dockerCli *command.DockerCli) inspect.Ge
 func inspectPlugin(ctx context.Context, dockerCli *command.DockerCli) inspect.GetRefFunc {
 	return func(ref string) (interface{}, []byte, error) {
 		return dockerCli.Client().PluginInspectWithRaw(ctx, ref)
+	}
+}
+
+func inspectSecret(ctx context.Context, dockerCli *command.DockerCli) inspect.GetRefFunc {
+	return func(ref string) (interface{}, []byte, error) {
+		return dockerCli.Client().SecretInspectWithRaw(ctx, ref)
 	}
 }
 
@@ -143,6 +151,11 @@ func inspectAll(ctx context.Context, dockerCli *command.DockerCli, getSize bool,
 		{
 			objectType:      "plugin",
 			objectInspector: inspectPlugin(ctx, dockerCli),
+		},
+		{
+			objectType:      "secret",
+			isSwarmObject:   true,
+			objectInspector: inspectSecret(ctx, dockerCli),
 		},
 	}
 
@@ -198,6 +211,6 @@ func inspectAll(ctx context.Context, dockerCli *command.DockerCli, getSize bool,
 			}
 			return v, raw, err
 		}
-		return nil, nil, fmt.Errorf("Error: No such object: %s", ref)
+		return nil, nil, errors.Errorf("Error: No such object: %s", ref)
 	}
 }

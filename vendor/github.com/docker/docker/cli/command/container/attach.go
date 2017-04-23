@@ -1,7 +1,6 @@
 package container
 
 import (
-	"errors"
 	"io"
 	"net/http/httputil"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	"github.com/docker/docker/pkg/signal"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 )
@@ -28,7 +28,7 @@ func NewAttachCommand(dockerCli *command.DockerCli) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "attach [OPTIONS] CONTAINER",
-		Short: "Attach to a running container",
+		Short: "Attach local standard input, output, and error streams to a running container",
 		Args:  cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.container = args[0]

@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestShellParser4EnvVars(t *testing.T) {
@@ -13,9 +15,7 @@ func TestShellParser4EnvVars(t *testing.T) {
 	lineCount := 0
 
 	file, err := os.Open(fn)
-	if err != nil {
-		t.Fatalf("Can't open '%s': %s", err, fn)
-	}
+	assert.NoError(t, err)
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
@@ -36,29 +36,25 @@ func TestShellParser4EnvVars(t *testing.T) {
 		}
 
 		words := strings.Split(line, "|")
-		if len(words) != 3 {
-			t.Fatalf("Error in '%s' - should be exactly one | in:%q", fn, line)
-		}
+		assert.Len(t, words, 3)
 
-		words[0] = strings.TrimSpace(words[0])
-		words[1] = strings.TrimSpace(words[1])
-		words[2] = strings.TrimSpace(words[2])
+		platform := strings.TrimSpace(words[0])
+		source := strings.TrimSpace(words[1])
+		expected := strings.TrimSpace(words[2])
 
 		// Key W=Windows; A=All; U=Unix
-		if (words[0] != "W") && (words[0] != "A") && (words[0] != "U") {
-			t.Fatalf("Invalid tag %s at line %d of %s. Must be W, A or U", words[0], lineCount, fn)
+		if platform != "W" && platform != "A" && platform != "U" {
+			t.Fatalf("Invalid tag %s at line %d of %s. Must be W, A or U", platform, lineCount, fn)
 		}
 
-		if ((words[0] == "W" || words[0] == "A") && runtime.GOOS == "windows") ||
-			((words[0] == "U" || words[0] == "A") && runtime.GOOS != "windows") {
-			newWord, err := ProcessWord(words[1], envs, '\\')
-
-			if err != nil {
-				newWord = "error"
-			}
-
-			if newWord != words[2] {
-				t.Fatalf("Error. Src: %s  Calc: %s  Expected: %s at line %d", words[1], newWord, words[2], lineCount)
+		if ((platform == "W" || platform == "A") && runtime.GOOS == "windows") ||
+			((platform == "U" || platform == "A") && runtime.GOOS != "windows") {
+			newWord, err := ProcessWord(source, envs, '\\')
+			if expected == "error" {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, newWord, expected)
 			}
 		}
 	}
@@ -75,8 +71,10 @@ func TestShellParser4Words(t *testing.T) {
 
 	envs := []string{}
 	scanner := bufio.NewScanner(file)
+	lineNum := 0
 	for scanner.Scan() {
 		line := scanner.Text()
+		lineNum = lineNum + 1
 
 		if strings.HasPrefix(line, "#") {
 			continue
@@ -90,7 +88,7 @@ func TestShellParser4Words(t *testing.T) {
 
 		words := strings.Split(line, "|")
 		if len(words) != 2 {
-			t.Fatalf("Error in '%s' - should be exactly one | in: %q", fn, line)
+			t.Fatalf("Error in '%s'(line %d) - should be exactly one | in: %q", fn, lineNum, line)
 		}
 		test := strings.TrimSpace(words[0])
 		expected := strings.Split(strings.TrimLeft(words[1], " "), ",")
@@ -102,11 +100,11 @@ func TestShellParser4Words(t *testing.T) {
 		}
 
 		if len(result) != len(expected) {
-			t.Fatalf("Error. %q was suppose to result in %q, but got %q instead", test, expected, result)
+			t.Fatalf("Error on line %d. %q was suppose to result in %q, but got %q instead", lineNum, test, expected, result)
 		}
 		for i, w := range expected {
 			if w != result[i] {
-				t.Fatalf("Error. %q was suppose to result in %q, but got %q instead", test, expected, result)
+				t.Fatalf("Error on line %d. %q was suppose to result in %q, but got %q instead", lineNum, test, expected, result)
 			}
 		}
 	}

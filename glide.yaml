@@ -7,12 +7,12 @@ import:
 - package: github.com/chzyer/readline
   version: c914be64f07d9998f52bf0d598ec26d457168c0f
 - package: github.com/docker/distribution
-  version: 55f1b7651f6242617133312ff8af5c2e4e3628ea
+  version: c3e06c6069653bf72034ed907d6749d3928fdacb
   subpackages:
   - digest
   - reference
 - package: github.com/docker/docker
-  version: 2b89356c07b1824041985386d0c9485e49d9b987
+  version: a709f79c1a98c3661f12397fe61f0e6a46f1dbb3
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -63,10 +63,6 @@ import:
   version: master
 - package: github.com/olekukonko/tablewriter
   version: cca8bbc0798408af109aaaa239cbd2634846b340
-- package: github.com/opencontainers/runc
-  version: c6db82f9219b2ea4c98f80560205ed6c65aeea19
-  subpackages:
-  - libcontainer/user
 - package: github.com/pkg/errors
   version: 494e70f7620561491c2ca11e185bbef4b70060da
 - package: github.com/patrickmn/go-cache

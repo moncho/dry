@@ -47,6 +47,7 @@ import (
 	"container/heap"
 	"fmt"
 	"net"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -127,6 +128,9 @@ type NetworkController interface {
 	// Wait for agent initialization complete in libnetwork controller
 	AgentInitWait()
 
+	// Wait for agent to stop if running
+	AgentStopWait()
+
 	// SetKeys configures the encryption key for gossip and overlay data path
 	SetKeys(keys []*types.EncryptionKey) error
 }
@@ -160,6 +164,7 @@ type controller struct {
 	agent                  *agent
 	networkLocker          *locker.Locker
 	agentInitDone          chan struct{}
+	agentStopDone          chan struct{}
 	keys                   []*types.EncryptionKey
 	clusterConfigAvailable bool
 	sync.Mutex
@@ -338,7 +343,12 @@ func (c *controller) clusterAgentInit() {
 			c.agentClose()
 			c.cleanupServiceBindings("")
 
-			c.clearIngress(true)
+			c.Lock()
+			if c.agentStopDone != nil {
+				close(c.agentStopDone)
+				c.agentStopDone = nil
+			}
+			c.Unlock()
 
 			return
 		}
@@ -354,6 +364,15 @@ func (c *controller) AgentInitWait() {
 
 	if agentInitDone != nil {
 		<-agentInitDone
+	}
+}
+
+func (c *controller) AgentStopWait() {
+	c.Lock()
+	agentStopDone := c.agentStopDone
+	c.Unlock()
+	if agentStopDone != nil {
+		<-agentStopDone
 	}
 }
 
@@ -567,6 +586,12 @@ func (c *controller) pushNodeDiscovery(d driverapi.Driver, cap driverapi.Capabil
 	if c.cfg != nil {
 		addr := strings.Split(c.cfg.Cluster.Address, ":")
 		self = net.ParseIP(addr[0])
+		// if external kvstore is not configured, try swarm-mode config
+		if self == nil {
+			if agent := c.getAgent(); agent != nil {
+				self = net.ParseIP(agent.advertiseAddr)
+			}
+		}
 	}
 
 	if d == nil || cap.DataScope != datastore.GlobalScope || nodes == nil {
@@ -647,8 +672,8 @@ func (c *controller) NewNetwork(networkType, name string, id string, options ...
 		}
 	}
 
-	if err := config.ValidateName(name); err != nil {
-		return nil, ErrInvalidName(err.Error())
+	if !config.IsValidName(name) {
+		return nil, ErrInvalidName(name)
 	}
 
 	if id == "" {
@@ -674,6 +699,10 @@ func (c *controller) NewNetwork(networkType, name string, id string, options ...
 	_, cap, err := network.resolveDriver(networkType, true)
 	if err != nil {
 		return nil, err
+	}
+
+	if network.ingress && cap.DataScope != datastore.GlobalScope {
+		return nil, types.ForbiddenErrorf("Ingress network can only be global scope network")
 	}
 
 	if cap.DataScope == datastore.GlobalScope && !c.isDistributedControl() && !network.dynamic {
@@ -735,7 +764,9 @@ func (c *controller) NewNetwork(networkType, name string, id string, options ...
 
 	joinCluster(network)
 	if !c.isDistributedControl() {
+		c.Lock()
 		arrangeIngressFilterRule()
+		c.Unlock()
 	}
 
 	return network, nil
@@ -949,6 +980,8 @@ func (c *controller) NewSandbox(containerID string, options ...SandboxOption) (s
 
 	if sb.ingress {
 		c.ingressSandbox = sb
+		sb.config.hostsPath = filepath.Join(c.cfg.Daemon.DataDir, "/network/files/hosts")
+		sb.config.resolvConfPath = filepath.Join(c.cfg.Daemon.DataDir, "/network/files/resolv.conf")
 		sb.id = "ingress_sbox"
 	}
 	c.Unlock()
@@ -1141,32 +1174,7 @@ func (c *controller) getIPAMDriver(name string) (ipamapi.Ipam, *ipamapi.Capabili
 }
 
 func (c *controller) Stop() {
-	c.clearIngress(false)
 	c.closeStores()
 	c.stopExternalKeyListener()
 	osl.GC()
-}
-
-func (c *controller) clearIngress(clusterLeave bool) {
-	c.Lock()
-	ingressSandbox := c.ingressSandbox
-	c.ingressSandbox = nil
-	c.Unlock()
-
-	if ingressSandbox != nil {
-		if err := ingressSandbox.Delete(); err != nil {
-			logrus.Warnf("Could not delete ingress sandbox while leaving: %v", err)
-		}
-	}
-
-	n, err := c.NetworkByName("ingress")
-	if err != nil && clusterLeave {
-		logrus.Warnf("Could not find ingress network while leaving: %v", err)
-	}
-
-	if n != nil {
-		if err := n.Delete(); err != nil {
-			logrus.Warnf("Could not delete ingress network while leaving: %v", err)
-		}
-	}
 }

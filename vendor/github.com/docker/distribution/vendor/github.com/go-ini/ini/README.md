@@ -1,4 +1,4 @@
-ini [![Build Status](https://drone.io/github.com/go-ini/ini/status.png)](https://drone.io/github.com/go-ini/ini/latest) [![](http://gocover.io/_badge/github.com/go-ini/ini)](http://gocover.io/github.com/go-ini/ini)
+INI [![Build Status](https://travis-ci.org/go-ini/ini.svg?branch=master)](https://travis-ci.org/go-ini/ini)
 ===
 
 ![](https://avatars0.githubusercontent.com/u/10216035?v=3&s=200)
@@ -30,17 +30,21 @@ To use with latest changes:
 
 	go get github.com/go-ini/ini
 
+Please add `-u` flag to update in the future.
+
 ### Testing
 
 If you want to test on your machine, please apply `-t` flag:
 
 	go get -t gopkg.in/ini.v1
 
+Please add `-u` flag to update in the future.
+
 ## Getting Started
 
 ### Loading from data sources
 
-A **Data Source** is either raw data in type `[]byte` or a file name with type `string` and you can load **as many as** data sources you want. Passing other types will simply return an error.
+A **Data Source** is either raw data in type `[]byte` or a file name with type `string` and you can load **as many data sources as you want**. Passing other types will simply return an error.
 
 ```go
 cfg, err := ini.Load([]byte("raw data"), "filename")
@@ -52,11 +56,55 @@ Or start with an empty object:
 cfg := ini.Empty()
 ```
 
-When you cannot decide how many data sources to load at the beginning, you still able to **Append()** them later.
+When you cannot decide how many data sources to load at the beginning, you will still be able to **Append()** them later.
 
 ```go
 err := cfg.Append("other file", []byte("other raw data"))
 ```
+
+If you have a list of files with possibilities that some of them may not available at the time, and you don't know exactly which ones, you can use `LooseLoad` to ignore nonexistent files without returning error.
+
+```go
+cfg, err := ini.LooseLoad("filename", "filename_404")
+```
+
+The cool thing is, whenever the file is available to load while you're calling `Reload` method, it will be counted as usual.
+
+#### Ignore cases of key name
+
+When you do not care about cases of section and key names, you can use `InsensitiveLoad` to force all names to be lowercased while parsing.
+
+```go
+cfg, err := ini.InsensitiveLoad("filename")
+//...
+
+// sec1 and sec2 are the exactly same section object
+sec1, err := cfg.GetSection("Section")
+sec2, err := cfg.GetSection("SecTIOn")
+
+// key1 and key2 are the exactly same key object
+key1, err := cfg.GetKey("Key")
+key2, err := cfg.GetKey("KeY")
+```
+
+#### MySQL-like boolean key 
+
+MySQL's configuration allows a key without value as follows:
+
+```ini
+[mysqld]
+...
+skip-host-cache
+skip-name-resolve
+```
+
+By default, this is considered as missing value. But if you know you're going to deal with those cases, you can assign advanced load options:
+
+```go
+cfg, err := LoadSources(LoadOptions{AllowBooleanKeys: true}, "my.cnf"))
+```
+
+The value of those keys are always `true`, and when you save to a file, it will keep in the same foramt as you read.
 
 ### Working with sections
 
@@ -129,7 +177,7 @@ names := cfg.Section("").KeyStrings()
 To get a clone hash of keys and corresponding values:
 
 ```go
-hash := cfg.GetSection("").KeysHash()
+hash := cfg.Section("").KeysHash()
 ```
 
 ### Working with values
@@ -242,6 +290,16 @@ cfg.Section("advance").Key("two_lines").String() // how about continuation lines
 cfg.Section("advance").Key("lots_of_lines").String() // 1 2 3 4
 ```
 
+Well, I hate continuation lines, how do I disable that?
+
+```go
+cfg, err := ini.LoadSources(ini.LoadOptions{
+	IgnoreContinuation: true,
+}, "filename")
+```
+
+Holy crap! 
+
 Note that single quotes around values will be stripped:
 
 ```ini
@@ -280,9 +338,13 @@ vals = cfg.Section("").Key("TIME").RangeTimeFormat(time.RFC3339, time.Now(), min
 vals = cfg.Section("").Key("TIME").RangeTime(time.Now(), minTime, maxTime) // RFC3339
 ```
 
-To auto-split value into slice:
+##### Auto-split values into a slice
+
+To use zero value of type for invalid inputs:
 
 ```go
+// Input: 1.1, 2.2, 3.3, 4.4 -> [1.1 2.2 3.3 4.4]
+// Input: how, 2.2, are, you -> [0.0 2.2 0.0 0.0]
 vals = cfg.Section("").Key("STRINGS").Strings(",")
 vals = cfg.Section("").Key("FLOAT64S").Float64s(",")
 vals = cfg.Section("").Key("INTS").Ints(",")
@@ -290,6 +352,32 @@ vals = cfg.Section("").Key("INT64S").Int64s(",")
 vals = cfg.Section("").Key("UINTS").Uints(",")
 vals = cfg.Section("").Key("UINT64S").Uint64s(",")
 vals = cfg.Section("").Key("TIMES").Times(",")
+```
+
+To exclude invalid values out of result slice:
+
+```go
+// Input: 1.1, 2.2, 3.3, 4.4 -> [1.1 2.2 3.3 4.4]
+// Input: how, 2.2, are, you -> [2.2]
+vals = cfg.Section("").Key("FLOAT64S").ValidFloat64s(",")
+vals = cfg.Section("").Key("INTS").ValidInts(",")
+vals = cfg.Section("").Key("INT64S").ValidInt64s(",")
+vals = cfg.Section("").Key("UINTS").ValidUints(",")
+vals = cfg.Section("").Key("UINT64S").ValidUint64s(",")
+vals = cfg.Section("").Key("TIMES").ValidTimes(",")
+```
+
+Or to return nothing but error when have invalid inputs:
+
+```go
+// Input: 1.1, 2.2, 3.3, 4.4 -> [1.1 2.2 3.3 4.4]
+// Input: how, 2.2, are, you -> error
+vals = cfg.Section("").Key("FLOAT64S").StrictFloat64s(",")
+vals = cfg.Section("").Key("INTS").StrictInts(",")
+vals = cfg.Section("").Key("INT64S").StrictInt64s(",")
+vals = cfg.Section("").Key("UINTS").StrictUints(",")
+vals = cfg.Section("").Key("UINT64S").StrictUint64s(",")
+vals = cfg.Section("").Key("TIMES").StrictTimes(",")
 ```
 
 ### Save your configuration
@@ -311,6 +399,12 @@ Another way to save is writing to a `io.Writer` interface:
 cfg.WriteTo(writer)
 cfg.WriteToIndent(writer, "\t")
 ```
+
+By default, spaces are used to align "=" sign between key and values, to disable that:
+
+```go
+ini.PrettyFormat = false
+``` 
 
 ## Advanced Usage
 
@@ -351,6 +445,12 @@ CLONE_URL = https://%(IMPORT_PATH)s
 
 ```go
 cfg.Section("package.sub").Key("CLONE_URL").String()	// https://gopkg.in/ini.v1
+```
+
+#### Retrieve parent keys available to a child section
+
+```go
+cfg.Section("package.sub").ParentKeys() // ["CLONE_URL"]
 ```
 
 ### Auto-increment Key Names
@@ -437,8 +537,8 @@ Why not?
 ```go
 type Embeded struct {
 	Dates  []time.Time `delim:"|"`
-	Places []string
-	None   []int
+	Places []string    `ini:"places,omitempty"`
+	None   []int       `ini:",omitempty"`
 }
 
 type Author struct {
@@ -473,8 +573,7 @@ GPA = 2.8
 
 [Embeded]
 Dates = 2015-08-07T22:14:22+08:00|2015-08-07T22:14:22+08:00
-Places = HangZhou,Boston
-None =
+places = HangZhou,Boston
 ```
 
 #### Name Mapper
@@ -507,6 +606,26 @@ func main() {
 ```
 
 Same rules of name mapper apply to `ini.ReflectFromWithMapper` function.
+
+#### Value Mapper
+
+To expand values (e.g. from environment variables), you can use the `ValueMapper` to transform values:
+
+```go
+type Env struct {
+	Foo string `ini:"foo"`
+}
+
+func main() {
+	cfg, err := ini.Load([]byte("[env]\nfoo = ${MY_VAR}\n")
+	cfg.ValueMapper = os.ExpandEnv
+	// ...
+	env := &Env{}
+	err = cfg.Section("env").MapTo(env)
+}
+```
+
+This would set the value of `env.Foo` to the value of the environment variable `MY_VAR`.
 
 #### Other Notes On Map/Reflect
 

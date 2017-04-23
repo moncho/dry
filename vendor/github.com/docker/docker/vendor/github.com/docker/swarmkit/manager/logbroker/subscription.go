@@ -1,7 +1,6 @@
 package logbroker
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -12,6 +11,7 @@ import (
 	"github.com/docker/swarmkit/manager/state"
 	"github.com/docker/swarmkit/manager/state/store"
 	"github.com/docker/swarmkit/watch"
+	"golang.org/x/net/context"
 )
 
 type subscription struct {
@@ -68,7 +68,7 @@ func (s *subscription) Run(ctx context.Context) {
 
 	if s.follow() {
 		wq := s.store.WatchQueue()
-		ch, cancel := state.Watch(wq, state.EventCreateTask{}, state.EventUpdateTask{})
+		ch, cancel := state.Watch(wq, api.EventCreateTask{}, api.EventUpdateTask{})
 		go func() {
 			defer cancel()
 			s.watch(ch)
@@ -182,6 +182,10 @@ func (s *subscription) match() {
 				continue
 			}
 			for _, task := range tasks {
+				// if we're not following, don't add tasks that aren't running yet
+				if !s.follow() && task.Status.State < api.TaskStateRunning {
+					continue
+				}
 				add(task)
 			}
 		}
@@ -223,9 +227,9 @@ func (s *subscription) watch(ch <-chan events.Event) error {
 			return s.ctx.Err()
 		case event := <-ch:
 			switch v := event.(type) {
-			case state.EventCreateTask:
+			case api.EventCreateTask:
 				t = v.Task
-			case state.EventUpdateTask:
+			case api.EventUpdateTask:
 				t = v.Task
 			}
 		}

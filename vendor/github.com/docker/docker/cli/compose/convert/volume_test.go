@@ -5,54 +5,51 @@ import (
 
 	"github.com/docker/docker/api/types/mount"
 	composetypes "github.com/docker/docker/cli/compose/types"
-	"github.com/docker/docker/pkg/testutil/assert"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestIsReadOnly(t *testing.T) {
-	assert.Equal(t, isReadOnly([]string{"foo", "bar", "ro"}), true)
-	assert.Equal(t, isReadOnly([]string{"ro"}), true)
-	assert.Equal(t, isReadOnly([]string{}), false)
-	assert.Equal(t, isReadOnly([]string{"foo", "rw"}), false)
-	assert.Equal(t, isReadOnly([]string{"foo"}), false)
-}
-
-func TestIsNoCopy(t *testing.T) {
-	assert.Equal(t, isNoCopy([]string{"foo", "bar", "nocopy"}), true)
-	assert.Equal(t, isNoCopy([]string{"nocopy"}), true)
-	assert.Equal(t, isNoCopy([]string{}), false)
-	assert.Equal(t, isNoCopy([]string{"foo", "rw"}), false)
-}
-
-func TestGetBindOptions(t *testing.T) {
-	opts := getBindOptions([]string{"slave"})
-	expected := mount.BindOptions{Propagation: mount.PropagationSlave}
-	assert.Equal(t, *opts, expected)
-}
-
-func TestGetBindOptionsNone(t *testing.T) {
-	opts := getBindOptions([]string{"ro"})
-	assert.Equal(t, opts, (*mount.BindOptions)(nil))
-}
-
 func TestConvertVolumeToMountAnonymousVolume(t *testing.T) {
-	stackVolumes := volumes{}
-	namespace := NewNamespace("foo")
+	config := composetypes.ServiceVolumeConfig{
+		Type:   "volume",
+		Target: "/foo/bar",
+	}
 	expected := mount.Mount{
 		Type:   mount.TypeVolume,
 		Target: "/foo/bar",
 	}
-	mount, err := convertVolumeToMount("/foo/bar", stackVolumes, namespace)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, mount, expected)
+	mount, err := convertVolumeToMount(config, volumes{}, NewNamespace("foo"))
+	assert.NoError(t, err)
+	assert.Equal(t, expected, mount)
 }
 
-func TestConvertVolumeToMountInvalidFormat(t *testing.T) {
+func TestConvertVolumeToMountConflictingOptionsBind(t *testing.T) {
 	namespace := NewNamespace("foo")
-	invalids := []string{"::", "::cc", ":bb:", "aa::", "aa::cc", "aa:bb:", " : : ", " : :cc", " :bb: ", "aa: : ", "aa: :cc", "aa:bb: "}
-	for _, vol := range invalids {
-		_, err := convertVolumeToMount(vol, volumes{}, namespace)
-		assert.Error(t, err, "invalid volume: "+vol)
+
+	config := composetypes.ServiceVolumeConfig{
+		Type:   "volume",
+		Source: "foo",
+		Target: "/target",
+		Bind: &composetypes.ServiceVolumeBind{
+			Propagation: "slave",
+		},
 	}
+	_, err := convertVolumeToMount(config, volumes{}, namespace)
+	assert.EqualError(t, err, "bind options are incompatible with type volume")
+}
+
+func TestConvertVolumeToMountConflictingOptionsVolume(t *testing.T) {
+	namespace := NewNamespace("foo")
+
+	config := composetypes.ServiceVolumeConfig{
+		Type:   "bind",
+		Source: "/foo",
+		Target: "/target",
+		Volume: &composetypes.ServiceVolumeVolume{
+			NoCopy: true,
+		},
+	}
+	_, err := convertVolumeToMount(config, volumes{}, namespace)
+	assert.EqualError(t, err, "volume options are incompatible with type bind")
 }
 
 func TestConvertVolumeToMountNamedVolume(t *testing.T) {
@@ -84,11 +81,21 @@ func TestConvertVolumeToMountNamedVolume(t *testing.T) {
 					"opt": "value",
 				},
 			},
+			NoCopy: true,
 		},
 	}
-	mount, err := convertVolumeToMount("normal:/foo:ro", stackVolumes, namespace)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, mount, expected)
+	config := composetypes.ServiceVolumeConfig{
+		Type:     "volume",
+		Source:   "normal",
+		Target:   "/foo",
+		ReadOnly: true,
+		Volume: &composetypes.ServiceVolumeVolume{
+			NoCopy: true,
+		},
+	}
+	mount, err := convertVolumeToMount(config, stackVolumes, namespace)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, mount)
 }
 
 func TestConvertVolumeToMountNamedVolumeExternal(t *testing.T) {
@@ -105,10 +112,49 @@ func TestConvertVolumeToMountNamedVolumeExternal(t *testing.T) {
 		Type:   mount.TypeVolume,
 		Source: "special",
 		Target: "/foo",
+		VolumeOptions: &mount.VolumeOptions{
+			NoCopy: false,
+		},
 	}
-	mount, err := convertVolumeToMount("outside:/foo", stackVolumes, namespace)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, mount, expected)
+	config := composetypes.ServiceVolumeConfig{
+		Type:   "volume",
+		Source: "outside",
+		Target: "/foo",
+	}
+	mount, err := convertVolumeToMount(config, stackVolumes, namespace)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, mount)
+}
+
+func TestConvertVolumeToMountNamedVolumeExternalNoCopy(t *testing.T) {
+	stackVolumes := volumes{
+		"outside": composetypes.VolumeConfig{
+			External: composetypes.External{
+				External: true,
+				Name:     "special",
+			},
+		},
+	}
+	namespace := NewNamespace("foo")
+	expected := mount.Mount{
+		Type:   mount.TypeVolume,
+		Source: "special",
+		Target: "/foo",
+		VolumeOptions: &mount.VolumeOptions{
+			NoCopy: true,
+		},
+	}
+	config := composetypes.ServiceVolumeConfig{
+		Type:   "volume",
+		Source: "outside",
+		Target: "/foo",
+		Volume: &composetypes.ServiceVolumeVolume{
+			NoCopy: true,
+		},
+	}
+	mount, err := convertVolumeToMount(config, stackVolumes, namespace)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, mount)
 }
 
 func TestConvertVolumeToMountBind(t *testing.T) {
@@ -121,13 +167,26 @@ func TestConvertVolumeToMountBind(t *testing.T) {
 		ReadOnly:    true,
 		BindOptions: &mount.BindOptions{Propagation: mount.PropagationShared},
 	}
-	mount, err := convertVolumeToMount("/bar:/foo:ro,shared", stackVolumes, namespace)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, mount, expected)
+	config := composetypes.ServiceVolumeConfig{
+		Type:     "bind",
+		Source:   "/bar",
+		Target:   "/foo",
+		ReadOnly: true,
+		Bind:     &composetypes.ServiceVolumeBind{Propagation: "shared"},
+	}
+	mount, err := convertVolumeToMount(config, stackVolumes, namespace)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, mount)
 }
 
 func TestConvertVolumeToMountVolumeDoesNotExist(t *testing.T) {
 	namespace := NewNamespace("foo")
-	_, err := convertVolumeToMount("unknown:/foo:ro", volumes{}, namespace)
-	assert.Error(t, err, "undefined volume: unknown")
+	config := composetypes.ServiceVolumeConfig{
+		Type:     "volume",
+		Source:   "unknown",
+		Target:   "/foo",
+		ReadOnly: true,
+	}
+	_, err := convertVolumeToMount(config, volumes{}, namespace)
+	assert.EqualError(t, err, "undefined volume \"unknown\"")
 }

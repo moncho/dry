@@ -1,6 +1,7 @@
 package node
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"io/ioutil"
@@ -25,14 +26,19 @@ import (
 	"github.com/docker/swarmkit/manager"
 	"github.com/docker/swarmkit/manager/encryption"
 	"github.com/docker/swarmkit/remotes"
+	"github.com/docker/swarmkit/watch"
 	"github.com/docker/swarmkit/xnet"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-const stateFilename = "state.json"
+const (
+	stateFilename     = "state.json"
+	roleChangeTimeout = 16 * time.Second
+)
 
 var (
 	errNodeStarted    = errors.New("node: already started")
@@ -125,8 +131,32 @@ type Node struct {
 	err              error
 	agent            *agent.Agent
 	manager          *manager.Manager
-	notifyNodeChange chan *api.Node // used to send role updates from the dispatcher api on promotion/demotion
+	notifyNodeChange chan *agent.NodeChanges // used by the agent to relay node updates from the dispatcher Session stream to (*Node).run
 	unlockKey        []byte
+
+	// lastNodeRole is the last-seen value of Node.Role, used to make role
+	// changes "edge triggered" and avoid renewal loops.
+	lastNodeRole lastSeenRole
+	// lastNodeDesiredRole is the last-seen value of Node.Spec.DesiredRole,
+	// used to make role changes "edge triggered" and avoid renewal loops.
+	// This exists in addition to lastNodeRole to support older CAs that
+	// only fill in the DesiredRole field.
+	lastNodeDesiredRole lastSeenRole
+}
+
+type lastSeenRole struct {
+	role *api.NodeRole
+}
+
+// observe notes the latest value of this node role, and returns true if it
+// is the first seen value, or is different from the most recently seen value.
+func (l *lastSeenRole) observe(newRole api.NodeRole) bool {
+	changed := l.role == nil || *l.role != newRole
+	if l.role == nil {
+		l.role = new(api.NodeRole)
+	}
+	*l.role = newRole
+	return changed
 }
 
 // RemoteAPIAddr returns address on which remote manager api listens.
@@ -135,11 +165,11 @@ func (n *Node) RemoteAPIAddr() (string, error) {
 	n.RLock()
 	defer n.RUnlock()
 	if n.manager == nil {
-		return "", errors.Errorf("node is not manager")
+		return "", errors.New("manager is not running")
 	}
 	addr := n.manager.Addr()
 	if addr == "" {
-		return "", errors.Errorf("manager addr is not set")
+		return "", errors.New("manager addr is not set")
 	}
 	return addr, nil
 }
@@ -168,7 +198,7 @@ func New(c *Config) (*Node, error) {
 		stopped:          make(chan struct{}),
 		closed:           make(chan struct{}),
 		ready:            make(chan struct{}),
-		notifyNodeChange: make(chan *api.Node, 1),
+		notifyNodeChange: make(chan *agent.NodeChanges, 1),
 		unlockKey:        c.UnlockKey,
 	}
 
@@ -184,6 +214,21 @@ func New(c *Config) (*Node, error) {
 	n.roleCond = sync.NewCond(n.RLocker())
 	n.connCond = sync.NewCond(n.RLocker())
 	return n, nil
+}
+
+// BindRemote starts a listener that exposes the remote API.
+func (n *Node) BindRemote(ctx context.Context, listenAddr string, advertiseAddr string) error {
+	n.RLock()
+	defer n.RUnlock()
+
+	if n.manager == nil {
+		return errors.New("manager is not running")
+	}
+
+	return n.manager.BindRemote(ctx, manager.RemoteAddrs{
+		ListenAddr:    listenAddr,
+		AdvertiseAddr: advertiseAddr,
+	})
 }
 
 // Start starts a node instance.
@@ -208,18 +253,21 @@ func (n *Node) run(ctx context.Context) (err error) {
 	defer cancel()
 	ctx = log.WithModule(ctx, "node")
 
-	go func() {
+	go func(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 		case <-n.stopped:
 			cancel()
 		}
-	}()
+	}(ctx)
 
-	securityConfig, err := n.loadSecurityConfig(ctx)
+	paths := ca.NewConfigPaths(filepath.Join(n.config.StateDir, certDirectory))
+	securityConfig, err := n.loadSecurityConfig(ctx, paths)
 	if err != nil {
 		return err
 	}
+
+	ctx = log.WithLogger(ctx, log.G(ctx).WithField("node.id", n.NodeID()))
 
 	taskDBPath := filepath.Join(n.config.StateDir, "worker/tasks.db")
 	if err := os.MkdirAll(filepath.Dir(taskDBPath), 0777); err != nil {
@@ -232,59 +280,104 @@ func (n *Node) run(ctx context.Context) (err error) {
 	}
 	defer db.Close()
 
+	agentDone := make(chan struct{})
+
 	forceCertRenewal := make(chan struct{})
 	renewCert := func() {
-		select {
-		case forceCertRenewal <- struct{}{}:
-		case <-ctx.Done():
+		for {
+			select {
+			case forceCertRenewal <- struct{}{}:
+				return
+			case <-agentDone:
+				return
+			case <-n.notifyNodeChange:
+				// consume from the channel to avoid blocking the writer
+			}
 		}
 	}
 
 	go func() {
 		for {
 			select {
-			case <-ctx.Done():
+			case <-agentDone:
 				return
-			case node := <-n.notifyNodeChange:
-				// If the server is sending us a ForceRenewal State, renew
-				if node.Certificate.Status.State == api.IssuanceStateRotate {
-					renewCert()
-					continue
-				}
+			case nodeChanges := <-n.notifyNodeChange:
 				n.Lock()
-				// If we got a role change, renew
-				lastRole := n.role
-				role := ca.WorkerRole
-				if node.Role == api.NodeRoleManager {
-					role = ca.ManagerRole
-				}
-				if lastRole == role {
-					n.Unlock()
-					continue
+				currentRole := api.NodeRoleWorker
+				if n.role == ca.ManagerRole {
+					currentRole = api.NodeRoleManager
 				}
 				n.Unlock()
-				renewCert()
+
+				if nodeChanges.Node != nil {
+					// This is a bit complex to be backward compatible with older CAs that
+					// don't support the Node.Role field. They only use what's presently
+					// called DesiredRole.
+					// 1) If we haven't seen the node object before, and the desired role
+					//    is different from our current role, renew the cert. This covers
+					//    the case of starting up after a role change.
+					// 2) If we have seen the node before, the desired role is
+					//    different from our current role, and either the actual role or
+					//    desired role has changed relative to the last values we saw in
+					//    those fields, renew the cert. This covers the case of the role
+					//    changing while this node is running, but prevents getting into a
+					//    rotation loop if Node.Role isn't what we expect (because it's
+					//    unset). We may renew the certificate an extra time (first when
+					//    DesiredRole changes, and then again when Role changes).
+					// 3) If the server is sending us IssuanceStateRotate, renew the cert as
+					//    requested by the CA.
+					roleChanged := n.lastNodeRole.observe(nodeChanges.Node.Role)
+					desiredRoleChanged := n.lastNodeDesiredRole.observe(nodeChanges.Node.Spec.DesiredRole)
+					if (currentRole != nodeChanges.Node.Spec.DesiredRole &&
+						((roleChanged && currentRole != nodeChanges.Node.Role) ||
+							desiredRoleChanged)) ||
+						nodeChanges.Node.Certificate.Status.State == api.IssuanceStateRotate {
+						renewCert()
+					}
+				}
+
+				if nodeChanges.RootCert != nil {
+					// We only want to update the root CA if this is a worker node.  Manager nodes directly watch the raft
+					// store and update the root CA, with the necessary signer, from the raft store (since the managers
+					// need the CA key as well to potentially issue new TLS certificates).
+					if currentRole == api.NodeRoleManager || bytes.Equal(nodeChanges.RootCert, securityConfig.RootCA().Certs) {
+						continue
+					}
+					newRootCA, err := ca.NewRootCA(nodeChanges.RootCert, nil, nil, ca.DefaultNodeCertExpiration, nil)
+					if err != nil {
+						log.G(ctx).WithError(err).Error("invalid new root certificate from the dispatcher")
+						continue
+					}
+					if err := ca.SaveRootCA(newRootCA, paths.RootCA); err != nil {
+						log.G(ctx).WithError(err).Error("could not save new root certificate from the dispatcher")
+						continue
+					}
+					if err := securityConfig.UpdateRootCA(&newRootCA, newRootCA.Pool); err != nil {
+						log.G(ctx).WithError(err).Error("could not use new root CA from dispatcher")
+						continue
+					}
+				}
 			}
 		}
 	}()
 
+	var wg sync.WaitGroup
+	wg.Add(3)
+
 	updates := ca.RenewTLSConfig(ctx, securityConfig, n.connBroker, forceCertRenewal)
 	go func() {
-		for {
-			select {
-			case certUpdate := <-updates:
-				if certUpdate.Err != nil {
-					logrus.Warnf("error renewing TLS certificate: %v", certUpdate.Err)
-					continue
-				}
-				n.Lock()
-				n.role = certUpdate.Role
-				n.roleCond.Broadcast()
-				n.Unlock()
-			case <-ctx.Done():
-				return
+		for certUpdate := range updates {
+			if certUpdate.Err != nil {
+				logrus.Warnf("error renewing TLS certificate: %v", certUpdate.Err)
+				continue
 			}
+			n.Lock()
+			n.role = certUpdate.Role
+			n.roleCond.Broadcast()
+			n.Unlock()
 		}
+
+		wg.Done()
 	}()
 
 	role := n.role
@@ -293,17 +386,16 @@ func (n *Node) run(ctx context.Context) (err error) {
 	agentReady := make(chan struct{})
 	var managerErr error
 	var agentErr error
-	var wg sync.WaitGroup
-	wg.Add(2)
 	go func() {
-		managerErr = n.superviseManager(ctx, securityConfig, managerReady) // store err and loop
+		managerErr = n.superviseManager(ctx, securityConfig, paths.RootCA, managerReady, forceCertRenewal) // store err and loop
 		wg.Done()
 		cancel()
 	}()
 	go func() {
-		agentErr = n.runAgent(ctx, db, securityConfig.ClientTLSCreds, agentReady)
+		agentErr = n.runAgent(ctx, db, securityConfig, agentReady)
 		wg.Done()
 		cancel()
+		close(agentDone)
 	}()
 
 	go func() {
@@ -374,7 +466,7 @@ func (n *Node) Err(ctx context.Context) error {
 	}
 }
 
-func (n *Node) runAgent(ctx context.Context, db *bolt.DB, creds credentials.TransportCredentials, ready chan<- struct{}) error {
+func (n *Node) runAgent(ctx context.Context, db *bolt.DB, securityConfig *ca.SecurityConfig, ready chan<- struct{}) error {
 	waitCtx, waitCancel := context.WithCancel(ctx)
 	remotesCh := n.remotes.WaitSelect(ctx)
 	controlCh := n.ListenControlSocket(waitCtx)
@@ -401,13 +493,28 @@ waitPeer:
 	default:
 	}
 
+	secChangeQueue := watch.NewQueue()
+	defer secChangeQueue.Close()
+	secChangesCh, secChangesCancel := secChangeQueue.Watch()
+	defer secChangesCancel()
+	securityConfig.SetWatch(secChangeQueue)
+
+	rootCA := securityConfig.RootCA()
+	issuer := securityConfig.IssuerInfo()
+
 	a, err := agent.New(&agent.Config{
 		Hostname:         n.config.Hostname,
 		ConnBroker:       n.connBroker,
 		Executor:         n.config.Executor,
 		DB:               db,
 		NotifyNodeChange: n.notifyNodeChange,
-		Credentials:      creds,
+		NotifyTLSChange:  secChangesCh,
+		Credentials:      securityConfig.ClientTLSCreds,
+		NodeTLSInfo: &api.NodeTLSInfo{
+			TrustRoot:           rootCA.Certs,
+			CertIssuerPublicKey: issuer.PublicKey,
+			CertIssuerSubject:   issuer.Subject,
+		},
 	})
 	if err != nil {
 		return err
@@ -514,6 +621,20 @@ func (n *Node) Agent() *agent.Agent {
 	return n.agent
 }
 
+// IsStateDirty returns true if any objects have been added to raft which make
+// the state "dirty". Currently, the existence of any object other than the
+// default cluster or the local node implies a dirty state.
+func (n *Node) IsStateDirty() (bool, error) {
+	n.RLock()
+	defer n.RUnlock()
+
+	if n.manager == nil {
+		return false, errors.New("node is not a manager")
+	}
+
+	return n.manager.IsStateDirty()
+}
+
 // Remotes returns a list of known peers known to node.
 func (n *Node) Remotes() []api.Peer {
 	weights := n.remotes.Weights()
@@ -524,8 +645,7 @@ func (n *Node) Remotes() []api.Peer {
 	return remotes
 }
 
-func (n *Node) loadSecurityConfig(ctx context.Context) (*ca.SecurityConfig, error) {
-	paths := ca.NewConfigPaths(filepath.Join(n.config.StateDir, certDirectory))
+func (n *Node) loadSecurityConfig(ctx context.Context, paths *ca.SecurityConfigPaths) (*ca.SecurityConfig, error) {
 	var securityConfig *ca.SecurityConfig
 
 	krw := ca.NewKeyReadWriter(paths.Node, n.unlockKey, &manager.RaftDEKData{})
@@ -539,7 +659,8 @@ func (n *Node) loadSecurityConfig(ctx context.Context) (*ca.SecurityConfig, erro
 		return nil, err
 	}
 	if err == nil {
-		securityConfig, err = ca.LoadSecurityConfig(ctx, rootCA, krw)
+		// if forcing a new cluster, we allow the certificates to be expired - a new set will be generated
+		securityConfig, err = ca.LoadSecurityConfig(ctx, rootCA, krw, n.config.ForceNewCluster)
 		if err != nil {
 			_, isInvalidKEK := errors.Cause(err).(ca.ErrInvalidKEK)
 			if isInvalidKEK {
@@ -558,8 +679,11 @@ func (n *Node) loadSecurityConfig(ctx context.Context) (*ca.SecurityConfig, erro
 				n.unlockKey = encryption.GenerateSecretKey()
 			}
 			krw = ca.NewKeyReadWriter(paths.Node, n.unlockKey, &manager.RaftDEKData{})
-			rootCA, err = ca.CreateRootCA(ca.DefaultRootCN, paths.RootCA)
+			rootCA, err = ca.CreateRootCA(ca.DefaultRootCN)
 			if err != nil {
+				return nil, err
+			}
+			if err := ca.SaveRootCA(rootCA, paths.RootCA); err != nil {
 				return nil, err
 			}
 			log.G(ctx).Debug("generated CA key and certificate")
@@ -577,7 +701,7 @@ func (n *Node) loadSecurityConfig(ctx context.Context) (*ca.SecurityConfig, erro
 		// - We wait for CreateSecurityConfig to finish since we need a certificate to operate.
 
 		// Attempt to load certificate from disk
-		securityConfig, err = ca.LoadSecurityConfig(ctx, rootCA, krw)
+		securityConfig, err = ca.LoadSecurityConfig(ctx, rootCA, krw, n.config.ForceNewCluster)
 		if err == nil {
 			log.G(ctx).WithFields(logrus.Fields{
 				"node.id": securityConfig.ClientTLSCreds.NodeID(),
@@ -610,7 +734,10 @@ func (n *Node) loadSecurityConfig(ctx context.Context) (*ca.SecurityConfig, erro
 }
 
 func (n *Node) initManagerConnection(ctx context.Context, ready chan<- struct{}) error {
-	opts := []grpc.DialOption{}
+	opts := []grpc.DialOption{
+		grpc.WithUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
+		grpc.WithStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
+	}
 	insecureCreds := credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
 	opts = append(opts, grpc.WithTransportCredentials(insecureCreds))
 	addr := n.config.ListenControlAPI
@@ -669,14 +796,19 @@ func (n *Node) waitRole(ctx context.Context, role string) error {
 	return nil
 }
 
-func (n *Node) runManager(ctx context.Context, securityConfig *ca.SecurityConfig, ready chan struct{}, workerRole <-chan struct{}) error {
-	remoteAddr, _ := n.remotes.Select(n.NodeID())
-	m, err := manager.New(&manager.Config{
-		ForceNewCluster: n.config.ForceNewCluster,
-		RemoteAPI: manager.RemoteAddrs{
+func (n *Node) runManager(ctx context.Context, securityConfig *ca.SecurityConfig, rootPaths ca.CertPaths, ready chan struct{}, workerRole <-chan struct{}) (bool, error) {
+	var remoteAPI *manager.RemoteAddrs
+	if n.config.ListenRemoteAPI != "" {
+		remoteAPI = &manager.RemoteAddrs{
 			ListenAddr:    n.config.ListenRemoteAPI,
 			AdvertiseAddr: n.config.AdvertiseRemoteAPI,
-		},
+		}
+	}
+
+	remoteAddr, _ := n.remotes.Select(n.NodeID())
+	m, err := manager.New(&manager.Config{
+		ForceNewCluster:  n.config.ForceNewCluster,
+		RemoteAPI:        remoteAPI,
 		ControlAPI:       n.config.ListenControlAPI,
 		SecurityConfig:   securityConfig,
 		ExternalCAs:      n.config.ExternalCAs,
@@ -688,18 +820,19 @@ func (n *Node) runManager(ctx context.Context, securityConfig *ca.SecurityConfig
 		UnlockKey:        n.unlockKey,
 		Availability:     n.config.Availability,
 		PluginGetter:     n.config.PluginGetter,
+		RootCAPaths:      rootPaths,
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 	done := make(chan struct{})
 	var runErr error
-	go func() {
-		if err := m.Run(context.Background()); err != nil {
+	go func(logger *logrus.Entry) {
+		if err := m.Run(log.WithLogger(context.Background(), logger)); err != nil {
 			runErr = err
 		}
 		close(done)
-	}()
+	}(log.G(ctx))
 
 	var clearData bool
 	defer func() {
@@ -723,7 +856,7 @@ func (n *Node) runManager(ctx context.Context, securityConfig *ca.SecurityConfig
 	// wait for manager stop or for role change
 	select {
 	case <-done:
-		return runErr
+		return false, runErr
 	case <-workerRole:
 		log.G(ctx).Info("role changed to worker, stopping manager")
 		clearData = true
@@ -731,12 +864,12 @@ func (n *Node) runManager(ctx context.Context, securityConfig *ca.SecurityConfig
 		log.G(ctx).Info("manager removed from raft cluster, stopping manager")
 		clearData = true
 	case <-ctx.Done():
-		return ctx.Err()
+		return false, ctx.Err()
 	}
-	return nil
+	return clearData, nil
 }
 
-func (n *Node) superviseManager(ctx context.Context, securityConfig *ca.SecurityConfig, ready chan struct{}) error {
+func (n *Node) superviseManager(ctx context.Context, securityConfig *ca.SecurityConfig, rootPaths ca.CertPaths, ready chan struct{}, forceCertRenewal chan struct{}) error {
 	for {
 		if err := n.waitRole(ctx, ca.ManagerRole); err != nil {
 			return err
@@ -750,7 +883,8 @@ func (n *Node) superviseManager(ctx context.Context, securityConfig *ca.Security
 			}
 		}()
 
-		if err := n.runManager(ctx, securityConfig, ready, workerRole); err != nil {
+		wasRemoved, err := n.runManager(ctx, securityConfig, rootPaths, ready, workerRole)
+		if err != nil {
 			waitRoleCancel()
 			return errors.Wrap(err, "manager stopped")
 		}
@@ -759,18 +893,60 @@ func (n *Node) superviseManager(ctx context.Context, securityConfig *ca.Security
 		// "manager", it's possible that the manager was demoted and
 		// the agent hasn't realized this yet. We should wait for the
 		// role to change instead of restarting the manager immediately.
-		timer := time.NewTimer(16 * time.Second)
-		select {
-		case <-timer.C:
-			log.G(ctx).Warn("failed to get worker role after manager stop, restarting manager")
-		case <-workerRole:
-		case <-ctx.Done():
-			timer.Stop()
-			waitRoleCancel()
-			return ctx.Err()
+		err = func() error {
+			timer := time.NewTimer(roleChangeTimeout)
+			defer timer.Stop()
+			defer waitRoleCancel()
+
+			select {
+			case <-timer.C:
+			case <-workerRole:
+				return nil
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+
+			if !wasRemoved {
+				log.G(ctx).Warn("failed to get worker role after manager stop, restarting manager")
+				return nil
+			}
+			// We need to be extra careful about restarting the
+			// manager. It may cause the node to wrongly join under
+			// a new Raft ID. Since we didn't see a role change
+			// yet, force a certificate renewal. If the certificate
+			// comes back with a worker role, we know we shouldn't
+			// restart the manager. However, if we don't see
+			// workerRole get closed, it means we didn't switch to
+			// a worker certificate, either because we couldn't
+			// contact a working CA, or because we've been
+			// re-promoted. In this case, we must assume we were
+			// re-promoted, and restart the manager.
+			log.G(ctx).Warn("failed to get worker role after manager stop, forcing certificate renewal")
+			timer.Reset(roleChangeTimeout)
+
+			select {
+			case forceCertRenewal <- struct{}{}:
+			case <-timer.C:
+				log.G(ctx).Warn("failed to trigger certificate renewal after manager stop, restarting manager")
+				return nil
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+
+			// Now that the renewal request has been sent to the
+			// renewal goroutine, wait for a change in role.
+			select {
+			case <-timer.C:
+				log.G(ctx).Warn("failed to get worker role after manager stop, restarting manager")
+			case <-workerRole:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+			return nil
+		}()
+		if err != nil {
+			return err
 		}
-		timer.Stop()
-		waitRoleCancel()
 
 		ready = nil
 	}

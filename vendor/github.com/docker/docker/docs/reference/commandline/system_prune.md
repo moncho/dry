@@ -27,12 +27,15 @@ Options:
       --help            Print usage
 ```
 
+## Description
+
 Remove all unused containers, volumes, networks and images (both dangling and unreferenced).
 
-Example output:
+## Examples
 
 ```bash
 $ docker system prune -a
+
 WARNING! This will remove:
 	- all stopped containers
 	- all volumes not used by at least one container
@@ -65,7 +68,7 @@ deleted: sha256:3a88a5c81eb5c283e72db2dbc6d65cbfd8e80b6c89bb6e714cfaaa0eed99c548
 Total reclaimed space: 13.5 MB
 ```
 
-## Filtering
+### Filtering
 
 The filtering flag (`-f` or `--filter`) format is of "key=value". If there is more
 than one filter, then pass multiple flags (e.g., `--filter "foo=bar" --filter "bif=baz"`)
@@ -73,6 +76,7 @@ than one filter, then pass multiple flags (e.g., `--filter "foo=bar" --filter "b
 The currently supported filters are:
 
 * until (`<timestamp>`) - only remove containers, images, and networks created before given timestamp
+* label (`label=<key>`, `label=<key>=<value>`, `label!=<key>`, or `label!=<key>=<value>`) - only remove containers, images, networks, and volumes with (or without, in case `label!=...` is used) the specified labels.
 
 The `until` filter can be Unix timestamps, date formatted
 timestamps, or Go duration strings (e.g. `10m`, `1h30m`) computed
@@ -86,7 +90,12 @@ that have elapsed since January 1, 1970 (midnight UTC/GMT), not counting leap
 seconds (aka Unix epoch or Unix time), and the optional .nanoseconds field is a
 fraction of a second no more than nine digits long.
 
-## Related information
+The `label` filter accepts two formats. One is the `label=...` (`label=<key>` or `label=<key>=<value>`),
+which removes containers, images, networks, and volumes with the specified labels. The other
+format is the `label!=...` (`label!=<key>` or `label!=<key>=<value>`), which removes
+containers, images, networks, and volumes without the specified labels.
+
+## Related commands
 
 * [volume create](volume_create.md)
 * [volume ls](volume_ls.md)

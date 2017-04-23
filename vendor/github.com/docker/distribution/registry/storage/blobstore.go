@@ -5,8 +5,8 @@ import (
 
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/context"
-	"github.com/docker/distribution/digest"
 	"github.com/docker/distribution/registry/storage/driver"
+	"github.com/opencontainers/go-digest"
 )
 
 // blobStore implements the read side of the blob store interface over a
@@ -64,7 +64,7 @@ func (bs *blobStore) Put(ctx context.Context, mediaType string, p []byte) (distr
 		// content already present
 		return desc, nil
 	} else if err != distribution.ErrBlobUnknown {
-		context.GetLogger(ctx).Errorf("blobStore: error stating content (%v): %#v", dgst, err)
+		context.GetLogger(ctx).Errorf("blobStore: error stating content (%v): %v", dgst, err)
 		// real error, return it
 		return distribution.Descriptor{}, err
 	}
@@ -75,7 +75,6 @@ func (bs *blobStore) Put(ctx context.Context, mediaType string, p []byte) (distr
 	}
 
 	// TODO(stevvooe): Write out mediatype here, as well.
-
 	return distribution.Descriptor{
 		Size: int64(len(p)),
 
@@ -146,7 +145,7 @@ func (bs *blobStore) readlink(ctx context.Context, path string) (digest.Digest, 
 		return "", err
 	}
 
-	linked, err := digest.ParseDigest(string(content))
+	linked, err := digest.Parse(string(content))
 	if err != nil {
 		return "", err
 	}

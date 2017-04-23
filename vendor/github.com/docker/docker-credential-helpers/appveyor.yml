@@ -1,0 +1,67 @@
+version: "{build}"
+
+# Source Config
+clone_folder: c:\gopath\src\github.com\docker\docker-credential-helpers
+
+# Build host
+
+environment:
+    global:
+      GOPATH: c:\gopath
+      CGO_ENABLED: 1
+      GOVERSION: 1.6
+    matrix:
+      - platform: x86
+        GOARCH: 386
+        MSYS2_BITS: 32
+      - platform: x64
+        GOARCH: amd64
+        MSYS2_BITS: 64
+
+init:
+  - git config --global core.autocrlf input
+
+# Build
+
+install:
+  # Install Go 1.6.
+  - rmdir c:\go /s /q
+  - appveyor DownloadFile https://storage.googleapis.com/golang/go%GOVERSION%.windows-%GOARCH%.msi
+  - msiexec /i go%GOVERSION%.windows-%GOARCH%.msi /q
+  - set Path=c:\msys64\mingw%MSYS2_BITS%\bin;c:\go\bin;%Path%
+  - go version
+  - go env
+
+build: false
+
+test_script:
+  - go vet ./wincred
+  - go test -v github.com/docker/docker-credential-helpers/wincred
+
+# Equivalent to `before_deploy` phase
+after_test:
+    # build binary
+  - mkdir bin
+  - go build -o bin/docker-credential-wincred wincred/cmd/main_windows.go
+    # build zipfile, will look like docker-credential-wincred-v0.1.0-amd64.zip in the root directory
+  - cd bin && 7z a ../docker-credential-wincred-%APPVEYOR_REPO_TAG_NAME%-%GOARCH%.zip docker-credential-wincred
+
+# IMPORTANT All the artifacts need to be listed here, or they won't be uploaded to GitHub
+artifacts:
+  - path: docker-credential-wincred-$(APPVEYOR_REPO_TAG_NAME)-$(GOARCH).zip
+    name: docker-credential-wincred-$(APPVEYOR_REPO_TAG_NAME)-$(GOARCH).zip
+
+deploy:
+  # All the zipped artifacts will be deployed
+  description: "Visit the [Changelog](https://github.com/docker/docker-credential-helpers/blob/master/CHANGELOG.md) for a detailed description of what's new in this release."
+  artifact: /.*\.zip/
+  auth_token:
+    secure: ixWmTXZs8aV5+9s6vPXziIcdMMLd+lBVINJ0K/Sy++2wllpRxUec4/TPVKUGLqvL
+  provider: GitHub
+  # deploy when a new tag is pushed
+  on:
+    appveyor_repo_tag: true
+
+branches:
+  only:
+    - master

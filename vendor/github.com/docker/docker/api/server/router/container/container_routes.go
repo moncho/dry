@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/docker/api"
 	"github.com/docker/docker/api/server/httputils"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/backend"
@@ -90,32 +91,38 @@ func (s *containerRouter) getContainersLogs(ctx context.Context, w http.Response
 	}
 
 	containerName := vars["name"]
-	logsConfig := &backend.ContainerLogsConfig{
-		ContainerLogsOptions: types.ContainerLogsOptions{
-			Follow:     httputils.BoolValue(r, "follow"),
-			Timestamps: httputils.BoolValue(r, "timestamps"),
-			Since:      r.Form.Get("since"),
-			Tail:       r.Form.Get("tail"),
-			ShowStdout: stdout,
-			ShowStderr: stderr,
-			Details:    httputils.BoolValue(r, "details"),
-		},
-		OutStream: w,
+	logsConfig := &types.ContainerLogsOptions{
+		Follow:     httputils.BoolValue(r, "follow"),
+		Timestamps: httputils.BoolValue(r, "timestamps"),
+		Since:      r.Form.Get("since"),
+		Tail:       r.Form.Get("tail"),
+		ShowStdout: stdout,
+		ShowStderr: stderr,
+		Details:    httputils.BoolValue(r, "details"),
 	}
 
-	chStarted := make(chan struct{})
-	if err := s.backend.ContainerLogs(ctx, containerName, logsConfig, chStarted); err != nil {
-		select {
-		case <-chStarted:
-			// The client may be expecting all of the data we're sending to
-			// be multiplexed, so send it through OutStream, which will
-			// have been set up to handle that if needed.
-			fmt.Fprintf(logsConfig.OutStream, "Error running logs job: %v\n", err)
-		default:
-			return err
-		}
+	// doesn't matter what version the client is on, we're using this internally only
+	// also do we need size? i'm thinkin no we don't
+	raw, err := s.backend.ContainerInspect(containerName, false, api.DefaultVersion)
+	if err != nil {
+		return err
+	}
+	container, ok := raw.(*types.ContainerJSON)
+	if !ok {
+		// %T prints the type. handy!
+		return fmt.Errorf("expected container to be *types.ContainerJSON but got %T", raw)
 	}
 
+	msgs, err := s.backend.ContainerLogs(ctx, containerName, logsConfig)
+	if err != nil {
+		return err
+	}
+
+	// if has a tty, we're not muxing streams. if it doesn't, we are. simple.
+	// this is the point of no return for writing a response. once we call
+	// WriteLogStream, the response has been started and errors will be
+	// returned in band by WriteLogStream
+	httputils.WriteLogStream(ctx, w, msgs, logsConfig, !container.Config.Tty)
 	return nil
 }
 
@@ -502,6 +509,8 @@ func (s *containerRouter) wsContainersAttach(ctx context.Context, w http.Respons
 	done := make(chan struct{})
 	started := make(chan struct{})
 
+	version := httputils.VersionFromContext(ctx)
+
 	setupStreams := func() (io.ReadCloser, io.Writer, io.Writer, error) {
 		wsChan := make(chan *websocket.Conn)
 		h := func(conn *websocket.Conn) {
@@ -516,6 +525,11 @@ func (s *containerRouter) wsContainersAttach(ctx context.Context, w http.Respons
 		}()
 
 		conn := <-wsChan
+		// In case version 1.28 and above, a binary frame will be sent.
+		// See 28176 for details.
+		if versions.GreaterThanOrEqualTo(version, "1.28") {
+			conn.PayloadType = websocket.BinaryFrame
+		}
 		return conn, conn, conn, nil
 	}
 

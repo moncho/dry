@@ -145,7 +145,7 @@ func (s *VolumeStore) Purge(name string) {
 	v, exists := s.names[name]
 	if exists {
 		if _, err := volumedrivers.RemoveDriver(v.DriverName()); err != nil {
-			logrus.Error("Error dereferencing volume driver: %v", err)
+			logrus.Errorf("Error dereferencing volume driver: %v", err)
 		}
 	}
 	if err := s.removeMeta(name); err != nil {
@@ -542,7 +542,11 @@ func lookupVolume(driverName, volumeName string) (volume.Volume, error) {
 	if err != nil {
 		err = errors.Cause(err)
 		if _, ok := err.(net.Error); ok {
-			return nil, errors.Wrapf(err, "error while checking if volume %q exists in driver %q", v.Name(), v.DriverName())
+			if v != nil {
+				volumeName = v.Name()
+				driverName = v.DriverName()
+			}
+			return nil, errors.Wrapf(err, "error while checking if volume %q exists in driver %q", volumeName, driverName)
 		}
 
 		// At this point, the error could be anything from the driver, such as "no such volume"
@@ -564,7 +568,7 @@ func (s *VolumeStore) Remove(v volume.Volume) error {
 
 	vd, err := volumedrivers.GetDriver(v.DriverName())
 	if err != nil {
-		return &OpErr{Err: err, Name: vd.Name(), Op: "remove"}
+		return &OpErr{Err: err, Name: v.DriverName(), Op: "remove"}
 	}
 
 	logrus.Debugf("Removing volume reference: driver %s, name %s", v.DriverName(), name)

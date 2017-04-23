@@ -1,16 +1,16 @@
-<!--[metadata]>
-+++
-draft = true
-+++
-<![end-metadata]-->
+---
+title: "Image Manifest V 2, Schema 2 "
+description: "image manifest for the Registry."
+keywords: ["registry, on-prem, images, tags, repository, distribution, api, advanced, manifest"]
+---
 
 # Image Manifest Version 2, Schema 2
 
-This document outlines the format of of the V2 image manifest, schema version 2.
+This document outlines the format of the V2 image manifest, schema version 2.
 The original (and provisional) image manifest for V2 (schema 1), was introduced
 in the Docker daemon in the [v1.3.0
 release](https://github.com/docker/docker/commit/9f482a66ab37ec396ac61ed0c00d59122ac07453)
-and is specified in the [schema 1 manifest definition](./manifest-v2-1.md)
+and is specified in the [schema 1 manifest definition](manifest-v2-1.md)
 
 This second schema version has two primary goals. The first is to allow
 multi-architecture images, through a "fat manifest" which references image
@@ -27,8 +27,10 @@ the resources they reference:
 - `application/vnd.docker.distribution.manifest.v1+json`: schema1 (existing manifest format)
 - `application/vnd.docker.distribution.manifest.v2+json`: New image manifest format (schemaVersion = 2)
 - `application/vnd.docker.distribution.manifest.list.v2+json`: Manifest list, aka "fat manifest"
-- `application/vnd.docker.image.rootfs.diff.tar.gzip`: "Layer", as a gzipped tar
 - `application/vnd.docker.container.image.v1+json`: Container config JSON
+- `application/vnd.docker.image.rootfs.diff.tar.gzip`: "Layer", as a gzipped tar
+- `application/vnd.docker.image.rootfs.foreign.diff.tar.gzip`: "Layer", as a gzipped tar that should never be pushed
+- `application/vnd.docker.plugin.v1+json`: Plugin config JSON
 
 ## Manifest List
 
@@ -40,7 +42,7 @@ image manifest based on the Content-Type returned in the HTTP response.
 ## *Manifest List* Field Descriptions
 
 - **`schemaVersion`** *int*
-	
+
   This field specifies the image manifest schema version as an integer. This
   schema uses the version `2`.
 
@@ -53,26 +55,26 @@ image manifest based on the Content-Type returned in the HTTP response.
 
     The manifests field contains a list of manifests for specific platforms.
 
-    Fields of a object in the manifests list are:
-    
+    Fields of an object in the manifests list are:
+
     - **`mediaType`** *string*
-    
+
         The MIME type of the referenced object. This will generally be
         `application/vnd.docker.image.manifest.v2+json`, but it could also
         be `application/vnd.docker.image.manifest.v1+json` if the manifest
         list references a legacy schema-1 manifest.
-    
+
     - **`size`** *int*
-    
+
         The size in bytes of the object. This field exists so that a client
         will have an expected size for the content before validating. If the
         length of the retrieved content does not match the specified length,
         the content should not be trusted.
-    
+
     - **`digest`** *string*
 
         The digest of the content, as defined by the
-        [Registry V2 HTTP API Specificiation](https://docs.docker.com/registry/spec/api/#digest-parameter).
+        [Registry V2 HTTP API Specificiation](api.md#digest-parameter).
 
     - **`platform`** *object*
 
@@ -153,7 +155,7 @@ image. It's the direct replacement for the schema-1 manifest.
 ## *Image Manifest* Field Descriptions
 
 - **`schemaVersion`** *int*
-	
+
   This field specifies the image manifest schema version as an integer. This
   schema uses version `2`.
 
@@ -171,46 +173,55 @@ image. It's the direct replacement for the schema-1 manifest.
     daemon side.
 
     Fields of a config object are:
-    
+
     - **`mediaType`** *string*
-    
+
         The MIME type of the referenced object. This should generally be
         `application/vnd.docker.container.image.v1+json`.
-    
+
     - **`size`** *int*
-    
+
         The size in bytes of the object. This field exists so that a client
         will have an expected size for the content before validating. If the
         length of the retrieved content does not match the specified length,
         the content should not be trusted.
-    
+
     - **`digest`** *string*
 
         The digest of the content, as defined by the
-        [Registry V2 HTTP API Specificiation](https://docs.docker.com/registry/spec/api/#digest-parameter).
+        [Registry V2 HTTP API Specificiation](api.md#digest-parameter).
 
 - **`layers`** *array*
 
     The layer list is ordered starting from the base image (opposite order of schema1).
 
     Fields of an item in the layers list are:
-    
+
     - **`mediaType`** *string*
-    
+
         The MIME type of the referenced object. This should
         generally be `application/vnd.docker.image.rootfs.diff.tar.gzip`.
-    
+        Layers of type
+        `application/vnd.docker.image.rootfs.foreign.diff.tar.gzip` may be
+        pulled from a remote location but they should never be pushed.
+
     - **`size`** *int*
-    
+
         The size in bytes of the object. This field exists so that a client
         will have an expected size for the content before validating. If the
         length of the retrieved content does not match the specified length,
         the content should not be trusted.
-    
+
     - **`digest`** *string*
 
         The digest of the content, as defined by the
-        [Registry V2 HTTP API Specificiation](https://docs.docker.com/registry/spec/api/#digest-parameter).
+        [Registry V2 HTTP API Specificiation](api.md#digest-parameter).
+
+    - **`urls`** *array*
+
+        Provides a list of URLs from which the content may be fetched. Content
+        should be verified against the `digest` and `size`. This field is
+        optional and uncommon.
 
 ## Example Image Manifest
 
@@ -240,7 +251,7 @@ image. It's the direct replacement for the schema-1 manifest.
             "size": 73109,
             "digest": "sha256:ec4b8955958665577945c89419d1af06b5f7636b4ac3da7f12184802ad867736"
         }
-    ],
+    ]
 }
 ```
 

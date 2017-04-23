@@ -1,26 +1,19 @@
 package logger
 
-import (
-	"reflect"
-	"testing"
-	"time"
-)
-
-func TestCopyMessage(t *testing.T) {
+func (m *Message) copy() *Message {
 	msg := &Message{
-		Line:      []byte("test line."),
-		Source:    "stdout",
-		Timestamp: time.Now(),
-		Attrs: LogAttributes{
-			"key1": "val1",
-			"key2": "val2",
-			"key3": "val3",
-		},
-		Partial: true,
+		Source:    m.Source,
+		Partial:   m.Partial,
+		Timestamp: m.Timestamp,
 	}
 
-	m := CopyMessage(msg)
-	if !reflect.DeepEqual(m, msg) {
-		t.Fatalf("CopyMessage failed to copy message")
+	if m.Attrs != nil {
+		msg.Attrs = make(map[string]string, len(m.Attrs))
+		for k, v := range m.Attrs {
+			msg.Attrs[k] = v
+		}
 	}
+
+	msg.Line = append(make([]byte, 0, len(m.Line)), m.Line...)
+	return msg
 }

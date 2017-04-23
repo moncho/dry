@@ -2,13 +2,14 @@ package swarm
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"strings"
 	"testing"
 
 	"github.com/docker/docker/cli/internal/test"
-	"github.com/docker/docker/pkg/testutil/assert"
+	"github.com/docker/docker/pkg/testutil"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSwarmLeaveErrors(t *testing.T) {
@@ -26,7 +27,7 @@ func TestSwarmLeaveErrors(t *testing.T) {
 		{
 			name: "leave-failed",
 			swarmLeaveFunc: func() error {
-				return fmt.Errorf("error leaving the swarm")
+				return errors.Errorf("error leaving the swarm")
 			},
 			expectedError: "error leaving the swarm",
 		},
@@ -39,7 +40,7 @@ func TestSwarmLeaveErrors(t *testing.T) {
 			}, buf))
 		cmd.SetArgs(tc.args)
 		cmd.SetOutput(ioutil.Discard)
-		assert.Error(t, cmd.Execute(), tc.expectedError)
+		testutil.ErrorContains(t, cmd.Execute(), tc.expectedError)
 	}
 }
 
@@ -47,6 +48,6 @@ func TestSwarmLeave(t *testing.T) {
 	buf := new(bytes.Buffer)
 	cmd := newLeaveCommand(
 		test.NewFakeCli(&fakeClient{}, buf))
-	assert.NilError(t, cmd.Execute())
-	assert.Equal(t, strings.TrimSpace(buf.String()), "Node left the swarm.")
+	assert.NoError(t, cmd.Execute())
+	assert.Equal(t, "Node left the swarm.", strings.TrimSpace(buf.String()))
 }

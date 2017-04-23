@@ -25,6 +25,8 @@ You start the Docker daemon with the command line. How you start the daemon
 affects your Docker containers. For that reason you should also make sure to
 read the [`dockerd`](dockerd.md) reference page.
 
+## Commands by object
+
 ### Docker management commands
 
 | Command | Description                                                        |
@@ -123,7 +125,7 @@ read the [`dockerd`](dockerd.md) reference page.
 | [node rm](node_rm.md) | Remove one or more nodes from the swarm                         |
 | [node update](node_update.md) | Update attributes for a node                 |
 
-### Swarm swarm commands
+### Swarm management commands
 
 | Command | Description                                                        |
 |:--------|:-------------------------------------------------------------------|
@@ -141,7 +143,7 @@ read the [`dockerd`](dockerd.md) reference page.
 |:--------|:-------------------------------------------------------------------|
 | [service create](service_create.md) | Create a new service                   |
 | [service inspect](service_inspect.md) | Inspect a service                    |
-| [service logs](service_logs.md)  | Fetch the logs of a service               |
+| [service logs](service_logs.md)  | Fetch the logs of a service or task       |
 | [service ls](service_ls.md) | List services in the swarm                     |
 | [service ps](service_ps.md) | List the tasks of a service              |
 | [service rm](service_rm.md) | Remove a service from the swarm                |

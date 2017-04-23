@@ -115,6 +115,9 @@ type ServiceConstructor func(*swarm.Service)
 // NodeConstructor defines a swarm node constructor
 type NodeConstructor func(*swarm.Node)
 
+// SecretConstructor defines a swarm secret constructor
+type SecretConstructor func(*swarm.Secret)
+
 // SpecConstructor defines a swarm spec constructor
 type SpecConstructor func(*swarm.Spec)
 
@@ -202,7 +205,30 @@ func (d *Swarm) CheckServiceTasks(service string) func(*check.C) (interface{}, c
 	}
 }
 
-// CheckRunningTaskImages returns the number of different images attached to a running task
+// CheckRunningTaskNetworks returns the number of times each network is referenced from a task.
+func (d *Swarm) CheckRunningTaskNetworks(c *check.C) (interface{}, check.CommentInterface) {
+	var tasks []swarm.Task
+
+	filterArgs := filters.NewArgs()
+	filterArgs.Add("desired-state", "running")
+	filters, err := filters.ToParam(filterArgs)
+	c.Assert(err, checker.IsNil)
+
+	status, out, err := d.SockRequest("GET", "/tasks?filters="+filters, nil)
+	c.Assert(err, checker.IsNil, check.Commentf(string(out)))
+	c.Assert(status, checker.Equals, http.StatusOK, check.Commentf("output: %q", string(out)))
+	c.Assert(json.Unmarshal(out, &tasks), checker.IsNil)
+
+	result := make(map[string]int)
+	for _, task := range tasks {
+		for _, network := range task.Spec.Networks {
+			result[network.Target]++
+		}
+	}
+	return result, nil
+}
+
+// CheckRunningTaskImages returns the times each image is running as a task.
 func (d *Swarm) CheckRunningTaskImages(c *check.C) (interface{}, check.CommentInterface) {
 	var tasks []swarm.Task
 
@@ -319,7 +345,7 @@ func (d *Swarm) ListNodes(c *check.C) []swarm.Node {
 	return nodes
 }
 
-// ListServices return the list of the current swarm services
+// ListServices returns the list of the current swarm services
 func (d *Swarm) ListServices(c *check.C) []swarm.Service {
 	status, out, err := d.SockRequest("GET", "/services", nil)
 	c.Assert(err, checker.IsNil, check.Commentf(string(out)))
@@ -370,7 +396,20 @@ func (d *Swarm) DeleteSecret(c *check.C, id string) {
 	c.Assert(status, checker.Equals, http.StatusNoContent, check.Commentf("output: %q", string(out)))
 }
 
-// GetSwarm return the current swarm object
+// UpdateSecret updates the swarm secret identified by the specified id
+// Currently, only label update is supported.
+func (d *Swarm) UpdateSecret(c *check.C, id string, f ...SecretConstructor) {
+	secret := d.GetSecret(c, id)
+	for _, fn := range f {
+		fn(secret)
+	}
+	url := fmt.Sprintf("/secrets/%s/update?version=%d", secret.ID, secret.Version.Index)
+	status, out, err := d.SockRequest("POST", url, secret.Spec)
+	c.Assert(err, checker.IsNil, check.Commentf(string(out)))
+	c.Assert(status, checker.Equals, http.StatusOK, check.Commentf("output: %q", string(out)))
+}
+
+// GetSwarm returns the current swarm object
 func (d *Swarm) GetSwarm(c *check.C) swarm.Swarm {
 	var sw swarm.Swarm
 	status, out, err := d.SockRequest("GET", "/swarm", nil)

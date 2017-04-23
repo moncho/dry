@@ -53,10 +53,7 @@ func (s *DockerSuite) TestInspectDefault(c *check.C) {
 }
 
 func (s *DockerSuite) TestInspectStatus(c *check.C) {
-	if testEnv.DaemonPlatform() != "windows" {
-		defer unpauseAllContainers(c)
-	}
-	out, _ := runSleepingContainer(c, "-d")
+	out := runSleepingContainer(c, "-d")
 	out = strings.TrimSpace(out)
 
 	inspectOut := inspectField(c, out, "State.Status")
@@ -353,14 +350,22 @@ func (s *DockerSuite) TestInspectByPrefix(c *check.C) {
 }
 
 func (s *DockerSuite) TestInspectStopWhenNotFound(c *check.C) {
-	runSleepingContainer(c, "--name=busybox", "-d")
-	runSleepingContainer(c, "--name=not-shown", "-d")
-	out, _, err := dockerCmdWithError("inspect", "--type=container", "--format='{{.Name}}'", "busybox", "missing", "not-shown")
+	runSleepingContainer(c, "--name=busybox1", "-d")
+	runSleepingContainer(c, "--name=busybox2", "-d")
+	result := dockerCmdWithResult("inspect", "--type=container", "--format='{{.Name}}'", "busybox1", "busybox2", "missing")
 
-	c.Assert(err, checker.Not(check.IsNil))
-	c.Assert(out, checker.Contains, "busybox")
-	c.Assert(out, checker.Not(checker.Contains), "not-shown")
-	c.Assert(out, checker.Contains, "Error: No such container: missing")
+	c.Assert(result.Error, checker.Not(check.IsNil))
+	c.Assert(result.Stdout(), checker.Contains, "busybox1")
+	c.Assert(result.Stdout(), checker.Contains, "busybox2")
+	c.Assert(result.Stderr(), checker.Contains, "Error: No such container: missing")
+
+	// test inspect would not fast fail
+	result = dockerCmdWithResult("inspect", "--type=container", "--format='{{.Name}}'", "missing", "busybox1", "busybox2")
+
+	c.Assert(result.Error, checker.Not(check.IsNil))
+	c.Assert(result.Stdout(), checker.Contains, "busybox1")
+	c.Assert(result.Stdout(), checker.Contains, "busybox2")
+	c.Assert(result.Stderr(), checker.Contains, "Error: No such container: missing")
 }
 
 func (s *DockerSuite) TestInspectHistory(c *check.C) {

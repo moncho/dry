@@ -112,6 +112,10 @@ case "$mirror" in
 		apt_url="https://mirror.azure.cn/docker-engine/apt"
 		yum_url="https://mirror.azure.cn/docker-engine/yum"
 		;;
+	Aliyun)
+		apt_url="https://mirrors.aliyun.com/docker-engine/apt"
+		yum_url="https://mirrors.aliyun.com/docker-engine/yum"
+		;;
 esac
 
 command_exists() {
@@ -178,6 +182,9 @@ check_forked() {
 				lsb_dist=debian
 				dist_version="$(cat /etc/debian_version | sed 's/\/.*//' | sed 's/\..*//')"
 				case "$dist_version" in
+					9)
+						dist_version="stretch"
+					;;
 					8|'Kali Linux 2')
 						dist_version="jessie"
 					;;
@@ -210,7 +217,11 @@ do_install() {
 		# unofficially supported without available repositories
 		aarch64|arm64|ppc64le|s390x)
 			cat 1>&2 <<-EOF
-			Error: Docker doesn't officially support $architecture and no Docker $architecture repository exists.
+			Error: This install script does not support $architecture, because no
+			$architecture package exists in Docker's repositories.
+
+			Other install options include checking your distribution's package repository
+			for a version of Docker, or building Docker from source.
 			EOF
 			exit 1
 			;;
@@ -359,6 +370,9 @@ do_install() {
 		debian|raspbian)
 			dist_version="$(cat /etc/debian_version | sed 's/\/.*//' | sed 's/\..*//')"
 			case "$dist_version" in
+				9)
+					dist_version="stretch"
+				;;
 				8)
 					dist_version="jessie"
 				;;
@@ -455,14 +469,20 @@ do_install() {
 				( set -x; $sh_c 'sleep 3; apt-get install -y -q curl ca-certificates' )
 				curl='curl -sSL'
 			fi
-			if [ ! -e /usr/bin/gpg ]; then
+			if ! command -v gpg > /dev/null; then
 				apt_get_update
 				( set -x; $sh_c 'sleep 3; apt-get install -y -q gnupg2 || apt-get install -y -q gnupg' )
 			fi
 
+			# dirmngr is a separate package in ubuntu yakkety; see https://bugs.launchpad.net/ubuntu/+source/apt/+bug/1634464
+			if ! command -v dirmngr > /dev/null; then
+				apt_get_update
+				( set -x; $sh_c 'sleep 3; apt-get install -y -q dirmngr' )
+			fi
+
 			(
 			set -x
-			echo "$docker_key" | apt-key add -
+			echo "$docker_key" | $sh_c 'apt-key add -'
 			$sh_c "mkdir -p /etc/apt/sources.list.d"
 			$sh_c "echo deb \[arch=$(dpkg --print-architecture)\] ${apt_url}/repo ${lsb_dist}-${dist_version} ${repo} > /etc/apt/sources.list.d/docker.list"
 			$sh_c 'sleep 3; apt-get update; apt-get install -y -q docker-engine'

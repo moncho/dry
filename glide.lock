@@ -1,15 +1,30 @@
-hash: 24ffa6480695a5edad1240965b2b555175cc03d28e1c945159920886b4cdf056
-updated: 2017-03-26T22:19:07.463359795+02:00
+hash: 3c0949b9e55ca2698998508ce451ab99d2fabdc87ca9413d842995c94ee62b66
+updated: 2017-04-22T22:39:42.272091319+02:00
 imports:
+- name: github.com/Azure/go-ansiterm
+  version: fa152c58bc15761d0200cb75fe958b89a9d4888e
+  subpackages:
+  - winterm
 - name: github.com/chzyer/readline
   version: c914be64f07d9998f52bf0d598ec26d457168c0f
 - name: github.com/docker/distribution
-  version: 55f1b7651f6242617133312ff8af5c2e4e3628ea
+  version: c3e06c6069653bf72034ed907d6749d3928fdacb
   subpackages:
+  - context
   - digest
+  - digestset
   - reference
+  - registry/api/errcode
+  - registry/api/v2
+  - registry/client
+  - registry/client/auth
+  - registry/client/auth/challenge
+  - registry/client/transport
+  - registry/storage/cache
+  - registry/storage/cache/memory
+  - uuid
 - name: github.com/docker/docker
-  version: 2b89356c07b1824041985386d0c9485e49d9b987
+  version: a709f79c1a98c3661f12397fe61f0e6a46f1dbb3
   subpackages:
   - api
   - api/types
@@ -17,6 +32,7 @@ imports:
   - api/types/container
   - api/types/events
   - api/types/filters
+  - api/types/image
   - api/types/mount
   - api/types/network
   - api/types/reference
@@ -27,21 +43,46 @@ imports:
   - api/types/versions
   - api/types/volume
   - cli
+  - cli/command
   - cli/command/formatter
   - cli/command/inspect
+  - cli/config
+  - cli/config/configfile
+  - cli/config/credentials
   - cli/debug
+  - cli/flags
   - client
+  - dockerversion
   - opts
+  - pkg/archive
+  - pkg/fileutils
+  - pkg/homedir
+  - pkg/httputils
+  - pkg/idtools
   - pkg/ioutils
+  - pkg/jsonlog
+  - pkg/jsonmessage
   - pkg/longpath
+  - pkg/parsers/kernel
+  - pkg/pools
+  - pkg/promise
   - pkg/random
   - pkg/stdcopy
   - pkg/stringid
   - pkg/stringutils
   - pkg/system
+  - pkg/tarsum
   - pkg/templates
+  - pkg/term
+  - pkg/term/windows
   - pkg/tlsconfig
-  - reference
+  - pkg/useragent
+  - registry
+- name: github.com/docker/docker-credential-helpers
+  version: 71779cf7f595bf47f5a56d0629ce044e59b1cffa
+  subpackages:
+  - client
+  - credentials
 - name: github.com/docker/go-connections
   version: 5b7154ba2efe13ff86ae8830a9e7cb120b080d6e
   subpackages:
@@ -52,8 +93,16 @@ imports:
   version: 0bbddae09c5a5419a8c6dcdd7ff90da3d450393b
 - name: github.com/docker/libtrust
   version: fa567046d9b14f6aa788882a950d69651d230b21
+- name: github.com/docker/notary
+  version: 86e2ee95b8674efa2d4d30eb2c91ee88ce8d99ac
+  subpackages:
+  - passphrase
 - name: github.com/gizak/termui
-  version: 798ffb9cbbe4073ef1f88e6069ca4a2c6aa6676b
+  version: 78e78f78b98822dcd4bfbf923baec8a65ca76798
+- name: github.com/gorilla/context
+  version: 14f550f51af52180c2eefed15e5fd18d63c0a64a
+- name: github.com/gorilla/mux
+  version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
 - name: github.com/gosuri/uitable
   version: 62e40473eadf9579716227a0033cd8db16e1c500
   subpackages:
@@ -68,6 +117,8 @@ imports:
   - stack
 - name: github.com/mattn/go-runewidth
   version: 12e0ff74603c9a3209d8bf84f8ab349fe1ad9477
+- name: github.com/mattn/go-shellwords
+  version: 02e3cf038dcea8290e44424da473dd12be796a8a
 - name: github.com/Microsoft/go-winio
   version: fff283ad5116362ca252298cfc9b95828956d85d
 - name: github.com/mitchellh/go-homedir
@@ -75,14 +126,17 @@ imports:
 - name: github.com/mitchellh/go-wordwrap
   version: ad45545899c7b13c020ea92b2072220eefad42b8
 - name: github.com/nsf/termbox-go
-  version: abe82ce5fb7a42fbd6784a5ceb71aff977e09ed8
+  version: 7994c181db7761ca3c67a217068cf31826113f5f
+- name: github.com/Nvveen/Gotty
+  version: cd527374f1e5bff4938207604a14f2e38a9cf512
 - name: github.com/olekukonko/tablewriter
   version: cca8bbc0798408af109aaaa239cbd2634846b340
 - name: github.com/opencontainers/go-digest
   version: aa2ec055abd10d26d539eb630a92241b781ce4bc
 - name: github.com/opencontainers/runc
-  version: c6db82f9219b2ea4c98f80560205ed6c65aeea19
+  version: e62817fefcb66450ecf1e404b6b232bfd89cf550
   subpackages:
+  - libcontainer/system
   - libcontainer/user
 - name: github.com/patrickmn/go-cache
   version: 1881a9bccb818787f68c52bfba648c6cf34c34fa
@@ -94,6 +148,10 @@ imports:
   version: 312092086bed4968099259622145a0c9ae280064
 - name: github.com/spf13/pflag
   version: 5644820622454e71517561946e3d94b9f9db6842
+- name: golang.org/x/crypto
+  version: 1e61df8d9ea476e2e1504cd9a32b40280c7c6c7e
+  subpackages:
+  - ssh/terminal
 - name: golang.org/x/net
   version: f2499483f923065a842d38eb4c7f1927e6fc6e6d
   subpackages:

@@ -8,6 +8,9 @@ import (
 
 // Node creates a node with default values.
 // Any number of node function builder can be pass to augment it.
+//
+//	n1 := Node() // Returns a default node
+//	n2 := Node(NodeID("foo"), NodeHostname("bar"), Leader())
 func Node(builders ...func(*swarm.Node)) *swarm.Node {
 	t1 := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 	node := &swarm.Node{
@@ -70,6 +73,13 @@ func Node(builders ...func(*swarm.Node)) *swarm.Node {
 func NodeID(id string) func(*swarm.Node) {
 	return func(node *swarm.Node) {
 		node.ID = id
+	}
+}
+
+// NodeName sets the node name
+func NodeName(name string) func(*swarm.Node) {
+	return func(node *swarm.Node) {
+		node.Spec.Annotations.Name = name
 	}
 }
 

@@ -2,12 +2,13 @@ package node
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"testing"
 
 	"github.com/docker/docker/cli/internal/test"
-	"github.com/docker/docker/pkg/testutil/assert"
+	"github.com/docker/docker/pkg/testutil"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNodeRemoveErrors(t *testing.T) {
@@ -22,7 +23,7 @@ func TestNodeRemoveErrors(t *testing.T) {
 		{
 			args: []string{"nodeID"},
 			nodeRemoveFunc: func() error {
-				return fmt.Errorf("error removing the node")
+				return errors.Errorf("error removing the node")
 			},
 			expectedError: "error removing the node",
 		},
@@ -35,7 +36,7 @@ func TestNodeRemoveErrors(t *testing.T) {
 			}, buf))
 		cmd.SetArgs(tc.args)
 		cmd.SetOutput(ioutil.Discard)
-		assert.Error(t, cmd.Execute(), tc.expectedError)
+		testutil.ErrorContains(t, cmd.Execute(), tc.expectedError)
 	}
 }
 
@@ -43,5 +44,5 @@ func TestNodeRemoveMultiple(t *testing.T) {
 	buf := new(bytes.Buffer)
 	cmd := newRemoveCommand(test.NewFakeCli(&fakeClient{}, buf))
 	cmd.SetArgs([]string{"nodeID1", "nodeID2"})
-	assert.NilError(t, cmd.Execute())
+	assert.NoError(t, cmd.Execute())
 }

@@ -9,8 +9,10 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/cli/internal/test"
-	"github.com/docker/docker/pkg/testutil/assert"
+	"github.com/docker/docker/pkg/testutil"
 	"github.com/docker/docker/pkg/testutil/golden"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSwarmInitErrorOnAPIFailure(t *testing.T) {
@@ -26,28 +28,28 @@ func TestSwarmInitErrorOnAPIFailure(t *testing.T) {
 		{
 			name: "init-failed",
 			swarmInitFunc: func() (string, error) {
-				return "", fmt.Errorf("error initializing the swarm")
+				return "", errors.Errorf("error initializing the swarm")
 			},
 			expectedError: "error initializing the swarm",
 		},
 		{
-			name: "init-faild-with-ip-choice",
+			name: "init-failed-with-ip-choice",
 			swarmInitFunc: func() (string, error) {
-				return "", fmt.Errorf("could not choose an IP address to advertise")
+				return "", errors.Errorf("could not choose an IP address to advertise")
 			},
 			expectedError: "could not choose an IP address to advertise - specify one with --advertise-addr",
 		},
 		{
 			name: "swarm-inspect-after-init-failed",
 			swarmInspectFunc: func() (swarm.Swarm, error) {
-				return swarm.Swarm{}, fmt.Errorf("error inspecting the swarm")
+				return swarm.Swarm{}, errors.Errorf("error inspecting the swarm")
 			},
 			expectedError: "error inspecting the swarm",
 		},
 		{
 			name: "node-inspect-after-init-failed",
 			nodeInspectFunc: func() (swarm.Node, []byte, error) {
-				return swarm.Node{}, []byte{}, fmt.Errorf("error inspecting the node")
+				return swarm.Node{}, []byte{}, errors.Errorf("error inspecting the node")
 			},
 			expectedError: "error inspecting the node",
 		},
@@ -57,7 +59,7 @@ func TestSwarmInitErrorOnAPIFailure(t *testing.T) {
 				flagAutolock: "true",
 			},
 			swarmGetUnlockKeyFunc: func() (types.SwarmUnlockKeyResponse, error) {
-				return types.SwarmUnlockKeyResponse{}, fmt.Errorf("error getting swarm unlock key")
+				return types.SwarmUnlockKeyResponse{}, errors.Errorf("error getting swarm unlock key")
 			},
 			expectedError: "could not fetch unlock key: error getting swarm unlock key",
 		},
@@ -75,7 +77,7 @@ func TestSwarmInitErrorOnAPIFailure(t *testing.T) {
 			cmd.Flags().Set(key, value)
 		}
 		cmd.SetOutput(ioutil.Discard)
-		assert.Error(t, cmd.Execute(), tc.expectedError)
+		assert.EqualError(t, cmd.Execute(), tc.expectedError)
 	}
 }
 
@@ -121,9 +123,9 @@ func TestSwarmInit(t *testing.T) {
 		for key, value := range tc.flags {
 			cmd.Flags().Set(key, value)
 		}
-		assert.NilError(t, cmd.Execute())
+		assert.NoError(t, cmd.Execute())
 		actual := buf.String()
 		expected := golden.Get(t, []byte(actual), fmt.Sprintf("init-%s.golden", tc.name))
-		assert.EqualNormalizedString(t, assert.RemoveSpace, actual, string(expected))
+		testutil.EqualNormalizedString(t, testutil.RemoveSpace, actual, string(expected))
 	}
 }

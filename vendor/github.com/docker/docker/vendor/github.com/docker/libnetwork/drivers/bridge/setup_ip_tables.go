@@ -7,6 +7,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/libnetwork/iptables"
+	"github.com/vishvananda/netlink"
 )
 
 // DockerChain: DOCKER iptable chain name
@@ -115,7 +116,10 @@ func (n *bridgeNetwork) setupIPTables(config *networkConfiguration, i *bridgeInt
 		n.portMapper.SetIptablesChain(natChain, n.getNetworkBridgeName())
 	}
 
-	if err := ensureJumpRule("FORWARD", IsolationChain); err != nil {
+	d.Lock()
+	err = ensureJumpRule("FORWARD", IsolationChain)
+	d.Unlock()
+	if err != nil {
 		return err
 	}
 
@@ -137,7 +141,6 @@ func setupIPTablesInternal(bridgeIface string, addr net.Addr, icc, ipmasq, hairp
 		hpNatRule = iptRule{table: iptables.Nat, chain: "POSTROUTING", preArgs: []string{"-t", "nat"}, args: []string{"-m", "addrtype", "--src-type", "LOCAL", "-o", bridgeIface, "-j", "MASQUERADE"}}
 		skipDNAT  = iptRule{table: iptables.Nat, chain: DockerChain, preArgs: []string{"-t", "nat"}, args: []string{"-i", bridgeIface, "-j", "RETURN"}}
 		outRule   = iptRule{table: iptables.Filter, chain: "FORWARD", args: []string{"-i", bridgeIface, "!", "-o", bridgeIface, "-j", "ACCEPT"}}
-		inRule    = iptRule{table: iptables.Filter, chain: "FORWARD", args: []string{"-o", bridgeIface, "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT"}}
 	)
 
 	// Set NAT.
@@ -167,11 +170,6 @@ func setupIPTablesInternal(bridgeIface string, addr net.Addr, icc, ipmasq, hairp
 
 	// Set Accept on all non-intercontainer outgoing packets.
 	if err := programChainRule(outRule, "ACCEPT NON_ICC OUTGOING", enable); err != nil {
-		return err
-	}
-
-	// Set Accept on incoming packets for existing connections.
-	if err := programChainRule(inRule, "ACCEPT INCOMING", enable); err != nil {
 		return err
 	}
 
@@ -350,4 +348,16 @@ func setupInternalNetworkRules(bridgeIface string, addr net.Addr, icc, insert bo
 		return err
 	}
 	return nil
+}
+
+func clearEndpointConnections(nlh *netlink.Handle, ep *bridgeEndpoint) {
+	var ipv4List []net.IP
+	var ipv6List []net.IP
+	if ep.addr != nil {
+		ipv4List = append(ipv4List, ep.addr.IP)
+	}
+	if ep.addrv6 != nil {
+		ipv6List = append(ipv6List, ep.addrv6.IP)
+	}
+	iptables.DeleteConntrackEntries(nlh, ipv4List, ipv6List)
 }

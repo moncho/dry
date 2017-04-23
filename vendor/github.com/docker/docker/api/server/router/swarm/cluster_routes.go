@@ -151,7 +151,17 @@ func (sr *swarmRouter) getServices(ctx context.Context, w http.ResponseWriter, r
 }
 
 func (sr *swarmRouter) getService(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
-	service, err := sr.backend.GetService(vars["id"])
+	var insertDefaults bool
+	if value := r.URL.Query().Get("insertDefaults"); value != "" {
+		var err error
+		insertDefaults, err = strconv.ParseBool(value)
+		if err != nil {
+			err := fmt.Errorf("invalid value for insertDefaults: %s", value)
+			return errors.NewBadRequestError(err)
+		}
+	}
+
+	service, err := sr.backend.GetService(vars["id"], insertDefaults)
 	if err != nil {
 		logrus.Errorf("Error getting service %s: %v", vars["id"], err)
 		return err
@@ -191,12 +201,14 @@ func (sr *swarmRouter) updateService(ctx context.Context, w http.ResponseWriter,
 		return errors.NewBadRequestError(err)
 	}
 
+	var flags basictypes.ServiceUpdateOptions
+
 	// Get returns "" if the header does not exist
-	encodedAuth := r.Header.Get("X-Registry-Auth")
+	flags.EncodedRegistryAuth = r.Header.Get("X-Registry-Auth")
+	flags.RegistryAuthFrom = r.URL.Query().Get("registryAuthFrom")
+	flags.Rollback = r.URL.Query().Get("rollback")
 
-	registryAuthFrom := r.URL.Query().Get("registryAuthFrom")
-
-	resp, err := sr.backend.UpdateService(vars["id"], version, service, encodedAuth, registryAuthFrom)
+	resp, err := sr.backend.UpdateService(vars["id"], version, service, flags)
 	if err != nil {
 		logrus.Errorf("Error updating service %s: %v", vars["id"], err)
 		return err
@@ -212,53 +224,28 @@ func (sr *swarmRouter) removeService(ctx context.Context, w http.ResponseWriter,
 	return nil
 }
 
+func (sr *swarmRouter) getTaskLogs(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if err := httputils.ParseForm(r); err != nil {
+		return err
+	}
+
+	// make a selector to pass to the helper function
+	selector := &backend.LogSelector{
+		Tasks: []string{vars["id"]},
+	}
+	return sr.swarmLogs(ctx, w, r, selector)
+}
+
 func (sr *swarmRouter) getServiceLogs(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if err := httputils.ParseForm(r); err != nil {
 		return err
 	}
 
-	// Args are validated before the stream starts because when it starts we're
-	// sending HTTP 200 by writing an empty chunk of data to tell the client that
-	// daemon is going to stream. By sending this initial HTTP 200 we can't report
-	// any error after the stream starts (i.e. container not found, wrong parameters)
-	// with the appropriate status code.
-	stdout, stderr := httputils.BoolValue(r, "stdout"), httputils.BoolValue(r, "stderr")
-	if !(stdout || stderr) {
-		return fmt.Errorf("Bad parameters: you must choose at least one stream")
+	// make a selector to pass to the helper function
+	selector := &backend.LogSelector{
+		Services: []string{vars["id"]},
 	}
-
-	serviceName := vars["id"]
-	logsConfig := &backend.ContainerLogsConfig{
-		ContainerLogsOptions: basictypes.ContainerLogsOptions{
-			Follow:     httputils.BoolValue(r, "follow"),
-			Timestamps: httputils.BoolValue(r, "timestamps"),
-			Since:      r.Form.Get("since"),
-			Tail:       r.Form.Get("tail"),
-			ShowStdout: stdout,
-			ShowStderr: stderr,
-			Details:    httputils.BoolValue(r, "details"),
-		},
-		OutStream: w,
-	}
-
-	if logsConfig.Details {
-		return fmt.Errorf("Bad parameters: details is not currently supported")
-	}
-
-	chStarted := make(chan struct{})
-	if err := sr.backend.ServiceLogs(ctx, serviceName, logsConfig, chStarted); err != nil {
-		select {
-		case <-chStarted:
-			// The client may be expecting all of the data we're sending to
-			// be multiplexed, so send it through OutStream, which will
-			// have been set up to handle that if needed.
-			fmt.Fprintf(logsConfig.OutStream, "Error grabbing service logs: %v\n", err)
-		default:
-			return err
-		}
-	}
-
-	return nil
+	return sr.swarmLogs(ctx, w, r, selector)
 }
 
 func (sr *swarmRouter) getNodes(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
