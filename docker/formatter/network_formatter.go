@@ -1,10 +1,11 @@
-package docker
+package formatter
 
 import (
 	"strconv"
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	"github.com/moncho/dry/docker"
 )
 
 const (
@@ -33,9 +34,9 @@ func (formatter *NetworkFormatter) addHeader(header string) {
 func (formatter *NetworkFormatter) ID() string {
 	formatter.addHeader(networkIDHeader)
 	if formatter.trunc {
-		return TruncateID(ImageID(formatter.network.ID))
+		return docker.TruncateID(docker.ImageID(formatter.network.ID))
 	}
-	return ImageID(formatter.network.ID)
+	return docker.ImageID(formatter.network.ID)
 }
 
 //Name prettifies the network name

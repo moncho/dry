@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/image"
 	"github.com/moncho/dry/appui"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -30,9 +31,11 @@ type state struct {
 	previousViewMode     viewMode
 	showingAllContainers bool
 	viewMode             viewMode
-	SortMode             drydocker.SortMode
-	SortImagesMode       drydocker.SortImagesMode
-	SortNetworksMode     drydocker.SortNetworksMode
+	sortMode             drydocker.SortMode
+	sortImagesMode       drydocker.SortImagesMode
+	sortNetworksMode     drydocker.SortNetworksMode
+	activeWidget         appui.Actionable
+	node                 string
 }
 
 //Dry represents the application.
@@ -41,7 +44,7 @@ type Dry struct {
 	dockerDaemon       drydocker.ContainerDaemon
 	dockerEvents       <-chan events.Message
 	dockerEventsDone   chan<- struct{}
-	imageHistory       []types.ImageHistory
+	imageHistory       []image.HistoryResponseItem
 	images             []types.ImageSummary
 	info               types.Info
 	inspectedContainer types.ContainerJSON
@@ -111,7 +114,7 @@ func (d *Dry) containerList() []*drydocker.Container {
 	} else {
 		filter = drydocker.ContainerFilters.Running()
 	}
-	containers := d.dockerDaemon.Containers(filter, d.state.SortMode)
+	containers := d.dockerDaemon.Containers(filter, d.state.sortMode)
 	return drydocker.Filter(containers, d.state.filter)
 }
 
@@ -288,11 +291,11 @@ func (d *Dry) doRefresh() {
 		d.dockerDaemon.Refresh(f)
 	case Images:
 		err = d.dockerDaemon.RefreshImages()
-		d.dockerDaemon.SortImages(d.state.SortImagesMode)
+		d.dockerDaemon.SortImages(d.state.sortImagesMode)
 
 	case Networks:
 		err = d.dockerDaemon.RefreshNetworks()
-		d.dockerDaemon.SortNetworks(d.state.SortNetworksMode)
+		d.dockerDaemon.SortNetworks(d.state.sortNetworksMode)
 
 	}
 	if err != nil {
@@ -496,20 +499,27 @@ func (d *Dry) ShowServices() {
 	d.changeViewMode(Services)
 }
 
+//ShowTasks changes the state of dry to show the given node's task list
+func (d *Dry) ShowTasks(nodeID string) {
+	d.state.node = nodeID
+	d.changeViewMode(Tasks)
+
+}
+
 //Sort rotates to the next sort mode.
 //SortByContainerID -> SortByImage -> SortByStatus -> SortByName -> SortByContainerID
 func (d *Dry) Sort() {
 	d.state.RLock()
 	defer d.state.RUnlock()
-	switch d.state.SortMode {
+	switch d.state.sortMode {
 	case drydocker.SortByContainerID:
-		d.state.SortMode = drydocker.SortByImage
+		d.state.sortMode = drydocker.SortByImage
 	case drydocker.SortByImage:
-		d.state.SortMode = drydocker.SortByStatus
+		d.state.sortMode = drydocker.SortByStatus
 	case drydocker.SortByStatus:
-		d.state.SortMode = drydocker.SortByName
+		d.state.sortMode = drydocker.SortByName
 	case drydocker.SortByName:
-		d.state.SortMode = drydocker.SortByContainerID
+		d.state.sortMode = drydocker.SortByContainerID
 	default:
 	}
 	d.state.changed = true
@@ -520,19 +530,19 @@ func (d *Dry) Sort() {
 func (d *Dry) SortImages() {
 	d.state.RLock()
 	defer d.state.RUnlock()
-	switch d.state.SortImagesMode {
+	switch d.state.sortImagesMode {
 	case drydocker.SortImagesByRepo:
-		d.state.SortImagesMode = drydocker.SortImagesByID
+		d.state.sortImagesMode = drydocker.SortImagesByID
 	case drydocker.SortImagesByID:
-		d.state.SortImagesMode = drydocker.SortImagesByCreationDate
+		d.state.sortImagesMode = drydocker.SortImagesByCreationDate
 	case drydocker.SortImagesByCreationDate:
-		d.state.SortImagesMode = drydocker.SortImagesBySize
+		d.state.sortImagesMode = drydocker.SortImagesBySize
 	case drydocker.SortImagesBySize:
-		d.state.SortImagesMode = drydocker.SortImagesByRepo
+		d.state.sortImagesMode = drydocker.SortImagesByRepo
 
 	default:
 	}
-	d.dockerDaemon.SortImages(d.state.SortImagesMode)
+	d.dockerDaemon.SortImages(d.state.sortImagesMode)
 	d.state.changed = true
 
 }
@@ -542,16 +552,16 @@ func (d *Dry) SortImages() {
 func (d *Dry) SortNetworks() {
 	d.state.RLock()
 	defer d.state.RUnlock()
-	switch d.state.SortNetworksMode {
+	switch d.state.sortNetworksMode {
 	case drydocker.SortNetworksByID:
-		d.state.SortNetworksMode = drydocker.SortNetworksByName
+		d.state.sortNetworksMode = drydocker.SortNetworksByName
 	case drydocker.SortNetworksByName:
-		d.state.SortNetworksMode = drydocker.SortNetworksByDriver
+		d.state.sortNetworksMode = drydocker.SortNetworksByDriver
 	case drydocker.SortNetworksByDriver:
-		d.state.SortNetworksMode = drydocker.SortNetworksByID
+		d.state.sortNetworksMode = drydocker.SortNetworksByID
 	default:
 	}
-	d.dockerDaemon.SortNetworks(d.state.SortNetworksMode)
+	d.dockerDaemon.SortNetworks(d.state.sortNetworksMode)
 	d.state.changed = true
 }
 
@@ -682,14 +692,14 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 		state := &state{
 			changed:              true,
 			showingAllContainers: false,
-			SortMode:             drydocker.SortByContainerID,
-			SortImagesMode:       drydocker.SortImagesByRepo,
-			SortNetworksMode:     drydocker.SortNetworksByID,
+			sortMode:             drydocker.SortByContainerID,
+			sortImagesMode:       drydocker.SortImagesByRepo,
+			sortNetworksMode:     drydocker.SortNetworksByID,
 			viewMode:             Main,
 			previousViewMode:     Main,
 		}
-		d.SortImages(state.SortImagesMode)
-		d.SortNetworks(state.SortNetworksMode)
+		d.SortImages(state.sortImagesMode)
+		d.SortNetworks(state.sortNetworksMode)
 		app := &Dry{}
 		app.ui = appui.NewAppUI(d)
 		app.state = state

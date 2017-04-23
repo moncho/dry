@@ -1,4 +1,4 @@
-package docker
+package formatter
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/go-units"
 	"github.com/gosuri/uitable/util/strutil"
+	"github.com/moncho/dry/docker"
 )
 
 const (
@@ -30,11 +31,11 @@ const (
 type ContainerFormatter struct {
 	trunc  bool
 	header []string
-	c      *Container
+	c      *docker.Container
 }
 
 //NewContainerFormatter creates a new container formatter
-func NewContainerFormatter(c *Container, trunc bool) *ContainerFormatter {
+func NewContainerFormatter(c *docker.Container, trunc bool) *ContainerFormatter {
 	return &ContainerFormatter{trunc: trunc, c: c}
 }
 
@@ -42,7 +43,7 @@ func NewContainerFormatter(c *Container, trunc bool) *ContainerFormatter {
 func (c *ContainerFormatter) ID() string {
 	c.addHeader(idHeader)
 	if c.trunc {
-		return TruncateID(c.c.ID)
+		return docker.TruncateID(c.c.ID)
 	}
 	return c.c.ID
 }
@@ -92,7 +93,7 @@ func (c *ContainerFormatter) Command() string {
 //CreatedAt prettifies the command that starts the container
 func (c *ContainerFormatter) CreatedAt() string {
 	c.addHeader(createdAtHeader)
-	return DurationForHumans(c.c.Created)
+	return docker.DurationForHumans(c.c.Created)
 }
 
 //RunningFor prettifies the  that starts the container

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/gizak/termui"
 	"github.com/moncho/dry/ui"
 )
@@ -18,11 +18,11 @@ const (
 )
 
 type topRenderer struct {
-	processList *types.ContainerProcessList
+	processList *container.ContainerTopOKBody
 }
 
 //NewDockerTopRenderer creates renderer for docker top result
-func NewDockerTopRenderer(processList *types.ContainerProcessList) ui.Renderer {
+func NewDockerTopRenderer(processList *container.ContainerTopOKBody) ui.Renderer {
 	return &topRenderer{
 		processList: processList,
 	}
@@ -51,7 +51,7 @@ func (r *topRenderer) Render() string {
 }
 
 //NewDockerTop creates termui bufferer for docker top
-func NewDockerTop(processList *types.ContainerProcessList, x, y, height, width int) (termui.Bufferer, int) {
+func NewDockerTop(processList *container.ContainerTopOKBody, x, y, height, width int) (termui.Bufferer, int) {
 
 	if processList != nil {
 		buf := bytes.NewBufferString("")

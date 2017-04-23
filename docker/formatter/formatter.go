@@ -1,4 +1,4 @@
-package docker
+package formatter
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"github.com/docker/docker/api/types"
+	"github.com/moncho/dry/docker"
 )
 
 const (
@@ -37,11 +38,11 @@ type FormattingContext struct {
 }
 
 // Format helps to format the output using the parameters set in the FormattingContext.
-func Format(ctx FormattingContext, containers []*Container) {
+func Format(ctx FormattingContext, containers []*docker.Container) {
 	tableFormat(ctx, containers)
 }
 
-func tableFormat(ctx FormattingContext, containers []*Container) {
+func tableFormat(ctx FormattingContext, containers []*docker.Container) {
 
 	var (
 		buffer = bytes.NewBufferString("")
@@ -61,7 +62,7 @@ func tableFormat(ctx FormattingContext, containers []*Container) {
 			if index == ctx.Selected {
 				buffer.WriteString("<white>")
 			} else {
-				if IsContainerRunning(container) {
+				if docker.IsContainerRunning(container) {
 					buffer.WriteString("<cyan0>")
 				} else {
 					buffer.WriteString("<grey2>")

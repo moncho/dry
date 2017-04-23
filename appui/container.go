@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/docker/formatter"
 	"github.com/moncho/dry/ui"
 	"github.com/olekukonko/tablewriter"
 )
@@ -28,7 +29,7 @@ func NewContainerInfo(container *docker.Container) (string, int) {
 		{ui.Blue("Container Name:"), ui.Yellow(container.Names[0]), ui.Blue("ID:"), ui.Yellow(docker.TruncateID(container.ID)), ui.Blue("Status:"), status},
 		{ui.Blue("Image:"), ui.Yellow(container.Image), ui.Blue("Created:"), ui.Yellow(docker.DurationForHumans(container.Created) + " ago")},
 		{ui.Blue("Command:"), ui.Yellow(container.Command)},
-		{ui.Blue("Port mapping:"), ui.Yellow(docker.DisplayablePorts(container.Ports))},
+		{ui.Blue("Port mapping:"), ui.Yellow(formatter.DisplayablePorts(container.Ports))},
 	}
 	var networkNames []string
 	var networkIps []string

@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/docker/formatter"
 	"github.com/moncho/dry/ui"
 )
 
@@ -105,13 +106,13 @@ func (r *DockerImagesRenderer) imageInformation() string {
 	buf := bytes.NewBufferString("")
 	images, selected := r.imagesToShow()
 
-	context := docker.FormattingContext{
+	context := formatter.FormattingContext{
 		Output:   buf,
 		Template: r.imagesTemplate,
 		Trunc:    true,
 		Selected: selected,
 	}
-	docker.FormatImages(
+	formatter.FormatImages(
 		context,
 		images)
 
@@ -162,7 +163,7 @@ func (r *DockerImagesRenderer) imagesToShow() ([]types.ImageSummary, int) {
 
 func buildImagesTemplate() *template.Template {
 
-	return template.Must(template.New(`image`).Parse(docker.DefaultImageTableFormat))
+	return template.Must(template.New(`image`).Parse(formatter.DefaultImageTableFormat))
 }
 
 //find gets the index of the given network in the given slice

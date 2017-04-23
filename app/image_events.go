@@ -37,7 +37,7 @@ func (h *imagesScreenEventHandler) handle(event termbox.Event) {
 
 	if !handled {
 		switch event.Ch {
-		case '2':
+		case '2': //Ignore since dry is already on the images screen
 			handled = true
 
 		case 'i', 'I': //image history

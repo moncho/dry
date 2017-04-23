@@ -8,9 +8,15 @@ type nodesScreenEventHandler struct {
 
 func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 	handled := false
+
 	switch event.Key {
 	case termbox.KeyEnter:
-		//h.dry.ShowSelectedNodeTasks()
+		showServices := func(nodeID string) error {
+			h.dry.ShowTasks(nodeID)
+			h.renderChan <- struct{}{}
+			return nil
+		}
+		h.dry.state.activeWidget.OnEvent(showServices)
 		handled = true
 	}
 	if !handled {

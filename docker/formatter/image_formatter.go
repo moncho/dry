@@ -1,10 +1,11 @@
-package docker
+package formatter
 
 import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/go-units"
+	"github.com/moncho/dry/docker"
 )
 
 const (
@@ -34,9 +35,9 @@ func (formatter *ImageFormatter) addHeader(header string) {
 func (formatter *ImageFormatter) ID() string {
 	formatter.addHeader(imageIDHeader)
 	if formatter.trunc {
-		return TruncateID(ImageID(formatter.image.ID))
+		return docker.TruncateID(docker.ImageID(formatter.image.ID))
 	}
-	return ImageID(formatter.image.ID)
+	return docker.ImageID(formatter.image.ID)
 }
 
 //Repository prettifies the repository
@@ -73,7 +74,7 @@ func (formatter *ImageFormatter) Digest() string {
 func (formatter *ImageFormatter) CreatedSince() string {
 	formatter.addHeader(createdSince)
 
-	return DurationForHumans(int64(formatter.image.Created))
+	return docker.DurationForHumans(int64(formatter.image.Created))
 }
 
 //Size prettifies the image size

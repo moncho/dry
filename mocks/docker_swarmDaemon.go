@@ -16,7 +16,7 @@ func (_m *SwarmDockerDaemon) Info() (types.Info, error) {
 	swarmInfo := swarm.Info{
 		LocalNodeState:   swarm.LocalNodeStateActive,
 		NodeID:           "ThisNodeID",
-		Cluster:          clusterInfo,
+		Cluster:          &clusterInfo,
 		ControlAvailable: true}
 	return types.Info{
 		Name:     "test",
@@ -25,7 +25,17 @@ func (_m *SwarmDockerDaemon) Info() (types.Info, error) {
 		Swarm:    swarmInfo}, nil
 }
 
-//SwarmNodes mock
-func (_m *SwarmDockerDaemon) SwarmNodes() ([]swarm.Node, error) {
+//Node returns a node with the given id
+func (_m *SwarmDockerDaemon) Node(id string) (*swarm.Node, error) {
+	return &swarm.Node{ID: id}, nil
+}
+
+//Nodes returns a list of nodes with 1 element
+func (_m *SwarmDockerDaemon) Nodes() ([]swarm.Node, error) {
 	return []swarm.Node{swarm.Node{ID: "1"}}, nil
+}
+
+//Tasks mock
+func (_m *SwarmDockerDaemon) Tasks(nodeID string) ([]swarm.Task, error) {
+	return []swarm.Task{swarm.Task{NodeID: nodeID}}, nil
 }

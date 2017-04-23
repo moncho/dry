@@ -3,7 +3,7 @@ package docker
 import (
 	"os"
 
-	"github.com/docker/docker/client"
+	"github.com/docker/docker/api"
 )
 
 //Env holds Docker-related environment variables
@@ -18,7 +18,7 @@ type Env struct {
 func NewEnv() *Env {
 	version := os.Getenv("DOCKER_API_VERSION")
 	if version == "" {
-		version = client.DefaultVersion
+		version = api.DefaultVersion
 	}
 	return &Env{DockerAPIVersion: version}
 }

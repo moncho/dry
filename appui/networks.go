@@ -9,6 +9,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/docker/formatter"
 	"github.com/moncho/dry/ui"
 )
 
@@ -87,13 +88,13 @@ func (r *DockerNetworksRenderer) networkInformation() string {
 	buf := bytes.NewBufferString("")
 	networks, selected := r.networksToShow()
 
-	context := docker.FormattingContext{
+	context := formatter.FormattingContext{
 		Output:   buf,
 		Template: r.networksTemplate,
 		Trunc:    true,
 		Selected: selected,
 	}
-	docker.FormatNetworks(
+	formatter.FormatNetworks(
 		context,
 		networks)
 
@@ -144,7 +145,7 @@ func (r *DockerNetworksRenderer) networksToShow() ([]types.NetworkResource, int)
 
 func buildNetworksTemplate() *template.Template {
 
-	return template.Must(template.New(`network`).Parse(docker.DefaultNetworkTableFormat))
+	return template.Must(template.New(`network`).Parse(formatter.DefaultNetworkTableFormat))
 }
 
 //find gets the index of the given network in the given slice

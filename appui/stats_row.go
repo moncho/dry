@@ -8,6 +8,7 @@ import (
 	units "github.com/docker/go-units"
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/docker/formatter"
 	"github.com/moncho/dry/ui"
 	drytermui "github.com/moncho/dry/ui/termui"
 )
@@ -34,7 +35,7 @@ type ContainerStatsRow struct {
 
 //NewContainerStatsRow creats a new ContainerStatsRow widget
 func NewContainerStatsRow(container *docker.Container) *ContainerStatsRow {
-	cf := docker.NewContainerFormatter(container, true)
+	cf := formatter.NewContainerFormatter(container, true)
 	row := &ContainerStatsRow{
 		container: container,
 		Name:      drytermui.NewThemedParColumn(DryTheme, cf.Names()),

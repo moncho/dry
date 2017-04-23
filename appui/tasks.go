@@ -3,18 +3,20 @@ package appui
 import (
 	"sync"
 
+	"github.com/docker/docker/api/types/swarm"
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
 )
 
-var defaultNodeTableHeader = nodeTableHeader()
+var defaultTasksTableHeader = taskTableHeader()
 
-//SwarmNodesWidget presents Docker swarm information
-type SwarmNodesWidget struct {
+//NodeTasksWidget shows a node's task information
+type NodeTasksWidget struct {
 	swarmClient          docker.SwarmAPI
-	nodes                []*NodeRow
+	node                 *swarm.Node
+	tasks                []*TaskRow
 	header               *termui.TableHeader
 	selectedIndex        int
 	offset               int
@@ -24,29 +26,34 @@ type SwarmNodesWidget struct {
 	sync.RWMutex
 }
 
-//NewSwarmNodesWidget creates a SwarmNodesWidget
-func NewSwarmNodesWidget(swarmClient docker.SwarmAPI, y int) *SwarmNodesWidget {
-	w := &SwarmNodesWidget{
-		swarmClient:   swarmClient,
-		header:        defaultNodeTableHeader,
-		selectedIndex: 0,
-		offset:        0,
-		x:             0,
-		y:             y,
-		height:        mainScreenAvailableHeight(),
-		width:         ui.ActiveScreen.Dimensions.Width}
+//NewTasksWidget creates a TasksWidget
+func NewTasksWidget(swarmClient docker.SwarmAPI, nodeID string, y int) *NodeTasksWidget {
+	if node, err := swarmClient.Node(nodeID); err == nil {
 
-	if nodes, err := swarmClient.Nodes(); err == nil {
-		for _, node := range nodes {
-			w.nodes = append(w.nodes, NewNodeRow(node))
+		w := &NodeTasksWidget{
+			swarmClient:   swarmClient,
+			node:          node,
+			header:        defaultTasksTableHeader,
+			selectedIndex: 0,
+			offset:        0,
+			x:             0,
+			y:             y,
+			height:        mainScreenAvailableHeight(),
+			width:         ui.ActiveScreen.Dimensions.Width}
+
+		if tasks, err := swarmClient.Tasks(node.ID); err == nil {
+			for _, task := range tasks {
+				w.tasks = append(w.tasks, NewTaskRow(task))
+			}
 		}
+		w.align()
+		return w
 	}
-	w.align()
-	return w
+	return nil
 }
 
 //Align aligns rows
-func (s *SwarmNodesWidget) align() {
+func (s *NodeTasksWidget) align() {
 	y := s.y
 	x := s.x
 	width := s.width
@@ -55,14 +62,14 @@ func (s *SwarmNodesWidget) align() {
 	s.header.SetY(y)
 	s.header.SetX(x)
 
-	for _, n := range s.nodes {
+	for _, n := range s.tasks {
 		n.SetX(x)
 		n.SetWidth(width)
 	}
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
-func (s *SwarmNodesWidget) Buffer() gizaktermui.Buffer {
+func (s *NodeTasksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
 
@@ -84,10 +91,10 @@ func (s *SwarmNodesWidget) Buffer() gizaktermui.Buffer {
 }
 
 //RowCount returns the number of rowns of this widget.
-func (s *SwarmNodesWidget) RowCount() int {
-	return len(s.nodes)
+func (s *NodeTasksWidget) RowCount() int {
+	return len(s.tasks)
 }
-func (s *SwarmNodesWidget) highlightSelectedRow() {
+func (s *NodeTasksWidget) highlightSelectedRow() {
 	if s.RowCount() == 0 {
 		return
 	}
@@ -95,22 +102,22 @@ func (s *SwarmNodesWidget) highlightSelectedRow() {
 	if index > s.RowCount() {
 		index = s.RowCount() - 1
 	}
-	s.nodes[s.selectedIndex].NotHighlighted()
+	s.tasks[s.selectedIndex].NotHighlighted()
 	s.selectedIndex = index
-	s.nodes[s.selectedIndex].Highlighted()
+	s.tasks[s.selectedIndex].Highlighted()
 }
 
-func (s *SwarmNodesWidget) OnEvent(event EventHandler) error {
-	return event(s.nodes[s.selectedIndex].node.ID)
+func (s *NodeTasksWidget) OnEvent(event EventHandler) error {
+	return nil
 }
 
-func (s *SwarmNodesWidget) visibleRows() []*NodeRow {
+func (s *NodeTasksWidget) visibleRows() []*TaskRow {
 
 	//no screen
 	if s.height < 0 {
 		return nil
 	}
-	rows := s.nodes
+	rows := s.tasks
 	count := len(rows)
 	cursor := ui.ActiveScreen.Cursor
 	selected := cursor.Position()
@@ -143,9 +150,9 @@ func (s *SwarmNodesWidget) visibleRows() []*NodeRow {
 	return rows[start:end]
 }
 
-func nodeTableHeader() *termui.TableHeader {
+func taskTableHeader() *termui.TableHeader {
 	fields := []string{
-		"NAME", "ROLE", "CPU", "MEMORY", "DOCKER ENGINE", "IP ADDRESS", "STATUS"}
+		"ID", "NAME", "NODE", "DESIRED STATE", "CURRENT STATE", "ERROR", "PORTS"}
 
 	header := termui.NewHeader(DryTheme)
 	header.ColumnSpacing = defaultColumnSpacing

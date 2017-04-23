@@ -11,6 +11,7 @@ type AppUI struct {
 	ContainerListWidget *DockerPs
 	ImageListWidget     *DockerImagesRenderer
 	DiskUsageWidget     *DockerDiskUsageRenderer
+	NodeTasksWidget     *NodeTasksWidget
 }
 
 //NewAppUI creates AppUI
@@ -20,9 +21,9 @@ func NewAppUI(daemon docker.ContainerDaemon) *AppUI {
 	di.SetY(1)
 	di.SetWidth(ui.ActiveScreen.Dimensions.Width)
 	return &AppUI{
-		di,
-		NewDockerPsRenderer(),
-		NewDockerImagesRenderer(),
-		NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
+		DockerInfoWidget:    di,
+		ContainerListWidget: NewDockerPsRenderer(),
+		ImageListWidget:     NewDockerImagesRenderer(),
+		DiskUsageWidget:     NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
 	}
 }

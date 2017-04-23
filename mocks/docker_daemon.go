@@ -5,7 +5,9 @@ import (
 	"io"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/swarm"
 	drydocker "github.com/moncho/dry/docker"
 )
@@ -46,7 +48,7 @@ func (_m *DockerDaemonMock) EventLog() *drydocker.EventLog {
 }
 
 //History mock
-func (_m *DockerDaemonMock) History(id string) ([]types.ImageHistory, error) {
+func (_m *DockerDaemonMock) History(id string) ([]image.HistoryResponseItem, error) {
 	return nil, nil
 }
 
@@ -171,8 +173,13 @@ func (_m *DockerDaemonMock) NetworkInspect(id string) (types.NetworkResource, er
 	return types.NetworkResource{}, nil
 }
 
-//SwarmNodes mock
-func (_m *DockerDaemonMock) SwarmNodes() ([]swarm.Node, error) {
+//Node mock
+func (_m *DockerDaemonMock) Node(id string) (*swarm.Node, error) {
+	return nil, nil
+}
+
+//Nodes mock
+func (_m *DockerDaemonMock) Nodes() ([]swarm.Node, error) {
 	return nil, nil
 }
 
@@ -204,7 +211,7 @@ func (_m *DockerDaemonMock) Rm(id string) error {
 }
 
 // Rmi mock
-func (_m *DockerDaemonMock) Rmi(id string, force bool) ([]types.ImageDelete, error) {
+func (_m *DockerDaemonMock) Rmi(id string, force bool) ([]types.ImageDeleteResponseItem, error) {
 	return nil, nil
 }
 
@@ -257,10 +264,15 @@ func (_m *DockerDaemonMock) SortImages(sortMode drydocker.SortImagesMode) {
 func (_m *DockerDaemonMock) SortNetworks(sortMode drydocker.SortNetworksMode) {
 }
 
-//Top function mock
-func (_m *DockerDaemonMock) Top(id string) (types.ContainerProcessList, error) {
+//Tasks mock
+func (_m *DockerDaemonMock) Tasks(nodeID string) ([]swarm.Task, error) {
+	return nil, nil
+}
 
-	return types.ContainerProcessList{}, nil
+//Top function mock
+func (_m *DockerDaemonMock) Top(id string) (container.ContainerTopOKBody, error) {
+
+	return container.ContainerTopOKBody{}, nil
 }
 
 // Version provides a mock function with given fields:

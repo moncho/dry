@@ -30,6 +30,7 @@ const (
 	InspectMode
 	Nodes
 	Services
+	Tasks
 )
 
 const (
@@ -55,11 +56,13 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	if cancelMonitorWidget != nil {
 		cancelMonitorWidget()
 	}
+	d.state.activeWidget = nil
+
 	switch viewMode {
 	case Main:
 		{
 			//after a refresh, sorting is needed
-			sortMode := d.state.SortMode
+			sortMode := d.state.sortMode
 			containers := d.containerList()
 
 			count = len(containers)
@@ -82,7 +85,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	case Images:
 		{
 			//after a refresh, sorting is needed
-			sortMode := d.state.SortImagesMode
+			sortMode := d.state.sortImagesMode
 			renderer := d.ui.ImageListWidget
 
 			images, err := d.dockerDaemon.Images()
@@ -105,7 +108,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Networks:
 		{
-			viewRenderer = appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Cursor, d.state.SortNetworksMode)
+			viewRenderer = appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Cursor, d.state.sortNetworksMode)
 			what = "Networks"
 			count = d.dockerDaemon.NetworksCount()
 			updateCursorPosition(screen.Cursor, count)
@@ -115,6 +118,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	case Nodes:
 		{
 			nodes := appui.NewSwarmNodesWidget(d.dockerDaemon, viewStartingLine)
+			d.state.activeWidget = nodes
 			bufferers = append(bufferers, nodes)
 			what = "Nodes"
 			count = nodes.RowCount()
@@ -126,11 +130,19 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		{
 			nodes := appui.NewSwarmNodesWidget(d.dockerDaemon, viewStartingLine)
 			bufferers = append(bufferers, nodes)
-			what = "Nodes"
+			what = "Services"
 			count = nodes.RowCount()
 			updateCursorPosition(screen.Cursor, count)
 			keymap = swarmMapping
-
+		}
+	case Tasks:
+		{
+			tasks := appui.NewTasksWidget(d.dockerDaemon, d.state.node, viewStartingLine)
+			bufferers = append(bufferers, tasks)
+			what = "Tasks"
+			count = tasks.RowCount()
+			updateCursorPosition(screen.Cursor, count)
+			keymap = swarmMapping
 		}
 	case DiskUsage:
 		{

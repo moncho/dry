@@ -4,7 +4,9 @@ import (
 	"io"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/swarm"
 )
 
@@ -22,7 +24,7 @@ type ContainerDaemon interface {
 	DockerEnv() *Env
 	Events() (<-chan events.Message, chan<- struct{}, error)
 	EventLog() *EventLog
-	History(id string) ([]types.ImageHistory, error)
+	History(id string) ([]image.HistoryResponseItem, error)
 	ImageAt(pos int) (*types.ImageSummary, error)
 	Images() ([]types.ImageSummary, error)
 	ImagesCount() int
@@ -35,7 +37,7 @@ type ContainerDaemon interface {
 	Ok() (bool, error)
 	Prune() (*PruneReport, error)
 	Rm(id string) error
-	Rmi(id string, force bool) ([]types.ImageDelete, error)
+	Rmi(id string, force bool) ([]types.ImageDeleteResponseItem, error)
 	Refresh(notify func(error))
 	RefreshImages() error
 	RefreshNetworks() error
@@ -58,12 +60,14 @@ type ContainerAPI interface {
 	RemoveAllStoppedContainers() (int, error)
 	RestartContainer(id string) error
 	StopContainer(id string) error
-	Top(id string) (types.ContainerProcessList, error)
+	Top(id string) (container.ContainerTopOKBody, error)
 }
 
 //SwarmAPI defines the API for Docker Swarm
 type SwarmAPI interface {
-	SwarmNodes() ([]swarm.Node, error)
+	Node(id string) (*swarm.Node, error)
+	Nodes() ([]swarm.Node, error)
+	Tasks(nodeID string) ([]swarm.Task, error)
 }
 
 //Stats holds runtime stats for a container
@@ -80,7 +84,7 @@ type Stats struct {
 	BlockWrite       float64
 	PidsCurrent      uint64
 	Stats            *types.StatsJSON
-	ProcessList      *types.ContainerProcessList
+	ProcessList      *container.ContainerTopOKBody
 }
 
 //PruneReport represents the result of a prune operation

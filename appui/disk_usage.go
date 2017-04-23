@@ -114,6 +114,7 @@ func (r *DockerDiskUsageRenderer) formattedDiskUsage() string {
 	context := formatter.DiskUsageContext{
 		Context: formatter.Context{
 			Output: buf,
+			Format: formatter.NewDiskUsageFormat(formatter.TableFormatKey),
 		},
 		LayersSize: usage.LayersSize,
 		Images:     usage.Images,
@@ -121,7 +122,10 @@ func (r *DockerDiskUsageRenderer) formattedDiskUsage() string {
 		Volumes:    usage.Volumes,
 		Verbose:    false,
 	}
-	context.Write()
+	err := context.Write()
+	if err != nil {
+		return err.Error()
+	}
 	//The header from the table created by the formatter is removed
 	duTable := buf.String()
 	duTable = duTable[strings.Index(duTable, "\n"):]

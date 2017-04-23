@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/go-units"
 	drydocker "github.com/moncho/dry/docker"
 
@@ -14,11 +14,11 @@ import (
 
 //DockerImageHistoryRenderer knows how render history image
 type DockerImageHistoryRenderer struct {
-	imageHistory []types.ImageHistory
+	imageHistory []image.HistoryResponseItem
 }
 
 //NewDockerImageHistoryRenderer creates a renderer for the history of an image
-func NewDockerImageHistoryRenderer(imageHistory []types.ImageHistory) ui.Renderer {
+func NewDockerImageHistoryRenderer(imageHistory []image.HistoryResponseItem) ui.Renderer {
 	r := &DockerImageHistoryRenderer{imageHistory: imageHistory}
 
 	return r
@@ -43,7 +43,7 @@ func (r *DockerImageHistoryRenderer) Render() string {
 	return ui.White(buffer.String())
 }
 
-func historyColumns(history types.ImageHistory) []string {
+func historyColumns(history image.HistoryResponseItem) []string {
 	result := make([]string, 5)
 
 	if strings.HasPrefix(history.ID, "<") {

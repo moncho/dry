@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/docker/formatter"
 	"github.com/moncho/dry/ui"
 )
 
@@ -106,13 +107,13 @@ func (r *DockerPs) containerInformation() string {
 		return "<red>There was an error rendering the container list, please refresh.</>"
 	}
 
-	context := docker.FormattingContext{
+	context := formatter.FormattingContext{
 		Output:   buf,
 		Template: r.containerTemplate,
 		Trunc:    true,
 		Selected: selected,
 	}
-	docker.Format(
+	formatter.Format(
 		context,
 		containers)
 
@@ -165,7 +166,7 @@ func (r *DockerPs) containersToShow() ([]*docker.Container, int) {
 
 func buildContainerTemplate() *template.Template {
 
-	return template.Must(template.New(`container`).Parse(docker.DefaultTableFormat))
+	return template.Must(template.New(`container`).Parse(formatter.DefaultTableFormat))
 }
 
 //find gets the index of the given container in the given slice

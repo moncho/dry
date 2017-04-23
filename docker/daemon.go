@@ -12,8 +12,10 @@ import (
 	"time"
 
 	dockerTypes "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	dockerEvents "github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/swarm"
 	dockerAPI "github.com/docker/docker/client"
 	pkgError "github.com/pkg/errors"
@@ -135,7 +137,7 @@ func (daemon *DockerDaemon) EventLog() *EventLog {
 }
 
 //History returns image history
-func (daemon *DockerDaemon) History(id string) ([]dockerTypes.ImageHistory, error) {
+func (daemon *DockerDaemon) History(id string) ([]image.HistoryResponseItem, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
@@ -257,7 +259,7 @@ func (daemon *DockerDaemon) NetworkInspect(id string) (dockerTypes.NetworkResour
 	defer cancel()
 
 	return daemon.client.NetworkInspect(
-		ctx, id)
+		ctx, id, true)
 }
 
 //Ok is true if connecting to the Docker daemon went fine
@@ -465,7 +467,7 @@ func (daemon *DockerDaemon) Rm(id string) error {
 }
 
 //Rmi removes the image with the given name
-func (daemon *DockerDaemon) Rmi(name string, force bool) ([]dockerTypes.ImageDelete, error) {
+func (daemon *DockerDaemon) Rmi(name string, force bool) ([]dockerTypes.ImageDeleteResponseItem, error) {
 	options := dockerTypes.ImageRemoveOptions{
 		Force: force,
 	}
@@ -521,10 +523,9 @@ func (daemon *DockerDaemon) SortNetworks(sortMode SortNetworksMode) {
 }
 
 //Top returns Top information for the given container
-func (daemon *DockerDaemon) Top(id string) (dockerTypes.ContainerProcessList, error) {
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
-
+func (daemon *DockerDaemon) Top(id string) (container.ContainerTopOKBody, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 	return daemon.client.ContainerTop(ctx, id, nil)
 }
 
@@ -548,6 +549,7 @@ func (daemon *DockerDaemon) Version() (*dockerTypes.Version, error) {
 func (daemon *DockerDaemon) init() {
 	daemon.eventLog = NewEventLog()
 	daemon.Version()
+
 	if info, err := daemon.Info(); err == nil {
 		daemon.swarmMode = info.Swarm.LocalNodeState == swarm.LocalNodeStateActive
 	}

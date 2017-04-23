@@ -8,6 +8,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 )
 
 //StatsChannel is a container and its stats channel.
@@ -65,7 +66,7 @@ func NewStatsChannel(daemon *DockerDaemon, container *Container) *StatsChannel {
 }
 
 //buildStats builds Stats with the given information
-func buildStats(container *Container, stats *types.StatsJSON, topResult *types.ContainerProcessList) *Stats {
+func buildStats(container *Container, stats *types.StatsJSON, topResult *container.ContainerTopOKBody) *Stats {
 	s := &Stats{
 		CID:         TruncateID(container.ID),
 		Command:     container.Command,

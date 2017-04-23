@@ -38,7 +38,7 @@ func newDryForTest() *Dry {
 	dry.state = &state{
 		changed:              true,
 		showingAllContainers: false,
-		SortMode:             docker.SortByContainerID,
+		sortMode:             docker.SortByContainerID,
 		viewMode:             Main,
 	}
 	dry.dockerDaemon = new(mocks.DockerDaemonMock)

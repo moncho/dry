@@ -10,9 +10,9 @@ import (
 const (
 	diskUsageOutput = `<green>TYPE           TOTAL                 ACTIVE                SIZE                  RECLAIMABLE</>
 
-Images              0                   0                   0 B                 0 B
-Containers          0                   0                   0 B                 0 B
-Local Volumes       0                   0                   0 B                 0 B
+Images              0                   0                   0B                  0B
+Containers          0                   0                   0B                  0B
+Local Volumes       0                   0                   0B                  0B
 
 
 Deleted containers: 0 
