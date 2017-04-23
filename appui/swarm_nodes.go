@@ -100,7 +100,8 @@ func (s *SwarmNodesWidget) highlightSelectedRow() {
 	s.nodes[s.selectedIndex].Highlighted()
 }
 
-func (s *SwarmNodesWidget) OnEvent(event EventHandler) error {
+//OnEvent runs the given command
+func (s *SwarmNodesWidget) OnEvent(event EventCommand) error {
 	return event(s.nodes[s.selectedIndex].node.ID)
 }
 

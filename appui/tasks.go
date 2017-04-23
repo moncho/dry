@@ -107,7 +107,8 @@ func (s *NodeTasksWidget) highlightSelectedRow() {
 	s.tasks[s.selectedIndex].Highlighted()
 }
 
-func (s *NodeTasksWidget) OnEvent(event EventHandler) error {
+//OnEvent runs the given command
+func (s *NodeTasksWidget) OnEvent(event EventCommand) error {
 	return nil
 }
 
