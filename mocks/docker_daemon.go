@@ -246,6 +246,11 @@ func (_m *DockerDaemonMock) RemoveNetwork(id string) error {
 	return nil
 }
 
+//Services mock
+func (_m *DockerDaemonMock) Services() ([]swarm.Service, error) {
+	return nil, nil
+}
+
 // StopContainer provides a mock function with given fields: id
 func (_m *DockerDaemonMock) StopContainer(id string) error {
 	return nil
