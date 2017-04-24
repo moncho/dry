@@ -48,3 +48,10 @@ func (daemon *DockerDaemon) Tasks(nodeID string) ([]swarm.Task, error) {
 	}
 	return nil, pkgError.Wrap(err, "Error retrieving task list")
 }
+
+//Services returns the services known by the Swarm
+func (daemon *DockerDaemon) Services() ([]swarm.Service, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	return daemon.client.ServiceList(ctx, types.ServiceListOptions{})
+}

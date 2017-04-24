@@ -67,6 +67,7 @@ type ContainerAPI interface {
 type SwarmAPI interface {
 	Node(id string) (*swarm.Node, error)
 	Nodes() ([]swarm.Node, error)
+	Services() ([]swarm.Service, error)
 	Tasks(nodeID string) ([]swarm.Task, error)
 }
 

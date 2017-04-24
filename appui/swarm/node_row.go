@@ -40,7 +40,7 @@ func NewNodeRow(node swarm.Node) *NodeRow {
 		Status:    drytermui.NewThemedParColumn(appui.DryTheme, string(node.Status.State)),
 		Height:    1,
 	}
-	row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
+	//row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
 	//Columns are rendered following the slice order
 	row.columns = []termui.GridBufferer{
 		row.Name,
@@ -108,23 +108,16 @@ func (row *NodeRow) Buffer() termui.Buffer {
 
 //Highlighted marks this rows as being highlighted
 func (row *NodeRow) Highlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.SelectedListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
 }
 
 //NotHighlighted marks this rows as being not highlighted
 func (row *NodeRow) NotHighlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.Bg))
 }
 
 func (row *NodeRow) changeTextColor(color termui.Attribute) {
-	row.Name.TextFgColor = color
-	row.Role.TextFgColor = color
-	row.CPU.TextFgColor = color
-	row.Memory.TextFgColor = color
-	row.Engine.TextFgColor = color
-	row.IPAddress.TextFgColor = color
-	row.Status.TextFgColor = color
-
+	row.Name.TextBgColor = color
 }
 
 func cpus(node swarm.Node) string {
