@@ -15,7 +15,7 @@ func NewThemedParColumn(theme *ui.ColorTheme, s string) *ParColumn {
 	p := NewParColumn(s)
 	p.Bg = termui.Attribute(theme.Bg)
 	p.TextBgColor = termui.Attribute(theme.Bg)
-	p.TextFgColor = termui.Attribute(theme.Fg)
+	p.TextFgColor = termui.Attribute(theme.ListItem)
 	return p
 }
 
