@@ -28,7 +28,8 @@ type TaskRow struct {
 
 //NewTaskRow creats a new TaskRow widget
 func NewTaskRow(task swarm.Task) *TaskRow {
-	ts := formatter.NewTaskStringer(task)
+	ts := formatter.NewTaskStringer(task, true)
+
 	row := &TaskRow{
 		task:         task,
 		ID:           drytermui.NewThemedParColumn(appui.DryTheme, ts.ID()),
@@ -41,7 +42,6 @@ func NewTaskRow(task swarm.Task) *TaskRow {
 		Ports:        drytermui.NewThemedParColumn(appui.DryTheme, ts.Ports()),
 		Height:       1,
 	}
-	row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
 	//Columns are rendered following the slice order
 	row.columns = []termui.GridBufferer{
 		row.ID,
@@ -86,11 +86,16 @@ func (row *TaskRow) SetWidth(width int) {
 	}
 	row.Width = width
 	x := row.X
-	rw := appui.CalcItemWidth(width, len(row.columns))
+	rw := appui.CalcItemWidth(width, len(row.columns)-1)
 	for _, col := range row.columns {
 		col.SetX(x)
-		col.SetWidth(rw)
-		x += rw + appui.DefaultColumnSpacing
+		if col != row.ID {
+			col.SetWidth(rw)
+			x += rw + appui.DefaultColumnSpacing
+		} else {
+			col.SetWidth(appui.IDColumnWidth)
+			x += appui.IDColumnWidth + appui.DefaultColumnSpacing
+		}
 	}
 }
 
@@ -99,6 +104,7 @@ func (row *TaskRow) Buffer() termui.Buffer {
 
 	buf := termui.NewBuffer()
 	buf.Merge(row.ID.Buffer())
+	buf.Merge(row.Name.Buffer())
 	buf.Merge(row.Image.Buffer())
 	buf.Merge(row.Node.Buffer())
 	buf.Merge(row.DesiredState.Buffer())
@@ -111,22 +117,14 @@ func (row *TaskRow) Buffer() termui.Buffer {
 
 //Highlighted marks this rows as being highlighted
 func (row *TaskRow) Highlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.SelectedListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.CursorLineBg))
 }
 
 //NotHighlighted marks this rows as being not highlighted
 func (row *TaskRow) NotHighlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.Bg))
 }
 
 func (row *TaskRow) changeTextColor(color termui.Attribute) {
-	row.Name.TextFgColor = color
-	row.ID.TextFgColor = color
-	row.Image.TextFgColor = color
-	row.Node.TextFgColor = color
-	row.DesiredState.TextFgColor = color
-	row.CurrentState.TextFgColor = color
-	row.Error.TextFgColor = color
-	row.Ports.TextFgColor = color
-
+	row.ID.TextBgColor = color
 }

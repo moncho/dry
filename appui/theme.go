@@ -36,21 +36,21 @@ var Black256 = &ui.ColorTheme{
 
 //Dark256 dark theme for 256-color mode
 var Dark256 = &ui.ColorTheme{
-	Fg:               ui.Color255,
-	Bg:               ui.Color234,
-	DarkBg:           ui.ColorBlack,
-	Prompt:           ui.Color110,
-	Key:              ui.Color108,
-	Current:          ui.Color254,
-	CurrentMatch:     ui.Color151,
-	Spinner:          ui.Color148,
-	Info:             ui.Color144,
-	Cursor:           ui.Color161,
-	Selected:         ui.Color168,
-	Header:           ui.Color25,
-	Footer:           ui.Color25,
-	ListItem:         ui.Color181,
-	SelectedListItem: ui.Color255}
+	Fg:           ui.Color255,
+	Bg:           ui.Color234,
+	DarkBg:       ui.ColorBlack,
+	Prompt:       ui.Color110,
+	Key:          ui.Color108,
+	Current:      ui.Color254,
+	CurrentMatch: ui.Color151,
+	Spinner:      ui.Color148,
+	Info:         ui.Color144,
+	Cursor:       ui.Color161,
+	Selected:     ui.Color168,
+	Header:       ui.Color25,
+	Footer:       ui.Color25,
+	ListItem:     ui.Color181,
+	CursorLineBg: ui.Color25}
 
 //Light256 light theme for 256-color mode
 var Light256 = &ui.ColorTheme{

@@ -2,10 +2,6 @@ package appui
 
 import "github.com/moncho/dry/ui/termui"
 
-const (
-	containerColumnWidth = 12
-)
-
 //defaultMonitorTableHeader is the default header for the container monitor table
 var defaultMonitorTableHeader = NewMonitorTableHeader()
 
@@ -39,9 +35,8 @@ func (ch *MonitorTableHeader) SetWidth(w int) {
 			x += iw + ch.ColumnSpacing
 
 		} else {
-			col.SetWidth(containerColumnWidth)
-			x += containerColumnWidth + ch.ColumnSpacing
+			col.SetWidth(IDColumnWidth)
+			x += IDColumnWidth + ch.ColumnSpacing
 		}
-
 	}
 }

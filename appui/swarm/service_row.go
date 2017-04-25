@@ -32,11 +32,10 @@ func NewServiceRow(service swarm.Service) *ServiceRow {
 		Name:    drytermui.NewThemedParColumn(appui.DryTheme, service.Spec.Name),
 		Mode:    drytermui.NewThemedParColumn(appui.DryTheme, serviceMode(service)),
 		Replicas: drytermui.NewThemedParColumn(appui.DryTheme,
-			fmt.Sprintf("%d/%d", 0, service.Spec.Mode.Replicated.Replicas)),
+			fmt.Sprintf("%d/%d", 0, *service.Spec.Mode.Replicated.Replicas)),
 		Image:  drytermui.NewThemedParColumn(appui.DryTheme, service.Spec.TaskTemplate.ContainerSpec.Image),
 		Height: 1,
 	}
-	row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
 	//Columns are rendered following the slice order
 	row.columns = []termui.GridBufferer{
 		row.ID,
@@ -101,12 +100,12 @@ func (row *ServiceRow) Buffer() termui.Buffer {
 
 //Highlighted marks this rows as being highlighted
 func (row *ServiceRow) Highlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.SelectedListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.CursorLineBg))
 }
 
 //NotHighlighted marks this rows as being not highlighted
 func (row *ServiceRow) NotHighlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.Bg))
 }
 
 func (row *ServiceRow) changeTextColor(color termui.Attribute) {

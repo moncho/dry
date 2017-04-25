@@ -108,7 +108,7 @@ func (row *NodeRow) Buffer() termui.Buffer {
 
 //Highlighted marks this rows as being highlighted
 func (row *NodeRow) Highlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
+	row.changeTextColor(termui.Attribute(appui.DryTheme.CursorLineBg))
 }
 
 //NotHighlighted marks this rows as being not highlighted

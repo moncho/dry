@@ -99,7 +99,9 @@ func (s *ServicesWidget) highlightSelectedRow() {
 	if index > s.RowCount() {
 		index = s.RowCount() - 1
 	}
+	s.services[s.selectedIndex].NotHighlighted()
 	s.selectedIndex = index
+	s.services[s.selectedIndex].Highlighted()
 }
 
 //OnEvent runs the given command

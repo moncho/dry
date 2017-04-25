@@ -87,23 +87,16 @@ func NewSelfUpdatedContainerStatsRow(s *docker.StatsChannel) *ContainerStatsRow 
 
 //Highlighted marks this rows as being highlighted
 func (row *ContainerStatsRow) Highlighted() {
-	row.changeTextColor(termui.Attribute(DryTheme.SelectedListItem))
+	row.changeTextColor(termui.Attribute(DryTheme.CursorLineBg))
 }
 
 //NotHighlighted marks this rows as being not highlighted
 func (row *ContainerStatsRow) NotHighlighted() {
-	row.changeTextColor(termui.Attribute(DryTheme.ListItem))
+	row.changeTextColor(termui.Attribute(DryTheme.Bg))
 }
 
 func (row *ContainerStatsRow) changeTextColor(color termui.Attribute) {
-	row.Name.TextFgColor = color
-	row.ID.TextFgColor = color
-	row.CPU.PercentColor = color
-	row.Memory.PercentColor = color
-	row.Net.TextFgColor = color
-	row.Block.TextFgColor = color
-	row.Pids.TextFgColor = color
-	row.Uptime.TextFgColor = color
+	row.ID.TextBgColor = color
 }
 
 //Reset resets row content
@@ -151,8 +144,8 @@ func (row *ContainerStatsRow) SetWidth(width int) {
 			col.SetWidth(rw)
 			x += rw + DefaultColumnSpacing
 		} else {
-			col.SetWidth(containerColumnWidth)
-			x += containerColumnWidth + DefaultColumnSpacing
+			col.SetWidth(IDColumnWidth)
+			x += IDColumnWidth + DefaultColumnSpacing
 		}
 	}
 }

@@ -18,6 +18,8 @@ const (
 	networkTableStartPos   = MainScreenHeaderSize + 5
 	//DefaultColumnSpacing defines the minimun space between columns in pixels
 	DefaultColumnSpacing = 1
+	//IDColumnWidth defines a fixed width for ID columns
+	IDColumnWidth = 12
 )
 
 //CalcItemWidth calculates the width of each item for the given total width and item count

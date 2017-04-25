@@ -17,8 +17,8 @@ const (
 )
 
 //NewTaskStringer creates a TaskStringer for the given task
-func NewTaskStringer(task swarm.Task) *TaskStringer {
-	return &TaskStringer{task, false}
+func NewTaskStringer(task swarm.Task, trunc bool) *TaskStringer {
+	return &TaskStringer{task, trunc}
 }
 
 //TaskStringer converts to it string representation Task attributes
@@ -37,7 +37,7 @@ func (t *TaskStringer) ID() string {
 
 //Name Task name as a string
 func (t *TaskStringer) Name() string {
-	return t.task.Name
+	return t.task.ServiceID
 }
 
 //Image Task image as a string
