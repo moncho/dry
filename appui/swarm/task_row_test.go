@@ -9,12 +9,12 @@ import (
 
 func TestTaskRow(t *testing.T) {
 	task := swarm.Task{
-		ID:          "task1",
-		Annotations: swarm.Annotations{Name: "taskName"},
-		Spec:        swarm.TaskSpec{},
+		ID:        "task1",
+		ServiceID: "serviceID",
+		Spec:      swarm.TaskSpec{},
 	}
 
-	ts := formatter.NewTaskStringer(task)
+	ts := formatter.NewTaskStringer(task, true)
 	row := NewTaskRow(task)
 
 	if row == nil {
@@ -25,7 +25,7 @@ func TestTaskRow(t *testing.T) {
 		t.Errorf("TaskRow name is not 'test', got %s", row.ID.Text)
 	}
 
-	if row.Name.Text != task.Name {
+	if row.Name.Text != task.ServiceID {
 		t.Errorf("TaskRow name is not 'test', got %s", row.Name.Text)
 	}
 

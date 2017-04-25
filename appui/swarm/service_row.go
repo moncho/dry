@@ -17,11 +17,10 @@ type ServiceRow struct {
 	Mode     *drytermui.ParColumn
 	Replicas *drytermui.ParColumn
 	Image    *drytermui.ParColumn
-
-	X, Y    int
-	Width   int
-	Height  int
-	columns []termui.GridBufferer
+	X, Y     int
+	Width    int
+	Height   int
+	columns  []termui.GridBufferer
 }
 
 //NewServiceRow creats a new ServiceRow widget

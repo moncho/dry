@@ -35,6 +35,12 @@ func (_m *SwarmDockerDaemon) Nodes() ([]swarm.Node, error) {
 	return []swarm.Node{swarm.Node{ID: "1"}}, nil
 }
 
+//Services returns a list of services with 1 element
+func (_m *SwarmDockerDaemon) Services() ([]swarm.Service, error) {
+	return []swarm.Service{
+		swarm.Service{ID: "ServiceID"}}, nil
+}
+
 //Tasks mock
 func (_m *SwarmDockerDaemon) Tasks(nodeID string) ([]swarm.Task, error) {
 	return []swarm.Task{swarm.Task{NodeID: nodeID}}, nil
