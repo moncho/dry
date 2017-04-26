@@ -13,7 +13,7 @@ import (
 //with whatever version of the same package the vendoring tools retrieve
 //A way to fix this is by removing the vendored package from the docker
 //directory of the vendor tool of dry, so:
-//rm -rf vendor/github.com/docker/docker/vendor/golang.org/x/
+//rm -rf vendor/github.com/docker/docker/vendor/golang.org/x/net
 
 //ContainerAPIClientMock mocks docker ContainerAPIClient
 type ContainerAPIClientMock struct {
