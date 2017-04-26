@@ -7,12 +7,13 @@ import (
 
 //TableHeader is a table header widget
 type TableHeader struct {
-	X, Y          int
-	Height, Width int
-	Columns       []*termui.Par
-	ColumnSpacing int
-	ColumnWidth   int
-	Theme         *ui.ColorTheme
+	X, Y              int
+	Height, Width     int
+	Columns           []*termui.Par
+	ColumnSpacing     int
+	ColumnWidth       int
+	FixedWidthColumns []*termui.Par
+	Theme             *ui.ColorTheme
 }
 
 //NewHeader creates a header of height 1 that uses the given Theme
@@ -69,6 +70,18 @@ func (th *TableHeader) AddColumn(s string) {
 	p.TextBgColor = termui.Attribute(th.Theme.Bg)
 	p.TextFgColor = termui.ColorWhite
 	th.Columns = append(th.Columns, p)
+}
+
+//AddFixedWidthColumn adds a column to this header with a fixed width
+func (th *TableHeader) AddFixedWidthColumn(s string, width int) {
+	p := termui.NewPar(s)
+	p.Height = th.Height
+	p.Width = width
+	p.Border = false
+	p.Bg = termui.Attribute(th.Theme.Bg)
+	p.TextBgColor = termui.Attribute(th.Theme.Bg)
+	p.TextFgColor = termui.ColorWhite
+	th.FixedWidthColumns = append(th.FixedWidthColumns, p)
 }
 
 //CalcColumnWidth calculates column width for this header
