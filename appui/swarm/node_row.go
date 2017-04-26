@@ -108,16 +108,21 @@ func (row *NodeRow) Buffer() termui.Buffer {
 
 //Highlighted marks this rows as being highlighted
 func (row *NodeRow) Highlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.CursorLineBg))
+	row.changeTextColor(
+		termui.Attribute(appui.DryTheme.Fg),
+		termui.Attribute(appui.DryTheme.CursorLineBg))
 }
 
 //NotHighlighted marks this rows as being not highlighted
 func (row *NodeRow) NotHighlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.Bg))
+	row.changeTextColor(
+		termui.Attribute(appui.DryTheme.ListItem),
+		termui.Attribute(appui.DryTheme.Bg))
 }
 
-func (row *NodeRow) changeTextColor(color termui.Attribute) {
-	row.Name.TextBgColor = color
+func (row *NodeRow) changeTextColor(fg, bg termui.Attribute) {
+	row.Name.TextFgColor = fg
+	row.Name.TextBgColor = bg
 }
 
 func cpus(node swarm.Node) string {

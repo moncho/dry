@@ -117,14 +117,19 @@ func (row *TaskRow) Buffer() termui.Buffer {
 
 //Highlighted marks this rows as being highlighted
 func (row *TaskRow) Highlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.CursorLineBg))
+	row.changeTextColor(
+		termui.Attribute(appui.DryTheme.Fg),
+		termui.Attribute(appui.DryTheme.CursorLineBg))
 }
 
 //NotHighlighted marks this rows as being not highlighted
 func (row *TaskRow) NotHighlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.Bg))
+	row.changeTextColor(
+		termui.Attribute(appui.DryTheme.ListItem),
+		termui.Attribute(appui.DryTheme.Bg))
 }
 
-func (row *TaskRow) changeTextColor(color termui.Attribute) {
-	row.ID.TextBgColor = color
+func (row *TaskRow) changeTextColor(fg, bg termui.Attribute) {
+	row.ID.TextFgColor = fg
+	row.ID.TextBgColor = bg
 }
