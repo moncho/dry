@@ -33,8 +33,8 @@ func (daemon *DockerDaemon) Nodes() ([]swarm.Node, error) {
 	return nil, pkgError.Wrap(err, "Error retrieving node list")
 }
 
-//Tasks returns the nodes that are part of the Swarm
-func (daemon *DockerDaemon) Tasks(nodeID string) ([]swarm.Task, error) {
+//NodeTasks returns the tasks being run by the given node
+func (daemon *DockerDaemon) NodeTasks(nodeID string) ([]swarm.Task, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
@@ -54,4 +54,22 @@ func (daemon *DockerDaemon) Services() ([]swarm.Service, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 	return daemon.client.ServiceList(ctx, types.ServiceListOptions{})
+}
+
+//ServiceTasks returns the tasks being run that belong to the given list of services
+func (daemon *DockerDaemon) ServiceTasks(services ...string) ([]swarm.Task, error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	filter := filters.NewArgs()
+	for _, service := range services {
+		filter.Add("service", service)
+	}
+
+	nodeTasks, err := daemon.client.TaskList(ctx, types.TaskListOptions{Filters: filter})
+
+	if err == nil {
+		return nodeTasks, nil
+	}
+	return nil, pkgError.Wrap(err, "Error retrieving task list")
 }

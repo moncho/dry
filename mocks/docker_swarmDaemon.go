@@ -5,6 +5,11 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 )
 
+const (
+	//TestNodeID defines the ID of the swarm node for testing
+	TestNodeID = "1"
+)
+
 //SwarmDockerDaemon mocks a DockerDaemon operating in Swarm mode
 type SwarmDockerDaemon struct {
 	DockerDaemonMock
@@ -32,7 +37,12 @@ func (_m *SwarmDockerDaemon) Node(id string) (*swarm.Node, error) {
 
 //Nodes returns a list of nodes with 1 element
 func (_m *SwarmDockerDaemon) Nodes() ([]swarm.Node, error) {
-	return []swarm.Node{swarm.Node{ID: "1"}}, nil
+	return []swarm.Node{swarm.Node{ID: TestNodeID}}, nil
+}
+
+//NodeTasks mock
+func (_m *SwarmDockerDaemon) NodeTasks(nodeID string) ([]swarm.Task, error) {
+	return []swarm.Task{swarm.Task{NodeID: nodeID}}, nil
 }
 
 //Services returns a list of services with 1 element
@@ -41,7 +51,13 @@ func (_m *SwarmDockerDaemon) Services() ([]swarm.Service, error) {
 		swarm.Service{ID: "ServiceID"}}, nil
 }
 
-//Tasks mock
-func (_m *SwarmDockerDaemon) Tasks(nodeID string) ([]swarm.Task, error) {
-	return []swarm.Task{swarm.Task{NodeID: nodeID}}, nil
+//ServiceTasks returns one task per service, the task belongs to node with id "1"
+func (_m *SwarmDockerDaemon) ServiceTasks(services ...string) ([]swarm.Task, error) {
+
+	tasks := make([]swarm.Task, len(services))
+	for _, service := range services {
+		tasks = append(tasks, swarm.Task{ServiceID: service, NodeID: TestNodeID})
+	}
+
+	return tasks, nil
 }

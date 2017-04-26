@@ -183,6 +183,11 @@ func (_m *DockerDaemonMock) Nodes() ([]swarm.Node, error) {
 	return nil, nil
 }
 
+//NodeTasks mock
+func (_m *DockerDaemonMock) NodeTasks(nodeID string) ([]swarm.Task, error) {
+	return nil, nil
+}
+
 // Ok mocks OK
 func (_m *DockerDaemonMock) Ok() (bool, error) {
 
@@ -251,6 +256,11 @@ func (_m *DockerDaemonMock) Services() ([]swarm.Service, error) {
 	return nil, nil
 }
 
+//ServiceTasks mock
+func (_m *DockerDaemonMock) ServiceTasks(services ...string) ([]swarm.Task, error) {
+	return nil, nil
+}
+
 // StopContainer provides a mock function with given fields: id
 func (_m *DockerDaemonMock) StopContainer(id string) error {
 	return nil
@@ -267,11 +277,6 @@ func (_m *DockerDaemonMock) SortImages(sortMode drydocker.SortImagesMode) {
 
 //SortNetworks mock
 func (_m *DockerDaemonMock) SortNetworks(sortMode drydocker.SortNetworksMode) {
-}
-
-//Tasks mock
-func (_m *DockerDaemonMock) Tasks(nodeID string) ([]swarm.Task, error) {
-	return nil, nil
 }
 
 //Top function mock

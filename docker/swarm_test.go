@@ -20,7 +20,7 @@ func TestSwarmNodeRetrieval(t *testing.T) {
 
 func TestTaskRetrieval(t *testing.T) {
 	daemon := DockerDaemon{client: mock.SwarmAPIClientMock{}}
-	tasks, err := daemon.Tasks("1")
+	tasks, err := daemon.NodeTasks("1")
 
 	if err != nil {
 		t.Errorf("Retrieving the list of task of node 1 resulted in error: %s", err.Error())
@@ -29,7 +29,7 @@ func TestTaskRetrieval(t *testing.T) {
 		t.Errorf("Expected a list with one task, got %d", len(tasks))
 	}
 
-	tasks, err = daemon.Tasks("Nope")
+	tasks, err = daemon.NodeTasks("Nope")
 
 	if err != nil {
 		t.Errorf("Retrieving the list of task of non-existing node resulted in error: %s", err.Error())

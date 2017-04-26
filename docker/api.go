@@ -67,8 +67,9 @@ type ContainerAPI interface {
 type SwarmAPI interface {
 	Node(id string) (*swarm.Node, error)
 	Nodes() ([]swarm.Node, error)
+	NodeTasks(nodeID string) ([]swarm.Task, error)
 	Services() ([]swarm.Service, error)
-	Tasks(nodeID string) ([]swarm.Task, error)
+	ServiceTasks(services ...string) ([]swarm.Task, error)
 }
 
 //Stats holds runtime stats for a container
