@@ -42,7 +42,7 @@ func NewTasksWidget(swarmClient docker.SwarmAPI, nodeID string, y int) *NodeTask
 			height:        appui.MainScreenAvailableHeight(),
 			width:         ui.ActiveScreen.Dimensions.Width}
 
-		if tasks, err := swarmClient.Tasks(node.ID); err == nil {
+		if tasks, err := swarmClient.NodeTasks(node.ID); err == nil {
 			for _, task := range tasks {
 				w.tasks = append(w.tasks, NewTaskRow(task))
 			}

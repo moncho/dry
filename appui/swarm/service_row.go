@@ -1,9 +1,8 @@
 package swarm
 
 import (
-	"fmt"
-
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/cli/command/formatter"
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	drytermui "github.com/moncho/dry/ui/termui"
@@ -24,16 +23,15 @@ type ServiceRow struct {
 }
 
 //NewServiceRow creats a new ServiceRow widget
-func NewServiceRow(service swarm.Service) *ServiceRow {
+func NewServiceRow(service swarm.Service, serviceInfo formatter.ServiceListInfo) *ServiceRow {
 	row := &ServiceRow{
-		service: service,
-		ID:      drytermui.NewThemedParColumn(appui.DryTheme, service.ID),
-		Name:    drytermui.NewThemedParColumn(appui.DryTheme, service.Spec.Name),
-		Mode:    drytermui.NewThemedParColumn(appui.DryTheme, serviceMode(service)),
-		Replicas: drytermui.NewThemedParColumn(appui.DryTheme,
-			fmt.Sprintf("%d/%d", 0, *service.Spec.Mode.Replicated.Replicas)),
-		Image:  drytermui.NewThemedParColumn(appui.DryTheme, service.Spec.TaskTemplate.ContainerSpec.Image),
-		Height: 1,
+		service:  service,
+		ID:       drytermui.NewThemedParColumn(appui.DryTheme, service.ID),
+		Name:     drytermui.NewThemedParColumn(appui.DryTheme, service.Spec.Name),
+		Mode:     drytermui.NewThemedParColumn(appui.DryTheme, serviceInfo.Mode),
+		Replicas: drytermui.NewThemedParColumn(appui.DryTheme, serviceInfo.Replicas),
+		Image:    drytermui.NewThemedParColumn(appui.DryTheme, service.Spec.TaskTemplate.ContainerSpec.Image),
+		Height:   1,
 	}
 	//Columns are rendered following the slice order
 	row.columns = []termui.GridBufferer{
@@ -99,16 +97,21 @@ func (row *ServiceRow) Buffer() termui.Buffer {
 
 //Highlighted marks this rows as being highlighted
 func (row *ServiceRow) Highlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.CursorLineBg))
+	row.changeTextColor(
+		termui.Attribute(appui.DryTheme.Fg),
+		termui.Attribute(appui.DryTheme.CursorLineBg))
 }
 
 //NotHighlighted marks this rows as being not highlighted
 func (row *ServiceRow) NotHighlighted() {
-	row.changeTextColor(termui.Attribute(appui.DryTheme.Bg))
+	row.changeTextColor(
+		termui.Attribute(appui.DryTheme.ListItem),
+		termui.Attribute(appui.DryTheme.Bg))
 }
 
-func (row *ServiceRow) changeTextColor(color termui.Attribute) {
-	row.ID.TextBgColor = color
+func (row *ServiceRow) changeTextColor(fg, bg termui.Attribute) {
+	row.ID.TextFgColor = fg
+	row.ID.TextBgColor = bg
 }
 
 func serviceMode(service swarm.Service) string {

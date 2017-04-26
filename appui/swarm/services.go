@@ -1,8 +1,13 @@
 package swarm
 
 import (
+	"fmt"
 	"sync"
 
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/cli/command/formatter"
+	"github.com/docker/docker/cli/command/service"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -37,9 +42,9 @@ func NewServicesWidget(swarmClient docker.SwarmAPI, y int) *ServicesWidget {
 		y:             y,
 		height:        appui.MainScreenAvailableHeight(),
 		width:         ui.ActiveScreen.Dimensions.Width}
-	if services, err := swarmClient.Services(); err == nil {
+	if services, servicesInfo, err := getServiceInfo(swarmClient); err == nil {
 		for _, service := range services {
-			w.services = append(w.services, NewServiceRow(service))
+			w.services = append(w.services, NewServiceRow(service, servicesInfo[service.ID]))
 		}
 	}
 	w.align()
@@ -158,4 +163,81 @@ func serviceTableHeader() *termui.TableHeader {
 		header.AddColumn(f)
 	}
 	return header
+}
+
+func getServiceInfo(swarmClient docker.SwarmAPI) ([]swarm.Service, map[string]formatter.ServiceListInfo, error) {
+
+	serviceFilters := filters.NewArgs()
+	serviceFilters.Add("runtime", string(swarm.RuntimeContainer))
+	services, err := swarmClient.Services()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	info := map[string]formatter.ServiceListInfo{}
+	if len(services) > 0 {
+
+		tasks, err := swarmClient.ServiceTasks(serviceIDs(services)...)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		nodes, err := swarmClient.Nodes()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		info = service.GetServicesStatus(services, nodes, tasks)
+	}
+	return services, info, nil
+}
+
+func serviceIDs(services []swarm.Service) []string {
+
+	ids := make([]string, len(services))
+	for i, service := range services {
+		ids[i] = service.ID
+	}
+
+	return ids
+}
+
+// getServicesStatus returns a map of mode and replicas
+func getServicesStatus(services []swarm.Service, nodes []swarm.Node, tasks []swarm.Task) map[string]formatter.ServiceListInfo {
+	running := map[string]int{}
+	tasksNoShutdown := map[string]int{}
+
+	activeNodes := make(map[string]struct{})
+	for _, n := range nodes {
+		if n.Status.State != swarm.NodeStateDown {
+			activeNodes[n.ID] = struct{}{}
+		}
+	}
+
+	for _, task := range tasks {
+		if task.DesiredState != swarm.TaskStateShutdown {
+			tasksNoShutdown[task.ServiceID]++
+		}
+
+		if _, nodeActive := activeNodes[task.NodeID]; nodeActive && task.Status.State == swarm.TaskStateRunning {
+			running[task.ServiceID]++
+		}
+	}
+
+	info := map[string]formatter.ServiceListInfo{}
+	for _, service := range services {
+		info[service.ID] = formatter.ServiceListInfo{}
+		if service.Spec.Mode.Replicated != nil && service.Spec.Mode.Replicated.Replicas != nil {
+			info[service.ID] = formatter.ServiceListInfo{
+				Mode:     "replicated",
+				Replicas: fmt.Sprintf("%d/%d", running[service.ID], *service.Spec.Mode.Replicated.Replicas),
+			}
+		} else if service.Spec.Mode.Global != nil {
+			info[service.ID] = formatter.ServiceListInfo{
+				Mode:     "global",
+				Replicas: fmt.Sprintf("%d/%d", running[service.ID], tasksNoShutdown[service.ID]),
+			}
+		}
+	}
+	return info
 }
