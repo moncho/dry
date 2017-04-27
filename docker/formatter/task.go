@@ -37,7 +37,7 @@ func (t *TaskStringer) ID() string {
 
 //Name Task name as a string
 func (t *TaskStringer) Name() string {
-	return t.task.Name
+	return t.task.ServiceID
 }
 
 //Image Task image as a string
