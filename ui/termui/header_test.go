@@ -29,7 +29,7 @@ func TestHeader(t *testing.T) {
 
 	header.ColumnSpacing = 1
 	header.SetWidth(40)
-	cw := header.CalcColumnWidth(3)
+	cw := header.calcColumnWidth()
 	if cw != (40-(3+8))/3 {
 		t.Errorf("Calculated column width with 4 columns (one of them with witdh 8) is: %d", cw)
 
