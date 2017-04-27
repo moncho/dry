@@ -9,7 +9,8 @@ import (
 
 const (
 	imagePrefixForV10 = "sha256:"
-	shortLen          = 10
+	//ShortLen defines the default size of shortened ID
+	ShortLen = 12
 )
 
 //DurationForHumans returns a human-readable approximation of a duration
@@ -43,8 +44,8 @@ func TruncateID(id string) string {
 	if i := strings.IndexRune(id, ':'); i >= 0 {
 		id = id[i+1:]
 	}
-	trimTo := shortLen
-	if len(id) < shortLen {
+	trimTo := ShortLen
+	if len(id) < ShortLen {
 		trimTo = len(id)
 	}
 	return id[:trimTo]
