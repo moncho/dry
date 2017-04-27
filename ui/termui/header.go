@@ -11,8 +11,8 @@ type TableHeader struct {
 	Height, Width     int
 	Columns           []*termui.Par
 	ColumnSpacing     int
-	ColumnWidth       int
-	FixedWidthColumns []*termui.Par
+	fixedWidthColumns []*termui.Par
+	varWidthColumns   []*termui.Par
 	Theme             *ui.ColorTheme
 }
 
@@ -26,16 +26,18 @@ func (th *TableHeader) GetHeight() int {
 	return th.Height
 }
 
-//SetWidth set the width of this header
+//SetWidth sets the width of this header
 func (th *TableHeader) SetWidth(w int) {
 	x := th.X
 	th.Width = w
-	//Set width on each par
-	iw := th.CalcColumnWidth(th.ColumnCount())
+	//Set width on each non-fixed width column
+	iw := th.calcColumnWidth()
 	for _, col := range th.Columns {
 		col.SetX(x)
-		col.SetWidth(iw)
-		x += iw + th.ColumnSpacing
+		if col.Width == -1 {
+			col.SetWidth(iw)
+		}
+		x += col.Width + th.ColumnSpacing
 	}
 }
 
@@ -63,34 +65,44 @@ func (th *TableHeader) Buffer() termui.Buffer {
 
 //AddColumn adds a column to this header
 func (th *TableHeader) AddColumn(s string) {
-	p := termui.NewPar(s)
-	p.Height = th.Height
-	p.Border = false
-	p.Bg = termui.Attribute(th.Theme.Bg)
-	p.TextBgColor = termui.Attribute(th.Theme.Bg)
-	p.TextFgColor = termui.ColorWhite
+	p := newHeaderColumn(s, th)
+	th.varWidthColumns = append(th.varWidthColumns, p)
 	th.Columns = append(th.Columns, p)
 }
 
 //AddFixedWidthColumn adds a column to this header with a fixed width
 func (th *TableHeader) AddFixedWidthColumn(s string, width int) {
-	p := termui.NewPar(s)
-	p.Height = th.Height
+	p := newHeaderColumn(s, th)
 	p.Width = width
-	p.Border = false
-	p.Bg = termui.Attribute(th.Theme.Bg)
-	p.TextBgColor = termui.Attribute(th.Theme.Bg)
-	p.TextFgColor = termui.ColorWhite
-	th.FixedWidthColumns = append(th.FixedWidthColumns, p)
+	th.fixedWidthColumns = append(th.fixedWidthColumns, p)
+	th.Columns = append(th.Columns, p)
+
 }
 
-//CalcColumnWidth calculates column width for this header
-func (th *TableHeader) CalcColumnWidth(colCount int) int {
-	spacing := th.ColumnSpacing * colCount
+//CalcColumnWidth calculates the column width for non-fixed width
+//columns on this header
+func (th *TableHeader) calcColumnWidth() int {
+	fixedWidthColumnsSpacing := 0
+	for _, column := range th.fixedWidthColumns {
+		fixedWidthColumnsSpacing += column.Width
+	}
+	colCount := len(th.varWidthColumns)
+	spacing := th.ColumnSpacing*colCount + fixedWidthColumnsSpacing
 	return (th.Width - spacing) / colCount
 }
 
 //ColumnCount returns the number of columns on this header
 func (th *TableHeader) ColumnCount() int {
 	return len(th.Columns)
+}
+
+func newHeaderColumn(columnTitle string, th *TableHeader) *termui.Par {
+	p := termui.NewPar(columnTitle)
+	p.Height = th.Height
+	p.Border = false
+	p.Bg = termui.Attribute(th.Theme.Bg)
+	p.TextBgColor = termui.Attribute(th.Theme.Bg)
+	p.TextFgColor = termui.ColorWhite
+	p.Width = -1
+	return p
 }
