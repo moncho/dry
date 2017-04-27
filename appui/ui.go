@@ -1,6 +1,9 @@
 package appui
 
-import "github.com/moncho/dry/ui"
+import (
+	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/ui"
+)
 
 const (
 	//DownArrow character
@@ -19,7 +22,7 @@ const (
 	//DefaultColumnSpacing defines the minimun space between columns in pixels
 	DefaultColumnSpacing = 1
 	//IDColumnWidth defines a fixed width for ID columns
-	IDColumnWidth = 12
+	IDColumnWidth = docker.ShortLen
 )
 
 //CalcItemWidth calculates the width of each item for the given total width and item count
