@@ -196,7 +196,7 @@ func statsScreen(container *docker.Container, screen *ui.Screen, dry *Dry, keybo
 	header.SetWidth(ui.ActiveScreen.Dimensions.Width)
 	header.SetY(infoLines + 2)
 
-	statsRow := appui.NewContainerStatsRow(container)
+	statsRow := appui.NewContainerStatsRow(container, header)
 	statsRow.SetX(0)
 	statsRow.SetY(header.Y + 1)
 	statsRow.SetWidth(ui.ActiveScreen.Dimensions.Width)
