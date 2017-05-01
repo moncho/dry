@@ -5,6 +5,11 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
+//Table defines common behaviour for table widgets
+type Table interface {
+	ColumnWidths() []int
+}
+
 //TableHeader is a table header widget
 type TableHeader struct {
 	X, Y              int
@@ -14,6 +19,7 @@ type TableHeader struct {
 	fixedWidthColumns []*termui.Par
 	varWidthColumns   []*termui.Par
 	Theme             *ui.ColorTheme
+	columnWidths      []int
 }
 
 //NewHeader creates a header of height 1 that uses the given Theme
@@ -38,6 +44,7 @@ func (th *TableHeader) SetWidth(w int) {
 			col.SetWidth(iw)
 		}
 		x += col.Width + th.ColumnSpacing
+		th.columnWidths = append(th.columnWidths, col.Width)
 	}
 }
 
@@ -94,6 +101,11 @@ func (th *TableHeader) calcColumnWidth() int {
 //ColumnCount returns the number of columns on this header
 func (th *TableHeader) ColumnCount() int {
 	return len(th.Columns)
+}
+
+//ColumnWidths returns the width of each column of the table
+func (th *TableHeader) ColumnWidths() []int {
+	return th.columnWidths
 }
 
 func newHeaderColumn(columnTitle string, th *TableHeader) *termui.Par {
