@@ -15,7 +15,7 @@ func TestTaskRow(t *testing.T) {
 	}
 
 	ts := formatter.NewTaskStringer(task, true)
-	row := NewTaskRow(task)
+	row := NewTaskRow(task, taskTableHeader())
 
 	if row == nil {
 		t.Error("TaskRow was not created")

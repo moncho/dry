@@ -39,7 +39,7 @@ func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
 
 	if nodes, err := swarmClient.Nodes(); err == nil {
 		for _, node := range nodes {
-			w.nodes = append(w.nodes, NewNodeRow(node))
+			w.nodes = append(w.nodes, NewNodeRow(node, w.header))
 		}
 	}
 	w.align()

@@ -17,6 +17,7 @@ var inactiveRowColor = termui.Attribute(ui.Color244)
 
 //ContainerStatsRow is a Grid row showing runtime information about a container
 type ContainerStatsRow struct {
+	table     drytermui.Table
 	container *docker.Container
 	Name      *drytermui.ParColumn
 	ID        *drytermui.ParColumn
@@ -27,14 +28,11 @@ type ContainerStatsRow struct {
 	Pids      *drytermui.ParColumn
 	Uptime    *drytermui.ParColumn
 
-	X, Y    int
-	Width   int
-	Height  int
-	columns []termui.GridBufferer
+	drytermui.Row
 }
 
 //NewContainerStatsRow creats a new ContainerStatsRow widget
-func NewContainerStatsRow(container *docker.Container) *ContainerStatsRow {
+func NewContainerStatsRow(container *docker.Container, table drytermui.Table) *ContainerStatsRow {
 	cf := formatter.NewContainerFormatter(container, true)
 	row := &ContainerStatsRow{
 		container: container,
@@ -46,10 +44,11 @@ func NewContainerStatsRow(container *docker.Container) *ContainerStatsRow {
 		Block:     drytermui.NewThemedParColumn(DryTheme, "-"),
 		Pids:      drytermui.NewThemedParColumn(DryTheme, "-"),
 		Uptime:    drytermui.NewThemedParColumn(DryTheme, container.Status),
-		Height:    1,
 	}
+	row.Height = 1
+	row.Table = table
 	//Columns are rendered following the slice order
-	row.columns = []termui.GridBufferer{
+	row.Columns = []termui.GridBufferer{
 		row.ID,
 		row.Name,
 		row.CPU,
@@ -70,9 +69,9 @@ func NewContainerStatsRow(container *docker.Container) *ContainerStatsRow {
 
 //NewSelfUpdatedContainerStatsRow creates a ContainerStatsRow that updates
 //itself on stats message sent on the given channel
-func NewSelfUpdatedContainerStatsRow(s *docker.StatsChannel) *ContainerStatsRow {
+func NewSelfUpdatedContainerStatsRow(s *docker.StatsChannel, table drytermui.Table) *ContainerStatsRow {
 	c := s.Container
-	row := NewContainerStatsRow(c)
+	row := NewContainerStatsRow(c, table)
 
 	if docker.IsContainerRunning(c) {
 		go func() {
@@ -112,63 +111,6 @@ func (row *ContainerStatsRow) Reset() {
 	row.Pids.Reset()
 	row.Block.Reset()
 	row.Uptime.Reset()
-}
-
-//GetHeight returns this ContainerStatsRow heigth
-func (row *ContainerStatsRow) GetHeight() int {
-	return row.Height
-}
-
-//SetX sets the x position of this ContainerStatsRow
-func (row *ContainerStatsRow) SetX(x int) {
-	row.X = x
-}
-
-//SetY sets the y position of this ContainerStatsRow
-func (row *ContainerStatsRow) SetY(y int) {
-	if y == row.Y {
-		return
-	}
-	for _, col := range row.columns {
-		col.SetY(y)
-	}
-	row.Y = y
-}
-
-//SetWidth sets the width of this ContainerStatsRow
-func (row *ContainerStatsRow) SetWidth(width int) {
-	if width == row.Width {
-		return
-	}
-	row.Width = width
-	x := row.X
-	rw := CalcItemWidth(width, len(row.columns)-1)
-	for _, col := range row.columns {
-		col.SetX(x)
-		if col != row.ID {
-			col.SetWidth(rw)
-			x += rw + DefaultColumnSpacing
-		} else {
-			col.SetWidth(IDColumnWidth)
-			x += IDColumnWidth + DefaultColumnSpacing
-		}
-	}
-}
-
-//Buffer returns this ContainerStatsRow data as a termui.Buffer
-func (row *ContainerStatsRow) Buffer() termui.Buffer {
-	buf := termui.NewBuffer()
-
-	buf.Merge(row.ID.Buffer())
-	buf.Merge(row.Name.Buffer())
-	buf.Merge(row.CPU.Buffer())
-	buf.Merge(row.Memory.Buffer())
-	buf.Merge(row.Net.Buffer())
-	buf.Merge(row.Block.Buffer())
-	buf.Merge(row.Pids.Buffer())
-	buf.Merge(row.Uptime.Buffer())
-
-	return buf
 }
 
 //Update updates the content of this row with the given stats

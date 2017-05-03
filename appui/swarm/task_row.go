@@ -20,14 +20,11 @@ type TaskRow struct {
 	Error        *drytermui.ParColumn
 	Ports        *drytermui.ParColumn
 
-	X, Y    int
-	Width   int
-	Height  int
-	columns []termui.GridBufferer
+	drytermui.Row
 }
 
 //NewTaskRow creats a new TaskRow widget
-func NewTaskRow(task swarm.Task) *TaskRow {
+func NewTaskRow(task swarm.Task, table drytermui.Table) *TaskRow {
 	ts := formatter.NewTaskStringer(task, true)
 
 	row := &TaskRow{
@@ -40,10 +37,11 @@ func NewTaskRow(task swarm.Task) *TaskRow {
 		CurrentState: drytermui.NewThemedParColumn(appui.DryTheme, ts.CurrentState()),
 		Error:        drytermui.NewThemedParColumn(appui.DryTheme, ts.Error()),
 		Ports:        drytermui.NewThemedParColumn(appui.DryTheme, ts.Ports()),
-		Height:       1,
 	}
+	row.Height = 1
+	row.Table = table
 	//Columns are rendered following the slice order
-	row.columns = []termui.GridBufferer{
+	row.Columns = []termui.GridBufferer{
 		row.ID,
 		row.Name,
 		row.Image,
@@ -56,63 +54,6 @@ func NewTaskRow(task swarm.Task) *TaskRow {
 
 	return row
 
-}
-
-//GetHeight returns this TaskRow heigth
-func (row *TaskRow) GetHeight() int {
-	return row.Height
-}
-
-//SetX sets the x position of this TaskRow
-func (row *TaskRow) SetX(x int) {
-	row.X = x
-}
-
-//SetY sets the y position of this TaskRow
-func (row *TaskRow) SetY(y int) {
-	if y == row.Y {
-		return
-	}
-	for _, col := range row.columns {
-		col.SetY(y)
-	}
-	row.Y = y
-}
-
-//SetWidth sets the width of this TaskRow
-func (row *TaskRow) SetWidth(width int) {
-	if width == row.Width {
-		return
-	}
-	row.Width = width
-	x := row.X
-	rw := appui.CalcItemWidth(width, len(row.columns)-1)
-	for _, col := range row.columns {
-		col.SetX(x)
-		if col != row.ID {
-			col.SetWidth(rw)
-			x += rw + appui.DefaultColumnSpacing
-		} else {
-			col.SetWidth(appui.IDColumnWidth)
-			x += appui.IDColumnWidth + appui.DefaultColumnSpacing
-		}
-	}
-}
-
-//Buffer returns this TaskRow data as a termui.Buffer
-func (row *TaskRow) Buffer() termui.Buffer {
-
-	buf := termui.NewBuffer()
-	buf.Merge(row.ID.Buffer())
-	buf.Merge(row.Name.Buffer())
-	buf.Merge(row.Image.Buffer())
-	buf.Merge(row.Node.Buffer())
-	buf.Merge(row.DesiredState.Buffer())
-	buf.Merge(row.CurrentState.Buffer())
-	buf.Merge(row.Error.Buffer())
-	buf.Merge(row.Ports.Buffer())
-
-	return buf
 }
 
 //Highlighted marks this rows as being highlighted

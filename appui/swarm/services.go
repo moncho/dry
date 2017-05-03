@@ -44,7 +44,7 @@ func NewServicesWidget(swarmClient docker.SwarmAPI, y int) *ServicesWidget {
 		width:         ui.ActiveScreen.Dimensions.Width}
 	if services, servicesInfo, err := getServiceInfo(swarmClient); err == nil {
 		for _, service := range services {
-			w.services = append(w.services, NewServiceRow(service, servicesInfo[service.ID]))
+			w.services = append(w.services, NewServiceRow(service, servicesInfo[service.ID], w.header))
 		}
 	}
 	w.align()

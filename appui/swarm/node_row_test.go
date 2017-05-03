@@ -27,7 +27,7 @@ func TestNodeRow(t *testing.T) {
 		},
 	}
 
-	row := NewNodeRow(node)
+	row := NewNodeRow(node, nodeTableHeader())
 
 	if row == nil {
 		t.Error("NodeRow was not created")

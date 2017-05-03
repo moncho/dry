@@ -21,14 +21,11 @@ type NodeRow struct {
 	IPAddress *drytermui.ParColumn
 	Status    *drytermui.ParColumn
 
-	X, Y    int
-	Width   int
-	Height  int
-	columns []termui.GridBufferer
+	drytermui.Row
 }
 
 //NewNodeRow creats a new NodeRow widget
-func NewNodeRow(node swarm.Node) *NodeRow {
+func NewNodeRow(node swarm.Node, table drytermui.Table) *NodeRow {
 	row := &NodeRow{
 		node:      node,
 		Name:      drytermui.NewThemedParColumn(appui.DryTheme, node.Description.Hostname),
@@ -38,11 +35,11 @@ func NewNodeRow(node swarm.Node) *NodeRow {
 		Engine:    drytermui.NewThemedParColumn(appui.DryTheme, node.Description.Engine.EngineVersion),
 		IPAddress: drytermui.NewThemedParColumn(appui.DryTheme, node.Status.Addr),
 		Status:    drytermui.NewThemedParColumn(appui.DryTheme, string(node.Status.State)),
-		Height:    1,
 	}
-	//row.changeTextColor(termui.Attribute(appui.DryTheme.ListItem))
+	row.Height = 1
+	row.Table = table
 	//Columns are rendered following the slice order
-	row.columns = []termui.GridBufferer{
+	row.Columns = []termui.GridBufferer{
 		row.Name,
 		row.Role,
 		row.CPU,
@@ -54,56 +51,6 @@ func NewNodeRow(node swarm.Node) *NodeRow {
 
 	return row
 
-}
-
-//GetHeight returns this NodeRow heigth
-func (row *NodeRow) GetHeight() int {
-	return row.Height
-}
-
-//SetX sets the x position of this NodeRow
-func (row *NodeRow) SetX(x int) {
-	row.X = x
-}
-
-//SetY sets the y position of this NodeRow
-func (row *NodeRow) SetY(y int) {
-	if y == row.Y {
-		return
-	}
-	for _, col := range row.columns {
-		col.SetY(y)
-	}
-	row.Y = y
-}
-
-//SetWidth sets the width of this NodeRow
-func (row *NodeRow) SetWidth(width int) {
-	if width == row.Width {
-		return
-	}
-	row.Width = width
-	x := row.X
-	rw := appui.CalcItemWidth(width, len(row.columns))
-	for _, col := range row.columns {
-		col.SetX(x)
-		col.SetWidth(rw)
-		x += rw + appui.DefaultColumnSpacing
-	}
-}
-
-//Buffer returns this NodeRow data as a termui.Buffer
-func (row *NodeRow) Buffer() termui.Buffer {
-	buf := termui.NewBuffer()
-	buf.Merge(row.Name.Buffer())
-	buf.Merge(row.Role.Buffer())
-	buf.Merge(row.CPU.Buffer())
-	buf.Merge(row.Memory.Buffer())
-	buf.Merge(row.Engine.Buffer())
-	buf.Merge(row.IPAddress.Buffer())
-	buf.Merge(row.Status.Buffer())
-
-	return buf
 }
 
 //Highlighted marks this rows as being highlighted

@@ -13,7 +13,7 @@ func TestStatsRow(t *testing.T) {
 		Container:     types.Container{ID: "CID", Names: []string{"Name"}, Status: "Never worked"},
 		ContainerJSON: types.ContainerJSON{}}
 
-	row := NewContainerStatsRow(container)
+	row := NewContainerStatsRow(container, NewMonitorTableHeader())
 	if row == nil {
 		t.Error("Stats row was not created")
 	}
@@ -21,8 +21,8 @@ func TestStatsRow(t *testing.T) {
 		t.Error("Stats row does not hold a reference to the container.")
 	}
 
-	if len(row.columns) != 8 {
-		t.Errorf("Stats row does not have the expected number of columns: %d.", len(row.columns))
+	if len(row.Columns) != 8 {
+		t.Errorf("Stats row does not have the expected number of columns: %d.", len(row.Columns))
 	}
 
 	if row.ID.Text != container.ID {

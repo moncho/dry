@@ -33,7 +33,7 @@ func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
 	var channels []*docker.StatsChannel
 	for _, c := range containers {
 		statsChan := daemon.OpenChannel(c)
-		rows = append(rows, NewSelfUpdatedContainerStatsRow(statsChan))
+		rows = append(rows, NewSelfUpdatedContainerStatsRow(statsChan, defaultMonitorTableHeader))
 		channels = append(channels, statsChan)
 	}
 	m := &Monitor{
@@ -50,7 +50,7 @@ func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
 	return m
 }
 
-//RowCount returns the number of rowns of this Monitor.
+//RowCount returns the number of rows of this Monitor.
 func (m *Monitor) RowCount() int {
 	return len(m.rows)
 }
