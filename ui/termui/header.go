@@ -5,11 +5,6 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
-//Table defines common behaviour for table widgets
-type Table interface {
-	ColumnWidths() []int
-}
-
 //TableHeader is a table header widget
 type TableHeader struct {
 	X, Y              int
