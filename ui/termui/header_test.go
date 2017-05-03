@@ -34,27 +34,90 @@ func TestHeader(t *testing.T) {
 		t.Errorf("Calculated column width with 4 columns (one of them with witdh 8) is: %d", cw)
 
 	}
-	if len(header.ColumnWidths) != 4 {
-		t.Errorf("Individual column widths does not have the expected length of 4, got %d", len(header.ColumnWidths))
+	if len(header.ColumnWidths()) != 4 {
+		t.Errorf("Individual column widths does not have the expected length of 4, got %d", len(header.ColumnWidths()))
 
 	}
 
-	if header.ColumnWidths[0] != cw {
-		t.Errorf("Non-fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths[0], cw)
+	if header.ColumnWidths()[0] != cw {
+		t.Errorf("Non-fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths()[0], cw)
 
 	}
 
-	if header.ColumnWidths[1] != cw {
-		t.Errorf("Non-fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths[1], cw)
+	if header.ColumnWidths()[1] != cw {
+		t.Errorf("Non-fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths()[1], cw)
 
 	}
 
-	if header.ColumnWidths[2] != cw {
-		t.Errorf("Non-fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths[2], cw)
+	if header.ColumnWidths()[2] != cw {
+		t.Errorf("Non-fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths()[2], cw)
 
 	}
-	if header.ColumnWidths[3] != 8 {
-		t.Errorf("Fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths[3], 8)
+	if header.ColumnWidths()[3] != 8 {
+		t.Errorf("Fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths()[3], 8)
+	}
+}
+
+func TestHeaderMultipleWidthSetting(t *testing.T) {
+
+	header := NewHeader(&ui.ColorTheme{})
+	header.ColumnSpacing = 1
+
+	header.AddColumn("column1")
+	header.AddColumn("column2")
+	header.AddColumn("column3")
+	header.AddFixedWidthColumn("Column4", 8)
+
+	header.SetWidth(40)
+	cw := header.calcColumnWidth()
+
+	if len(header.ColumnWidths()) != 4 {
+		t.Errorf("Individual column widths does not have the expected length of 4, got %d", len(header.ColumnWidths()))
 
 	}
+
+	if header.ColumnWidths()[0] != cw {
+		t.Errorf("Non-fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths()[0], cw)
+
+	}
+
+	if header.ColumnWidths()[1] != cw {
+		t.Errorf("Non-fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths()[1], cw)
+
+	}
+
+	if header.ColumnWidths()[2] != cw {
+		t.Errorf("Non-fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths()[2], cw)
+
+	}
+	if header.ColumnWidths()[3] != 8 {
+		t.Errorf("Fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths()[3], 8)
+	}
+
+	header.SetWidth(50)
+	cw = header.calcColumnWidth()
+
+	if len(header.ColumnWidths()) != 4 {
+		t.Errorf("Individual column widths does not have the expected length of 4, got %d", len(header.ColumnWidths()))
+
+	}
+
+	if header.ColumnWidths()[0] != cw {
+		t.Errorf("Non-fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths()[0], cw)
+
+	}
+
+	if header.ColumnWidths()[1] != cw {
+		t.Errorf("Non-fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths()[1], cw)
+
+	}
+
+	if header.ColumnWidths()[2] != cw {
+		t.Errorf("Non-fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths()[2], cw)
+
+	}
+	if header.ColumnWidths()[3] != 8 {
+		t.Errorf("Fixed width columns do not have the expected width, got: %d, expected :%d", header.ColumnWidths()[3], 8)
+	}
+
 }

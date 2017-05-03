@@ -38,14 +38,22 @@ func (th *TableHeader) SetWidth(w int) {
 	th.Width = w
 	//Set width on each non-fixed width column
 	iw := th.calcColumnWidth()
+
+	//Reset columns with variable width
+	for _, col := range th.varWidthColumns {
+		col.Width = -1
+	}
+
+	var columnWidths []int
 	for _, col := range th.Columns {
 		col.SetX(x)
 		if col.Width == -1 {
 			col.SetWidth(iw)
 		}
 		x += col.Width + th.ColumnSpacing
-		th.columnWidths = append(th.columnWidths, col.Width)
+		columnWidths = append(columnWidths, col.Width)
 	}
+	th.columnWidths = columnWidths
 }
 
 //SetX sets the X position of this header
