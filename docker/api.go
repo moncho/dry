@@ -70,6 +70,7 @@ type SwarmAPI interface {
 	Nodes() ([]swarm.Node, error)
 	NodeTasks(nodeID string) ([]swarm.Task, error)
 	Resolve(t interface{}, id string) (string, error)
+	Service(id string) (*swarm.Service, error)
 	Services() ([]swarm.Service, error)
 	ServiceTasks(services ...string) ([]swarm.Task, error)
 }

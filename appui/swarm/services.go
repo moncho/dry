@@ -111,7 +111,7 @@ func (s *ServicesWidget) highlightSelectedRow() {
 
 //OnEvent runs the given command
 func (s *ServicesWidget) OnEvent(event appui.EventCommand) error {
-	return nil
+	return event(s.services[s.selectedIndex].service.ID)
 }
 
 func (s *ServicesWidget) visibleRows() []*ServiceRow {

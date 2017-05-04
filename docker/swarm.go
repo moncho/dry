@@ -56,6 +56,18 @@ func (daemon *DockerDaemon) Resolve(t interface{}, id string) (string, error) {
 	return daemon.resolver.Resolve(ctx, t, id)
 }
 
+//Service returns service details of the service with the given id
+func (daemon *DockerDaemon) Service(id string) (*swarm.Service, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	service, _, err := daemon.client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{InsertDefaults: true})
+	if err == nil {
+		return &service, nil
+	}
+	return nil, pkgError.Wrapf(err, "Error retrieving service with id %s", id)
+
+}
+
 //Services returns the services known by the Swarm
 func (daemon *DockerDaemon) Services() ([]swarm.Service, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)

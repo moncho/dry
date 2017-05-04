@@ -31,6 +31,7 @@ const (
 	InspectMode
 	Nodes
 	Services
+	ServiceTasks
 	Tasks
 )
 
@@ -129,22 +130,34 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Services:
 		{
-			nodes := swarm.NewServicesWidget(d.dockerDaemon, viewStartingLine)
-			bufferers = append(bufferers, nodes)
+			services := swarm.NewServicesWidget(d.dockerDaemon, viewStartingLine)
+			d.state.activeWidget = services
+			bufferers = append(bufferers, services)
 			what = "Services"
-			count = nodes.RowCount()
+			count = services.RowCount()
 			updateCursorPosition(screen.Cursor, count)
 			keymap = swarmMapping
 		}
 	case Tasks:
 		{
-			tasks := swarm.NewTasksWidget(d.dockerDaemon, d.state.node, viewStartingLine)
+
+			tasks := swarm.NewNodeTasksWidget(d.dockerDaemon, d.state.node, viewStartingLine)
 			bufferers = append(bufferers, tasks)
-			what = "Tasks"
+			what = fmt.Sprintf("Node %s Tasks", d.state.node)
 			count = tasks.RowCount()
 			updateCursorPosition(screen.Cursor, count)
 			keymap = swarmMapping
 		}
+	case ServiceTasks:
+		{
+			tasks := swarm.NewServiceTasksWidget(d.dockerDaemon, d.state.service, viewStartingLine)
+			bufferers = append(bufferers, tasks)
+			what = fmt.Sprintf("Service %s Tasks", d.state.service)
+			count = tasks.RowCount()
+			updateCursorPosition(screen.Cursor, count)
+			keymap = swarmMapping
+		}
+
 	case DiskUsage:
 		{
 			if du, err := d.dockerDaemon.DiskUsage(); err == nil {

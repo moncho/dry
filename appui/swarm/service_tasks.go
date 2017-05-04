@@ -11,12 +11,10 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
-var defaultTasksTableHeader = taskTableHeader()
-
-//NodeTasksWidget shows a node's task information
-type NodeTasksWidget struct {
+//ServiceTasksWidget shows a service's task information
+type ServiceTasksWidget struct {
 	swarmClient          docker.SwarmAPI
-	node                 *swarm.Node
+	service              *swarm.Service
 	tasks                []*TaskRow
 	header               *termui.TableHeader
 	selectedIndex        int
@@ -27,13 +25,13 @@ type NodeTasksWidget struct {
 	sync.RWMutex
 }
 
-//NewTasksWidget creates a TasksWidget
-func NewTasksWidget(swarmClient docker.SwarmAPI, nodeID string, y int) *NodeTasksWidget {
-	if node, err := swarmClient.Node(nodeID); err == nil {
+//NewServiceTasksWidget creates a TasksWidget
+func NewServiceTasksWidget(swarmClient docker.SwarmAPI, serviceID string, y int) *ServiceTasksWidget {
+	if service, err := swarmClient.Service(serviceID); err == nil {
 
-		w := &NodeTasksWidget{
+		w := &ServiceTasksWidget{
 			swarmClient:   swarmClient,
-			node:          node,
+			service:       service,
 			header:        defaultTasksTableHeader,
 			selectedIndex: 0,
 			offset:        0,
@@ -42,7 +40,7 @@ func NewTasksWidget(swarmClient docker.SwarmAPI, nodeID string, y int) *NodeTask
 			height:        appui.MainScreenAvailableHeight(),
 			width:         ui.ActiveScreen.Dimensions.Width}
 
-		if tasks, err := swarmClient.NodeTasks(node.ID); err == nil {
+		if tasks, err := swarmClient.ServiceTasks(serviceID); err == nil {
 			for _, task := range tasks {
 				w.tasks = append(w.tasks, NewTaskRow(swarmClient, task, w.header))
 			}
@@ -54,7 +52,7 @@ func NewTasksWidget(swarmClient docker.SwarmAPI, nodeID string, y int) *NodeTask
 }
 
 //Align aligns rows
-func (s *NodeTasksWidget) align() {
+func (s *ServiceTasksWidget) align() {
 	y := s.y
 	x := s.x
 	width := s.width
@@ -70,7 +68,7 @@ func (s *NodeTasksWidget) align() {
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
-func (s *NodeTasksWidget) Buffer() gizaktermui.Buffer {
+func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
 
@@ -92,10 +90,10 @@ func (s *NodeTasksWidget) Buffer() gizaktermui.Buffer {
 }
 
 //RowCount returns the number of rowns of this widget.
-func (s *NodeTasksWidget) RowCount() int {
+func (s *ServiceTasksWidget) RowCount() int {
 	return len(s.tasks)
 }
-func (s *NodeTasksWidget) highlightSelectedRow() {
+func (s *ServiceTasksWidget) highlightSelectedRow() {
 	if s.RowCount() == 0 {
 		return
 	}
@@ -109,11 +107,11 @@ func (s *NodeTasksWidget) highlightSelectedRow() {
 }
 
 //OnEvent runs the given command
-func (s *NodeTasksWidget) OnEvent(event appui.EventCommand) error {
+func (s *ServiceTasksWidget) OnEvent(event appui.EventCommand) error {
 	return nil
 }
 
-func (s *NodeTasksWidget) visibleRows() []*TaskRow {
+func (s *ServiceTasksWidget) visibleRows() []*TaskRow {
 
 	//no screen
 	if s.height < 0 {
@@ -150,17 +148,4 @@ func (s *NodeTasksWidget) visibleRows() []*TaskRow {
 	start := s.startIndex
 	end := s.endIndex + 1
 	return rows[start:end]
-}
-
-func taskTableHeader() *termui.TableHeader {
-	fields := []string{
-		"NAME", "IMAGE", "NODE", "DESIRED STATE", "CURRENT STATE", "ERROR", "PORTS"}
-
-	header := termui.NewHeader(appui.DryTheme)
-	header.ColumnSpacing = appui.DefaultColumnSpacing
-	header.AddFixedWidthColumn("ID", docker.ShortLen)
-	for _, f := range fields {
-		header.AddColumn(f)
-	}
-	return header
 }

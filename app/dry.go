@@ -36,6 +36,7 @@ type state struct {
 	sortNetworksMode     drydocker.SortNetworksMode
 	activeWidget         appui.Actionable
 	node                 string
+	service              string
 }
 
 //Dry represents the application.
@@ -499,7 +500,14 @@ func (d *Dry) ShowServices() {
 	d.changeViewMode(Services)
 }
 
-//ShowTasks changes the state of dry to show the given node's task list
+//ShowServiceTasks changes the state of dry to show the given service task list
+func (d *Dry) ShowServiceTasks(serviceID string) {
+	d.state.service = serviceID
+	d.changeViewMode(ServiceTasks)
+
+}
+
+//ShowTasks changes the state of dry to show the given node task list
 func (d *Dry) ShowTasks(nodeID string) {
 	d.state.node = nodeID
 	d.changeViewMode(Tasks)

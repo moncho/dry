@@ -256,6 +256,11 @@ func (_m *DockerDaemonMock) Resolve(t interface{}, id string) (string, error) {
 	return "", nil
 }
 
+//Service mock
+func (_m *DockerDaemonMock) Service(id string) (*swarm.Service, error) {
+	return nil, nil
+}
+
 //Services mock
 func (_m *DockerDaemonMock) Services() ([]swarm.Service, error) {
 	return nil, nil

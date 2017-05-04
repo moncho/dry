@@ -29,7 +29,7 @@ func TestTaskRow(t *testing.T) {
 	}
 
 	if row.Name.Text != "Service1.1" {
-		t.Errorf("TaskRow name is not %s, got %s", "Service1.1", row.Name.Text)
+		t.Errorf("TaskRow name is not %s, got %s", "Service1.1 ", row.Name.Text)
 	}
 
 	if row.Image.Text != ts.Image() {
