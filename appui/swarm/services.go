@@ -155,13 +155,17 @@ func (s *ServicesWidget) visibleRows() []*ServiceRow {
 
 func serviceTableHeader() *termui.TableHeader {
 	fields := []string{
-		"ID", "NAME", "MODE", "REPLICAS", "IMAGE"}
+		"ID", "NAME", "MODE", "REPLICAS", "SERVICE PORT(S)", "IMAGE"}
 
 	header := termui.NewHeader(appui.DryTheme)
 	header.ColumnSpacing = appui.DefaultColumnSpacing
-	for _, f := range fields {
-		header.AddColumn(f)
-	}
+	header.AddColumn(fields[0])
+	header.AddColumn(fields[1])
+	header.AddFixedWidthColumn(fields[2], 12)
+	header.AddFixedWidthColumn(fields[3], 10)
+	header.AddColumn(fields[4])
+	header.AddColumn(fields[5])
+
 	return header
 }
 
