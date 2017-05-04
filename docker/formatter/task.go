@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/cli/command"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/go-units"
+	"github.com/moncho/dry/docker"
 )
 
 const (
@@ -17,12 +18,13 @@ const (
 )
 
 //NewTaskStringer creates a TaskStringer for the given task
-func NewTaskStringer(task swarm.Task, trunc bool) *TaskStringer {
-	return &TaskStringer{task, trunc}
+func NewTaskStringer(api docker.SwarmAPI, task swarm.Task, trunc bool) *TaskStringer {
+	return &TaskStringer{api, task, trunc}
 }
 
 //TaskStringer converts to it string representation Task attributes
 type TaskStringer struct {
+	api   docker.SwarmAPI
 	task  swarm.Task
 	trunc bool
 }
@@ -37,7 +39,18 @@ func (t *TaskStringer) ID() string {
 
 //Name Task name as a string
 func (t *TaskStringer) Name() string {
-	return t.task.ServiceID
+
+	if serviceName, err := t.api.Resolve(swarm.Service{}, t.task.ServiceID); err == nil {
+		name := ""
+		if t.task.Slot != 0 {
+			name = fmt.Sprintf("%v.%v", serviceName, t.task.Slot)
+		} else {
+			name = fmt.Sprintf("%v.%v", serviceName, t.task.NodeID)
+		}
+		return name
+	}
+	return ""
+
 }
 
 //Image Task image as a string
@@ -59,7 +72,10 @@ func (t *TaskStringer) Image() string {
 
 //NodeID Task nodeID as a string
 func (t *TaskStringer) NodeID() string {
-	return t.task.NodeID
+	if name, err := t.api.Resolve(swarm.Node{}, t.task.NodeID); err == nil {
+		return name
+	}
+	return ""
 }
 
 //DesiredState Task desired state as a string
@@ -93,13 +109,5 @@ func (t *TaskStringer) Ports() string {
 	if len(t.task.Status.PortStatus.Ports) == 0 {
 		return ""
 	}
-	ports := []string{}
-	for _, pConfig := range t.task.Status.PortStatus.Ports {
-		ports = append(ports, fmt.Sprintf("*:%d->%d/%s",
-			pConfig.PublishedPort,
-			pConfig.TargetPort,
-			pConfig.Protocol,
-		))
-	}
-	return strings.Join(ports, ",")
+	return FormatPorts(t.task.Status.PortStatus.Ports)
 }

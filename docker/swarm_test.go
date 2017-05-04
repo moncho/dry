@@ -1,9 +1,13 @@
 package docker
 
 import (
+	"context"
 	"testing"
 
+	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/cli/command/idresolver"
 	"github.com/moncho/dry/docker/mock"
+	"github.com/pkg/errors"
 )
 
 func TestSwarmNodeRetrieval(t *testing.T) {
@@ -36,5 +40,34 @@ func TestTaskRetrieval(t *testing.T) {
 	}
 	if len(tasks) != 0 {
 		t.Errorf("Expected a list with no task, got %d", len(tasks))
+	}
+}
+
+func TestIDResolution(t *testing.T) {
+	r := &resolverMock{}
+	daemon := DockerDaemon{resolver: r}
+	name, err := daemon.Resolve(swarm.Node{}, "1")
+
+	if err != nil {
+		t.Errorf("Resolving node with ID 1 resulted in error: %s", err.Error())
+	}
+	if name != "Node1" {
+		t.Errorf("Resolving node with ID 1 resulted in %s , expected %s", name, "Node1")
+	}
+
+}
+
+type resolverMock struct {
+	idresolver.IDResolver
+}
+
+func (r *resolverMock) Resolve(ctx context.Context, t interface{}, id string) (string, error) {
+	switch t.(type) {
+	case swarm.Node:
+		return "Node" + id, nil
+	case swarm.Service:
+		return "Service" + id, nil
+	default:
+		return "", errors.Errorf("unsupported type")
 	}
 }

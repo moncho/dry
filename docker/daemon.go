@@ -52,8 +52,8 @@ type DockerDaemon struct {
 	storeLock    sync.RWMutex
 	imagesLock   sync.RWMutex
 	networksLock sync.RWMutex
-
-	eventLog *EventLog
+	resolver     Resolver
+	eventLog     *EventLog
 }
 
 func init() {

@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"context"
 	"io"
 
 	"github.com/docker/docker/api/types"
@@ -68,6 +69,7 @@ type SwarmAPI interface {
 	Node(id string) (*swarm.Node, error)
 	Nodes() ([]swarm.Node, error)
 	NodeTasks(nodeID string) ([]swarm.Task, error)
+	Resolve(t interface{}, id string) (string, error)
 	Services() ([]swarm.Service, error)
 	ServiceTasks(services ...string) ([]swarm.Task, error)
 }
@@ -87,4 +89,9 @@ type Stats struct {
 	PidsCurrent      uint64
 	Stats            *types.StatsJSON
 	ProcessList      *container.ContainerTopOKBody
+}
+
+//Resolver defines the interface for ID to name resolution
+type Resolver interface {
+	Resolve(ctx context.Context, t interface{}, id string) (string, error)
 }

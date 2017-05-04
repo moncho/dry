@@ -50,6 +50,7 @@ func connect(client client.APIClient, env *Env) (*DockerDaemon, error) {
 		images:    images,
 		networks:  networks,
 		dockerEnv: env,
+		resolver:  newResolver(client, false),
 	}
 	d.init()
 	return d, nil
