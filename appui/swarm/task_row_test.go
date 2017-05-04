@@ -5,28 +5,31 @@ import (
 
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/moncho/dry/docker/formatter"
+	"github.com/moncho/dry/mocks"
 )
 
 func TestTaskRow(t *testing.T) {
 	task := swarm.Task{
 		ID:        "task1",
-		ServiceID: "serviceID",
+		ServiceID: "1",
 		Spec:      swarm.TaskSpec{},
+		Slot:      0,
+		NodeID:    "1",
 	}
-
-	ts := formatter.NewTaskStringer(task, true)
-	row := NewTaskRow(task, taskTableHeader())
+	client := &mocks.SwarmDockerDaemon{}
+	ts := formatter.NewTaskStringer(client, task, true)
+	row := NewTaskRow(client, task, taskTableHeader())
 
 	if row == nil {
 		t.Error("TaskRow was not created")
 	}
 
 	if row.ID.Text != task.ID {
-		t.Errorf("TaskRow name is not 'test', got %s", row.ID.Text)
+		t.Errorf("TaskRow ID is not 'task1', got %s", row.ID.Text)
 	}
 
-	if row.Name.Text != task.ServiceID {
-		t.Errorf("TaskRow name is not 'test', got %s", row.Name.Text)
+	if row.Name.Text != "Service1.1" {
+		t.Errorf("TaskRow name is not %s, got %s", "Service1.1", row.Name.Text)
 	}
 
 	if row.Image.Text != ts.Image() {

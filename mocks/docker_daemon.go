@@ -251,6 +251,11 @@ func (_m *DockerDaemonMock) RemoveNetwork(id string) error {
 	return nil
 }
 
+//Resolve mock
+func (_m *DockerDaemonMock) Resolve(t interface{}, id string) (string, error) {
+	return "", nil
+}
+
 //Services mock
 func (_m *DockerDaemonMock) Services() ([]swarm.Service, error) {
 	return nil, nil

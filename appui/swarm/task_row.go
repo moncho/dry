@@ -4,6 +4,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
+	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/docker/formatter"
 	drytermui "github.com/moncho/dry/ui/termui"
 )
@@ -24,8 +25,8 @@ type TaskRow struct {
 }
 
 //NewTaskRow creats a new TaskRow widget
-func NewTaskRow(task swarm.Task, table drytermui.Table) *TaskRow {
-	ts := formatter.NewTaskStringer(task, true)
+func NewTaskRow(swarmClient docker.SwarmAPI, task swarm.Task, table drytermui.Table) *TaskRow {
+	ts := formatter.NewTaskStringer(swarmClient, task, true)
 
 	row := &TaskRow{
 		task:         task,
