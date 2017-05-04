@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	dockerSwarm "github.com/docker/docker/api/types/swarm"
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/appui/swarm"
@@ -140,19 +141,28 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Tasks:
 		{
-
-			tasks := swarm.NewNodeTasksWidget(d.dockerDaemon, d.state.node, viewStartingLine)
+			nodeID := d.state.node
+			tasks := swarm.NewNodeTasksWidget(d.dockerDaemon, nodeID, viewStartingLine)
 			bufferers = append(bufferers, tasks)
-			what = fmt.Sprintf("Node %s Tasks", d.state.node)
+			if node, err := d.dockerDaemon.Resolve(dockerSwarm.Node{}, nodeID); err == nil {
+				what = fmt.Sprintf("Node %s tasks", node)
+			} else {
+				what = fmt.Sprintf("Node %s asks", nodeID)
+			}
 			count = tasks.RowCount()
 			updateCursorPosition(screen.Cursor, count)
 			keymap = swarmMapping
 		}
 	case ServiceTasks:
 		{
-			tasks := swarm.NewServiceTasksWidget(d.dockerDaemon, d.state.service, viewStartingLine)
+			serviceID := d.state.service
+			tasks := swarm.NewServiceTasksWidget(d.dockerDaemon, serviceID, viewStartingLine)
 			bufferers = append(bufferers, tasks)
-			what = fmt.Sprintf("Service %s Tasks", d.state.service)
+			if service, err := d.dockerDaemon.Resolve(dockerSwarm.Service{}, serviceID); err == nil {
+				what = fmt.Sprintf("Service %s tasks", service)
+			} else {
+				what = fmt.Sprintf("Service %s tasks", serviceID)
+			}
 			count = tasks.RowCount()
 			updateCursorPosition(screen.Cursor, count)
 			keymap = swarmMapping
