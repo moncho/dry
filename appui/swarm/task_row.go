@@ -52,6 +52,7 @@ func NewTaskRow(swarmClient docker.SwarmAPI, task swarm.Task, table drytermui.Ta
 		row.Error,
 		row.Ports,
 	}
+	updateStateColumns(row)
 
 	return row
 
@@ -74,4 +75,19 @@ func (row *TaskRow) NotHighlighted() {
 func (row *TaskRow) changeTextColor(fg, bg termui.Attribute) {
 	row.ID.TextFgColor = fg
 	row.ID.TextBgColor = bg
+}
+
+//updateStateColumns changes the color of state-related column depending
+//on the task state
+func updateStateColumns(row *TaskRow) {
+	var color termui.Attribute
+	if row.DesiredState.Text == "Running" {
+		color = appui.Running
+	} else {
+		color = appui.NotRunning
+	}
+	row.DesiredState.TextFgColor = color
+	row.CurrentState.TextFgColor = color
+	row.Error.TextFgColor = color
+
 }

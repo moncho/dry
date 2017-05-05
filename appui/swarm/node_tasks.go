@@ -163,7 +163,7 @@ func taskTableHeader() *termui.TableHeader {
 	header.AddColumn(fields[2])
 	header.AddColumn(fields[3])
 	header.AddFixedWidthColumn(fields[4], 13)
-	header.AddColumn(fields[5])
+	header.AddFixedWidthColumn(fields[5], 22)
 	header.AddColumn(fields[6])
 	header.AddColumn(fields[7])
 

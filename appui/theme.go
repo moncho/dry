@@ -1,6 +1,14 @@
 package appui
 
-import "github.com/moncho/dry/ui"
+import (
+	"github.com/gizak/termui"
+	"github.com/moncho/dry/ui"
+)
+
+const (
+	Running    = termui.Attribute(ui.Color108)
+	NotRunning = termui.Attribute(ui.Color161)
+)
 
 //Default16 default theme for 16-color mode
 var Default16 = &ui.ColorTheme{
