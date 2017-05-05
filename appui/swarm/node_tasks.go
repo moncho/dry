@@ -154,13 +154,18 @@ func (s *NodeTasksWidget) visibleRows() []*TaskRow {
 
 func taskTableHeader() *termui.TableHeader {
 	fields := []string{
-		"NAME", "IMAGE", "NODE", "DESIRED STATE", "CURRENT STATE", "ERROR", "PORTS"}
+		"ID", "NAME", "IMAGE", "NODE", "DESIRED STATE", "CURRENT STATE", "ERROR", "PORTS"}
 
 	header := termui.NewHeader(appui.DryTheme)
 	header.ColumnSpacing = appui.DefaultColumnSpacing
-	header.AddFixedWidthColumn("ID", docker.ShortLen)
-	for _, f := range fields {
-		header.AddColumn(f)
-	}
+	header.AddFixedWidthColumn(fields[0], docker.ShortLen)
+	header.AddColumn(fields[1])
+	header.AddColumn(fields[2])
+	header.AddColumn(fields[3])
+	header.AddFixedWidthColumn(fields[4], 13)
+	header.AddColumn(fields[5])
+	header.AddColumn(fields[6])
+	header.AddColumn(fields[7])
+
 	return header
 }
