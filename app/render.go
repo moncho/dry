@@ -144,11 +144,11 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			nodeID := d.state.node
 			tasks := swarm.NewNodeTasksWidget(d.dockerDaemon, nodeID, viewStartingLine)
 			bufferers = append(bufferers, tasks)
+			whatNode := nodeID
 			if node, err := d.dockerDaemon.Resolve(dockerSwarm.Node{}, nodeID); err == nil {
-				what = fmt.Sprintf("Node %s tasks", node)
-			} else {
-				what = fmt.Sprintf("Node %s asks", nodeID)
+				whatNode = node
 			}
+			what = fmt.Sprintf("Node %s tasks", whatNode)
 			count = tasks.RowCount()
 			updateCursorPosition(screen.Cursor, count)
 			keymap = swarmMapping
@@ -158,16 +158,15 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			serviceID := d.state.service
 			tasks := swarm.NewServiceTasksWidget(d.dockerDaemon, serviceID, viewStartingLine)
 			bufferers = append(bufferers, tasks)
+			whatService := serviceID
 			if service, err := d.dockerDaemon.Resolve(dockerSwarm.Service{}, serviceID); err == nil {
-				what = fmt.Sprintf("Service %s tasks", service)
-			} else {
-				what = fmt.Sprintf("Service %s tasks", serviceID)
+				whatService = service
 			}
+			what = fmt.Sprintf("Service %s tasks", whatService)
 			count = tasks.RowCount()
 			updateCursorPosition(screen.Cursor, count)
 			keymap = swarmMapping
 		}
-
 	case DiskUsage:
 		{
 			if du, err := d.dockerDaemon.DiskUsage(); err == nil {
