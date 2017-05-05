@@ -8,6 +8,18 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+var viewsToHandlers = map[viewMode]eventHandler{
+	Images:       &imagesScreenEventHandler{},
+	Networks:     &networksScreenEventHandler{},
+	DiskUsage:    &diskUsageScreenEventHandler{},
+	Main:         &containersScreenEventHandler{},
+	Monitor:      &monitorScreenEventHandler{},
+	Nodes:        &nodesScreenEventHandler{},
+	Tasks:        &taskScreenEventHandler{},
+	Services:     &servicesScreenEventHandler{},
+	ServiceTasks: &serviceTaskScreenEventHandler{},
+}
+
 var defaultHandler eventHandler
 
 //eventHandler interface to handle termbox events
@@ -131,42 +143,10 @@ func (eh *eventHandlerFactory) handlerFor(view viewMode) eventHandler {
 	eh.once.Do(func() {
 		defaultHandler = &baseEventHandler{}
 		defaultHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
-
-		eh.handlers = make(map[viewMode]eventHandler)
-		handler := &imagesScreenEventHandler{}
-		handler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
-		eh.handlers[Images] = handler
-
-		iHandler := &networksScreenEventHandler{}
-		iHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
-
-		eh.handlers[Networks] = iHandler
-
-		duHandler := &diskUsageScreenEventHandler{}
-		duHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
-
-		eh.handlers[DiskUsage] = duHandler
-
-		cHandler := &containersScreenEventHandler{}
-		cHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
-		eh.handlers[Main] = cHandler
-
-		mHandler := &monitorScreenEventHandler{}
-		mHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
-		eh.handlers[Monitor] = mHandler
-
-		nHandler := &nodesScreenEventHandler{}
-		nHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
-		eh.handlers[Nodes] = nHandler
-
-		tHandler := &taskScreenEventHandler{}
-		tHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
-		eh.handlers[Tasks] = tHandler
-
-		sHandler := &servicesScreenEventHandler{}
-		sHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
-		eh.handlers[Services] = sHandler
-
+		eh.handlers = viewsToHandlers
+		for _, handler := range eh.handlers {
+			handler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
+		}
 	})
 	if handler, ok := eh.handlers[view]; ok {
 		return handler
