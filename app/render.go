@@ -74,10 +74,12 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 				containers,
 				sortMode)
 			d.ui.ContainerListWidget.PrepareToRender(data)
-			viewRenderer = d.ui.ContainerListWidget
+
+			containersWidget := appui.NewContainersWidget(data, viewStartingLine)
+			d.state.activeWidget = containersWidget
+			bufferers = append(bufferers, containersWidget)
 
 			keymap = keyMappings
-
 			if d.state.filterPattern != "" {
 				titleInfo = titleInfo + fmt.Sprintf(
 					"<b><blue> | Container name filter: </><yellow>%s</></> ", d.state.filterPattern)
