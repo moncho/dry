@@ -21,8 +21,8 @@ func TestStatsRow(t *testing.T) {
 		t.Error("Stats row does not hold a reference to the container.")
 	}
 
-	if len(row.Columns) != 8 {
-		t.Errorf("Stats row does not have the expected number of columns: %d.", len(row.Columns))
+	if len(row.Columns) != 9 {
+		t.Errorf("Stats row does not have the expected number of columns. Got: %d, expected 9.", len(row.Columns))
 	}
 
 	if row.ID.Text != container.ID {
