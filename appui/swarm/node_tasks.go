@@ -27,7 +27,7 @@ type NodeTasksWidget struct {
 	sync.RWMutex
 }
 
-//NewTasksWidget creates a TasksWidget
+//NewNodeTasksWidget creates a TasksWidget
 func NewNodeTasksWidget(swarmClient docker.SwarmAPI, nodeID string, y int) *NodeTasksWidget {
 	if node, err := swarmClient.Node(nodeID); err == nil {
 

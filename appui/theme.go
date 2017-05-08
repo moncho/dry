@@ -6,7 +6,9 @@ import (
 )
 
 const (
-	Running    = termui.Attribute(ui.Color108)
+	//Running is the color used to identify a running element (e.g container, task)
+	Running = termui.Attribute(ui.Color108)
+	//NotRunning is the color used to identify a non-running element
 	NotRunning = termui.Attribute(ui.Color161)
 )
 
