@@ -48,6 +48,7 @@ func NewNodeRow(node swarm.Node, table drytermui.Table) *NodeRow {
 		row.IPAddress,
 		row.Status,
 	}
+	row.updateStatusColumn()
 
 	return row
 
@@ -70,6 +71,14 @@ func (row *NodeRow) NotHighlighted() {
 func (row *NodeRow) changeTextColor(fg, bg termui.Attribute) {
 	row.Name.TextFgColor = fg
 	row.Name.TextBgColor = bg
+}
+
+func (row *NodeRow) updateStatusColumn() {
+	color := appui.Running
+	if row.Status.Text != "ready" {
+		color = appui.NotRunning
+	}
+	row.Status.TextFgColor = color
 }
 
 func cpus(node swarm.Node) string {

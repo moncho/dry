@@ -19,6 +19,7 @@ var inactiveRowColor = termui.Attribute(ui.Color244)
 type ContainerStatsRow struct {
 	table     drytermui.Table
 	container *docker.Container
+	Status    *drytermui.ParColumn
 	Name      *drytermui.ParColumn
 	ID        *drytermui.ParColumn
 	CPU       *drytermui.GaugeColumn
@@ -36,6 +37,7 @@ func NewContainerStatsRow(container *docker.Container, table drytermui.Table) *C
 	cf := formatter.NewContainerFormatter(container, true)
 	row := &ContainerStatsRow{
 		container: container,
+		Status:    drytermui.NewThemedParColumn(DryTheme, statusSymbol),
 		Name:      drytermui.NewThemedParColumn(DryTheme, cf.Names()),
 		ID:        drytermui.NewThemedParColumn(DryTheme, cf.ID()),
 		CPU:       drytermui.NewThemedGaugeColumn(DryTheme),
@@ -49,6 +51,7 @@ func NewContainerStatsRow(container *docker.Container, table drytermui.Table) *C
 	row.Table = table
 	//Columns are rendered following the slice order
 	row.Columns = []termui.GridBufferer{
+		row.Status,
 		row.ID,
 		row.Name,
 		row.CPU,
@@ -61,7 +64,7 @@ func NewContainerStatsRow(container *docker.Container, table drytermui.Table) *C
 	if !docker.IsContainerRunning(container) {
 		row.markAsNotRunning()
 	} else {
-		row.NotHighlighted()
+		row.Status.TextFgColor = Running
 	}
 	return row
 
@@ -137,7 +140,7 @@ func (row *ContainerStatsRow) setPids(pids uint64) {
 func (row *ContainerStatsRow) setCPU(val float64) {
 	row.CPU.Label = fmt.Sprintf("%.2f%%", val)
 	cpu := int(val)
-	if cpu < 5 {
+	if cpu > 0 && cpu < 5 {
 		cpu = 5
 	} else if cpu > 100 {
 		cpu = 100
@@ -168,7 +171,7 @@ func (row *ContainerStatsRow) setUptime(startedAt string) {
 
 //markAsNotRunning
 func (row *ContainerStatsRow) markAsNotRunning() {
-
+	row.Status.TextFgColor = NotRunning
 	row.Name.TextFgColor = inactiveRowColor
 	row.ID.TextFgColor = inactiveRowColor
 	row.CPU.PercentColor = inactiveRowColor

@@ -16,6 +16,8 @@ func NewMonitorTableHeader() *MonitorTableHeader {
 
 	header := termui.NewHeader(DryTheme)
 	header.ColumnSpacing = DefaultColumnSpacing
+	//Status indicator header
+	header.AddFixedWidthColumn("", 2)
 	header.AddFixedWidthColumn("CONTAINER", IDColumnWidth)
 	for _, f := range fields {
 		header.AddColumn(f)
