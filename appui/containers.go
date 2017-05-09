@@ -1,6 +1,7 @@
 package appui
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/moncho/dry/docker"
@@ -11,6 +12,16 @@ import (
 )
 
 var defaultContainerTableHeader = containerTableHeader()
+
+var containerTableHeaders = []headerColumn{
+	{``, docker.NoSort},
+	{`CONTAINER`, docker.SortByContainerID},
+	{`IMAGE`, docker.SortByImage},
+	{`COMMAND`, docker.NoSort},
+	{`STATUS`, docker.SortByStatus},
+	{`PORTS`, docker.NoSort},
+	{`NAMES`, docker.SortByName},
+}
 
 //ContainersWidget shows information containers
 type ContainersWidget struct {
@@ -68,6 +79,8 @@ func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 	defer s.Unlock()
 
 	buf := gizaktermui.NewBuffer()
+	s.updateHeader()
+
 	buf.Merge(s.header.Buffer())
 
 	y := s.y
@@ -104,6 +117,31 @@ func (s *ContainersWidget) highlightSelectedRow() {
 //OnEvent runs the given command
 func (s *ContainersWidget) OnEvent(event EventCommand) error {
 	return event(s.containers[s.selectedIndex].container.ID)
+}
+
+func (s *ContainersWidget) updateHeader() {
+	sortMode := s.data.sortMode
+
+	for _, c := range s.header.Columns {
+		colTitle := c.Text
+		var header headerColumn
+		if strings.Contains(colTitle, DownArrow) {
+			colTitle = colTitle[DownArrowLenght:]
+		}
+		for _, h := range containerTableHeaders {
+			if colTitle == h.title {
+				header = h
+				break
+			}
+		}
+		if header.mode == sortMode {
+			c.Text = DownArrow + colTitle
+		} else {
+			c.Text = colTitle
+		}
+
+	}
+
 }
 
 func (s *ContainersWidget) visibleRows() []*ContainerRow {
@@ -152,26 +190,15 @@ type headerColumn struct {
 
 func containerTableHeader() *termui.TableHeader {
 
-	headerColumns := []headerColumn{
-		{``, docker.NoSort},
-		{`CONTAINER`, docker.SortByContainerID},
-		{`IMAGE`, docker.SortByImage},
-		{`COMMAND`, docker.NoSort},
-		{`STATUS`, docker.SortByStatus},
-		{`PORTS`, docker.NoSort},
-		{`NAMES`, docker.SortByName},
-	}
-
 	header := termui.NewHeader(DryTheme)
 	header.ColumnSpacing = DefaultColumnSpacing
-	header.AddFixedWidthColumn(headerColumns[0].title, 2)
-	header.AddFixedWidthColumn(headerColumns[1].title, 12)
-	header.AddColumn(headerColumns[2].title)
-	header.AddColumn(headerColumns[3].title)
-	header.AddFixedWidthColumn(headerColumns[4].title, 18)
-	header.AddColumn(headerColumns[5].title)
-	header.AddColumn(headerColumns[6].title)
-	//header.Columns[0].Text = DownArrow + header.Columns[0].Text
+	header.AddFixedWidthColumn(containerTableHeaders[0].title, 2)
+	header.AddFixedWidthColumn(containerTableHeaders[1].title, 12)
+	header.AddColumn(containerTableHeaders[2].title)
+	header.AddColumn(containerTableHeaders[3].title)
+	header.AddFixedWidthColumn(containerTableHeaders[4].title, 18)
+	header.AddColumn(containerTableHeaders[5].title)
+	header.AddColumn(containerTableHeaders[6].title)
 
 	return header
 }
