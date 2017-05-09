@@ -137,11 +137,7 @@ func (c *ContainerFormatter) Labels() string {
 		return ""
 	}
 
-	var joinLabels []string
-	for k, v := range c.c.Labels {
-		joinLabels = append(joinLabels, fmt.Sprintf("%s=%s", k, v))
-	}
-	return strings.Join(joinLabels, ",")
+	return FormatLabels(c.c.Labels)
 }
 
 func (c *ContainerFormatter) fullHeader() string {
@@ -251,4 +247,13 @@ func formGroup(key string, start, last int) string {
 		group = fmt.Sprintf("%s:%s->%s", ip, group, group)
 	}
 	return fmt.Sprintf("%s/%s", group, groupType)
+}
+
+//FormatLabels returns the string representation of the given labels.
+func FormatLabels(labels map[string]string) string {
+	var joinLabels []string
+	for k, v := range labels {
+		joinLabels = append(joinLabels, fmt.Sprintf("%s=%s", k, v))
+	}
+	return strings.Join(joinLabels, ",")
 }

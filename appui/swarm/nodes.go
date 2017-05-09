@@ -146,13 +146,37 @@ func (s *NodesWidget) visibleRows() []*NodeRow {
 }
 
 func nodeTableHeader() *termui.TableHeader {
-	fields := []string{
-		"NAME", "ROLE", "CPU", "MEMORY", "DOCKER ENGINE", "IP ADDRESS", "STATUS"}
+	fieldWidths := map[string]int{
+		"NAME":           0,
+		"ROLE":           12,
+		"LABELS":         0,
+		"CPU":            4,
+		"MEMORY":         12,
+		"DOCKER ENGINE":  16,
+		"IP ADDRESS":     16,
+		"STATUS":         16,
+		"MANAGER STATUS": 0,
+	}
+
+	fields := []string{"NAME",
+		"ROLE",
+		"LABELS",
+		"CPU",
+		"MEMORY",
+		"DOCKER ENGINE",
+		"IP ADDRESS",
+		"STATUS",
+		"MANAGER STATUS"}
 
 	header := termui.NewHeader(appui.DryTheme)
 	header.ColumnSpacing = appui.DefaultColumnSpacing
 	for _, f := range fields {
-		header.AddColumn(f)
+		width := fieldWidths[f]
+		if width == 0 {
+			header.AddColumn(f)
+		} else {
+			header.AddFixedWidthColumn(f, width)
+		}
 	}
 	return header
 }
