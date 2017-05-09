@@ -140,9 +140,9 @@ func (row *ContainerStatsRow) setPids(pids uint64) {
 func (row *ContainerStatsRow) setCPU(val float64) {
 	row.CPU.Label = fmt.Sprintf("%.2f%%", val)
 	cpu := int(val)
-	if cpu > 0 && cpu < 5 {
+	if val > 0 && val < 5 {
 		cpu = 5
-	} else if cpu > 100 {
+	} else if val > 100 {
 		cpu = 100
 	}
 	row.CPU.Percent = cpu
