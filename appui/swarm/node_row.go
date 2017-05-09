@@ -96,7 +96,7 @@ func cpus(node swarm.Node) string {
 }
 
 func managerStatus(node swarm.Node) string {
-	if node.ManagerStatus.Leader {
+	if node.ManagerStatus != nil && node.ManagerStatus.Leader {
 		return "Leader"
 	}
 	return ""
