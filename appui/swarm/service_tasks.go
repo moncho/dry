@@ -19,7 +19,7 @@ type ServiceTasksWidget struct {
 	tasks                []*TaskRow
 	header               *termui.TableHeader
 	info                 *ServiceInfoWidget
-	tableTitle           *gizaktermui.Par
+	tableTitle           termui.SizableBufferer
 	selectedIndex        int
 	offset               int
 	x, y                 int
@@ -60,7 +60,10 @@ func NewServiceTasksWidget(swarmClient docker.SwarmAPI, serviceID string, y int)
 func (s *ServiceTasksWidget) align() {
 	x := s.x
 	width := s.width
+
+	s.info.SetX(x)
 	s.info.SetWidth(width)
+	s.tableTitle.SetX(x)
 	s.tableTitle.SetWidth(width)
 	s.header.SetWidth(width)
 	s.header.SetX(x)
@@ -80,7 +83,7 @@ func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
 	buf := gizaktermui.NewBuffer()
 	buf.Merge(s.info.Buffer())
 	y += s.info.GetHeight()
-	s.tableTitle.Y = y
+	s.tableTitle.SetY(y)
 	buf.Merge(s.tableTitle.Buffer())
 	y += s.tableTitle.GetHeight()
 	s.header.SetY(y)
@@ -159,12 +162,10 @@ func (s *ServiceTasksWidget) visibleRows() []*TaskRow {
 	return rows[start:end]
 }
 
-func createTableTitle(serviceName string, count int) *gizaktermui.Par {
-	p := gizaktermui.NewPar(fmt.Sprintf("Service %s tasks: %d", serviceName, count))
-	p.Border = false
-	p.Bg = gizaktermui.Attribute(appui.DryTheme.Bg)
-	p.TextBgColor = gizaktermui.Attribute(appui.DryTheme.Bg)
-	p.TextFgColor = gizaktermui.Attribute(appui.DryTheme.Info)
-	p.Height = 1
+func createTableTitle(serviceName string, count int) termui.SizableBufferer {
+	p := termui.NewKeyValuePar(
+		fmt.Sprintf("Service %s tasks", serviceName),
+		fmt.Sprintf("%d", count),
+		appui.DryTheme)
 	return p
 }

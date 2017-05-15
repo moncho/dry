@@ -34,6 +34,8 @@ func NewServiceInfoWidget(swarmClient docker.SwarmAPI, service *swarm.Service, y
 	di.BorderLeft = false
 	di.BorderRight = false
 	di.BorderFg = termui.Attribute(appui.DryTheme.Footer)
+	di.BorderBg = termui.Attribute(appui.DryTheme.Bg)
+
 	di.Height = 5
 	di.Bg = termui.Attribute(appui.DryTheme.Bg)
 	di.TextBgColor = termui.Attribute(appui.DryTheme.Bg)

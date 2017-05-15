@@ -29,6 +29,8 @@ func NewDockerInfo(daemon docker.ContainerDaemon) *DockerInfo {
 	di.BorderLeft = false
 	di.BorderRight = false
 	di.BorderFg = termui.Attribute(DryTheme.Footer)
+	di.BorderBg = termui.Attribute(DryTheme.Bg)
+
 	di.Height = 4
 	di.Bg = termui.Attribute(DryTheme.Bg)
 	di.TextBgColor = termui.Attribute(DryTheme.Bg)
