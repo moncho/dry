@@ -158,15 +158,9 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	case ServiceTasks:
 		{
 			serviceID := d.state.service
-			tasks := swarm.NewServiceTasksWidget(d.dockerDaemon, serviceID, viewStartingLine)
+			tasks := swarm.NewServiceTasksWidget(d.dockerDaemon, serviceID, appui.MainScreenHeaderSize)
 			bufferers = append(bufferers, tasks)
-			whatService := serviceID
-			if service, err := d.dockerDaemon.Resolve(dockerSwarm.Service{}, serviceID); err == nil {
-				whatService = service
-			}
-			what = fmt.Sprintf("Service %s tasks", whatService)
-			count = tasks.RowCount()
-			updateCursorPosition(screen.Cursor, count)
+			updateCursorPosition(screen.Cursor, tasks.RowCount())
 			keymap = swarmMapping
 		}
 	case DiskUsage:
