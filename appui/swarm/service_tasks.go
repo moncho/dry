@@ -1,6 +1,7 @@
 package swarm
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/docker/docker/api/types/swarm"
@@ -17,6 +18,8 @@ type ServiceTasksWidget struct {
 	service              *swarm.Service
 	tasks                []*TaskRow
 	header               *termui.TableHeader
+	info                 *ServiceInfoWidget
+	tableTitle           *gizaktermui.Par
 	selectedIndex        int
 	offset               int
 	x, y                 int
@@ -28,19 +31,21 @@ type ServiceTasksWidget struct {
 //NewServiceTasksWidget creates a TasksWidget
 func NewServiceTasksWidget(swarmClient docker.SwarmAPI, serviceID string, y int) *ServiceTasksWidget {
 	if service, err := swarmClient.Service(serviceID); err == nil {
-
+		serviceInfo := NewServiceInfoWidget(swarmClient, service, y)
 		w := &ServiceTasksWidget{
 			swarmClient:   swarmClient,
 			service:       service,
+			info:          serviceInfo,
 			header:        defaultTasksTableHeader,
 			selectedIndex: 0,
 			offset:        0,
 			x:             0,
 			y:             y,
-			height:        appui.MainScreenAvailableHeight(),
+			height:        appui.MainScreenAvailableHeight() - serviceInfo.GetHeight(),
 			width:         ui.ActiveScreen.Dimensions.Width}
 
 		if tasks, err := swarmClient.ServiceTasks(serviceID); err == nil {
+			w.tableTitle = createTableTitle(serviceInfo.serviceName, len(tasks))
 			for _, task := range tasks {
 				w.tasks = append(w.tasks, NewTaskRow(swarmClient, task, w.header))
 			}
@@ -53,12 +58,11 @@ func NewServiceTasksWidget(swarmClient docker.SwarmAPI, serviceID string, y int)
 
 //Align aligns rows
 func (s *ServiceTasksWidget) align() {
-	y := s.y
 	x := s.x
 	width := s.width
-
+	s.info.SetWidth(width)
+	s.tableTitle.SetWidth(width)
 	s.header.SetWidth(width)
-	s.header.SetY(y)
 	s.header.SetX(x)
 
 	for _, n := range s.tasks {
@@ -71,11 +75,16 @@ func (s *ServiceTasksWidget) align() {
 func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
+	y := s.y
 
 	buf := gizaktermui.NewBuffer()
+	buf.Merge(s.info.Buffer())
+	y += s.info.GetHeight()
+	s.tableTitle.Y = y
+	buf.Merge(s.tableTitle.Buffer())
+	y += s.tableTitle.GetHeight()
+	s.header.SetY(y)
 	buf.Merge(s.header.Buffer())
-
-	y := s.y
 	y += s.header.GetHeight()
 
 	s.highlightSelectedRow()
@@ -148,4 +157,14 @@ func (s *ServiceTasksWidget) visibleRows() []*TaskRow {
 	start := s.startIndex
 	end := s.endIndex + 1
 	return rows[start:end]
+}
+
+func createTableTitle(serviceName string, count int) *gizaktermui.Par {
+	p := gizaktermui.NewPar(fmt.Sprintf("Service %s tasks: %d", serviceName, count))
+	p.Border = false
+	p.Bg = gizaktermui.Attribute(appui.DryTheme.Bg)
+	p.TextBgColor = gizaktermui.Attribute(appui.DryTheme.Bg)
+	p.TextFgColor = gizaktermui.Attribute(appui.DryTheme.Info)
+	p.Height = 1
+	return p
 }
