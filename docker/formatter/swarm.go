@@ -19,3 +19,12 @@ func FormatPorts(ports []swarm.PortConfig) string {
 	}
 	return strings.Join(result, ",")
 }
+
+//FormatSwarmNetworks returns the string representation of the given slice of NetworkAttachmentConfig
+func FormatSwarmNetworks(networks []swarm.NetworkAttachmentConfig) string {
+	result := []string{}
+	for _, network := range networks {
+		result = append(result, network.Target)
+	}
+	return strings.Join(result, ",")
+}
