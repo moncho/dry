@@ -12,10 +12,9 @@ func TestParColumn(t *testing.T) {
 	}
 
 	if p.Text != text {
-		t.Errorf("ParColumn content is not what was expected: %s", p.Text)
+		t.Errorf("ParColumn content is not what expected: %s", p.Text)
 	}
 	if p.Border {
 		t.Error("ParColumn has a border")
-
 	}
 }
