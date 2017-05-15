@@ -24,8 +24,12 @@ type DockerInfo struct {
 //NewDockerInfo creates a DockerInfo widget
 func NewDockerInfo(daemon docker.ContainerDaemon) *DockerInfo {
 	di := drytermui.NewParFromMarkupText(DryTheme, dockerInfo(daemon))
-	di.Border = false
-	di.Height = 3
+	di.BorderTop = false
+	di.BorderBottom = true
+	di.BorderLeft = false
+	di.BorderRight = false
+	di.BorderFg = termui.Attribute(DryTheme.Footer)
+	di.Height = 4
 	di.Bg = termui.Attribute(DryTheme.Bg)
 	di.TextBgColor = termui.Attribute(DryTheme.Bg)
 	di.Display = false
