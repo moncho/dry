@@ -10,7 +10,6 @@ import (
 
 	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/cli/debug"
 	"github.com/docker/go-units"
 	"github.com/moncho/dry/ui"
 )
@@ -179,7 +178,6 @@ func (r *infoRenderer) Render() string {
 	writeKVIfNotEmpty(buffer, "Name", info.Name)
 	writeKVIfNotEmpty(buffer, "ID", info.ID)
 	writeKV(buffer, "Docker Root Dir", info.DockerRootDir)
-	writeKV(buffer, "Debug Mode (client)", debug.IsEnabled())
 	writeKV(buffer, "Debug Mode (server)", info.Debug)
 
 	if info.Debug {
