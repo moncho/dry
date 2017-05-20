@@ -38,6 +38,8 @@ Besides this, it:
 [1]         show container list
 [2]         show image list
 [3]         show network list
+[4]         show node list (on Swarm mode)
+[5]         show service list (on Swarm mode)
 [ArrowUp]   move the cursor one line up
 [ArrowDown] move the cursor one line down
 [g]         move the cursor to the top
