@@ -178,6 +178,7 @@ get_architecture() {
 
     local _ostype="$(uname -s)"
     local _cputype="$(uname -m)"
+    local _isarm
 
     verbose_say "uname -s reports: $_ostype"
     verbose_say "uname -m reports: $_cputype"
