@@ -224,7 +224,13 @@ get_architecture() {
             ;;
 
 	*)
-            err "unknown CPU type: $CFG_CPUTYPE"
+            _isarm=$(echo $_cputype|awk '{print substr($0,0,4)}')
+            echo $_isarm
+            if [ "$_isarm" = "arm" ]; then
+               local _cputype=arm
+            else
+               err "unknown CPU type: $CFG_CPUTYPE"
+            fi
 
     esac
 
