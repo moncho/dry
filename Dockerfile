@@ -1,9 +1,14 @@
 FROM alpine:latest
 
-# get dependancies
-RUN apk --no-cache update && apk add curl file
+LABEL maintainer "Moncho"
 
-# install dry
-RUN curl -sSf https://moncho.github.io/dry/dryup.sh | sh
-RUN chmod 755 /usr/local/bin/dry
-CMD sleep 1;/usr/local/bin/dry
+RUN set -x && \
+    apk update && \
+    apk upgrade && \
+    apk add curl file && \
+    curl https://moncho.github.io/dry/dryup.sh | sh && \
+    apk del curl file && \
+    rm -rf /var/cache/apk/* && \
+    chmod 755 /usr/local/bin/dry
+
+CMD ["sleep 1;/usr/local/bin/dry"]
