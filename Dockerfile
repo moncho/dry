@@ -11,4 +11,4 @@ RUN set -x && \
     rm -rf /var/cache/apk/* && \
     chmod 755 /usr/local/bin/dry
 
-CMD ["sleep 1;/usr/local/bin/dry"]
+CMD sleep 1;/usr/local/bin/dry
