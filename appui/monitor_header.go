@@ -12,7 +12,7 @@ type MonitorTableHeader struct {
 
 //NewMonitorTableHeader creates a table header for the monitor screen
 func NewMonitorTableHeader() *MonitorTableHeader {
-	fields := []string{"NAME", "CPU", "MEM", "NET RX/TX", "BLOCK I/O", "PIDS"}
+	fields := []string{"NAME", "CPU", "MEM", "NET RX/TX", "BLOCK I/O"}
 
 	header := termui.NewHeader(DryTheme)
 	header.ColumnSpacing = DefaultColumnSpacing
@@ -22,6 +22,7 @@ func NewMonitorTableHeader() *MonitorTableHeader {
 	for _, f := range fields {
 		header.AddColumn(f)
 	}
+	header.AddFixedWidthColumn("PIDS", 5)
 	header.AddFixedWidthColumn("UPTIME", IDColumnWidth)
 	return &MonitorTableHeader{header}
 }

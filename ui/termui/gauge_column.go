@@ -6,7 +6,7 @@ import (
 )
 
 //GaugeColumn is a termui.Gauge to be used as a Grid column. It is
-//borderless, has a height of 1 and its label its left-aligned.
+//borderless, has a height of 1 and its label is left-aligned.
 type GaugeColumn struct {
 	termui.Gauge
 }
