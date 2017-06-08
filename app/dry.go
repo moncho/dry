@@ -74,7 +74,7 @@ func (d *Dry) changeViewMode(newViewMode viewMode) {
 	defer d.state.Unlock()
 	//If the new view is one of the main screens, it must be
 	//considered as the view to go back to.
-	if newViewMode == Main || newViewMode == Networks || newViewMode == Images {
+	if newViewMode.isMainScreen() {
 		d.state.previousViewMode = newViewMode
 	}
 	d.state.viewMode = newViewMode

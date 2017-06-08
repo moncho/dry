@@ -13,29 +13,6 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
-//ViewMode represents dry possible views
-type viewMode uint16
-
-//known view modes
-const (
-	Main viewMode = iota //This is the container list view
-	DiskUsage
-	Images
-	Monitor
-	Networks
-	EventsMode
-	HelpMode
-	ImageHistoryMode
-	InfoMode
-	InspectImageMode
-	InspectNetworkMode
-	InspectMode
-	Nodes
-	Services
-	ServiceTasks
-	Tasks
-)
-
 const (
 	viewStartingLine = appui.MainScreenHeaderSize + 2
 )

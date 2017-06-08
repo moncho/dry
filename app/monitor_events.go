@@ -26,6 +26,7 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event) {
 		handled = true
 	case 'H', 'h', 'q', '1', '2', '3', '4', '5':
 		handled = false
+		cancelMonitorWidget()
 	default:
 		handled = true
 	}
