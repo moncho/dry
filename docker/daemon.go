@@ -222,10 +222,8 @@ func (daemon *DockerDaemon) Logs(id string) io.ReadCloser {
 		Follow:     true,
 		Details:    false,
 	}
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
 
-	reader, _ := daemon.client.ContainerLogs(ctx, id, options)
+	reader, _ := daemon.client.ContainerLogs(context.Background(), id, options)
 	return reader
 }
 
