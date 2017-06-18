@@ -11,8 +11,10 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+type newLineEvent func()
+
 // A View is a region of the screen where text can be rendered. It maintains
-//its own internal buffer and cursor position.
+//its own internal buffer and cursor position.)
 type View struct {
 	name             string
 	x0, y0, x1, y1   int      //view position in the screen
@@ -22,9 +24,10 @@ type View struct {
 	lines            [][]rune //the content buffer
 	showCursor       bool
 
-	tainted bool // marks if the viewBuffer must be updated
-	theme   *ColorTheme
-	markup  *Markup
+	newLineNotifier newLineEvent
+
+	theme  *ColorTheme
+	markup *Markup
 }
 
 // ViewSize returns the width and the height of the View.
@@ -77,12 +80,14 @@ func (v *View) Position() (x, y int) {
 // Write appends a byte slice into the view's internal buffer, as defined
 // by the io.Writer interface.
 func (v *View) Write(p []byte) (n int, err error) {
-	v.tainted = true
 
 	for _, ch := range bytes.Runes(p) {
 		switch ch {
 		case '\n':
 			v.lines = append(v.lines, nil)
+			if v.newLineNotifier != nil {
+				v.newLineNotifier()
+			}
 		case '\r':
 			nl := len(v.lines)
 			if nl > 0 {
@@ -108,7 +113,7 @@ func (v *View) Write(p []byte) (n int, err error) {
 }
 
 // Render renders the view buffer contents.
-func (v *View) Render() error {
+func (v *View) render() {
 	_, maxY := v.ViewSize()
 	y := v.y0
 	for _, vline := range v.lines[v.bufferY:] {
@@ -121,7 +126,6 @@ func (v *View) Render() error {
 	if v.showCursor {
 		v.drawCursor()
 	}
-	return nil
 }
 
 //calculateCursorPosition gives the cursor position
@@ -183,7 +187,6 @@ func (v *View) renderLine(x int, y int, line string) (int, error) {
 
 // Clear empties the view's internal buffer.
 func (v *View) Clear() {
-	v.tainted = true
 	v.lines = nil
 	v.clearRunes()
 }
@@ -197,110 +200,6 @@ func (v *View) clearRunes() {
 				termbox.Attribute(v.theme.Fg), termbox.Attribute(v.theme.Bg))
 		}
 	}
-}
-
-// writeRune writes a rune into the view's internal buffer, at the
-// position corresponding to the point (x, y). The length of the internal
-// buffer is increased if the point is out of bounds.
-func (v *View) writeRune(x, y int, ch rune) error {
-	v.tainted = true
-
-	x, y, err := v.realPosition(x, y)
-	if err != nil {
-		return err
-	}
-
-	if x < 0 || y < 0 {
-		return invalidPointError(x, y)
-	}
-
-	if y >= len(v.lines) {
-		s := make([][]rune, y-len(v.lines)+1)
-		v.lines = append(v.lines, s...)
-	}
-
-	olen := len(v.lines[y])
-	if x >= len(v.lines[y]) {
-		s := make([]rune, x-len(v.lines[y])+1)
-		v.lines[y] = append(v.lines[y], s...)
-	}
-
-	if x < olen {
-		v.lines[y] = append(v.lines[y], '\x00')
-		copy(v.lines[y][x+1:], v.lines[y][x:])
-	}
-	v.lines[y][x] = ch
-	return nil
-}
-
-// deleteRune removes a rune from the view's internal buffer, at the
-// position corresponding to the point (x, y).
-func (v *View) deleteRune(x, y int) error {
-	v.tainted = true
-
-	x, y, err := v.realPosition(x, y)
-	if err != nil {
-		return err
-	}
-
-	if x < 0 || y < 0 || y >= len(v.lines) || x >= len(v.lines[y]) {
-		return invalidPointError(x, y)
-	}
-	v.lines[y] = append(v.lines[y][:x], v.lines[y][x+1:]...)
-	return nil
-}
-
-// mergeLines merges the lines "y" and "y+1" if possible.
-func (v *View) mergeLines(y int) error {
-	v.tainted = true
-
-	_, y, err := v.realPosition(0, y)
-	if err != nil {
-		return err
-	}
-
-	if y < 0 || y >= len(v.lines) {
-		return invalidPointError(0, y)
-	}
-
-	if y < len(v.lines)-1 { // otherwise we don't need to merge anything
-		v.lines[y] = append(v.lines[y], v.lines[y+1]...)
-		v.lines = append(v.lines[:y+1], v.lines[y+2:]...)
-	}
-	return nil
-}
-
-// breakLine breaks a line of the internal buffer at the position corresponding
-// to the point (x, y).
-func (v *View) breakLine(x, y int) error {
-	v.tainted = true
-
-	x, y, err := v.realPosition(x, y)
-	if err != nil {
-		return err
-	}
-
-	if y < 0 || y >= len(v.lines) {
-		return invalidPointError(x, y)
-	}
-
-	var left, right []rune
-	if x < len(v.lines[y]) { // break line
-		left = make([]rune, len(v.lines[y][:x]))
-		copy(left, v.lines[y][:x])
-		right = make([]rune, len(v.lines[y][x:]))
-		copy(right, v.lines[y][x:])
-	} else { // new empty line
-		left = v.lines[y]
-	}
-
-	lines := make([][]rune, len(v.lines)+1)
-	lines[y] = left
-	lines[y+1] = right
-	copy(lines, v.lines[:y])
-	copy(lines[y+2:], v.lines[y+1:])
-	v.lines = lines
-	return nil
 }
 
 // Line returns a string with the line of the view's internal buffer
@@ -422,12 +321,6 @@ func (v *View) MarkupSupport() {
 	v.markup = NewMarkup(v.theme)
 }
 
-// indexFunc allows to split lines by words taking into account spaces
-// and 0.
-func indexFunc(r rune) bool {
-	return r == ' ' || r == 0
-}
-
 // NewView returns a new View
 func NewView(name string, x0, y0, x1, y1 int, showCursor bool, theme *ColorTheme) *View {
 	v := &View{
@@ -440,7 +333,6 @@ func NewView(name string, x0, y0, x1, y1 int, showCursor bool, theme *ColorTheme
 		//last line is used by the cursor and for reading input, it is not used to
 		//render view buffer
 		height:     y1 - y0 - 1,
-		tainted:    true,
 		showCursor: showCursor,
 		theme:      theme,
 	}
@@ -454,6 +346,12 @@ func NewMarkupView(name string, x0, y0, x1, y1 int, showCursor bool, theme *Colo
 	v.markup = NewMarkup(theme)
 
 	return v
+}
+
+// indexFunc allows to split lines by words taking into account spaces
+// and 0.
+func indexFunc(r rune) bool {
+	return r == ' ' || r == 0
 }
 
 func invalidPointError(x, y int) error {

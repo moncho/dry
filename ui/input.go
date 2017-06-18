@@ -8,7 +8,7 @@ import (
 
 const (
 	preferredHorizontalThreshold = 5
-	tabstopLength                = 8
+	tabStopLength                = 8
 	editBoxWidth                 = 30
 	coldef                       = termbox.ColorDefault
 )
@@ -41,7 +41,7 @@ func (eb *InputBox) Draw(x, y, w, h int) {
 		}
 
 		if lx == tabstop {
-			tabstop += tabstopLength
+			tabstop += tabStopLength
 		}
 
 		if rx >= w {
@@ -252,9 +252,10 @@ mainloop:
 }
 
 //NewInputBox creates an input box, located at position x,y in the screen.
-func NewInputBox(x, y int, prompt string, output chan<- string, keyboardQueue chan termbox.Event) *InputBox {
+func NewInputBox(x, y int, prompt string, output chan<- string, keyboardQueue chan termbox.Event, theme *ColorTheme) *InputBox {
 	width, _ := termbox.Size()
-	renderString(x, y, width, prompt, termbox.ColorYellow, termbox.ColorDefault)
+	//TODO use color from the theme for the prompt
+	renderString(x, y, width, prompt, termbox.ColorYellow, termbox.Attribute(theme.Bg))
 	termbox.Flush()
 	return &InputBox{x: x + len(prompt), y: y, output: output, eventQueue: keyboardQueue}
 }

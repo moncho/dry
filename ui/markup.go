@@ -153,10 +153,9 @@ func Tokenize(str string, regex *regexp.Regexp) []string {
 		tail = match[0]
 		if match[1] != 0 {
 			if head != 0 || tail != 0 {
-				// Apend the text between tags.
+				// Append the text between tags.
 				strings = append(strings, str[head:tail])
 			}
-			// Append the tag itmarkup.
 			strings = append(strings, str[match[0]:match[1]])
 		}
 		head = match[1]

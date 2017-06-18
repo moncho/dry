@@ -85,7 +85,7 @@ func TestLessSearch(t *testing.T) {
 		fmt.Fprintf(less, "Line %d\n", i)
 	}
 
-	err := less.Search("Line")
+	err := less.search("Line")
 
 	if err != nil {
 		t.Errorf(err.Error())
@@ -131,7 +131,10 @@ func testEndOfBufferReached(t *testing.T, less *Less, expected bool) {
 func newLess(width int, height int) *Less {
 	view := NewView("", 0, 0, width, height-1, true, nil)
 	view.cursorY = height - 1 //Last line i
+	//The refresh channel must hold all refresh events sent during the test
+	//TODO consume events during testing and do not rely on a buffered channel
 	return &Less{
-		view, nil, false,
+		View:    view,
+		refresh: make(chan struct{}, 10),
 	}
 }

@@ -10,7 +10,7 @@ const (
 	Darkgrey Color = Color232
 )
 
-// First 256 entries corresponde to Colors from the color palette as defined by the standard
+// First 256 entries correspond to Colors from the color palette as defined by the standard
 //https://en.wikipedia.org/wiki/ANSI_escape_code#Colors. Order is important.
 //Below that, a few colors from the TrueColor palette are defined.
 const (

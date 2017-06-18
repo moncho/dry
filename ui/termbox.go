@@ -92,7 +92,7 @@ func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) int {
 
 func runeAdvanceLen(r rune, pos int) int {
 	if r == '\t' {
-		return tabstopLength - pos%tabstopLength
+		return tabStopLength - pos%tabStopLength
 	}
 	return 1
 }
