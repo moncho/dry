@@ -58,6 +58,7 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 			less.render()
 		}
 	}()
+	//This ensures at least one refresh
 	less.refresh <- struct{}{}
 
 	defer close(inputBoxOutput)
@@ -356,7 +357,9 @@ func (less *Less) statusLine() string {
 	}
 
 	if less.following {
-		end = end + " Following: On"
+		end = end + " Follow: On"
+	} else {
+		end = end + " Follow: Off"
 	}
 
 	return strings.Join(

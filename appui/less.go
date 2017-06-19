@@ -7,18 +7,18 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-//Less shows dry output in a "less" emulator
+//Less renders the given renderer output in a "less" buffer
 func Less(renderer ui.Renderer, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan struct{}) {
 	defer func() {
 		closeView <- struct{}{}
 	}()
 	screen.Clear()
-	v := ui.NewLess(DryTheme)
-	v.MarkupSupport()
-	io.WriteString(v, renderer.Render())
+	less := ui.NewLess(DryTheme)
+	less.MarkupSupport()
+	io.WriteString(less, renderer.Render())
 
-	//Focus blocks until v decides that it does not want focus any more
-	if err := v.Focus(keyboardQueue); err != nil {
+	//Focus blocks until less decides that it does not want focus any more
+	if err := less.Focus(keyboardQueue); err != nil {
 		ui.ShowErrorMessage(screen, keyboardQueue, closeView, err)
 	}
 	termbox.HideCursor()

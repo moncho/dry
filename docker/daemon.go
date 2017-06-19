@@ -222,7 +222,6 @@ func (daemon *DockerDaemon) Logs(id string) io.ReadCloser {
 		Follow:     true,
 		Details:    false,
 	}
-
 	reader, _ := daemon.client.ContainerLogs(context.Background(), id, options)
 	return reader
 }

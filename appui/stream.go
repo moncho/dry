@@ -3,7 +3,6 @@ package appui
 import (
 	"io"
 
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/moncho/dry/ui"
 	"github.com/nsf/termbox-go"
 )
@@ -16,12 +15,12 @@ func Stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.
 	screen.Clear()
 	screen.Sync()
 	v := ui.NewLess(DryTheme)
-	go func() {
-		stdcopy.StdCopy(v, v, stream)
-	}()
+	//TODO make sure that io errors can be safely ignored
+	go io.Copy(v, stream)
 	if err := v.Focus(keyboardQueue); err != nil {
 		ui.ShowErrorMessage(screen, keyboardQueue, closeView, err)
 	}
+
 	stream.Close()
 	termbox.HideCursor()
 	screen.Clear()
