@@ -66,9 +66,9 @@ func (s *ContainersWidget) align() {
 	s.header.SetY(y)
 	s.header.SetX(x)
 
-	for _, service := range s.containers {
-		service.SetX(x)
-		service.SetWidth(width)
+	for _, container := range s.containers {
+		container.SetX(x)
+		container.SetWidth(width)
 	}
 
 }
@@ -87,17 +87,16 @@ func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 	y += s.header.GetHeight()
 
 	s.highlightSelectedRow()
-	for _, service := range s.visibleRows() {
-		service.SetY(y)
-		service.Height = 1
-		y += service.GetHeight()
-		buf.Merge(service.Buffer())
+	for _, containerRow := range s.visibleRows() {
+		containerRow.SetY(y)
+		y += containerRow.GetHeight()
+		buf.Merge(containerRow.Buffer())
 	}
 
 	return buf
 }
 
-//RowCount returns the number of rowns of this widget.
+//RowCount returns the number of rows of this widget.
 func (s *ContainersWidget) RowCount() int {
 	return len(s.containers)
 }
