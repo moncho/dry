@@ -2,6 +2,7 @@ package appui
 
 import (
 	"fmt"
+	"image"
 	"strconv"
 	"time"
 
@@ -101,9 +102,34 @@ func (row *ContainerStatsRow) NotHighlighted() {
 		termui.Attribute(DryTheme.Bg))
 }
 
+//Buffer returns this Row data as a termui.Buffer
+func (row *ContainerStatsRow) Buffer() termui.Buffer {
+	buf := termui.NewBuffer()
+	//This set the background of the whole row
+	buf.Area.Min = image.Point{row.X, row.Y}
+	buf.Area.Max = image.Point{row.X + row.Width, row.Y + row.Height}
+	buf.Fill(' ', row.ID.TextFgColor, row.ID.TextBgColor)
+
+	for _, col := range row.Columns {
+		buf.Merge(col.Buffer())
+	}
+	return buf
+}
+
 func (row *ContainerStatsRow) changeTextColor(fg, bg termui.Attribute) {
 	row.ID.TextFgColor = fg
 	row.ID.TextBgColor = bg
+	row.Name.TextFgColor = fg
+	row.Name.TextBgColor = bg
+	row.Net.TextFgColor = fg
+	row.Net.TextBgColor = bg
+	row.Block.TextFgColor = fg
+	row.Block.TextBgColor = bg
+	row.Pids.TextFgColor = fg
+	row.Pids.TextBgColor = bg
+
+	row.Uptime.TextFgColor = fg
+	row.Uptime.TextBgColor = bg
 }
 
 //Reset resets row content
@@ -127,14 +153,14 @@ func (row *ContainerStatsRow) Update(container *docker.Container, stat *docker.S
 }
 
 func (row *ContainerStatsRow) setNet(rx float64, tx float64) {
-	row.Net.Text = fmt.Sprintf("%s / %s", units.BytesSize(rx), units.BytesSize(tx))
+	row.Net.Content(fmt.Sprintf("%s / %s", units.BytesSize(rx), units.BytesSize(tx)))
 }
 
 func (row *ContainerStatsRow) setBlockIO(read float64, write float64) {
-	row.Block.Text = fmt.Sprintf("%s / %s", units.BytesSize(read), units.BytesSize(write))
+	row.Block.Content(fmt.Sprintf("%s / %s", units.BytesSize(read), units.BytesSize(write)))
 }
 func (row *ContainerStatsRow) setPids(pids uint64) {
-	row.Pids.Text = strconv.Itoa(int(pids))
+	row.Pids.Content(strconv.Itoa(int(pids)))
 }
 
 func (row *ContainerStatsRow) setCPU(val float64) {

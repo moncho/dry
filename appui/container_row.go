@@ -1,6 +1,8 @@
 package appui
 
 import (
+	"image"
+
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/docker/formatter"
@@ -57,6 +59,7 @@ func NewContainerRow(container *docker.Container, table drytermui.Table) *Contai
 	} else {
 		row.markAsRunning()
 	}
+
 	return row
 
 }
@@ -75,9 +78,34 @@ func (row *ContainerRow) NotHighlighted() {
 		termui.Attribute(DryTheme.Bg))
 }
 
+//Buffer returns this Row data as a termui.Buffer
+func (row *ContainerRow) Buffer() termui.Buffer {
+	buf := termui.NewBuffer()
+	//This set the background of the whole row
+	buf.Area.Min = image.Point{row.X, row.Y}
+	buf.Area.Max = image.Point{row.X + row.Width, row.Y + row.Height}
+	buf.Fill(' ', row.ID.TextFgColor, row.ID.TextBgColor)
+
+	for _, col := range row.Columns {
+		buf.Merge(col.Buffer())
+	}
+	return buf
+}
+
 func (row *ContainerRow) changeTextColor(fg, bg termui.Attribute) {
+
 	row.ID.TextFgColor = fg
 	row.ID.TextBgColor = bg
+	row.Image.TextFgColor = fg
+	row.Image.TextBgColor = bg
+	row.Command.TextFgColor = fg
+	row.Command.TextBgColor = bg
+	row.Status.TextFgColor = fg
+	row.Status.TextBgColor = bg
+	row.Ports.TextFgColor = fg
+	row.Ports.TextBgColor = bg
+	row.Names.TextFgColor = fg
+	row.Names.TextBgColor = bg
 }
 
 //markAsNotRunning
