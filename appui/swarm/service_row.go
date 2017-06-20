@@ -1,6 +1,8 @@
 package swarm
 
 import (
+	"image"
+
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/cli/command/formatter"
 	termui "github.com/gizak/termui"
@@ -47,6 +49,20 @@ func NewServiceRow(service swarm.Service, serviceInfo formatter.ServiceListInfo,
 	}
 	return row
 
+}
+
+//Buffer returns this Row data as a termui.Buffer
+func (row *ServiceRow) Buffer() termui.Buffer {
+	buf := termui.NewBuffer()
+	//This set the background of the whole row
+	buf.Area.Min = image.Point{row.X, row.Y}
+	buf.Area.Max = image.Point{row.X + row.Width, row.Y + row.Height}
+	buf.Fill(' ', row.Name.TextFgColor, row.Name.TextBgColor)
+
+	for _, col := range row.Columns {
+		buf.Merge(col.Buffer())
+	}
+	return buf
 }
 
 //Highlighted marks this rows as being highlighted

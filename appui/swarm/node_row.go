@@ -1,6 +1,7 @@
 package swarm
 
 import (
+	"image"
 	"strconv"
 
 	"github.com/docker/docker/api/types/swarm"
@@ -66,6 +67,20 @@ func (row *NodeRow) Highlighted() {
 	row.changeTextColor(
 		termui.Attribute(appui.DryTheme.Fg),
 		termui.Attribute(appui.DryTheme.CursorLineBg))
+}
+
+//Buffer returns this Row data as a termui.Buffer
+func (row *NodeRow) Buffer() termui.Buffer {
+	buf := termui.NewBuffer()
+	//This set the background of the whole row
+	buf.Area.Min = image.Point{row.X, row.Y}
+	buf.Area.Max = image.Point{row.X + row.Width, row.Y + row.Height}
+	buf.Fill(' ', row.Name.TextFgColor, row.Name.TextBgColor)
+
+	for _, col := range row.Columns {
+		buf.Merge(col.Buffer())
+	}
+	return buf
 }
 
 //NotHighlighted marks this rows as being not highlighted
