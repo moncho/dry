@@ -23,6 +23,7 @@ func NewThemedParColumn(theme *ui.ColorTheme, s string) *ParColumn {
 func NewParColumn(s string) *ParColumn {
 	p := termui.NewPar(s)
 	p.Border = false
+
 	return &ParColumn{*p}
 }
 
@@ -34,4 +35,15 @@ func (w *ParColumn) Reset() {
 //Content sets the text of this Par to the given content
 func (w *ParColumn) Content(s string) {
 	w.Text = s
+	w.Width = len(w.Text)
+}
+
+//SetWidth sets par width.
+func (w *ParColumn) SetWidth(width int) {
+	contentWidth := len(w.Text)
+	if width > contentWidth {
+		w.Width = contentWidth
+	} else {
+		w.Width = width
+	}
 }
