@@ -1,6 +1,8 @@
 package swarm
 
 import (
+	"image"
+
 	"github.com/docker/docker/api/types/swarm"
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
@@ -58,6 +60,20 @@ func NewTaskRow(swarmClient docker.SwarmAPI, task swarm.Task, table drytermui.Ta
 
 }
 
+//Buffer returns this Row data as a termui.Buffer
+func (row *TaskRow) Buffer() termui.Buffer {
+	buf := termui.NewBuffer()
+	//This set the background of the whole row
+	buf.Area.Min = image.Point{row.X, row.Y}
+	buf.Area.Max = image.Point{row.X + row.Width, row.Y + row.Height}
+	buf.Fill(' ', row.ID.TextFgColor, row.ID.TextBgColor)
+
+	for _, col := range row.Columns {
+		buf.Merge(col.Buffer())
+	}
+	return buf
+}
+
 //Highlighted marks this rows as being highlighted
 func (row *TaskRow) Highlighted() {
 	row.changeTextColor(
@@ -75,6 +91,18 @@ func (row *TaskRow) NotHighlighted() {
 func (row *TaskRow) changeTextColor(fg, bg termui.Attribute) {
 	row.ID.TextFgColor = fg
 	row.ID.TextBgColor = bg
+	row.Name.TextFgColor = fg
+	row.Name.TextBgColor = bg
+	row.Image.TextFgColor = fg
+	row.Image.TextBgColor = bg
+	row.Node.TextFgColor = fg
+	row.Node.TextBgColor = bg
+	row.DesiredState.TextBgColor = bg
+	row.CurrentState.TextBgColor = bg
+	row.Error.TextFgColor = fg
+	row.Error.TextBgColor = bg
+	row.Ports.TextFgColor = fg
+	row.Ports.TextBgColor = bg
 }
 
 //updateStateColumns changes the color of state-related column depending

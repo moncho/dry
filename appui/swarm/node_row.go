@@ -93,6 +93,24 @@ func (row *NodeRow) NotHighlighted() {
 func (row *NodeRow) changeTextColor(fg, bg termui.Attribute) {
 	row.Name.TextFgColor = fg
 	row.Name.TextBgColor = bg
+	row.Role.TextFgColor = fg
+	row.Role.TextBgColor = bg
+	row.Labels.TextFgColor = fg
+	row.Labels.TextBgColor = bg
+	row.CPU.TextFgColor = fg
+	row.CPU.TextBgColor = bg
+	row.Memory.TextFgColor = fg
+	row.Memory.TextBgColor = bg
+	row.Engine.TextFgColor = fg
+	row.Engine.TextBgColor = bg
+	row.IPAddress.TextFgColor = fg
+	row.IPAddress.TextBgColor = bg
+	row.Engine.TextFgColor = fg
+	row.Engine.TextBgColor = bg
+	row.Status.TextBgColor = bg
+	row.ManagerStatus.TextFgColor = fg
+	row.ManagerStatus.TextBgColor = bg
+
 }
 
 func (row *NodeRow) updateStatusColumn() {

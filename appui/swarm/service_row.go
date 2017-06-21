@@ -82,6 +82,16 @@ func (row *ServiceRow) NotHighlighted() {
 func (row *ServiceRow) changeTextColor(fg, bg termui.Attribute) {
 	row.ID.TextFgColor = fg
 	row.ID.TextBgColor = bg
+	row.Name.TextFgColor = fg
+	row.Name.TextBgColor = bg
+	row.Mode.TextFgColor = fg
+	row.Mode.TextBgColor = bg
+	row.Replicas.TextFgColor = fg
+	row.Replicas.TextBgColor = bg
+	row.ServicePorts.TextFgColor = fg
+	row.ServicePorts.TextBgColor = bg
+	row.Image.TextFgColor = fg
+	row.Image.TextBgColor = bg
 }
 
 func serviceMode(service swarm.Service) string {
