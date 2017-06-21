@@ -28,7 +28,7 @@ type ContainerRow struct {
 	drytermui.Row
 }
 
-//NewContainerRow creats a new ContainerRow widget
+//NewContainerRow creates a new ContainerRow widget
 func NewContainerRow(container *docker.Container, table drytermui.Table) *ContainerRow {
 	cf := formatter.NewContainerFormatter(container, true)
 
@@ -73,8 +73,15 @@ func (row *ContainerRow) Highlighted() {
 
 //NotHighlighted marks this rows as being not highlighted
 func (row *ContainerRow) NotHighlighted() {
+	var fg termui.Attribute
+	if !docker.IsContainerRunning(row.container) {
+		fg = inactiveRowColor
+	} else {
+		fg = termui.Attribute(DryTheme.ListItem)
+	}
+
 	row.changeTextColor(
-		termui.Attribute(DryTheme.ListItem),
+		fg,
 		termui.Attribute(DryTheme.Bg))
 }
 

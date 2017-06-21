@@ -39,14 +39,11 @@ type ContainersWidget struct {
 //NewContainersWidget creates a ContainersWidget
 func NewContainersWidget(data *DockerPsRenderData, y int) *ContainersWidget {
 	w := &ContainersWidget{
-		data:          data,
-		header:        defaultContainerTableHeader,
-		selectedIndex: 0,
-		offset:        0,
-		x:             0,
-		y:             y,
-		height:        MainScreenAvailableHeight(),
-		width:         ui.ActiveScreen.Dimensions.Width}
+		data:   data,
+		header: defaultContainerTableHeader,
+		y:      y,
+		height: MainScreenAvailableHeight(),
+		width:  ui.ActiveScreen.Dimensions.Width}
 	for _, container := range data.containers {
 		w.containers = append(w.containers, NewContainerRow(container, w.header))
 	}
