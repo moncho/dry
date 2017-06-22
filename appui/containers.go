@@ -122,7 +122,7 @@ func (s *ContainersWidget) updateHeader() {
 		colTitle := c.Text
 		var header headerColumn
 		if strings.Contains(colTitle, DownArrow) {
-			colTitle = colTitle[DownArrowLenght:]
+			colTitle = colTitle[DownArrowLength:]
 		}
 		for _, h := range containerTableHeaders {
 			if colTitle == h.title {
@@ -148,8 +148,7 @@ func (s *ContainersWidget) visibleRows() []*ContainerRow {
 	}
 	rows := s.containers
 	count := len(rows)
-	cursor := ui.ActiveScreen.Cursor
-	selected := cursor.Position()
+	selected := ui.ActiveScreen.Cursor.Position()
 	//everything fits
 	if count <= s.height {
 		return rows
@@ -159,7 +158,7 @@ func (s *ContainersWidget) visibleRows() []*ContainerRow {
 		//internal state is reset
 		s.startIndex = 0
 		s.endIndex = s.height
-		return rows[s.startIndex : s.endIndex+1]
+		return rows[s.startIndex:s.endIndex]
 	}
 
 	if selected >= s.endIndex {
@@ -174,9 +173,7 @@ func (s *ContainersWidget) visibleRows() []*ContainerRow {
 			s.endIndex = s.startIndex + s.height
 		}
 	}
-	start := s.startIndex
-	end := s.endIndex + 1
-	return rows[start:end]
+	return rows[s.startIndex:s.endIndex]
 }
 
 type headerColumn struct {

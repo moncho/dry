@@ -8,8 +8,8 @@ import (
 const (
 	//DownArrow character
 	DownArrow = string('\U00002193')
-	//DownArrowLenght is the length of the DownArrow string
-	DownArrowLenght = len(DownArrow)
+	//DownArrowLength is the length of the DownArrow string
+	DownArrowLength = len(DownArrow)
 	//RightArrow character
 	RightArrow = string('\U00002192')
 
