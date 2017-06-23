@@ -40,7 +40,7 @@ func (t *TaskStringer) ID() string {
 //Name Task name as a string
 func (t *TaskStringer) Name() string {
 
-	if serviceName, err := t.api.Resolve(swarm.Service{}, t.task.ServiceID); err == nil {
+	if serviceName, err := t.api.ResolveService(t.task.ServiceID); err == nil {
 		name := ""
 		if t.task.Slot != 0 {
 			name = fmt.Sprintf("%v.%v", serviceName, t.task.Slot)
@@ -72,7 +72,7 @@ func (t *TaskStringer) Image() string {
 
 //NodeID Task nodeID as a string
 func (t *TaskStringer) NodeID() string {
-	if name, err := t.api.Resolve(swarm.Node{}, t.task.NodeID); err == nil {
+	if name, err := t.api.ResolveNode(t.task.NodeID); err == nil {
 		return name
 	}
 	return ""

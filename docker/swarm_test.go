@@ -46,7 +46,7 @@ func TestTaskRetrieval(t *testing.T) {
 func TestIDResolution(t *testing.T) {
 	r := &resolverMock{}
 	daemon := DockerDaemon{resolver: r}
-	name, err := daemon.Resolve(swarm.Node{}, "1")
+	name, err := daemon.ResolveNode("1")
 
 	if err != nil {
 		t.Errorf("Resolving node with ID 1 resulted in error: %s", err.Error())

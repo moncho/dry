@@ -251,8 +251,13 @@ func (_m *DockerDaemonMock) RemoveNetwork(id string) error {
 	return nil
 }
 
-//Resolve mock
-func (_m *DockerDaemonMock) Resolve(t interface{}, id string) (string, error) {
+//ResolveNode mock
+func (_m *DockerDaemonMock) ResolveNode(id string) (string, error) {
+	return "", nil
+}
+
+//ResolveService mock
+func (_m *DockerDaemonMock) ResolveService(id string) (string, error) {
 	return "", nil
 }
 

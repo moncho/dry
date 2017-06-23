@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	dockerSwarm "github.com/docker/docker/api/types/swarm"
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/appui/swarm"
@@ -124,7 +123,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			tasks := swarm.NewNodeTasksWidget(d.dockerDaemon, nodeID, viewStartingLine)
 			bufferers = append(bufferers, tasks)
 			whatNode := nodeID
-			if node, err := d.dockerDaemon.Resolve(dockerSwarm.Node{}, nodeID); err == nil {
+			if node, err := d.dockerDaemon.ResolveNode(nodeID); err == nil {
 				whatNode = node
 			}
 			what = fmt.Sprintf("Node %s tasks", whatNode)

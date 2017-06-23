@@ -5,7 +5,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -48,16 +47,14 @@ func (_m *SwarmDockerDaemon) NodeTasks(nodeID string) ([]swarm.Task, error) {
 	return []swarm.Task{swarm.Task{NodeID: nodeID}}, nil
 }
 
-//Resolve mock
-func (_m *SwarmDockerDaemon) Resolve(t interface{}, id string) (string, error) {
-	switch t.(type) {
-	case swarm.Node:
-		return strings.Join([]string{"Node", id}, ""), nil
-	case swarm.Service:
-		return strings.Join([]string{"Service", id}, ""), nil
-	default:
-		return "", errors.Errorf("unsupported type")
-	}
+//ResolveNode mock
+func (_m *SwarmDockerDaemon) ResolveNode(id string) (string, error) {
+	return strings.Join([]string{"Node", id}, ""), nil
+}
+
+//ResolveService mock
+func (_m *SwarmDockerDaemon) ResolveService(id string) (string, error) {
+	return strings.Join([]string{"Service", id}, ""), nil
 }
 
 //Services returns a list of services with 1 element

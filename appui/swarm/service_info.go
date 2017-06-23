@@ -26,7 +26,7 @@ type ServiceInfoWidget struct {
 //NewServiceInfoWidget creates ServiceInfoWidget with information about the service with the given ID
 func NewServiceInfoWidget(swarmClient docker.SwarmAPI, service *swarm.Service, y int) *ServiceInfoWidget {
 	w := &ServiceInfoWidget{}
-	name, _ := swarmClient.Resolve(swarm.Service{}, service.ID)
+	name, _ := swarmClient.ResolveService(service.ID)
 	w.serviceName = name
 	di := drytermui.NewParFromMarkupText(appui.DryTheme, serviceInfo(swarmClient, name, service))
 	di.BorderTop = false

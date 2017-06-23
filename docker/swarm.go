@@ -49,8 +49,16 @@ func (daemon *DockerDaemon) NodeTasks(nodeID string) ([]swarm.Task, error) {
 	return nil, pkgError.Wrap(err, "Error retrieving task list")
 }
 
-//Resolve will attempt to resolve the given ID to a name.
-func (daemon *DockerDaemon) Resolve(t interface{}, id string) (string, error) {
+//ResolveNode will attempt to resolve the given node ID to a name.
+func (daemon *DockerDaemon) ResolveNode(id string) (string, error) {
+	return daemon.resolve(swarm.Node{}, id)
+}
+
+//ResolveService will attempt to resolve the given service ID to a name.
+func (daemon *DockerDaemon) ResolveService(id string) (string, error) {
+	return daemon.resolve(swarm.Service{}, id)
+}
+func (daemon *DockerDaemon) resolve(t interface{}, id string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 	return daemon.resolver.Resolve(ctx, t, id)
