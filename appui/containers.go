@@ -37,20 +37,26 @@ type ContainersWidget struct {
 }
 
 //NewContainersWidget creates a ContainersWidget
-func NewContainersWidget(data *DockerPsRenderData, y int) *ContainersWidget {
+func NewContainersWidget(y int) *ContainersWidget {
 	w := &ContainersWidget{
-		data:   data,
-		header: defaultContainerTableHeader,
 		y:      y,
+		header: defaultContainerTableHeader,
 		height: MainScreenAvailableHeight(),
 		width:  ui.ActiveScreen.Dimensions.Width}
-	for _, container := range data.containers {
-		w.containers = append(w.containers, NewContainerRow(container, w.header))
-	}
-	w.align()
 
 	return w
 
+}
+
+//PrepareToRender prepares this widget for rendering
+func (s *ContainersWidget) PrepareToRender(data *DockerPsRenderData) {
+	s.data = data
+	var containers []*ContainerRow
+	for _, container := range data.containers {
+		containers = append(containers, NewContainerRow(container, s.header))
+	}
+	s.containers = containers
+	s.align()
 }
 
 //Align aligns rows
@@ -105,7 +111,6 @@ func (s *ContainersWidget) highlightSelectedRow() {
 	if index > s.RowCount() {
 		index = s.RowCount() - 1
 	}
-	s.containers[s.selectedIndex].NotHighlighted()
 	s.selectedIndex = index
 	s.containers[s.selectedIndex].Highlighted()
 }
@@ -155,23 +160,20 @@ func (s *ContainersWidget) visibleRows() []*ContainerRow {
 	}
 	//at the the start
 	if selected == 0 {
-		//internal state is reset
 		s.startIndex = 0
 		s.endIndex = s.height
-		return rows[s.startIndex:s.endIndex]
-	}
-
-	if selected >= s.endIndex {
-		if selected-s.height >= 0 {
-			s.startIndex = selected - s.height
-		}
+	} else if selected >= count-1 { //at the end
+		s.startIndex = count - s.height
+		s.endIndex = count
+	} else if selected == s.endIndex { //scroll down by one
+		s.startIndex++
+		s.endIndex++
+	} else if selected <= s.startIndex { //scroll up by one
+		s.startIndex--
+		s.endIndex--
+	} else if selected > s.endIndex { // scroll
+		s.startIndex = selected - s.height
 		s.endIndex = selected
-	}
-	if selected <= s.startIndex {
-		s.startIndex = s.startIndex - 1
-		if selected+s.height < count {
-			s.endIndex = s.startIndex + s.height
-		}
 	}
 	return rows[s.startIndex:s.endIndex]
 }

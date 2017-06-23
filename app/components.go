@@ -10,7 +10,7 @@ import (
 //Widgets holds initialized UI componets
 type Widgets struct {
 	DockerInfoWidget    *appui.DockerInfo
-	ContainerListWidget *appui.DockerPs
+	ContainerListWidget *appui.ContainersWidget
 	ImageListWidget     *appui.DockerImagesRenderer
 	DiskUsageWidget     *appui.DockerDiskUsageRenderer
 	NodeTasksWidget     *swarm.NodeTasksWidget
@@ -24,7 +24,7 @@ func NewAppUI(daemon docker.ContainerDaemon) *Widgets {
 	di.SetWidth(ui.ActiveScreen.Dimensions.Width)
 	return &Widgets{
 		DockerInfoWidget:    di,
-		ContainerListWidget: appui.NewDockerPsRenderer(),
+		ContainerListWidget: appui.NewContainersWidget(viewStartingLine),
 		ImageListWidget:     appui.NewDockerImagesRenderer(),
 		DiskUsageWidget:     appui.NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
 	}

@@ -23,18 +23,25 @@ func TestContainerListVisibleRows(t *testing.T) {
 	screen.Cursor.Max(len(containers) - 1)
 	ui.ActiveScreen = screen
 
-	w := NewContainersWidget(&DockerPsRenderData{containers, docker.SortByContainerID}, 0)
+	w := NewContainersWidget(0)
+
+	w.PrepareToRender(&DockerPsRenderData{containers, docker.SortByContainerID})
 
 	rows := w.visibleRows()
 	if len(rows) != w.height {
 		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
 	}
+	if rows[0].container.ID != "0" || rows[4].container.ID != "4" {
+		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
+	}
 
 	ui.ActiveScreen.Cursor.ScrollCursorDown()
-
 	rows = w.visibleRows()
 	if len(rows) != w.height {
 		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
+	}
+	if rows[0].container.ID != "0" || rows[4].container.ID != "4" {
+		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
 	}
 
 	ui.ActiveScreen.Cursor.ScrollTo(10)
@@ -42,17 +49,40 @@ func TestContainerListVisibleRows(t *testing.T) {
 	if len(rows) != w.height {
 		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
 	}
+	if rows[0].container.ID != "5" || rows[4].container.ID != "9" {
+		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
+	}
 
 	ui.ActiveScreen.Cursor.ScrollCursorUp()
 	rows = w.visibleRows()
 	if len(rows) != w.height {
 		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
 	}
+	if rows[0].container.ID != "5" || rows[4].container.ID != "9" {
+		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
+	}
 
 	ui.ActiveScreen.Cursor.ScrollTo(0)
 	rows = w.visibleRows()
 	if len(rows) != w.height {
 		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
+	}
+	if rows[0].container.ID != "0" || rows[4].container.ID != "4" {
+		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
+	}
+
+	ui.ActiveScreen.Cursor.ScrollCursorDown()
+	ui.ActiveScreen.Cursor.ScrollCursorDown()
+	ui.ActiveScreen.Cursor.ScrollCursorDown()
+	ui.ActiveScreen.Cursor.ScrollCursorDown()
+	ui.ActiveScreen.Cursor.ScrollCursorDown()
+
+	rows = w.visibleRows()
+	if len(rows) != w.height {
+		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
+	}
+	if rows[0].container.ID != "1" || rows[4].container.ID != "5" {
+		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
 	}
 
 }

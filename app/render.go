@@ -50,9 +50,9 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			data := appui.NewDockerPsRenderData(
 				containers,
 				sortMode)
-			d.ui.ContainerListWidget.PrepareToRender(data)
+			containersWidget := d.ui.ContainerListWidget
+			containersWidget.PrepareToRender(data)
 
-			containersWidget := appui.NewContainersWidget(data, viewStartingLine)
 			d.state.activeWidget = containersWidget
 			bufferers = append(bufferers, containersWidget)
 
