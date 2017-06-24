@@ -11,7 +11,7 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-type newLineEvent func()
+type eventCallback func()
 
 // A View is a region of the screen where text can be rendered. It maintains
 //its own internal buffer and cursor position.)
@@ -24,7 +24,7 @@ type View struct {
 	lines            [][]rune //the content buffer
 	showCursor       bool
 
-	newLineNotifier newLineEvent
+	newLineCallback eventCallback
 
 	theme  *ColorTheme
 	markup *Markup
@@ -85,9 +85,7 @@ func (v *View) Write(p []byte) (n int, err error) {
 		switch ch {
 		case '\n':
 			v.lines = append(v.lines, nil)
-			if v.newLineNotifier != nil {
-				v.newLineNotifier()
-			}
+			v.newLineCallback()
 		case '\r':
 			nl := len(v.lines)
 			if nl > 0 {
@@ -332,9 +330,10 @@ func NewView(name string, x0, y0, x1, y1 int, showCursor bool, theme *ColorTheme
 		width: x1 - x0,
 		//last line is used by the cursor and for reading input, it is not used to
 		//render view buffer
-		height:     y1 - y0 - 1,
-		showCursor: showCursor,
-		theme:      theme,
+		height:          y1 - y0 - 1,
+		showCursor:      showCursor,
+		theme:           theme,
+		newLineCallback: func() {},
 	}
 
 	return v
