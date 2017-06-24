@@ -92,12 +92,12 @@ loop:
 						less.ScrollPageDown()
 					} else if event.Key == termbox.KeyPgup { // cursor one page up
 						less.ScrollPageUp()
-					} else if event.Ch == 'f' {
+					} else if event.Ch == 'f' { //toggle follow
+						less.flipFollow()
+					} else if event.Ch == 'F' {
 						inputMode = true
 						less.filtering = true
 						go less.readInput(inputBoxEventChan, inputBoxOutput)
-					} else if event.Ch == 'F' { //toggle follow
-						less.flipFollow()
 					} else if event.Ch == 'g' { //to the top of the view
 						less.ScrollToTop()
 					} else if event.Ch == 'G' { //to the bottom of the view
