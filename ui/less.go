@@ -20,8 +20,6 @@ const (
 type Less struct {
 	*View
 	searchResult *search.Result
-	active       bool
-	activeLock   sync.RWMutex
 	filtering    bool
 	following    bool
 	refresh      chan struct{}
@@ -47,23 +45,19 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 	refreshChan := make(chan struct{}, 1)
 	less.refresh = refreshChan
 	less.newLineCallback = func() {
-		if less.isActive() {
-			if less.following {
-				//ScrollToBottom refreshes the buffer as well
-				less.ScrollToBottom()
-			} else {
-				less.refreshBuffer()
-			}
+		if less.following {
+			//ScrollToBottom refreshes the buffer as well
+			less.ScrollToBottom()
+		} else {
+			less.refreshBuffer()
 		}
 	}
 	inputMode := false
 	inputBoxEventChan := make(chan termbox.Event)
 	inputBoxOutput := make(chan string, 1)
-	less.activate()
 	defer close(inputBoxOutput)
 	defer close(inputBoxEventChan)
 	defer func() {
-		less.deactivate()
 		less.newLineCallback = func() {}
 		close(refreshChan)
 	}()
@@ -225,12 +219,6 @@ func (less *Less) ScrollToTop() {
 	less.refreshBuffer()
 }
 
-func (less *Less) activate() {
-	less.activeLock.Lock()
-	defer less.activeLock.Unlock()
-	less.active = true
-}
-
 func (less *Less) atTheStartOfBuffer() bool {
 	_, y := less.Position()
 	return y == 0
@@ -245,12 +233,6 @@ func (less *Less) atTheEndOfBuffer() bool {
 
 func (less *Less) bufferSize() int {
 	return len(less.lines)
-}
-
-func (less *Less) deactivate() {
-	less.activeLock.Lock()
-	defer less.activeLock.Unlock()
-	less.active = false
 }
 
 func (less *Less) gotoPreviousSearchHit() {
@@ -272,12 +254,6 @@ func (less *Less) gotoNextSearchHit() {
 		}
 	}
 	less.refreshBuffer()
-}
-
-func (less *Less) isActive() bool {
-	less.activeLock.RLock()
-	defer less.activeLock.RUnlock()
-	return less.active
 }
 
 func (less *Less) refreshBuffer() {
