@@ -20,9 +20,12 @@ const (
 type Less struct {
 	*View
 	searchResult *search.Result
+	active       bool
+	activeLock   sync.RWMutex
 	filtering    bool
 	following    bool
 	refresh      chan struct{}
+
 	sync.Mutex
 }
 
@@ -41,16 +44,29 @@ func NewLess(theme *ColorTheme) *Less {
 //Focus sets the view as active, so it starts handling terminal events
 //and user actions
 func (less *Less) Focus(events <-chan termbox.Event) error {
-	less.refresh = make(chan struct{}, 1)
-	less.newLineNotifier = func() {
-		if less.following {
-			less.ScrollToBottom()
+	refreshChan := make(chan struct{}, 1)
+	less.refresh = refreshChan
+	less.newLineCallback = func() {
+		if less.isActive() {
+			if less.following {
+				//ScrollToBottom refreshes the buffer as well
+				less.ScrollToBottom()
+			} else {
+				less.refreshBuffer()
+			}
 		}
-		less.refresh <- struct{}{}
 	}
 	inputMode := false
 	inputBoxEventChan := make(chan termbox.Event)
 	inputBoxOutput := make(chan string, 1)
+	less.activate()
+	defer close(inputBoxOutput)
+	defer close(inputBoxEventChan)
+	defer func() {
+		less.deactivate()
+		less.newLineCallback = func() {}
+		close(refreshChan)
+	}()
 
 	go func() {
 		for range less.refresh {
@@ -59,11 +75,8 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 		}
 	}()
 	//This ensures at least one refresh
-	less.refresh <- struct{}{}
+	less.refreshBuffer()
 
-	defer close(inputBoxOutput)
-	defer close(inputBoxEventChan)
-	defer close(less.refresh)
 loop:
 	for {
 		select {
@@ -145,7 +158,7 @@ func (less *Less) render() {
 	less.Lock()
 	defer less.Unlock()
 	clear(termbox.Attribute(less.View.theme.Fg), termbox.Attribute(less.View.theme.Bg))
-	_, maxY := less.renderSize()
+	_, maxY := less.renderableArea()
 	y := 0
 
 	bufferStart := 0
@@ -168,7 +181,7 @@ func (less *Less) render() {
 
 func (less *Less) flipFollow() {
 	less.following = !less.following
-	less.refresh <- struct{}{}
+	less.refreshBuffer()
 }
 
 //ScrollDown moves the cursor down one line
@@ -202,14 +215,20 @@ func (less *Less) ScrollPageUp() {
 //ScrollToBottom moves the cursor to the bottom of the view buffer
 func (less *Less) ScrollToBottom() {
 	less.bufferY = less.bufferSize() - less.y1
-	less.refresh <- struct{}{}
+	less.refreshBuffer()
 
 }
 
 //ScrollToTop moves the cursor to the top of the view buffer
 func (less *Less) ScrollToTop() {
 	less.bufferY = 0
-	less.refresh <- struct{}{}
+	less.refreshBuffer()
+}
+
+func (less *Less) activate() {
+	less.activeLock.Lock()
+	defer less.activeLock.Unlock()
+	less.active = true
 }
 
 func (less *Less) atTheStartOfBuffer() bool {
@@ -228,6 +247,12 @@ func (less *Less) bufferSize() int {
 	return len(less.lines)
 }
 
+func (less *Less) deactivate() {
+	less.activeLock.Lock()
+	defer less.activeLock.Unlock()
+	less.active = false
+}
+
 func (less *Less) gotoPreviousSearchHit() {
 	sr := less.searchResult
 	if sr != nil {
@@ -236,7 +261,7 @@ func (less *Less) gotoPreviousSearchHit() {
 			less.setPosition(x, newy)
 		}
 	}
-	less.refresh <- struct{}{}
+	less.refreshBuffer()
 }
 func (less *Less) gotoNextSearchHit() {
 	sr := less.searchResult
@@ -246,18 +271,34 @@ func (less *Less) gotoNextSearchHit() {
 			less.setPosition(x, newY)
 		}
 	}
-	less.refresh <- struct{}{}
+	less.refreshBuffer()
 }
 
-//renderSize return the part of the view size available for rendering.
-func (less *Less) renderSize() (int, int) {
+func (less *Less) isActive() bool {
+	less.activeLock.RLock()
+	defer less.activeLock.RUnlock()
+	return less.active
+}
+
+func (less *Less) refreshBuffer() {
+	//Non blocking send. Since the refresh channel is buffered, losing
+	//refresh messages because of a full buffer should not be a problem
+	//since there is already a refresh message waiting to be processed.
+	select {
+	case less.refresh <- struct{}{}:
+	default:
+	}
+}
+
+//renderableArea return the part of the view size available for rendering.
+func (less *Less) renderableArea() (int, int) {
 	maxX, maxY := less.ViewSize()
 	return maxX, maxY - 1
 }
 
 func (less *Less) renderLine(x int, y int, line string) (int, error) {
 	var lines = 1
-	maxWidth, _ := less.renderSize()
+	maxWidth, _ := less.renderableArea()
 	if less.searchResult != nil {
 		//If markup support is active then it might happen that tags are present in the line
 		//but since we are searching, markups are ignored and coloring output is
@@ -308,7 +349,7 @@ func (less *Less) scrollDown(lines int) {
 	} else {
 		less.ScrollToBottom()
 	}
-	less.refresh <- struct{}{}
+	less.refreshBuffer()
 
 }
 
@@ -320,7 +361,7 @@ func (less *Less) scrollUp(lines int) {
 	} else {
 		less.setPosition(ox, 0)
 	}
-	less.refresh <- struct{}{}
+	less.refreshBuffer()
 }
 
 func (less *Less) renderStatusLine() {
