@@ -98,7 +98,7 @@ Besides this, it:
 
 The easiest way to install the latest binaries for Linux and Mac is to run this in your shell:
 
-```$ curl -sSf https://moncho.github.io/dry/dryup.sh | sudo sh```
+```curl -sSf https://moncho.github.io/dry/dryup.sh | sudo sh```
 
 ### Binaries
 
