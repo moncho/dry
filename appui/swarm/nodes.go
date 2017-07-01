@@ -103,7 +103,10 @@ func (s *NodesWidget) highlightSelectedRow() {
 
 //OnEvent runs the given command
 func (s *NodesWidget) OnEvent(event appui.EventCommand) error {
-	return event(s.nodes[s.selectedIndex].node.ID)
+	if s.RowCount() > 0 {
+		return event(s.nodes[s.selectedIndex].node.ID)
+	}
+	return nil
 }
 
 func (s *NodesWidget) visibleRows() []*NodeRow {

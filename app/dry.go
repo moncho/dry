@@ -421,6 +421,11 @@ func (d *Dry) SetContainerFilter(filter string) {
 	}
 }
 
+//ServiceLogs retrieves the log of the service with the given id
+func (d *Dry) ServiceLogs(id string) (io.ReadCloser, error) {
+	return d.dockerDaemon.ServiceLogs(id)
+}
+
 //ShowMainView changes the state of dry to show the main view, main views are
 //the container list, the image list or the network list
 func (d *Dry) ShowMainView() {
@@ -716,7 +721,7 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 		app.dockerEvents = dockerEvents
 		app.dockerEventsDone = dockerEventsDone
 		app.refreshTimerMutex = &sync.Mutex{}
-		//first refresh should not happen inmediately after dry creation
+		//first refresh should happen TimeBetweenRefresh seconds after dry creation
 		app.lastRefresh = time.Now().Add(TimeBetweenRefresh)
 		app.cache = c
 		app.startDry()

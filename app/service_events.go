@@ -1,6 +1,9 @@
 package app
 
-import termbox "github.com/nsf/termbox-go"
+import (
+	"github.com/moncho/dry/appui"
+	termbox "github.com/nsf/termbox-go"
+)
 
 type servicesScreenEventHandler struct {
 	baseEventHandler
@@ -8,6 +11,7 @@ type servicesScreenEventHandler struct {
 
 func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 	handled := false
+	focus := true
 
 	switch event.Key {
 	case termbox.KeyEnter:
@@ -19,10 +23,24 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		h.dry.state.activeWidget.OnEvent(showServices)
 		handled = true
 	}
+	switch event.Ch {
+	case 'l':
+		showServiceLogs := func(serviceID string) error {
+			logs, err := h.dry.ServiceLogs(serviceID)
+			if err == nil {
+				go appui.Stream(h.screen, logs, h.keyboardQueueForView, h.closeViewChan)
+				return nil
+			}
+			return err
+		}
+		h.dry.state.activeWidget.OnEvent(showServiceLogs)
+		handled = true
+		focus = false
+	}
 	if !handled {
 		h.baseEventHandler.handle(event)
 	} else {
-		h.setFocus(true)
+		h.setFocus(focus)
 	}
 }
 

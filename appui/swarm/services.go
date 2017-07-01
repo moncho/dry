@@ -111,7 +111,10 @@ func (s *ServicesWidget) highlightSelectedRow() {
 
 //OnEvent runs the given command
 func (s *ServicesWidget) OnEvent(event appui.EventCommand) error {
-	return event(s.services[s.selectedIndex].service.ID)
+	if s.RowCount() > 0 {
+		return event(s.services[s.selectedIndex].service.ID)
+	}
+	return nil
 }
 
 func (s *ServicesWidget) visibleRows() []*ServiceRow {
