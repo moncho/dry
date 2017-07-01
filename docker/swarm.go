@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"io"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -74,6 +75,19 @@ func (daemon *DockerDaemon) Service(id string) (*swarm.Service, error) {
 	}
 	return nil, pkgError.Wrapf(err, "Error retrieving service with id %s", id)
 
+}
+
+//ServiceLogs returns logs of the service with the given id
+func (daemon *DockerDaemon) ServiceLogs(id string) (io.ReadCloser, error) {
+
+	options := types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Timestamps: false,
+		Follow:     true,
+		Details:    true,
+	}
+	return daemon.client.ServiceLogs(context.Background(), id, options)
 }
 
 //Services returns the services known by the Swarm

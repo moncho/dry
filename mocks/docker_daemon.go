@@ -266,6 +266,11 @@ func (_m *DockerDaemonMock) Service(id string) (*swarm.Service, error) {
 	return nil, nil
 }
 
+//ServiceLogs mock
+func (_m *DockerDaemonMock) ServiceLogs(id string) (io.ReadCloser, error) {
+	return nil, nil
+}
+
 //Services mock
 func (_m *DockerDaemonMock) Services() ([]swarm.Service, error) {
 	return nil, nil

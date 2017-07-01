@@ -72,6 +72,7 @@ type SwarmAPI interface {
 	ResolveNode(id string) (string, error)
 	ResolveService(id string) (string, error)
 	Service(id string) (*swarm.Service, error)
+	ServiceLogs(id string) (io.ReadCloser, error)
 	Services() ([]swarm.Service, error)
 	ServiceTasks(services ...string) ([]swarm.Task, error)
 }
