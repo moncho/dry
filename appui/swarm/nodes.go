@@ -1,8 +1,11 @@
 package swarm
 
 import (
+	"strconv"
+	"strings"
 	"sync"
 
+	units "github.com/docker/go-units"
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
@@ -17,11 +20,14 @@ type NodesWidget struct {
 	swarmClient          docker.SwarmAPI
 	nodes                []*NodeRow
 	header               *termui.TableHeader
+	title                *termui.MarkupPar
 	selectedIndex        int
 	offset               int
 	x, y                 int
 	height, width        int
 	startIndex, endIndex int
+	totalMemory          int64
+	totalCPU             int
 	sync.RWMutex
 }
 
@@ -39,9 +45,17 @@ func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
 
 	if nodes, err := swarmClient.Nodes(); err == nil {
 		for _, node := range nodes {
-			w.nodes = append(w.nodes, NewNodeRow(node, w.header))
+			row := NewNodeRow(node, w.header)
+			w.nodes = append(w.nodes, row)
+			if cpu, err := strconv.Atoi(row.CPU.Text); err == nil {
+				w.totalCPU += cpu
+			}
+			w.totalMemory += node.Description.Resources.MemoryBytes
+
 		}
 	}
+	addSwarmSpecs(w)
+
 	w.align()
 	return w
 }
@@ -52,8 +66,12 @@ func (s *NodesWidget) align() {
 	x := s.x
 	width := s.width
 
+	s.title.SetWidth(width)
+	s.title.SetY(y)
+	s.title.SetX(x)
+
 	s.header.SetWidth(width)
-	s.header.SetY(y)
+	s.header.SetY(y + s.title.Height)
 	s.header.SetX(x)
 
 	for _, n := range s.nodes {
@@ -68,9 +86,11 @@ func (s *NodesWidget) Buffer() gizaktermui.Buffer {
 	defer s.Unlock()
 
 	buf := gizaktermui.NewBuffer()
+	buf.Merge(s.title.Buffer())
 	buf.Merge(s.header.Buffer())
 
 	y := s.y
+	y += s.title.GetHeight()
 	y += s.header.GetHeight()
 
 	s.highlightSelectedRow()
@@ -84,7 +104,7 @@ func (s *NodesWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
-//RowCount returns the number of rowns of this widget.
+//RowCount returns the number of rows of this widget.
 func (s *NodesWidget) RowCount() int {
 	return len(s.nodes)
 }
@@ -182,4 +202,25 @@ func nodeTableHeader() *termui.TableHeader {
 		}
 	}
 	return header
+}
+
+func addSwarmSpecs(w *NodesWidget) {
+	par := termui.NewParFromMarkupText(appui.DryTheme,
+		strings.Join(
+			[]string{
+				ui.Blue("Total CPU:"),
+				ui.Yellow(strconv.Itoa(w.totalCPU)),
+				ui.Blue("Total Memory:"),
+				ui.Yellow(units.BytesSize(float64(w.totalMemory))),
+			}, " "))
+	par.BorderTop = false
+	par.BorderBottom = false
+	par.BorderLeft = false
+	par.BorderRight = false
+	par.Height = 1
+	par.Bg = gizaktermui.Attribute(appui.DryTheme.Bg)
+	par.TextBgColor = gizaktermui.Attribute(appui.DryTheme.Bg)
+
+	w.title = par
+
 }
