@@ -12,8 +12,9 @@ func Less(renderer ui.Renderer, screen *ui.Screen, keyboardQueue chan termbox.Ev
 	defer func() {
 		closeView <- struct{}{}
 	}()
-	screen.Clear()
-	less := ui.NewLess(DryTheme)
+	screen.ClearAndFlush()
+
+	less := ui.NewLess(screen, DryTheme)
 	less.MarkupSupport()
 	io.WriteString(less, renderer.Render())
 
@@ -22,6 +23,7 @@ func Less(renderer ui.Renderer, screen *ui.Screen, keyboardQueue chan termbox.Ev
 		ui.ShowErrorMessage(screen, keyboardQueue, closeView, err)
 	}
 	termbox.HideCursor()
-	screen.Clear()
+	screen.ClearAndFlush()
+
 	screen.Sync()
 }

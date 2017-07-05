@@ -23,17 +23,19 @@ type Less struct {
 	filtering    bool
 	following    bool
 	refresh      chan struct{}
+	screen       *Screen
 
 	sync.Mutex
 }
 
 //NewLess creates a view that partially simulates less.
-func NewLess(theme *ColorTheme) *Less {
+func NewLess(screen *Screen, theme *ColorTheme) *Less {
 	width, height := termbox.Size()
 	view := NewView("", 0, 0, width, height, true, theme)
 	view.cursorY = height - 1 //Last line is at height -1
 	less := &Less{
-		View: view,
+		View:   view,
+		screen: screen,
 	}
 
 	return less
@@ -43,6 +45,8 @@ func NewLess(theme *ColorTheme) *Less {
 //and user actions
 func (less *Less) Focus(events <-chan termbox.Event) error {
 	refreshChan := make(chan struct{}, 1)
+	closeChan := make(chan struct{})
+
 	less.refresh = refreshChan
 	less.newLineCallback = func() {
 		if less.following {
@@ -57,66 +61,70 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 	inputBoxOutput := make(chan string, 1)
 	defer close(inputBoxOutput)
 	defer close(inputBoxEventChan)
-	defer func() {
-		less.newLineCallback = func() {}
-		close(refreshChan)
-	}()
 
-	go func() {
-		for range less.refresh {
-			clear(termbox.Attribute(less.View.theme.Fg), termbox.Attribute(less.View.theme.Bg))
-			less.render()
-		}
-	}()
 	//This ensures at least one refresh
 	less.refreshBuffer()
 
-loop:
-	for {
-		select {
-		case input := <-inputBoxOutput:
-			inputMode = false
-			less.search(input)
-			less.render()
-		case event := <-events:
-			switch event.Type {
-			case termbox.EventKey:
-				if !inputMode {
-					if event.Key == termbox.KeyEsc {
-						break loop
-					} else if event.Key == termbox.KeyArrowDown { //cursor down
-						less.ScrollDown()
-					} else if event.Key == termbox.KeyArrowUp { // cursor up
-						less.ScrollUp()
-					} else if event.Key == termbox.KeyPgdn { //cursor one page down
-						less.ScrollPageDown()
-					} else if event.Key == termbox.KeyPgup { // cursor one page up
-						less.ScrollPageUp()
-					} else if event.Ch == 'f' { //toggle follow
-						less.flipFollow()
-					} else if event.Ch == 'F' {
-						inputMode = true
-						less.filtering = true
-						go less.readInput(inputBoxEventChan, inputBoxOutput)
-					} else if event.Ch == 'g' { //to the top of the view
-						less.ScrollToTop()
-					} else if event.Ch == 'G' { //to the bottom of the view
-						less.ScrollToBottom()
-					} else if event.Ch == 'N' { //to the top of the view
-						less.gotoPreviousSearchHit()
-					} else if event.Ch == 'n' { //to the bottom of the view
-						less.gotoNextSearchHit()
-					} else if event.Ch == '/' {
-						inputMode = true
-						less.filtering = false
-						go less.readInput(inputBoxEventChan, inputBoxOutput)
+	go func() {
+		for {
+			select {
+			case <-closeChan:
+				return
+
+			case input := <-inputBoxOutput:
+				inputMode = false
+				less.search(input)
+				less.render()
+			case event := <-events:
+				switch event.Type {
+				case termbox.EventKey:
+					if !inputMode {
+						if event.Key == termbox.KeyEsc {
+
+							less.newLineCallback = func() {}
+							close(refreshChan)
+
+						} else if event.Key == termbox.KeyArrowDown { //cursor down
+							less.ScrollDown()
+						} else if event.Key == termbox.KeyArrowUp { // cursor up
+							less.ScrollUp()
+						} else if event.Key == termbox.KeyPgdn { //cursor one page down
+							less.ScrollPageDown()
+						} else if event.Key == termbox.KeyPgup { // cursor one page up
+							less.ScrollPageUp()
+						} else if event.Ch == 'f' { //toggle follow
+							less.flipFollow()
+						} else if event.Ch == 'F' {
+							inputMode = true
+							less.filtering = true
+							go less.readInput(inputBoxEventChan, inputBoxOutput)
+						} else if event.Ch == 'g' { //to the top of the view
+							less.ScrollToTop()
+						} else if event.Ch == 'G' { //to the bottom of the view
+							less.ScrollToBottom()
+						} else if event.Ch == 'N' { //to the top of the view
+							less.gotoPreviousSearchHit()
+						} else if event.Ch == 'n' { //to the bottom of the view
+							less.gotoNextSearchHit()
+						} else if event.Ch == '/' {
+							inputMode = true
+							less.filtering = false
+							go less.readInput(inputBoxEventChan, inputBoxOutput)
+						}
+					} else {
+						inputBoxEventChan <- event
 					}
-				} else {
-					inputBoxEventChan <- event
 				}
 			}
 		}
+	}()
+
+	for range less.refresh {
+		less.screen.Clear()
+		less.render()
+		less.screen.Flush()
 	}
+	close(closeChan)
 	return nil
 }
 
@@ -151,7 +159,6 @@ func (less *Less) readInput(inputBoxEventChan chan termbox.Event, inputBoxOutput
 func (less *Less) render() {
 	less.Lock()
 	defer less.Unlock()
-	clear(termbox.Attribute(less.View.theme.Fg), termbox.Attribute(less.View.theme.Bg))
 	_, maxY := less.renderableArea()
 	y := 0
 
@@ -170,7 +177,6 @@ func (less *Less) render() {
 
 	less.renderStatusLine()
 	less.drawCursor()
-	termbox.Flush()
 }
 
 func (less *Less) flipFollow() {
@@ -388,8 +394,4 @@ func (less *Less) drawCursor() {
 	x, y := less.Cursor()
 
 	termbox.SetCursor(x, y)
-}
-
-func clear(fg, bg termbox.Attribute) {
-	termbox.Clear(fg, bg)
 }

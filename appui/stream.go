@@ -13,9 +13,8 @@ func Stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.
 	defer func() {
 		closeView <- struct{}{}
 	}()
-	screen.Clear()
-	screen.Sync()
-	v := ui.NewLess(DryTheme)
+	screen.ClearAndFlush()
+	v := ui.NewLess(screen, DryTheme)
 	//TODO make sure that io errors can be safely ignored
 	go stdcopy.StdCopy(v, v, stream)
 	if err := v.Focus(keyboardQueue); err != nil {
@@ -24,6 +23,6 @@ func Stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.
 
 	stream.Close()
 	termbox.HideCursor()
-	screen.Clear()
+	screen.ClearAndFlush()
 	screen.Sync()
 }
