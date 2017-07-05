@@ -36,7 +36,7 @@ func NewSearch(text [][]rune, pattern string) (*Result, error) {
 
 func (result *Result) String() string {
 	if result.Hits > 0 {
-		return fmt.Sprintf("Pattern found %d times", result.Hits)
+		return fmt.Sprintf("Pattern %s found %d times", result.Pattern, result.Hits)
 	}
 	return "Pattern not found"
 }
