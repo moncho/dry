@@ -45,7 +45,6 @@ func NewLess(screen *Screen, theme *ColorTheme) *Less {
 //and user actions
 func (less *Less) Focus(events <-chan termbox.Event) error {
 	refreshChan := make(chan struct{}, 1)
-	closeChan := make(chan struct{})
 
 	less.refresh = refreshChan
 	less.newLineCallback = func() {
@@ -68,8 +67,6 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 	go func() {
 		for {
 			select {
-			case <-closeChan:
-				return
 
 			case input := <-inputBoxOutput:
 				inputMode = false
@@ -83,6 +80,7 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 
 							less.newLineCallback = func() {}
 							close(refreshChan)
+							return
 
 						} else if event.Key == termbox.KeyArrowDown { //cursor down
 							less.ScrollDown()
@@ -124,7 +122,6 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 		less.render()
 		less.screen.Flush()
 	}
-	close(closeChan)
 	return nil
 }
 
@@ -181,7 +178,11 @@ func (less *Less) render() {
 
 func (less *Less) flipFollow() {
 	less.following = !less.following
-	less.refreshBuffer()
+	if less.following {
+		less.ScrollToBottom()
+	} else {
+		less.refreshBuffer()
+	}
 }
 
 //ScrollDown moves the cursor down one line
