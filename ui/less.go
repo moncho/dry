@@ -56,15 +56,17 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 		}
 	}
 	inputMode := false
-	inputBoxEventChan := make(chan termbox.Event)
-	inputBoxOutput := make(chan string, 1)
-	defer close(inputBoxOutput)
-	defer close(inputBoxEventChan)
 
 	//This ensures at least one refresh
 	less.refreshBuffer()
 
-	go func() {
+	go func(input *bool) {
+
+		inputBoxEventChan := make(chan termbox.Event)
+		inputBoxOutput := make(chan string, 1)
+		defer close(inputBoxOutput)
+		defer close(inputBoxEventChan)
+
 		for {
 			select {
 
@@ -115,12 +117,14 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 				}
 			}
 		}
-	}()
+	}(&inputMode)
 
 	for range less.refresh {
-		less.screen.Clear()
-		less.render()
-		less.screen.Flush()
+		if !inputMode {
+			less.screen.Clear()
+			less.render()
+			less.screen.Flush()
+		}
 	}
 	return nil
 }
@@ -147,7 +151,7 @@ func (less *Less) search(pattern string) error {
 
 func (less *Less) readInput(inputBoxEventChan chan termbox.Event, inputBoxOutput chan string) error {
 	_, height := less.ViewSize()
-	eb := NewInputBox(0, height, ">>> ", inputBoxOutput, inputBoxEventChan, less.theme)
+	eb := NewInputBox(0, height, ">>> ", inputBoxOutput, inputBoxEventChan, less.theme, less.screen)
 	eb.Focus()
 	return nil
 }

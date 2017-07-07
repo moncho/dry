@@ -23,6 +23,7 @@ type InputBox struct {
 	x, y          int // InputBox position in the screen
 	output        chan<- string
 	eventQueue    chan termbox.Event
+	screen        *Screen
 }
 
 //Draw draws the InputBox in the given location
@@ -203,7 +204,7 @@ func (eb *InputBox) redrawAll() {
 	eb.Draw(eb.x, eb.y, editBoxWidth, 1)
 	termbox.SetCursor(eb.x+eb.CursorX(), eb.y)
 
-	termbox.Flush()
+	eb.screen.Flush()
 }
 
 //Focus is set on the inputbox, it starts handling terminal events and responding
@@ -252,10 +253,10 @@ mainloop:
 }
 
 //NewInputBox creates an input box, located at position x,y in the screen.
-func NewInputBox(x, y int, prompt string, output chan<- string, keyboardQueue chan termbox.Event, theme *ColorTheme) *InputBox {
+func NewInputBox(x, y int, prompt string, output chan<- string, keyboardQueue chan termbox.Event, theme *ColorTheme, screen *Screen) *InputBox {
 	width, _ := termbox.Size()
 	//TODO use color from the theme for the prompt
 	renderString(x, y, width, prompt, termbox.ColorYellow, termbox.Attribute(theme.Bg))
-	termbox.Flush()
-	return &InputBox{x: x + len(prompt), y: y, output: output, eventQueue: keyboardQueue}
+	screen.Flush()
+	return &InputBox{x: x + len(prompt), y: y, output: output, eventQueue: keyboardQueue, screen: screen}
 }
