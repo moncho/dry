@@ -38,7 +38,7 @@ func (result *Result) String() string {
 	if result.Hits > 0 {
 		return fmt.Sprintf("Pattern %s found %d times", result.Pattern, result.Hits)
 	}
-	return "Pattern not found"
+	return fmt.Sprintf("Pattern %s not found", result.Pattern)
 }
 
 //InitialLine sets the position for iterating the search results on the first line
