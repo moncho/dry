@@ -60,7 +60,7 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 	//This ensures at least one refresh
 	less.refreshBuffer()
 
-	go func(input *bool) {
+	go func(inputMode *bool) {
 
 		inputBoxEventChan := make(chan termbox.Event)
 		inputBoxOutput := make(chan string, 1)
@@ -71,13 +71,13 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 			select {
 
 			case input := <-inputBoxOutput:
-				inputMode = false
+				*inputMode = false
 				less.search(input)
-				less.render()
+				less.refreshBuffer()
 			case event := <-events:
 				switch event.Type {
 				case termbox.EventKey:
-					if !inputMode {
+					if !*inputMode {
 						if event.Key == termbox.KeyEsc {
 
 							less.newLineCallback = func() {}
@@ -95,7 +95,7 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 						} else if event.Ch == 'f' { //toggle follow
 							less.flipFollow()
 						} else if event.Ch == 'F' {
-							inputMode = true
+							*inputMode = true
 							less.filtering = true
 							go less.readInput(inputBoxEventChan, inputBoxOutput)
 						} else if event.Ch == 'g' { //to the top of the view
@@ -107,7 +107,7 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 						} else if event.Ch == 'n' { //to the bottom of the view
 							less.gotoNextSearchHit()
 						} else if event.Ch == '/' {
-							inputMode = true
+							*inputMode = true
 							less.filtering = false
 							go less.readInput(inputBoxEventChan, inputBoxOutput)
 						}
@@ -120,6 +120,9 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 	}(&inputMode)
 
 	for range less.refresh {
+		//If input is being read, refresh events are ignore
+		//the only UI changes are happening on the input bar
+		//and are done by the InputBox
 		if !inputMode {
 			less.screen.Clear()
 			less.render()
