@@ -7,8 +7,10 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
-//DryWidgets holds initialized UI componets
-type DryWidgets struct {
+//WidgetCatalog holds initialized UI components that are ready
+//to be rendered.
+//For now, it holds named components.
+type WidgetCatalog struct {
 	DockerInfo    *appui.DockerInfo
 	ContainerList *appui.ContainersWidget
 	ImageList     *appui.DockerImagesRenderer
@@ -16,13 +18,13 @@ type DryWidgets struct {
 	NodeTasks     *swarm.NodeTasksWidget
 }
 
-//NewAppUI creates AppUI
-func NewAppUI(daemon docker.ContainerDaemon) *DryWidgets {
+//NewWidgetCatalog creates the WidgetCatalog
+func NewWidgetCatalog(daemon docker.ContainerDaemon) *WidgetCatalog {
 	di := appui.NewDockerInfo(daemon)
 	di.SetX(0)
 	di.SetY(1)
 	di.SetWidth(ui.ActiveScreen.Dimensions.Width)
-	return &DryWidgets{
+	return &WidgetCatalog{
 		DockerInfo:    di,
 		ContainerList: appui.NewContainersWidget(viewStartingLine),
 		ImageList:     appui.NewDockerImagesRenderer(),

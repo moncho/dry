@@ -41,7 +41,7 @@ type state struct {
 
 //Dry represents the application.
 type Dry struct {
-	ui                 *DryWidgets
+	ui                 *WidgetCatalog
 	dockerDaemon       drydocker.ContainerDaemon
 	dockerEvents       <-chan events.Message
 	dockerEventsDone   chan<- struct{}
@@ -714,7 +714,7 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 		d.SortImages(state.sortImagesMode)
 		d.SortNetworks(state.sortNetworksMode)
 		app := &Dry{}
-		app.ui = NewAppUI(d)
+		app.ui = NewWidgetCatalog(d)
 		app.state = state
 		app.dockerDaemon = d
 		app.output = make(chan string)

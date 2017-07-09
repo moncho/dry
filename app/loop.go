@@ -160,7 +160,7 @@ loop:
 		case termbox.EventResize:
 			ui.Resize()
 			//Reload dry ui elements
-			dry.ui = NewAppUI(dry.dockerDaemon)
+			dry.ui = NewWidgetCatalog(dry.dockerDaemon)
 		}
 	}
 
