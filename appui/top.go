@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 	"text/tabwriter"
 
@@ -62,13 +63,16 @@ func NewDockerTop(processList *container.ContainerTopOKBody, x, y, height, width
 			fmt.Sprintf("[%s](fg-red)",
 				strings.Join(processList.Titles, "\t")))
 
-		//Commented because process list does not always includes
-		//the same columns and sortByPid sorts by the first column
-		//which is not guaranteed to be the PID.
-		/*		if len(processList.Processes) > 2 {
-					sort.Sort(sortByPID(processList.Processes))
-				}
-		*/
+		if len(processList.Processes) > 1 {
+			pidColumnIndex := findPIDColumn(processList)
+			if pidColumnIndex != -1 {
+				sort.Slice(processList.Processes,
+					func(i, j int) bool {
+						return processList.Processes[i][pidColumnIndex] < processList.Processes[j][pidColumnIndex]
+					})
+			}
+		}
+
 		for _, proc := range processList.Processes {
 			fmt.Fprintln(w,
 				fmt.Sprintf("[%s](fg-white)",
@@ -97,16 +101,12 @@ func NewDockerTop(processList *container.ContainerTopOKBody, x, y, height, width
 	return ui.NewPar("", DryTheme), 0
 }
 
-type sortByPID [][]string
+func findPIDColumn(process *container.ContainerTopOKBody) int {
+	for i, title := range process.Titles {
+		if title == "PID" {
+			return i
+		}
+	}
+	return -1
 
-func (s sortByPID) Len() int {
-	return len(s)
-}
-
-func (s sortByPID) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-
-func (s sortByPID) Less(i, j int) bool {
-	return s[i][0] < s[j][0]
 }
