@@ -18,100 +18,9 @@ type containersScreenEventHandler struct {
 }
 
 func (h *containersScreenEventHandler) handle(event termbox.Event) {
-	focus := true
-	dry := h.dry
-	screen := h.screen
-	cursor := screen.Cursor
-	cursorPos := cursor.Position()
-	//Controls if the event has been handled by the first¡ switch statement
-	handled := true
-	switch event.Key {
-	case termbox.KeyF1: //sort
-		dry.Sort()
-	case termbox.KeyF2: //show all containers
-		cursor.Reset()
-		dry.ToggleShowAllContainers()
-	case termbox.KeyF3: //filter containers
-		if filter, err := appui.ReadLine("Show containers named (leave empty to remove the filter) >>> "); err == nil {
-			dry.SetContainerFilter(filter)
-		}
-		screen.ClearAndFlush()
-	case termbox.KeyCtrlE: //remove all stopped
-		if confirmation, err := appui.ReadLine("All stopped containers will be removed. Do you want to continue? (y/N) "); err == nil {
-			screen.ClearAndFlush()
-			if confirmation == "Y" || confirmation == "y" {
-				dry.RemoveAllStoppedContainers()
-			}
-		}
-	case termbox.KeyCtrlK: //kill
-		dry.KillAt(cursorPos)
-	case termbox.KeyCtrlR: //start
-		dry.RestartContainerAt(cursorPos)
-	case termbox.KeyCtrlT: //stop
-		dry.StopContainerAt(cursorPos)
-	case termbox.KeyEnter: //inspect
-		focus = false
-		go showContainerOptions(h, dry, screen, h.keyboardQueueForView, h.closeViewChan)
-	default: //Not handled
-		handled = false
-	}
+	focus, handled := handleKey(h, event.Key)
 	if !handled {
-
-		switch event.Ch {
-		case 'e', 'E': //remove
-			handled = true
-
-			container := dry.ContainerAt(cursorPos)
-			if container != nil {
-				//Since a command is created the focus is handled by handleCommand
-				//Fixes #24
-				focus = false
-				h.handleCommand(commandToExecute{
-					docker.RM,
-					container,
-				})
-			}
-		case 'i', 'I': //inspect
-			handled = true
-
-			if cursorPos >= 0 {
-				container := dry.ContainerAt(cursorPos)
-				if container != nil {
-					focus = false
-
-					h.handleCommand(commandToExecute{
-						docker.INSPECT,
-						container,
-					})
-				}
-			}
-		case 'l', 'L': //logs
-			handled = true
-
-			if cursorPos >= 0 {
-				container := dry.ContainerAt(cursorPos)
-				if container != nil {
-					focus = false
-
-					h.handleCommand(commandToExecute{
-						docker.LOGS,
-						container,
-					})
-				}
-			}
-		case 's', 'S': //stats
-			handled = true
-			if cursorPos >= 0 {
-				container := dry.ContainerAt(cursorPos)
-				if container != nil {
-					focus = false
-					h.handleCommand(commandToExecute{
-						docker.STATS,
-						container,
-					})
-				}
-			}
-		}
+		focus, handled = handleCharacter(h, event.Ch)
 	}
 	if handled {
 		h.setFocus(focus)
@@ -159,6 +68,107 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 	if focus {
 		h.closeViewChan <- struct{}{}
 	}
+}
+
+func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled bool) {
+	focus = true
+	handled = false
+	cursor := h.screen.Cursor
+	cursorPos := cursor.Position()
+	dry := h.dry
+	switch key {
+	case 'e', 'E': //remove
+		handled = true
+		container := dry.ContainerAt(cursorPos)
+		if container != nil {
+			//Since a command is created the focus is handled by handleCommand
+			//Fixes #24
+			focus = false
+			h.handleCommand(commandToExecute{
+				docker.RM,
+				container,
+			})
+		}
+	case 'i', 'I': //inspect
+		handled = true
+
+		if cursorPos >= 0 {
+			container := dry.ContainerAt(cursorPos)
+			if container != nil {
+				focus = false
+
+				h.handleCommand(commandToExecute{
+					docker.INSPECT,
+					container,
+				})
+			}
+		}
+	case 'l', 'L': //logs
+		handled = true
+
+		if cursorPos >= 0 {
+			container := dry.ContainerAt(cursorPos)
+			if container != nil {
+				focus = false
+
+				h.handleCommand(commandToExecute{
+					docker.LOGS,
+					container,
+				})
+			}
+		}
+	case 's', 'S': //stats
+		handled = true
+		if cursorPos >= 0 {
+			container := dry.ContainerAt(cursorPos)
+			if container != nil {
+				focus = false
+				h.handleCommand(commandToExecute{
+					docker.STATS,
+					container,
+				})
+			}
+		}
+	}
+	return focus, handled
+}
+
+func handleKey(h *containersScreenEventHandler, key termbox.Key) (focus, handled bool) {
+	focus = true
+	handled = true
+	cursor := h.screen.Cursor
+	cursorPos := cursor.Position()
+	switch key {
+	case termbox.KeyF1: //sort
+		h.dry.Sort()
+	case termbox.KeyF2: //show all containers
+		cursor.Reset()
+		h.dry.ToggleShowAllContainers()
+	case termbox.KeyF3: //filter containers
+		if filter, err := appui.ReadLine("Show containers named (leave empty to remove the filter) >>> "); err == nil {
+			h.dry.SetContainerFilter(filter)
+		}
+		h.screen.ClearAndFlush()
+	case termbox.KeyCtrlE: //remove all stopped
+		if confirmation, err := appui.ReadLine("All stopped containers will be removed. Do you want to continue? (y/N) "); err == nil {
+			h.screen.ClearAndFlush()
+			if confirmation == "Y" || confirmation == "y" {
+				h.dry.RemoveAllStoppedContainers()
+			}
+		}
+	case termbox.KeyCtrlK: //kill
+		h.dry.KillAt(cursorPos)
+	case termbox.KeyCtrlR: //start
+		h.dry.RestartContainerAt(cursorPos)
+	case termbox.KeyCtrlT: //stop
+		h.dry.StopContainerAt(cursorPos)
+	case termbox.KeyEnter: //inspect
+		focus = false
+		go showContainerOptions(h)
+	default: //Not handled
+		handled = false
+	}
+	return focus, handled
 }
 
 //statsScreen shows container stats on the screen
@@ -242,9 +252,12 @@ loop:
 }
 
 //statsScreen shows container stats on the screen
-func showContainerOptions(h *containersScreenEventHandler, dry *Dry, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
-
+func showContainerOptions(h *containersScreenEventHandler) {
+	screen := h.screen
+	dry := h.dry
 	selectedContainer := screen.Cursor.Position()
+	keyboardQueue := h.keyboardQueueForView
+	closeView := h.closeViewChan
 	//TODO handle error
 	container := dry.ContainerAt(selectedContainer)
 	if container != nil {
