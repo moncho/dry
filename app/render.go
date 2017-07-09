@@ -27,7 +27,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	var titleInfo string
 	var keymap string
 	var viewRenderer ui.Renderer
-	di := d.ui.DockerInfoWidget
+	di := d.ui.DockerInfo
 	bufferers = append(bufferers, di)
 
 	viewMode := d.viewMode()
@@ -49,7 +49,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			data := appui.NewDockerPsRenderData(
 				containers,
 				sortMode)
-			containersWidget := d.ui.ContainerListWidget
+			containersWidget := d.ui.ContainerList
 			containersWidget.PrepareToRender(data)
 
 			d.state.activeWidget = containersWidget
@@ -67,7 +67,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		{
 			//after a refresh, sorting is needed
 			sortMode := d.state.sortImagesMode
-			renderer := d.ui.ImageListWidget
+			renderer := d.ui.ImageList
 
 			images, err := d.dockerDaemon.Images()
 			if err == nil {
@@ -142,8 +142,8 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	case DiskUsage:
 		{
 			if du, err := d.dockerDaemon.DiskUsage(); err == nil {
-				d.ui.DiskUsageWidget.PrepareToRender(&du, d.PruneReport())
-				viewRenderer = d.ui.DiskUsageWidget
+				d.ui.DiskUsage.PrepareToRender(&du, d.PruneReport())
+				viewRenderer = d.ui.DiskUsage
 
 			} else {
 				screen.Render(1,

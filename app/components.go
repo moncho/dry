@@ -9,11 +9,11 @@ import (
 
 //Widgets holds initialized UI componets
 type Widgets struct {
-	DockerInfoWidget    *appui.DockerInfo
-	ContainerListWidget *appui.ContainersWidget
-	ImageListWidget     *appui.DockerImagesRenderer
-	DiskUsageWidget     *appui.DockerDiskUsageRenderer
-	NodeTasksWidget     *swarm.NodeTasksWidget
+	DockerInfo    *appui.DockerInfo
+	ContainerList *appui.ContainersWidget
+	ImageList     *appui.DockerImagesRenderer
+	DiskUsage     *appui.DockerDiskUsageRenderer
+	NodeTasks     *swarm.NodeTasksWidget
 }
 
 //NewAppUI creates AppUI
@@ -23,9 +23,9 @@ func NewAppUI(daemon docker.ContainerDaemon) *Widgets {
 	di.SetY(1)
 	di.SetWidth(ui.ActiveScreen.Dimensions.Width)
 	return &Widgets{
-		DockerInfoWidget:    di,
-		ContainerListWidget: appui.NewContainersWidget(viewStartingLine),
-		ImageListWidget:     appui.NewDockerImagesRenderer(),
-		DiskUsageWidget:     appui.NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
+		DockerInfo:    di,
+		ContainerList: appui.NewContainersWidget(viewStartingLine),
+		ImageList:     appui.NewDockerImagesRenderer(),
+		DiskUsage:     appui.NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
 	}
 }
