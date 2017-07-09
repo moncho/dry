@@ -10,15 +10,13 @@ import (
 const ShortHelp = `
 dry
 
-Connects to a Docker daemon if environment variable DOCKER_HOST is present
-then shows the list of containers and allows to execute Docker commands on them.
-
+A tool to interact with a Docker Daemon from the terminal. 
 `
 
 var help = `
 <white>dry ` + fmt.Sprintf("version %s, build %s", version.VERSION, version.GITCOMMIT) + `</>` +
 	`
-Connects to a Docker daemon, shows the list of containers and allows to execute Docker commands on them.
+A tool to interact with a Docker Daemon from the terminal. 
 
 Visit <blue>http://moncho.github.io/dry/</> for more information.
 
@@ -31,12 +29,11 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>3</>         To network list
 	<white>4</>         To node list (in Swarm mode)
 	<white>5</>         To service list (in Swarm mode)
-	<white>m</>         To container monitor mode
+	<white>m</>         Show container monitor mode
 	<white>h</>         Shows this help screen
 	<white>Crtl+c</>    Quits <white>dry</> inmediately
 	<white>q</>         Quits <white>dry</>
 	<white>esc</>       Goes back to the main screen
-
 
 <yellow>Container list keybinds</>
 	<white>F1</>        Cycles through containers sort modes (by Id | by Image | by Status | by Name)
@@ -60,22 +57,29 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>i</>         Shows image history
 	<white>Enter</>     Returns low-level information of the selected image
 
-	<yellow>Network list keybinds</>
+<yellow>Network list keybinds</>
 	<white>Enter</>     Returns low-level information of the selected network
 
+<yellow>Node list keybinds</>
+	<white>Enter</>     Shows the list of taks running on the selected node
 
-<yellow>Move around in container/image/network lists</>
+<yellow>Service list keybinds</>
+	<white>Enter</>     Shows the list of taks that are part of the selected service
+	<white>l</>         Displays the logs of the selected service
+	
+<yellow>Move around in lists</>
 	<white>ArrowUp</>   Moves the cursor one line up
 	<white>ArrowDown</> Moves the cursor one line down
 	<white>g</>         Moves the cursor to the beginning of the list
 	<white>G</>         Moves the cursor to the end of the list
 
 <yellow>Move around in logs/inspect buffers</>
+	<white>/</>         Searches for a pattern
+	<white>F</>         Only show lines that matches a pattern
 	<white>g</>         Moves the cursor to the beginning
 	<white>G</>         Moves the cursor until the end
 	<white>n</>         After a search, it moves forwards to the next search hit
 	<white>N</>         After a search, it moves backwards to the previous search hit
-	<white>s</>         Searches in the text being shown
 	<white>pg up</>     Moves the cursor "screen size" lines up
 	<white>pg down</>   Moves the cursor "screen size" lines down
 
