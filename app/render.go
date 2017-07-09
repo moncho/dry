@@ -30,14 +30,13 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	di := d.ui.DockerInfo
 	bufferers = append(bufferers, di)
 
-	viewMode := d.viewMode()
 	//if the monitor widget is active it is now cancelled since (most likely) the view is going to change now
 	if cancelMonitorWidget != nil {
 		cancelMonitorWidget()
 	}
 	d.state.activeWidget = nil
 
-	switch viewMode {
+	switch d.viewMode() {
 	case Main:
 		{
 			//after a refresh, sorting is needed

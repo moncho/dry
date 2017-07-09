@@ -41,7 +41,7 @@ type state struct {
 
 //Dry represents the application.
 type Dry struct {
-	ui                 *Widgets
+	ui                 *DryWidgets
 	dockerDaemon       drydocker.ContainerDaemon
 	dockerEvents       <-chan events.Message
 	dockerEventsDone   chan<- struct{}
@@ -619,7 +619,7 @@ func (d *Dry) Stats(id string) (*drydocker.StatsChannel, error) {
 	d.appmessage(
 		fmt.Sprintf("<red>Cannot run stats on stopped container. Id: </><white>%s</>", id))
 
-	return nil, errors.New("Cannot run stats on stopped container.")
+	return nil, errors.New("cannot run stats on stopped container")
 }
 
 //StopContainerAt stops the container at the given position
