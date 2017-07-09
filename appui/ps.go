@@ -2,12 +2,6 @@ package appui
 
 import "github.com/moncho/dry/docker"
 
-type column struct {
-	name  string // The name of the field in the struct.
-	title string // Title to display in the tableHeader.
-	mode  docker.SortMode
-}
-
 //DockerPsRenderData holds information that might be
 //used during ps rendering
 type DockerPsRenderData struct {

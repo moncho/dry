@@ -18,9 +18,7 @@ const (
 	//MainScreenFooterSize is the number of lines the footer of the main screen uses
 	MainScreenFooterSize = 1
 
-	imageTableStartPos     = MainScreenHeaderSize + 5 //5 its the number of lines in the image table header
-	containerTableStartPos = MainScreenHeaderSize + 5
-	networkTableStartPos   = MainScreenHeaderSize + 5
+	networkTableStartPos = MainScreenHeaderSize + 5
 	//DefaultColumnSpacing defines the minimun space between columns in pixels
 	DefaultColumnSpacing = 1
 	//IDColumnWidth defines a fixed width for ID columns

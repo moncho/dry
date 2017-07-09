@@ -166,14 +166,3 @@ func (m *Monitor) visibleRows() []*ContainerStatsRow {
 	end := m.endIndex + 1
 	return rows[start:end]
 }
-
-//Updates the cursor position in case it is out of bounds
-func retrieveCursorPosition(cursor *ui.Cursor, noOfElements int) int {
-
-	if cursor.Position() >= noOfElements {
-		cursor.ScrollTo(noOfElements - 1)
-	} else if cursor.Position() < 0 {
-		cursor.Reset()
-	}
-	return cursor.Position()
-}

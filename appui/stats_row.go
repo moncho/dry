@@ -14,7 +14,8 @@ import (
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
-var inactiveRowColor = termui.Attribute(ui.Color244)
+const inactiveRowColor = termui.Attribute(ui.Color244)
+const inactiveRowText = "-"
 
 //ContainerStatsRow is a Grid row showing runtime information about a container
 type ContainerStatsRow struct {
@@ -43,9 +44,9 @@ func NewContainerStatsRow(container *docker.Container, table drytermui.Table) *C
 		ID:        drytermui.NewThemedParColumn(DryTheme, cf.ID()),
 		CPU:       drytermui.NewThemedGaugeColumn(DryTheme),
 		Memory:    drytermui.NewThemedGaugeColumn(DryTheme),
-		Net:       drytermui.NewThemedParColumn(DryTheme, "-"),
-		Block:     drytermui.NewThemedParColumn(DryTheme, "-"),
-		Pids:      drytermui.NewThemedParColumn(DryTheme, "-"),
+		Net:       drytermui.NewThemedParColumn(DryTheme, inactiveRowText),
+		Block:     drytermui.NewThemedParColumn(DryTheme, inactiveRowText),
+		Pids:      drytermui.NewThemedParColumn(DryTheme, inactiveRowText),
 		Uptime:    drytermui.NewThemedParColumn(DryTheme, container.Status),
 	}
 	row.Height = 1
@@ -202,17 +203,17 @@ func (row *ContainerStatsRow) markAsNotRunning() {
 	row.ID.TextFgColor = inactiveRowColor
 	row.CPU.PercentColor = inactiveRowColor
 	row.CPU.Percent = 0
-	row.CPU.Label = "-"
+	row.CPU.Label = inactiveRowText
 	row.Memory.PercentColor = inactiveRowColor
 	row.Memory.Percent = 0
-	row.Memory.Label = "-"
+	row.Memory.Label = inactiveRowText
 	row.Net.TextFgColor = inactiveRowColor
-	row.Net.Text = "-"
+	row.Net.Text = inactiveRowText
 	row.Block.TextFgColor = inactiveRowColor
-	row.Block.Text = "-"
+	row.Block.Text = inactiveRowText
 	row.Pids.Text = "0"
 	row.Pids.TextFgColor = inactiveRowColor
-	row.Uptime.Text = "-"
+	row.Uptime.Text = inactiveRowText
 	row.Pids.TextFgColor = inactiveRowColor
 
 }

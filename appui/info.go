@@ -3,7 +3,6 @@ package appui
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -299,9 +298,4 @@ func writeKVIfNotEmpty(buffer *bytes.Buffer, key string, value interface{}) {
 //writeKV write into the given buffer "key: value"
 func writeKV(buffer *bytes.Buffer, key string, value interface{}) {
 	buffer.WriteString(fmt.Sprintf("<white> %s </>: %v\n", key, value))
-}
-
-// isDebugEnabled checks whether the debug flag is set or not.
-func isDebugEnabled() bool {
-	return os.Getenv("DEBUG") != ""
 }

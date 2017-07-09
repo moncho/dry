@@ -172,7 +172,7 @@ func main() {
 		return
 	}
 	log.Info("Launching dry")
-	if err := termbox.Init(); err != nil {
+	if err = termbox.Init(); err != nil {
 		log.Error(pkgError.Wrap(err, "There was an error initializing termbox"))
 		return
 	}
