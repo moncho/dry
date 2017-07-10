@@ -16,8 +16,9 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 			h.renderChan <- struct{}{}
 			return nil
 		}
-		h.dry.state.activeWidget.OnEvent(showServices)
-		handled = true
+		if err := h.dry.state.activeWidget.OnEvent(showServices); err == nil {
+			handled = true
+		}
 	}
 	if !handled {
 		h.baseEventHandler.handle(event)

@@ -33,9 +33,9 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 			}
 			return err
 		}
-		handled = true
 		//TODO show error on screen
 		if err := h.dry.state.activeWidget.OnEvent(showServiceLogs); err == nil {
+			handled = true
 			focus = false
 		}
 	}

@@ -1,6 +1,7 @@
 package swarm
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -114,7 +115,7 @@ func (s *ServicesWidget) OnEvent(event appui.EventCommand) error {
 	if s.RowCount() > 0 {
 		return event(s.services[s.selectedIndex].service.ID)
 	}
-	return nil
+	return errors.New("the service list is empty")
 }
 
 func (s *ServicesWidget) visibleRows() []*ServiceRow {

@@ -1,6 +1,7 @@
 package swarm
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"sync"
@@ -126,7 +127,7 @@ func (s *NodesWidget) OnEvent(event appui.EventCommand) error {
 	if s.RowCount() > 0 {
 		return event(s.nodes[s.selectedIndex].node.ID)
 	}
-	return nil
+	return errors.New("the node list is empty")
 }
 
 func (s *NodesWidget) visibleRows() []*NodeRow {
