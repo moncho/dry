@@ -6,6 +6,8 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
+const stop = "stop"
+
 type markupTextBuilder struct {
 	markup *ui.Markup
 }
@@ -44,18 +46,18 @@ func wrapTx(cs []gizaktermui.Cell, wl int) []gizaktermui.Cell {
 	plainWrapped := wordwrap.WrapString(plain, uint(wl))
 
 	// find differences and insert
-	finalCell := tmpCell // finalcell will get the inserts and is what is returned
+	var finalCell []gizaktermui.Cell
 
 	plainRune := []rune(plain)
 	plainWrappedRune := []rune(plainWrapped)
 	trigger := "go"
 	plainRuneNew := plainRune
 
-	for trigger != "stop" {
+	for trigger != stop {
 		plainRune = plainRuneNew
 		for i := range plainRune {
 			if plainRune[i] == plainWrappedRune[i] {
-				trigger = "stop"
+				trigger = stop
 			} else if plainRune[i] != plainWrappedRune[i] && plainWrappedRune[i] == 10 {
 				trigger = "go"
 				cell := gizaktermui.Cell{Ch: 10, Fg: 0, Bg: 0}
@@ -84,7 +86,7 @@ func wrapTx(cs []gizaktermui.Cell, wl int) []gizaktermui.Cell {
 				break
 
 			} else {
-				trigger = "stop" // stops the outer for loop
+				trigger = stop // stops the outer for loop
 			}
 		}
 	}
