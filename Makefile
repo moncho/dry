@@ -16,6 +16,8 @@ GO_LDFLAGS_STATIC=-ldflags "-w $(CTIMEVAR) -extldflags -static"
 GOOSES = darwin freebsd linux windows
 GOARCHS = amd64 386 arm
 
+print-%: ; @echo $*=$($*)
+
 run: ## Runs dry
 	go run ./main.go
 
