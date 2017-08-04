@@ -77,26 +77,16 @@ func buildStats(container *Container, stats *types.StatsJSON, topResult *contain
 	br, bw := calculateBlockIO(stats)
 	s.BlockRead = float64(br)
 	s.BlockWrite = float64(bw)
-	s.Memory = float64(stats.MemoryStats.Usage)
-	s.MemoryLimit = float64(stats.MemoryStats.Limit)
-	s.MemoryPercentage = calculateMemPercentage(stats)
 	s.NetworkRx, s.NetworkTx = calculateNetwork(stats)
 
-	var memPercent = 0.0
-	var cpuPercent = 0.0
-
-	// MemoryStats.Limit will never be 0 unless the container is not running and we haven't
-	// got any data from cgroup
-	if stats.MemoryStats.Limit != 0 {
-		memPercent = float64(stats.MemoryStats.Usage) / float64(stats.MemoryStats.Limit) * 100.0
-	}
-
-	cpuPercent = calculateCPUPercent(stats)
+	mem := calculateMemUsageUnixNoCache(stats.MemoryStats)
+	memLimit := float64(stats.MemoryStats.Limit)
+	cpuPercent := calculateCPUPercent(stats)
 	blkRead, blkWrite := calculateBlockIO(stats)
 	s.CPUPercentage = cpuPercent
-	s.Memory = float64(stats.MemoryStats.Usage)
-	s.MemoryLimit = float64(stats.MemoryStats.Limit)
-	s.MemoryPercentage = memPercent
+	s.Memory = mem
+	s.MemoryLimit = memLimit
+	s.MemoryPercentage = calculateMemPercentUnixNoCache(memLimit, mem)
 	s.NetworkRx, s.NetworkTx = calculateNetwork(stats)
 	s.BlockRead = float64(blkRead)
 	s.BlockWrite = float64(blkWrite)
@@ -121,15 +111,6 @@ func calculateCPUPercent(stats *types.StatsJSON) float64 {
 	return cpuPercent
 }
 
-func calculateMemPercentage(stats *types.StatsJSON) float64 {
-	// MemoryStats.Limit will never be 0 unless the container is not running and we havn't
-	// got any data from cgroup
-	if stats.MemoryStats.Limit != 0 {
-		return float64(stats.MemoryStats.Usage) / float64(stats.MemoryStats.Limit) * 100.0
-	}
-	return 0.0
-}
-
 func calculateBlockIO(stats *types.StatsJSON) (blkRead uint64, blkWrite uint64) {
 	blkio := stats.BlkioStats
 	for _, bioEntry := range blkio.IoServiceBytesRecursive {
@@ -152,4 +133,17 @@ func calculateNetwork(stats *types.StatsJSON) (float64, float64) {
 	}
 	return rx, tx
 
+}
+
+func calculateMemUsageUnixNoCache(mem types.MemoryStats) float64 {
+	return float64(mem.Usage - mem.Stats["cache"])
+}
+
+func calculateMemPercentUnixNoCache(limit float64, usedNoCache float64) float64 {
+	// MemoryStats.Limit will never be 0 unless the container is not running and we haven't
+	// got any data from cgroup
+	if limit != 0 {
+		return usedNoCache / limit * 100.0
+	}
+	return 0
 }
