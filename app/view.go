@@ -23,7 +23,12 @@ const (
 	Tasks
 )
 
-//isMainScreen returns true if this is one of the main screens of dry
+//isMainScreen returns true if this viewMode is one of the main screens of dry
 func (v viewMode) isMainScreen() bool {
-	return v == Main || v == Networks || v == Images || v == Monitor || v == Nodes || v == Services
+	switch v {
+	case Main, Networks, Images, Monitor, Nodes, Services:
+		return true
+	default:
+		return false
+	}
 }
