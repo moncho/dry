@@ -18,7 +18,7 @@ const (
 
 var cancelMonitorWidget context.CancelFunc
 
-//Render renders dry in the given screen
+//Render renders dry on the given screen
 func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	var bufferers []gizaktermui.Bufferer
 
@@ -27,7 +27,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	var titleInfo string
 	var keymap string
 	var viewRenderer ui.Renderer
-	di := d.ui.DockerInfo
+	di := d.widgetRegistry.DockerInfo
 	bufferers = append(bufferers, di)
 
 	//if the monitor widget is active it is now cancelled since (most likely) the view is going to change now
@@ -48,7 +48,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			data := appui.NewDockerPsRenderData(
 				containers,
 				sortMode)
-			containersWidget := d.ui.ContainerList
+			containersWidget := d.widgetRegistry.ContainerList
 			containersWidget.PrepareToRender(data)
 
 			d.state.activeWidget = containersWidget
@@ -66,7 +66,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		{
 			//after a refresh, sorting is needed
 			sortMode := d.state.sortImagesMode
-			renderer := d.ui.ImageList
+			renderer := d.widgetRegistry.ImageList
 
 			images, err := d.dockerDaemon.Images()
 			if err == nil {
@@ -141,8 +141,8 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	case DiskUsage:
 		{
 			if du, err := d.dockerDaemon.DiskUsage(); err == nil {
-				d.ui.DiskUsage.PrepareToRender(&du, d.PruneReport())
-				viewRenderer = d.ui.DiskUsage
+				d.widgetRegistry.DiskUsage.PrepareToRender(&du, d.PruneReport())
+				viewRenderer = d.widgetRegistry.DiskUsage
 
 			} else {
 				screen.Render(1,
