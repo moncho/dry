@@ -1,10 +1,11 @@
 package app
 
-type viewMode interface {
-	prepareForView(d *dry)
+type viewMode2 interface {
+	prepareForView(d *Dry)
 }
+
 //ViewMode represents dry possible views
-type viewMode uint16 {}
+type viewMode uint16
 
 //known view modes
 const (
