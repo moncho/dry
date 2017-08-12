@@ -1,7 +1,6 @@
 package termui
 
 import (
-	"image"
 	"strconv"
 	"strings"
 
@@ -16,7 +15,6 @@ const (
 // TextInput is a widget for text input
 type TextInput struct {
 	termui.Block
-	innerArea   image.Rectangle
 	TextFgColor termui.Attribute
 	TextBgColor termui.Attribute
 	isCapturing bool
@@ -34,23 +32,20 @@ type TextInput struct {
 
 //NewTextInput creates a new TextInput
 func NewTextInput(s string, isMultiLine bool) *TextInput {
-	textArea := &TextInput{
-		Block:       *termui.NewBlock(),
-		TextFgColor: termui.ThemeAttr("par.text.fg"),
-		TextBgColor: termui.ThemeAttr("par.text.bg"),
-		TextBuilder: termui.NewMarkdownTxBuilder(),
-		isMultiLine: isMultiLine,
-		ShowLineNo:  false,
-
+	textInput := &TextInput{
+		Block:           *termui.NewBlock(),
+		TextBuilder:     termui.NewMarkdownTxBuilder(),
+		isMultiLine:     isMultiLine,
+		ShowLineNo:      false,
 		cursorLineIndex: 0,
 		cursorLinePos:   0,
 	}
 
 	if s != "" {
-		textArea.setText(s)
+		textInput.setText(s)
 	}
 
-	return textArea
+	return textInput
 }
 
 //Focus starts handling events sent to the given channel. It is a
@@ -280,14 +275,15 @@ func (i *TextInput) moveRight() {
 
 //Buffer returns the content of this widget as a termui.Buffer
 func (i *TextInput) Buffer() termui.Buffer {
-	buf := i.Block.Buffer()
+	buffer := i.Block.Buffer()
 
 	// offset used to display the line numbers
 	textXOffset := 0
 
-	bufferLines := i.lines[:]
+	bufferLines := i.lines
 	firstLine := 0
-	lastLine := i.innerArea.Dy()
+	innerArea := i.InnerBounds()
+	lastLine := innerArea.Dy()
 	if i.isMultiLine {
 		if i.cursorLineIndex >= lastLine {
 			firstLine += i.cursorLineIndex - lastLine + 1
@@ -321,7 +317,7 @@ func (i *TextInput) Buffer() termui.Buffer {
 				strings.Join(make([]string, textXOffset-len(strconv.Itoa(lineNoCnt))-1), " ")
 			curLineNoRunes := i.TextBuilder.Build(curLineNoString, fg, bg)
 			for lineNo := 0; lineNo < len(curLineNoRunes); lineNo++ {
-				buf.Set(i.innerArea.Min.X+x+lineNo, i.innerArea.Min.Y+y, curLineNoRunes[lineNo])
+				buffer.Set(innerArea.Min.X+x+lineNo, innerArea.Min.Y+y, curLineNoRunes[lineNo])
 			}
 			lineNoCnt++
 		}
@@ -332,7 +328,7 @@ func (i *TextInput) Buffer() termui.Buffer {
 			x = 0
 			continue
 		}
-		buf.Set(i.innerArea.Min.X+x+textXOffset, i.innerArea.Min.Y+y, cs[n])
+		buffer.Set(innerArea.Min.X+x+textXOffset, innerArea.Min.Y+y, cs[n])
 
 		n++
 		x += w
@@ -343,12 +339,12 @@ func (i *TextInput) Buffer() termui.Buffer {
 		cursorXOffset++
 	}
 
-	cursorYOffset := i.Y //   termui.TermHeight() - i.innerArea.Dy()
+	cursorYOffset := i.Y
 	if i.BorderTop {
 		cursorYOffset++
 	}
-	if lastLine > i.innerArea.Dy() {
-		cursorYOffset += i.innerArea.Dy() - 1
+	if lastLine > innerArea.Dy() {
+		cursorYOffset += innerArea.Dy() - 1
 	} else {
 		cursorYOffset += i.cursorLineIndex
 	}
@@ -358,5 +354,5 @@ func (i *TextInput) Buffer() termui.Buffer {
 		termbox.SetCursor(i.cursorLinePos+cursorXOffset, cursorYOffset)
 	}
 
-	return buf
+	return buffer
 }

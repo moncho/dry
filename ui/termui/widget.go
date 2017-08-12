@@ -1,6 +1,9 @@
 package termui
 
-import gizaktermui "github.com/gizak/termui"
+import (
+	gizaktermui "github.com/gizak/termui"
+	termbox "github.com/nsf/termbox-go"
+)
 
 //Widget defines how a UI widget responds to its lifecycle events:
 // * Buffer returns the content of the widget as termui.Buffer,
@@ -15,4 +18,9 @@ type Widget interface {
 	Mount() error
 	Name() string
 	Unmount() error
+}
+
+//FocusableWidget defines how UI widget handle termbox events
+type FocusableWidget interface {
+	Focus(events <-chan termbox.Event) error
 }

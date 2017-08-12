@@ -72,17 +72,17 @@ func Test_markupTextBuilder_Build(t *testing.T) {
 			}},
 			args: args{str: "yup", fg: gizaktermui.ColorBlack, bg: gizaktermui.ColorBlue},
 			want: []gizaktermui.Cell{
-				gizaktermui.Cell{
+				{
 					Ch: 'y',
 					Fg: gizaktermui.ColorBlack,
 					Bg: gizaktermui.ColorBlue,
 				},
-				gizaktermui.Cell{
+				{
 					Ch: 'u',
 					Fg: gizaktermui.ColorBlack,
 					Bg: gizaktermui.ColorBlue,
 				},
-				gizaktermui.Cell{
+				{
 					Ch: 'p',
 					Fg: gizaktermui.ColorBlack,
 					Bg: gizaktermui.ColorBlue,
@@ -114,26 +114,26 @@ func Test_wrapTx(t *testing.T) {
 			name: "test wrapping no need for wrapping",
 			args: args{
 				cs: []gizaktermui.Cell{
-					gizaktermui.Cell{
+					{
 						Ch: 'y',
 					},
-					gizaktermui.Cell{
+					{
 						Ch: 'u',
 					},
-					gizaktermui.Cell{
+					{
 						Ch: 'p',
 					},
 				},
 				wl: 10,
 			},
 			want: []gizaktermui.Cell{
-				gizaktermui.Cell{
+				{
 					Ch: 'y',
 				},
-				gizaktermui.Cell{
+				{
 					Ch: 'u',
 				},
-				gizaktermui.Cell{
+				{
 					Ch: 'p',
 				},
 			},
