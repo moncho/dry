@@ -15,7 +15,7 @@ type SwarmAPIClientMock struct {
 
 //NodeList returns a list with one Node
 func (mock SwarmAPIClientMock) NodeList(context context.Context, options types.NodeListOptions) ([]swarm.Node, error) {
-	return []swarm.Node{swarm.Node{
+	return []swarm.Node{{
 		ID: "1",
 	}}, nil
 }
@@ -25,7 +25,7 @@ func (mock SwarmAPIClientMock) TaskList(context context.Context, options types.T
 	nodeID := options.Filters.Get("node")[0]
 	if nodeID == "1" {
 		return []swarm.Task{
-			swarm.Task{
+			{
 				ID:     "1",
 				NodeID: "1",
 			},

@@ -39,12 +39,12 @@ func (_m *SwarmDockerDaemon) Node(id string) (*swarm.Node, error) {
 
 //Nodes returns a list of nodes with 1 element
 func (_m *SwarmDockerDaemon) Nodes() ([]swarm.Node, error) {
-	return []swarm.Node{swarm.Node{ID: TestNodeID}}, nil
+	return []swarm.Node{{ID: TestNodeID}}, nil
 }
 
 //NodeTasks mock
 func (_m *SwarmDockerDaemon) NodeTasks(nodeID string) ([]swarm.Task, error) {
-	return []swarm.Task{swarm.Task{NodeID: nodeID}}, nil
+	return []swarm.Task{{NodeID: nodeID}}, nil
 }
 
 //ResolveNode mock
@@ -60,7 +60,7 @@ func (_m *SwarmDockerDaemon) ResolveService(id string) (string, error) {
 //Services returns a list of services with 1 element
 func (_m *SwarmDockerDaemon) Services() ([]swarm.Service, error) {
 	return []swarm.Service{
-		swarm.Service{ID: "ServiceID"}}, nil
+		{ID: "ServiceID"}}, nil
 }
 
 //ServiceTasks returns one task per service, the task belongs to node with id "1"
