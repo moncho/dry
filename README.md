@@ -29,70 +29,75 @@ Besides this, it:
 
 ### Global
 
-```
-[F1]        sort list
-[F5]        refresh list
-[F8]        show docker disk usage
-[F9]        show last 10 docker events
-[F10]       show docker info
-[1]         show container list
-[2]         show image list
-[3]         show network list
-[4]         show node list (on Swarm mode)
-[5]         show service list (on Swarm mode)
-[ArrowUp]   move the cursor one line up
-[ArrowDown] move the cursor one line down
-[g]         move the cursor to the top
-[G]         move the cursor to the bottom
-[q]         quit dry
-```
+Keybinding           | Description
+---------------------|---------------------------------------
+<kbd>F1</kbd>        | sort list
+<kbd>F5</kbd>        | refresh list
+<kbd>F8</kbd>        | show docker disk usage
+<kbd>F9</kbd>        | show last 10 docker events
+<kbd>F10</kbd>       | show docker info
+<kbd>1</kbd>         | show container list
+<kbd>2</kbd>         | show image list
+<kbd>3</kbd>         | show network list
+<kbd>4</kbd>         | show node list (on Swarm mode)
+<kbd>5</kbd>         | show service list (on Swarm mode)
+<kbd>ArrowUp</kbd>   | move the cursor one line up
+<kbd>ArrowDown</kbd> | move the cursor one line down
+<kbd>g</kbd>         | move the cursor to the top
+<kbd>G</kbd>         | move the cursor to the bottom
+<kbd>q</kbd>         | quit dry
+
 
 #### Container commands
 
-```
-[Enter]     show container command menu
-[F2]        toggle on/off showing stopped containers
-[F3]        filter containers
-[i]         inspect
-[Ctrl]+[k]  kill
-[l]         logs
-[e]         remove
-[Ctrl]+[e]  remove all stopped containers
-[Ctrl]+[r]  start/restart
-[s]         stats
-[Ctrl]+[t]  stop
-```
+Keybinding           | Description
+---------------------|---------------------------------------
+<kbd>Enter</kbd>     | show container command menu
+<kbd>F2</kbd>        | toggle on/off showing stopped containers
+<kbd>F3</kbd>        | filter containers
+<kbd>i</kbd>         | inspect
+<kbd>Ctrl+k</kbd>    | kill
+<kbd>l</kbd>         | logs
+<kbd>e</kbd>         | remove
+<kbd>Ctrl+e</kbd>    | remove all stopped containers
+<kbd>Ctrl+r</kbd>    | start/restart
+<kbd>s</kbd>         | stats
+<kbd>Ctrl+t</kbd>    | stop
+
 
 #### Image commands
 
-```
-[i]         history
-[Ctrl]+[d]    remove dangling images
-[Ctrl]+[e]    remove image
-[Ctrl]+[f]    remove image (force)
-[Enter]     inspect
-```
+Keybinding           | Description
+---------------------|---------------------------------------
+<kbd>i</kbd>         | history
+<kbd>Ctrl+d</kbd>    | remove dangling images
+<kbd>Ctrl+e</kbd>    | remove image
+<kbd>Ctrl+f</kbd>    | remove image (force)
+<kbd>Enter</kbd>     | inspect
+
 
 #### Network commands
 
-```
-[Ctrl]+[e]    remove network
-[Enter]     inspect
-```
+Keybinding           | Description
+---------------------|---------------------------------------
+<kbd>Ctrl+e</kbd>    | remove network
+<kbd>Enter</kbd>     | inspect
+
 
 #### Moving around buffers
 
-```
-[ArrowUp]   move the cursor one line up
-[ArrowDown] move the cursor one line down
-[g]         move the cursor to the beginning of the buffer
-[G]         move the cursor to the end of the buffer
-[n]         after search, move forwards to the next search hit
-[N]         after search, move backwards to the previous search hit
-[s]         search
-[pg up]     move the cursor "screen size" lines up
-[pg down]   move the cursor "screen size" lines down
-```
+Keybinding           | Description
+---------------------|---------------------------------------
+<kbd>ArrowUp</kbd>   | move the cursor one line up
+<kbd>ArrowDown</kbd> | move the cursor one line down
+<kbd>g</kbd>         | move the cursor to the beginning of the buffer
+<kbd>G</kbd>         | move the cursor to the end of the buffer
+<kbd>n</kbd>         | after search, move forwards to the next search hit
+<kbd>N</kbd>         | after search, move backwards to the previous search hit
+<kbd>s</kbd>         | search
+<kbd>pg up</kbd>     | move the cursor "screen size" lines up
+<kbd>pg down</kbd>   | move the cursor "screen size" lines down
+
 
 ## Installation
 
