@@ -1,23 +1,24 @@
 package appui
 
 import (
-	"bytes"
-	"fmt"
 	"strings"
 	"sync"
-	"text/tabwriter"
-	"text/template"
 
 	"github.com/docker/docker/api/types"
+	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/docker/formatter"
 	"github.com/moncho/dry/ui"
+	"github.com/moncho/dry/ui/termui"
 )
 
-type imagesColumn struct {
-	name  string // The name of the field in the struct.
-	title string // Title to display in the tableHeader.
-	mode  docker.SortImagesMode
+var defaultImageTableHeader = imageTableHeader()
+
+var imageTableHeaders = []imageHeaderColumn{
+	{`REPOSITORY`, docker.SortImagesByRepo},
+	{`TAG`, docker.NoSortImages},
+	{`ID`, docker.SortImagesByID},
+	{`Created`, docker.SortImagesByCreationDate},
+	{`Size`, docker.SortImagesBySize},
 }
 
 //DockerImageRenderData holds information that might be
@@ -35,143 +36,167 @@ func NewDockerImageRenderData(images []types.ImageSummary, sortMode docker.SortI
 	}
 }
 
-//DockerImagesRenderer knows how render a container list
-type DockerImagesRenderer struct {
-	columns        []imagesColumn // List of columns.
-	imagesTemplate *template.Template
-	data           *DockerImageRenderData
-	renderLock     sync.Mutex
-	renderableRows int
-	startIndex     int
-	endIndex       int
+//DockerImagesWidget knows how render a container list
+type DockerImagesWidget struct {
+	images               []*ImageRow // List of columns.
+	data                 *DockerImageRenderData
+	header               *termui.TableHeader
+	selectedIndex        int
+	offset               int
+	x, y                 int
+	height, width        int
+	startIndex, endIndex int
+	sync.RWMutex
 }
 
-//NewDockerImagesRenderer creates a renderer for a container list
-func NewDockerImagesRenderer() *DockerImagesRenderer {
-	r := &DockerImagesRenderer{}
+//NewDockerImagesWidget creates a renderer for a container list
+func NewDockerImagesWidget(y int) *DockerImagesWidget {
+	w := &DockerImagesWidget{
+		y:      y,
+		header: defaultImageTableHeader,
+		height: MainScreenAvailableHeight(),
+		width:  ui.ActiveScreen.Dimensions.Width}
 
-	r.columns = []imagesColumn{
-		{`Repository`, `REPOSITORY`, docker.SortImagesByRepo},
-		{`Tag`, `TAG`, docker.NoSortImages},
-		{`Id`, `ID`, docker.SortImagesByID},
-		{`Created`, `Created`, docker.SortImagesByCreationDate},
-		{`Size`, `Size`, docker.SortImagesBySize},
+	return w
+}
+
+//PrepareToRender prepare this widget for rendering using the given data
+func (s *DockerImagesWidget) PrepareToRender(data *DockerImageRenderData) {
+	s.data = data
+	var images []*ImageRow
+	for _, image := range data.images {
+		images = append(images, NewImageRow(image, s.header))
+	}
+	s.images = images
+	s.align()
+}
+
+//Align aligns rows
+func (s *DockerImagesWidget) align() {
+	y := s.y
+	x := s.x
+	width := s.width
+
+	s.header.SetWidth(width)
+	s.header.SetY(y)
+	s.header.SetX(x)
+
+	for _, image := range s.images {
+		image.SetX(x)
+		image.SetWidth(width)
 	}
 
-	r.imagesTemplate = buildImagesTemplate()
-	r.renderableRows = ui.ActiveScreen.Dimensions.Height - networkTableStartPos - 1
-
-	return r
 }
 
-//PrepareForRender received information that might be used during the render phase
-func (r *DockerImagesRenderer) PrepareForRender(data *DockerImageRenderData) {
-	r.renderLock.Lock()
-	r.data = data
-	r.renderLock.Unlock()
+//Buffer returns the content of this widget as a termui.Buffer
+func (s *DockerImagesWidget) Buffer() gizaktermui.Buffer {
+	s.Lock()
+	defer s.Unlock()
+
+	buf := gizaktermui.NewBuffer()
+	s.updateHeader()
+
+	buf.Merge(s.header.Buffer())
+
+	y := s.y
+	y += s.header.GetHeight()
+
+	s.highlightSelectedRow()
+	for _, containerRow := range s.visibleRows() {
+		containerRow.SetY(y)
+		y += containerRow.GetHeight()
+		buf.Merge(containerRow.Buffer())
+	}
+
+	return buf
 }
 
-//Render docker images
-func (r *DockerImagesRenderer) Render() string {
-	r.renderLock.Lock()
-	defer r.renderLock.Unlock()
-	return r.imagesTable()
+func (s *DockerImagesWidget) updateHeader() {
+	sortMode := s.data.sortMode
 
-}
-func (r *DockerImagesRenderer) imagesTable() string {
-	buffer := new(bytes.Buffer)
-	t := tabwriter.NewWriter(buffer, 22, 0, 1, ' ', 0)
-	replacer := strings.NewReplacer(`\t`, "\t", `\n`, "\n")
-	fmt.Fprintln(t, replacer.Replace(r.tableHeader()))
-	fmt.Fprint(t, replacer.Replace(r.imageInformation()))
-	t.Flush()
-	return buffer.String()
-}
-func (r *DockerImagesRenderer) tableHeader() string {
-	columns := make([]string, len(r.columns))
-	for i, col := range r.columns {
-		if r.data.sortMode != col.mode {
-			columns[i] = col.title
-		} else {
-			columns[i] = DownArrow + col.title
+	for _, c := range s.header.Columns {
+		colTitle := c.Text
+		var header imageHeaderColumn
+		if strings.Contains(colTitle, DownArrow) {
+			colTitle = colTitle[DownArrowLength:]
 		}
+		for _, h := range imageTableHeaders {
+			if colTitle == h.title {
+				header = h
+				break
+			}
+		}
+		if header.mode == sortMode {
+			c.Text = DownArrow + colTitle
+		} else {
+			c.Text = colTitle
+		}
+
 	}
-	return "<green>" + strings.Join(columns, "\t") + "</>"
+
 }
 
-func (r *DockerImagesRenderer) imageInformation() string {
-	if len(r.data.images) == 0 {
-		return ""
+//RowCount returns the number of rows of this widget.
+func (s *DockerImagesWidget) RowCount() int {
+	return len(s.images)
+}
+func (s *DockerImagesWidget) highlightSelectedRow() {
+	if s.RowCount() == 0 {
+		return
 	}
-	buf := bytes.NewBufferString("")
-	images, selected := r.imagesToShow()
-
-	context := formatter.FormattingContext{
-		Output:   buf,
-		Template: r.imagesTemplate,
-		Trunc:    true,
-		Selected: selected,
+	index := ui.ActiveScreen.Cursor.Position()
+	if index > s.RowCount() {
+		index = s.RowCount() - 1
 	}
-	formatter.FormatImages(
-		context,
-		images)
-
-	return buf.String()
+	s.selectedIndex = index
+	s.images[s.selectedIndex].Highlighted()
 }
 
-func (r *DockerImagesRenderer) imagesToShow() ([]types.ImageSummary, int) {
+func (s *DockerImagesWidget) visibleRows() []*ImageRow {
 
 	//no screen
-	if r.renderableRows < 0 {
-		return nil, 0
+	if s.height < 0 {
+		return nil
 	}
-	images := r.data.images
-	count := len(images)
-	cursor := ui.ActiveScreen.Cursor
-	selected := cursor.Position()
+	rows := s.images
+	count := len(rows)
+	selected := ui.ActiveScreen.Cursor.Position()
 	//everything fits
-	if count <= r.renderableRows {
-		return images, selected
+	if count <= s.height {
+		return rows
 	}
 	//at the the start
 	if selected == 0 {
-		//internal state is reset
-		r.startIndex = 0
-		r.endIndex = r.renderableRows
-		return images[r.startIndex : r.endIndex+1], selected
+		s.startIndex = 0
+		s.endIndex = s.height
+	} else if selected >= count-1 { //at the end
+		s.startIndex = count - s.height
+		s.endIndex = count
+	} else if selected == s.endIndex { //scroll down by one
+		s.startIndex++
+		s.endIndex++
+	} else if selected <= s.startIndex { //scroll up by one
+		s.startIndex--
+		s.endIndex--
+	} else if selected > s.endIndex { // scroll
+		s.startIndex = selected - s.height
+		s.endIndex = selected
 	}
-
-	if selected >= r.endIndex {
-		if selected-r.renderableRows >= 0 {
-			r.startIndex = selected - r.renderableRows
-		}
-		r.endIndex = selected
-	}
-	if selected <= r.startIndex {
-		r.startIndex = r.startIndex - 1
-		if selected+r.renderableRows < count {
-			r.endIndex = r.startIndex + r.renderableRows
-		}
-	}
-	start := r.startIndex
-	end := r.endIndex + 1
-	visibleImages := images[start:end]
-	selected = findImageIndex(visibleImages, images[selected])
-
-	return visibleImages, selected
+	return rows[s.startIndex:s.endIndex]
 }
 
-func buildImagesTemplate() *template.Template {
-
-	return template.Must(template.New(`image`).Parse(formatter.DefaultImageTableFormat))
+type imageHeaderColumn struct {
+	title string // Title to display in the tableHeader.
+	mode  docker.SortImagesMode
 }
 
-//find gets the index of the given network in the given slice
-func findImageIndex(networks []types.ImageSummary, n types.ImageSummary) int {
-	for i, network := range networks {
-		if n.ID == network.ID {
-			return i
-		}
-	}
-	return -1
+func imageTableHeader() *termui.TableHeader {
+	header := termui.NewHeader(DryTheme)
+	header.ColumnSpacing = DefaultColumnSpacing
+	header.AddColumn(imageTableHeaders[0].title)
+	header.AddColumn(imageTableHeaders[1].title)
+	header.AddFixedWidthColumn(imageTableHeaders[2].title, 12)
+	header.AddFixedWidthColumn(imageTableHeaders[3].title, 12)
+	header.AddColumn(imageTableHeaders[4].title)
+	return header
 }

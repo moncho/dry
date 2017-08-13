@@ -66,7 +66,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		{
 			//after a refresh, sorting is needed
 			sortMode := d.state.sortImagesMode
-			renderer := d.widgetRegistry.ImageList
+			widget := d.widgetRegistry.ImageList
 
 			images, err := d.dockerDaemon.Images()
 			if err == nil {
@@ -76,8 +76,9 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 					images,
 					sortMode)
 
-				renderer.PrepareForRender(data)
-				viewRenderer = renderer
+				widget.PrepareToRender(data)
+				bufferers = append(bufferers, widget)
+
 			} else {
 				screen.Render(1, err.Error())
 			}

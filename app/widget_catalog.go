@@ -16,7 +16,7 @@ import (
 type WidgetRegistry struct {
 	DockerInfo    *appui.DockerInfo
 	ContainerList *appui.ContainersWidget
-	ImageList     *appui.DockerImagesRenderer
+	ImageList     *appui.DockerImagesWidget
 	DiskUsage     *appui.DockerDiskUsageRenderer
 	NodeTasks     *swarm.NodeTasksWidget
 	activeWidgets map[string]termui.Widget
@@ -31,7 +31,7 @@ func NewWidgetRegistry(daemon docker.ContainerDaemon) *WidgetRegistry {
 	return &WidgetRegistry{
 		DockerInfo:    di,
 		ContainerList: appui.NewContainersWidget(viewStartingLine),
-		ImageList:     appui.NewDockerImagesRenderer(),
+		ImageList:     appui.NewDockerImagesWidget(viewStartingLine),
 		DiskUsage:     appui.NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
 		activeWidgets: make(map[string]termui.Widget),
 	}
