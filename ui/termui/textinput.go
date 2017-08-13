@@ -53,7 +53,6 @@ func NewTextInput(s string, isMultiLine bool) *TextInput {
 //sent a closing event (i.e. KeyEnter on single line mode, KeyEsc on any mode).
 func (i *TextInput) Focus(events <-chan termbox.Event) error {
 	i.isCapturing = true
-	//	termbox.SetInputMode(termbox.InputEsc)
 
 mainloop:
 	for ev := range events {
@@ -63,7 +62,7 @@ mainloop:
 			switch ev.Key {
 			case termbox.KeyEnter:
 				if i.isMultiLine {
-					i.addString("\n")
+					i.addString(newLine)
 				} else {
 					break mainloop
 				}
@@ -99,6 +98,8 @@ mainloop:
 			}
 		}
 	}
+	termbox.HideCursor()
+	i.isCapturing = false
 	return nil
 }
 
@@ -211,6 +212,9 @@ func (i *TextInput) addString(s string) {
 }
 
 func (i *TextInput) moveUp() {
+	if !i.isMultiLine {
+		return
+	}
 	// if we are already on the first line then just move the cursor to the beginning
 	if i.cursorLineIndex == 0 {
 		i.cursorLinePos = 0
@@ -229,6 +233,9 @@ func (i *TextInput) moveUp() {
 }
 
 func (i *TextInput) moveDown() {
+	if !i.isMultiLine {
+		return
+	}
 	// we are already on the last line, we just need to move the position to the end of the line
 	if i.cursorLineIndex == len(i.lines)-1 {
 		i.cursorLinePos = len(i.lines[i.cursorLineIndex])
