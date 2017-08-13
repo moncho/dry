@@ -24,6 +24,11 @@ type ImageFormatter struct {
 	image  types.ImageSummary
 }
 
+//NewImageFormatter creates an image formatter
+func NewImageFormatter(image types.ImageSummary, trunc bool) *ImageFormatter {
+	return &ImageFormatter{trunc: trunc, image: image}
+}
+
 func (formatter *ImageFormatter) addHeader(header string) {
 	if formatter.header == nil {
 		formatter.header = []string{}
@@ -45,9 +50,19 @@ func (formatter *ImageFormatter) Repository() string {
 	formatter.addHeader(repository)
 	if len(formatter.image.RepoTags) > 0 {
 		tagPos := strings.LastIndex(formatter.image.RepoTags[0], ":")
-		return formatter.image.RepoTags[0][:tagPos]
+		if tagPos > 0 {
+			return formatter.image.RepoTags[0][:tagPos]
+		}
+		return formatter.image.RepoTags[0]
+	} else if len(formatter.image.RepoDigests) > 0 {
+		tagPos := strings.LastIndex(formatter.image.RepoDigests[0], "@")
+		if tagPos > 0 {
+			return formatter.image.RepoDigests[0][:tagPos]
+		}
+		return formatter.image.RepoDigests[0]
 	}
-	return ""
+
+	return "<none>"
 }
 
 //Tag prettifies the tag
@@ -57,7 +72,7 @@ func (formatter *ImageFormatter) Tag() string {
 		tagPos := strings.LastIndex(formatter.image.RepoTags[0], ":")
 		return formatter.image.RepoTags[0][tagPos+1:]
 	}
-	return ""
+	return "<none>"
 
 }
 
