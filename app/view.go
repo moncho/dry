@@ -1,8 +1,6 @@
 package app
 
-type viewMode2 interface {
-	prepareForView(d *Dry)
-}
+type onViewChange func(d *Dry) error
 
 //ViewMode represents dry possible views
 type viewMode uint16

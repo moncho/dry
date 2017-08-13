@@ -36,12 +36,12 @@ type eventHandler interface {
 }
 
 type baseEventHandler struct {
-	dry                  *Dry
-	screen               *ui.Screen
-	keyboardQueueForView chan termbox.Event
-	closeViewChan        chan struct{}
-	renderChan           chan<- struct{}
-	focus                bool
+	dry           *Dry
+	screen        *ui.Screen
+	eventChan     chan termbox.Event
+	closeViewChan chan struct{}
+	renderChan    chan<- struct{}
+	focus         bool
 	sync.RWMutex
 }
 
@@ -52,7 +52,7 @@ func (b *baseEventHandler) initialize(dry *Dry,
 	renderChan chan<- struct{}) {
 	b.dry = dry
 	b.screen = screen
-	b.keyboardQueueForView = keyboardQueueForView
+	b.eventChan = keyboardQueueForView
 	b.closeViewChan = closeViewChan
 	b.renderChan = renderChan
 }
@@ -86,17 +86,17 @@ func (b *baseEventHandler) handle(event termbox.Event) {
 	case termbox.KeyF9: // docker events
 		dry.ShowDockerEvents()
 		focus = false
-		go appui.Less(renderDry(dry), screen, b.keyboardQueueForView, b.closeViewChan)
+		go appui.Less(renderDry(dry), screen, b.eventChan, b.closeViewChan)
 	case termbox.KeyF10: // docker info
 		dry.ShowInfo()
 		focus = false
-		go appui.Less(renderDry(dry), screen, b.keyboardQueueForView, b.closeViewChan)
+		go appui.Less(renderDry(dry), screen, b.eventChan, b.closeViewChan)
 	}
 	switch event.Ch {
 	case '?', 'h', 'H': //help
 		focus = false
 		dry.ShowHelp()
-		go appui.Less(renderDry(dry), screen, b.keyboardQueueForView, b.closeViewChan)
+		go appui.Less(renderDry(dry), screen, b.eventChan, b.closeViewChan)
 	case '1':
 		cursor.Reset()
 		dry.ShowContainers()

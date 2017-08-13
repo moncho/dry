@@ -49,21 +49,21 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 	case docker.LOGS:
 		if logs, err := dry.Logs(id); err == nil {
 			focus = false
-			go appui.Stream(screen, logs, h.keyboardQueueForView, h.closeViewChan)
+			go appui.Stream(screen, logs, h.eventChan, h.closeViewChan)
 		}
 	case docker.RM:
 		dry.Rm(id)
 	case docker.STATS:
 		focus = false
-		go statsScreen(command.container, screen, dry, h.keyboardQueueForView, h.closeViewChan)
+		go statsScreen(command.container, screen, dry, h.eventChan, h.closeViewChan)
 	case docker.INSPECT:
 		dry.Inspect(id)
 		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeViewChan)
+		go appui.Less(renderDry(dry), screen, h.eventChan, h.closeViewChan)
 	case docker.HISTORY:
 		dry.History(command.container.ImageID)
 		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeViewChan)
+		go appui.Less(renderDry(dry), screen, h.eventChan, h.closeViewChan)
 	}
 	if focus {
 		h.closeViewChan <- struct{}{}
@@ -256,7 +256,7 @@ func showContainerOptions(h *containersScreenEventHandler) {
 	screen := h.screen
 	dry := h.dry
 	selectedContainer := screen.Cursor.Position()
-	keyboardQueue := h.keyboardQueueForView
+	keyboardQueue := h.eventChan
 	closeView := h.closeViewChan
 	//TODO handle error
 	container := dry.ContainerAt(selectedContainer)

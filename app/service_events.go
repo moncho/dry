@@ -28,7 +28,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		showServiceLogs := func(serviceID string) error {
 			logs, err := h.dry.ServiceLogs(serviceID)
 			if err == nil {
-				go appui.Stream(h.screen, logs, h.keyboardQueueForView, h.closeViewChan)
+				go appui.Stream(h.screen, logs, h.eventChan, h.closeViewChan)
 				return nil
 			}
 			return err

@@ -261,6 +261,10 @@ func (_m *DockerDaemonMock) ResolveService(id string) (string, error) {
 	return "", nil
 }
 
+func (_m *DockerDaemonMock) RunImage(image *types.ImageSummary, command string) error {
+	return nil
+}
+
 //Service mock
 func (_m *DockerDaemonMock) Service(id string) (*swarm.Service, error) {
 	return nil, nil
