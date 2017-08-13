@@ -20,15 +20,12 @@ type Container struct {
 //ContainerDaemon describes what is expected from the container daemon
 type ContainerDaemon interface {
 	ContainerAPI
+	ImageAPI
 	SwarmAPI
 	DiskUsage() (types.DiskUsage, error)
 	DockerEnv() *Env
 	Events() (<-chan events.Message, chan<- struct{}, error)
 	EventLog() *EventLog
-	History(id string) ([]image.HistoryResponseItem, error)
-	ImageAt(pos int) (*types.ImageSummary, error)
-	Images() ([]types.ImageSummary, error)
-	ImagesCount() int
 	Info() (types.Info, error)
 	InspectImage(id string) (types.ImageInspect, error)
 	Networks() ([]types.NetworkResource, error)
@@ -62,6 +59,15 @@ type ContainerAPI interface {
 	RestartContainer(id string) error
 	StopContainer(id string) error
 	Top(id string) (container.ContainerTopOKBody, error)
+}
+
+//ImageAPI defines the API for Docker images
+type ImageAPI interface {
+	History(id string) ([]image.HistoryResponseItem, error)
+	ImageAt(pos int) (*types.ImageSummary, error)
+	Images() ([]types.ImageSummary, error)
+	ImagesCount() int
+	RunImage(image *types.ImageSummary, command string) error
 }
 
 //SwarmAPI defines the API for Docker Swarm

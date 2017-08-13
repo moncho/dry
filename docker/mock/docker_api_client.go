@@ -28,7 +28,7 @@ type NetworkAPIClientMock struct {
 
 //ImageAPIClientMock mocks docker ImageAPIClient
 type ImageAPIClientMock struct {
-	dockerAPI.ImageAPIClient
+	dockerAPI.APIClient
 }
 
 //ContainerList returns a list with 10 container with IDs from 0 to 9.

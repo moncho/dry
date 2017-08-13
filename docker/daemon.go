@@ -15,7 +15,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 	dockerEvents "github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/swarm"
 	dockerAPI "github.com/docker/docker/client"
 	pkgError "github.com/pkg/errors"
@@ -134,41 +133,6 @@ func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct
 //EventLog returns the events log
 func (daemon *DockerDaemon) EventLog() *EventLog {
 	return daemon.eventLog
-}
-
-//History returns image history
-func (daemon *DockerDaemon) History(id string) ([]image.HistoryResponseItem, error) {
-
-	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
-	defer cancel()
-
-	return daemon.client.ImageHistory(
-		ctx, id)
-}
-
-//ImageAt returns the Image found at the given
-//position.
-func (daemon *DockerDaemon) ImageAt(pos int) (*dockerTypes.ImageSummary, error) {
-	daemon.imagesLock.Lock()
-	defer daemon.imagesLock.Unlock()
-	if pos >= len(daemon.images) {
-		return nil, errors.New("Position is higher than number of images")
-	}
-	return &daemon.images[pos], nil
-}
-
-//Images returns the list of Docker images
-func (daemon *DockerDaemon) Images() ([]dockerTypes.ImageSummary, error) {
-	daemon.imagesLock.Lock()
-	defer daemon.imagesLock.Unlock()
-	return daemon.images, nil
-}
-
-//ImagesCount returns the number of images
-func (daemon *DockerDaemon) ImagesCount() int {
-	daemon.imagesLock.Lock()
-	defer daemon.imagesLock.Unlock()
-	return len(daemon.images)
 }
 
 //Info returns system-wide information about the Docker server.

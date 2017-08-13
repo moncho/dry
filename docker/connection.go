@@ -84,7 +84,9 @@ func newHTTPClient(host string, config *tls.Config) (*http.Client, error) {
 		},
 	}
 
-	sockets.ConfigureTransport(tr, proto, addr)
+	if err = sockets.ConfigureTransport(tr, proto, addr); err != nil {
+		return nil, err
+	}
 
 	return &http.Client{
 		Transport: tr,
