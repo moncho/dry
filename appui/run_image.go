@@ -7,11 +7,13 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
+//ImageRunWidget is an input widget to run images
 type ImageRunWidget struct {
 	image *types.ImageSummary
 	termui.TextInput
 }
 
+//NewImageRunWidget creates a new ImageRunWidget for the given image
 func NewImageRunWidget(image *types.ImageSummary) *ImageRunWidget {
 	w := &ImageRunWidget{
 		image:     image,
@@ -24,22 +26,32 @@ func NewImageRunWidget(image *types.ImageSummary) *ImageRunWidget {
 	w.Bg = gtermui.Attribute(DryTheme.Bg)
 	w.TextBgColor = gtermui.Attribute(DryTheme.Bg)
 	w.TextFgColor = gtermui.ColorWhite
-	w.BorderLabel = " docker run " + image.RepoTags[0]
+	w.BorderLabel = widgetTitle(image)
 	w.BorderLabelFg = gtermui.ColorWhite
 
 	return w
 }
 
+//Mount callback
 func (w *ImageRunWidget) Mount() error {
 	return nil
-
 }
-func (w *ImageRunWidget) Unmount() error {
 
+//Unmount callback
+func (w *ImageRunWidget) Unmount() error {
 	return nil
 }
 
+//Name returns the widget name
 func (w *ImageRunWidget) Name() string {
-
 	return "ImageRunWidget." + w.image.ID
+}
+
+func widgetTitle(image *types.ImageSummary) string {
+	if len(image.RepoTags) > 0 {
+		return " docker run " + image.RepoTags[0]
+	} else if len(image.RepoDigests) > 0 {
+		return " docker run " + image.RepoDigests[0]
+	}
+	return " docker run <none>"
 }
