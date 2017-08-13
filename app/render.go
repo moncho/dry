@@ -176,7 +176,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		screen.RenderRenderer(viewStartingLine, viewRenderer)
 	}
 
-	for _, widget := range d.widgetRegistry.ActiveWidgets {
+	for _, widget := range d.widgetRegistry.activeWidgets {
 		screen.RenderBufferer(widget)
 	}
 	d.setChanged(false)

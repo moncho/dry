@@ -1,25 +1,51 @@
 package app
 
 import (
+	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/appui"
-	"github.com/moncho/dry/ui/termui"
 	"github.com/nsf/termbox-go"
 )
 
 type imagesScreenEventHandler struct {
 	baseEventHandler
+	passingEvents bool
 }
 
 func (h *imagesScreenEventHandler) handle(event termbox.Event) {
-	focus := true
+	if h.passingEvents {
+		h.eventChan <- event
+		//This just kind of works, but a better way to signal that refreshing
+		//is expected after the event has been processed is needed
+		h.renderChan <- struct{}{}
+		return
+	}
+	//Controls if the event has been handled by the first switch statement
+	var handled bool
+	var keepFocus bool
+
+	handled, keepFocus = h.handleKeyEvent(event.Key)
+
+	if !handled {
+		handled, keepFocus = h.handleChEvent(event.Ch)
+	}
+	if handled {
+		h.setFocus(keepFocus)
+		if h.hasFocus() {
+			h.renderChan <- struct{}{}
+		}
+	} else {
+		h.baseEventHandler.handle(event)
+	}
+}
+
+func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key) (bool, bool) {
 	dry := h.dry
 	screen := h.screen
 	cursor := screen.Cursor
 	cursorPos := cursor.Position()
-	//Controls if the event has been handled by the first switch statement
+	keepFocus := true
 	handled := true
-
-	switch event.Key {
+	switch key {
 	case termbox.KeyF1: //sort
 		dry.SortImages()
 	case termbox.KeyCtrlD: //remove dangling images
@@ -30,39 +56,45 @@ func (h *imagesScreenEventHandler) handle(event termbox.Event) {
 		dry.RemoveImageAt(cursorPos, true)
 	case termbox.KeyEnter: //inspect image
 		dry.InspectImageAt(cursorPos)
-		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeViewChan)
+		keepFocus = false
+		go appui.Less(renderDry(dry), screen, h.eventChan, h.closeViewChan)
 	default:
 		handled = false
 	}
+	return handled, keepFocus
+}
 
-	if !handled {
-		switch event.Ch {
-		case '2': //Ignore since dry is already on the images screen
-			handled = true
+func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
+	dry := h.dry
+	screen := h.screen
+	cursor := screen.Cursor
+	cursorPos := cursor.Position()
+	keepFocus := true
+	handled := true
+	switch ch {
+	case '2': //Ignore since dry is already on the images screen
 
-		case 'i', 'I': //image history
-			handled = true
+	case 'i', 'I': //image history
+		dry.HistoryAt(cursorPos)
+		keepFocus = false
+		go appui.Less(renderDry(dry), screen, h.eventChan, h.closeViewChan)
 
-			dry.HistoryAt(cursorPos)
-			focus = false
-			go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeViewChan)
-
-		case 'r', 'R': //Run container
-			handled = true
-			focus = false
-			dry.widgetRegistry.ActiveWidgets = append(dry.widgetRegistry.ActiveWidgets,
-				termui.NewTextInput("bla", false))
-
+	case 'r', 'R': //Run container
+		if image, err := dry.dockerDaemon.ImageAt(cursorPos); err == nil {
+			rw := appui.NewImageRunWidget(image)
+			h.passingEvents = true
+			dry.widgetRegistry.add(rw)
+			go func(image *types.ImageSummary) {
+				rw.Focus(h.eventChan)
+				dry.widgetRegistry.remove(rw)
+				runCommand := rw.Text()
+				h.passingEvents = false
+				dry.dockerDaemon.RunImage(image, runCommand)
+			}(image)
 		}
+	default:
+		handled = false
 
 	}
-	if handled {
-		h.setFocus(focus)
-		if h.hasFocus() {
-			h.renderChan <- struct{}{}
-		}
-	} else {
-		h.baseEventHandler.handle(event)
-	}
+	return handled, keepFocus
 }

@@ -25,7 +25,7 @@ func (h *networksScreenEventHandler) handle(event termbox.Event) {
 		handled = true
 		dry.InspectNetworkAt(cursorPos)
 		focus = false
-		go appui.Less(renderDry(dry), screen, h.keyboardQueueForView, h.closeViewChan)
+		go appui.Less(renderDry(dry), screen, h.eventChan, h.closeViewChan)
 	case termbox.KeyCtrlE: //remove network
 		handled = true
 		if cursorPos >= 0 {
@@ -33,7 +33,7 @@ func (h *networksScreenEventHandler) handle(event termbox.Event) {
 			if err == nil {
 				dry.RemoveNetwork(network.ID)
 			} else {
-				ui.ShowErrorMessage(screen, h.keyboardQueueForView, h.closeViewChan, err)
+				ui.ShowErrorMessage(screen, h.eventChan, h.closeViewChan, err)
 			}
 		}
 	}

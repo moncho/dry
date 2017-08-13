@@ -19,7 +19,7 @@ type WidgetRegistry struct {
 	ImageList     *appui.DockerImagesRenderer
 	DiskUsage     *appui.DockerDiskUsageRenderer
 	NodeTasks     *swarm.NodeTasksWidget
-	ActiveWidgets []termui.Widget
+	activeWidgets map[string]termui.Widget
 }
 
 //NewWidgetRegistry creates the WidgetCatalog
@@ -33,5 +33,18 @@ func NewWidgetRegistry(daemon docker.ContainerDaemon) *WidgetRegistry {
 		ContainerList: appui.NewContainersWidget(viewStartingLine),
 		ImageList:     appui.NewDockerImagesRenderer(),
 		DiskUsage:     appui.NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
+		activeWidgets: make(map[string]termui.Widget),
+	}
+}
+
+func (wr *WidgetRegistry) add(w termui.Widget) {
+	if err := w.Mount(); err == nil {
+		wr.activeWidgets[w.Name()] = w
+	}
+}
+
+func (wr *WidgetRegistry) remove(w termui.Widget) {
+	if err := w.Unmount(); err == nil {
+		delete(wr.activeWidgets, w.Name())
 	}
 }
