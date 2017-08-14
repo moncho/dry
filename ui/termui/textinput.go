@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gizak/termui"
+	"github.com/moncho/dry/ui"
 	"github.com/nsf/termbox-go"
 )
 
@@ -48,14 +49,14 @@ func NewTextInput(s string, isMultiLine bool) *TextInput {
 	return textInput
 }
 
-//Focus starts handling events sent to the given channel. It is a
+//OnFocus starts handling events sent to the given channel. It is a
 //blocking call, to return from it, either close the channel or
 //sent a closing event (i.e. KeyEnter on single line mode, KeyEsc on any mode).
-func (i *TextInput) Focus(events <-chan termbox.Event) error {
+func (i *TextInput) OnFocus(event ui.EventSource) error {
 	i.isCapturing = true
 
 mainloop:
-	for ev := range events {
+	for ev := range event.Events {
 
 		switch ev.Type {
 		case termbox.EventKey:
@@ -64,9 +65,12 @@ mainloop:
 				if i.isMultiLine {
 					i.addString(newLine)
 				} else {
+					event.EventHandledCallback()
 					break mainloop
 				}
 			case termbox.KeyEsc:
+				event.EventHandledCallback()
+
 				break mainloop
 			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
 				i.moveLeft()
@@ -97,6 +101,7 @@ mainloop:
 				}
 			}
 		}
+		event.EventHandledCallback()
 	}
 	termbox.HideCursor()
 	i.isCapturing = false

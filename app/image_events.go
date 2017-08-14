@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/appui"
+	"github.com/moncho/dry/ui"
 	"github.com/nsf/termbox-go"
 )
 
@@ -14,9 +15,6 @@ type imagesScreenEventHandler struct {
 func (h *imagesScreenEventHandler) handle(event termbox.Event) {
 	if h.passingEvents {
 		h.eventChan <- event
-		//This just kind of works, but a better way to signal that refreshing
-		//is expected after the event has been processed is needed
-		h.renderChan <- struct{}{}
 		return
 	}
 	//Controls if the event has been handled by the first switch statement
@@ -85,7 +83,14 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
 			h.passingEvents = true
 			dry.widgetRegistry.add(rw)
 			go func(image *types.ImageSummary) {
-				rw.Focus(h.eventChan)
+				events := ui.EventSource{
+					Events: h.eventChan,
+					EventHandledCallback: func() error {
+						h.renderChan <- struct{}{}
+						return nil
+					},
+				}
+				rw.OnFocus(events)
 				dry.widgetRegistry.remove(rw)
 				runCommand := rw.Text()
 				h.passingEvents = false

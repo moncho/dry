@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gizak/termui"
+	"github.com/moncho/dry/ui"
 	termbox "github.com/nsf/termbox-go"
 )
 
@@ -74,14 +75,18 @@ func Test_TextInput_Focus(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		events := make(chan termbox.Event)
+		c := make(chan termbox.Event)
+		events := ui.EventSource{
+			Events:               c,
+			EventHandledCallback: func() error { return nil },
+		}
 		input := NewTextInput("", false)
 		go func() {
 			for _, e := range tt.arg.events {
-				events <- e
+				c <- e
 			}
 		}()
-		err := input.Focus(events)
+		err := input.OnFocus(events)
 
 		if err != nil {
 			t.Errorf("Got an error on Focus: %s", err.Error())
@@ -151,15 +156,20 @@ func Test_TextInput_FocusReleaseWithEvent(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		events := make(chan termbox.Event)
+		c := make(chan termbox.Event)
+		events := ui.EventSource{
+			Events:               c,
+			EventHandledCallback: func() error { return nil },
+		}
+
 		input := NewTextInput("", tt.arg.multi)
 		go func() {
 			for _, e := range tt.arg.events {
-				events <- e
+				c <- e
 			}
 		}()
-		err := input.Focus(events)
-		close(events)
+		err := input.OnFocus(events)
+		close(c)
 		if err != nil {
 			t.Errorf("Got an error on Focus: %s", err.Error())
 		}
@@ -172,11 +182,15 @@ func Test_TextInput_FocusReleaseWithEvent(t *testing.T) {
 }
 
 func Test_TextInput_FocusReleaseByClosingChan(t *testing.T) {
-	events := make(chan termbox.Event)
+	c := make(chan termbox.Event)
+	events := ui.EventSource{
+		Events:               c,
+		EventHandledCallback: func() error { return nil },
+	}
 	input := NewTextInput("", false)
 
-	go close(events)
-	err := input.Focus(events)
+	go close(c)
+	err := input.OnFocus(events)
 	if err != nil {
 		t.Errorf("Got an error on Focus: %s", err.Error())
 	}
