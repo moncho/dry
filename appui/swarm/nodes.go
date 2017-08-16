@@ -2,6 +2,7 @@ package swarm
 
 import (
 	"errors"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -45,6 +46,9 @@ func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
 		width:         ui.ActiveScreen.Dimensions.Width}
 
 	if nodes, err := swarmClient.Nodes(); err == nil {
+		sort.Slice(nodes, func(i, j int) bool {
+			return nodes[i].Description.Hostname < nodes[j].Description.Hostname
+		})
 		for _, node := range nodes {
 			row := NewNodeRow(node, w.header)
 			w.nodes = append(w.nodes, row)
