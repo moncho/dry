@@ -62,6 +62,8 @@ func NewDockerImagesWidget(y int) *DockerImagesWidget {
 
 //PrepareToRender prepare this widget for rendering using the given data
 func (s *DockerImagesWidget) PrepareToRender(data *DockerImageRenderData) {
+	s.Lock()
+	defer s.Unlock()
 	s.data = data
 	var images []*ImageRow
 	for _, image := range data.images {
