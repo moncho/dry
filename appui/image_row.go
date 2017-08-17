@@ -3,8 +3,8 @@ package appui
 import (
 	"image"
 
-	"github.com/docker/docker/api/types"
 	termui "github.com/gizak/termui"
+	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/docker/formatter"
 	drytermui "github.com/moncho/dry/ui/termui"
 )

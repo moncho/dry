@@ -8,7 +8,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/moncho/dry/app"
 	"github.com/moncho/dry/appui"
@@ -17,6 +16,7 @@ import (
 	"github.com/moncho/dry/version"
 	"github.com/nsf/termbox-go"
 	pkgError "github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

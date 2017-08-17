@@ -3,8 +3,8 @@ package swarm
 import (
 	"image"
 
+	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/cli/command/formatter"
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	dryformatter "github.com/moncho/dry/docker/formatter"

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/docker/docker/api/types/image"
 	"github.com/docker/go-units"
+	"github.com/docker/docker/api/types/image"
 	drydocker "github.com/moncho/dry/docker"
 
 	"github.com/moncho/dry/ui"

@@ -7,7 +7,6 @@ import (
 
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/cli/command"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/go-units"
 	"github.com/moncho/dry/docker"
@@ -80,13 +79,13 @@ func (t *TaskStringer) NodeID() string {
 
 //DesiredState Task desired state as a string
 func (t *TaskStringer) DesiredState() string {
-	return command.PrettyPrint(t.task.DesiredState)
+	return PrettyPrint(t.task.DesiredState)
 }
 
 //CurrentState Task current state as a string
 func (t *TaskStringer) CurrentState() string {
 	return fmt.Sprintf("%s %s ago",
-		command.PrettyPrint(t.task.Status.State),
+		PrettyPrint(t.task.Status.State),
 		strings.ToLower(units.HumanDuration(time.Since(t.task.Status.Timestamp))),
 	)
 }

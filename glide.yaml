@@ -2,8 +2,6 @@ package: github.com/moncho/dry
 import:
 - package: github.com/Microsoft/go-winio
   version: ^0.3.3
-- package: github.com/Sirupsen/logrus
-  version: ^0.7.3
 - package: github.com/chzyer/readline
   version: c914be64f07d9998f52bf0d598ec26d457168c0f
 - package: github.com/docker/distribution
@@ -12,7 +10,7 @@ import:
   - digest
   - reference
 - package: github.com/docker/docker
-  version: a709f79c1a98c3661f12397fe61f0e6a46f1dbb3
+  version: d58ffa0364c04d03a8f25704d7f0489ee6cd9634
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -67,3 +65,12 @@ import:
   version: 494e70f7620561491c2ca11e185bbef4b70060da
 - package: github.com/patrickmn/go-cache
   version: ^2.0.0
+- package: github.com/sirupsen/logrus
+  version: master
+  repo: git@github.com:/sirupsen/logrus
+  vcs: git
+- package: github.com/Sirupsen/logrus
+  version: master
+  repo: git@github.com:/sirupsen/logrus
+  vcs: git
+- package: github.com/docker/cli

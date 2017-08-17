@@ -4,8 +4,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/docker/api/types"
 	gizaktermui "github.com/gizak/termui"
+	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"

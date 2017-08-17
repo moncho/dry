@@ -13,6 +13,7 @@ const (
 Images              0                   0                   0B                  0B
 Containers          0                   0                   0B                  0B
 Local Volumes       0                   0                   0B                  0B
+Build Cache                                                 0B                  0B
 
 
 Deleted containers: 0 

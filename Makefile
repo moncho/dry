@@ -21,6 +21,16 @@ print-%: ; @echo $*=$($*)
 run: ## Runs dry
 	go run ./main.go
 
+vendor: ## Runs dep ensure
+	dep ensure
+	# TODO(eric): kill it with fire once https://github.com/golang/dep/issues/433 is resolved
+	# Workaround for OSX sed behaving differently
+	case "${PLATFORM}" in \
+		Darwin) find vendor -type f -name "*.go" -print0 | xargs -0 sed -i '' 's/Sirupsen\/logrus/sirupsen\/logrus/g' ;;\
+		*)      find vendor -type f -name "*.go" -print0 | xargs -0 sed -i    's/Sirupsen\/logrus/sirupsen\/logrus/g' ;;\
+	esac ;\
+	touch $@
+
 build: ## Builds dry
 	go build .
 
@@ -56,7 +66,7 @@ release: *.go VERSION ## Prepares a dry release
 clean:
 	rm -rf ${PREFIX}/cross
 
-.PHONY: help
+.PHONY: help vendor
 
 # Magic as explained here: http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/cli/command/idresolver"
 	"github.com/moncho/dry/docker/mock"
 	"github.com/pkg/errors"
 )
@@ -58,7 +57,6 @@ func TestIDResolution(t *testing.T) {
 }
 
 type resolverMock struct {
-	idresolver.IDResolver
 }
 
 func (r *resolverMock) Resolve(ctx context.Context, t interface{}, id string) (string, error) {

@@ -219,8 +219,11 @@ func (daemon *DockerDaemon) NetworkInspect(id string) (dockerTypes.NetworkResour
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
+	options := dockerTypes.NetworkInspectOptions{
+		Verbose: true,
+	}
 	return daemon.client.NetworkInspect(
-		ctx, id, true)
+		ctx, id, options)
 }
 
 //Ok is true if connecting to the Docker daemon went fine

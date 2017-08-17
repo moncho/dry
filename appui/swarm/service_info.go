@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/cli/command/formatter"
 	"github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"

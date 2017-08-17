@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/docker/cli/cli/command/formatter"
+	"github.com/docker/cli/cli/command/service"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/cli/command/formatter"
-	"github.com/docker/docker/cli/command/service"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"

@@ -122,7 +122,7 @@ func (row *NodeRow) updateStatusColumn() {
 }
 
 func cpus(node swarm.Node) string {
-	//https://github.com/docker/docker/blob/v1.12.0-rc4/daemon/cluster/executor/container/container.go#L328-L332
+	//https://github.com/moby/moby/blob/v1.12.0-rc4/daemon/cluster/executor/container/container.go#L328-L332
 	nano := node.Description.Resources.NanoCPUs
 	nano = nano / 1e9
 	return strconv.Itoa(int(nano))

@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // Options represents the information needed to create client and server TLS configurations.

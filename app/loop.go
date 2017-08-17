@@ -4,10 +4,10 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
 	"github.com/nsf/termbox-go"
+	log "github.com/sirupsen/logrus"
 )
 
 type focusTracker struct {
