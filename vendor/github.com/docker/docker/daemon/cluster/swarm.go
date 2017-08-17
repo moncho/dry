@@ -54,6 +54,11 @@ func (c *Cluster) Init(req types.InitRequest) (string, error) {
 		return "", err
 	}
 
+	dataPathAddr, err := resolveDataPathAddr(req.DataPathAddr)
+	if err != nil {
+		return "", err
+	}
+
 	localAddr := listenHost
 
 	// If the local address is undetermined, the advertise address
@@ -83,16 +88,13 @@ func (c *Cluster) Init(req types.InitRequest) (string, error) {
 		}
 	}
 
-	if !req.ForceNewCluster {
-		clearPersistentState(c.root)
-	}
-
 	nr, err := c.newNodeRunner(nodeStartConfig{
 		forceNewCluster: req.ForceNewCluster,
 		autolock:        req.AutoLockManagers,
 		LocalAddr:       localAddr,
 		ListenAddr:      net.JoinHostPort(listenHost, listenPort),
 		AdvertiseAddr:   net.JoinHostPort(advertiseHost, advertisePort),
+		DataPathAddr:    dataPathAddr,
 		availability:    req.Availability,
 	})
 	if err != nil {
@@ -103,15 +105,13 @@ func (c *Cluster) Init(req types.InitRequest) (string, error) {
 	c.mu.Unlock()
 
 	if err := <-nr.Ready(); err != nil {
+		c.mu.Lock()
+		c.nr = nil
+		c.mu.Unlock()
 		if !req.ForceNewCluster { // if failure on first attempt don't keep state
 			if err := clearPersistentState(c.root); err != nil {
 				return "", err
 			}
-		}
-		if err != nil {
-			c.mu.Lock()
-			c.nr = nil
-			c.mu.Unlock()
 		}
 		return "", err
 	}
@@ -155,12 +155,16 @@ func (c *Cluster) Join(req types.JoinRequest) error {
 		}
 	}
 
-	clearPersistentState(c.root)
+	dataPathAddr, err := resolveDataPathAddr(req.DataPathAddr)
+	if err != nil {
+		return err
+	}
 
 	nr, err := c.newNodeRunner(nodeStartConfig{
 		RemoteAddr:    req.RemoteAddrs[0],
 		ListenAddr:    net.JoinHostPort(listenHost, listenPort),
 		AdvertiseAddr: advertiseAddr,
+		DataPathAddr:  dataPathAddr,
 		joinAddr:      req.RemoteAddrs[0],
 		joinToken:     req.JoinToken,
 		availability:  req.Availability,
@@ -181,6 +185,9 @@ func (c *Cluster) Join(req types.JoinRequest) error {
 			c.mu.Lock()
 			c.nr = nil
 			c.mu.Unlock()
+			if err := clearPersistentState(c.root); err != nil {
+				return err
+			}
 		}
 		return err
 	}
@@ -376,7 +383,6 @@ func (c *Cluster) Leave(force bool) error {
 		}
 	}
 
-	c.configEvent <- struct{}{}
 	// todo: cleanup optional?
 	if err := clearPersistentState(c.root); err != nil {
 		return err

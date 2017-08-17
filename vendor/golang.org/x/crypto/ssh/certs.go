@@ -22,7 +22,6 @@ const (
 	CertAlgoECDSA256v01 = "ecdsa-sha2-nistp256-cert-v01@openssh.com"
 	CertAlgoECDSA384v01 = "ecdsa-sha2-nistp384-cert-v01@openssh.com"
 	CertAlgoECDSA521v01 = "ecdsa-sha2-nistp521-cert-v01@openssh.com"
-	CertAlgoED25519v01  = "ssh-ed25519-cert-v01@openssh.com"
 )
 
 // Certificate types distinguish between host and user
@@ -86,73 +85,46 @@ func marshalStringList(namelist []string) []byte {
 	return to
 }
 
-type optionsTuple struct {
-	Key   string
-	Value []byte
-}
-
-type optionsTupleValue struct {
-	Value string
-}
-
-// serialize a map of critical options or extensions
-// issue #10569 - per [PROTOCOL.certkeys] and SSH implementation,
-// we need two length prefixes for a non-empty string value
 func marshalTuples(tups map[string]string) []byte {
 	keys := make([]string, 0, len(tups))
-	for key := range tups {
-		keys = append(keys, key)
+	for k := range tups {
+		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 
-	var ret []byte
-	for _, key := range keys {
-		s := optionsTuple{Key: key}
-		if value := tups[key]; len(value) > 0 {
-			s.Value = Marshal(&optionsTupleValue{value})
-		}
-		ret = append(ret, Marshal(&s)...)
+	var r []byte
+	for _, k := range keys {
+		s := struct{ K, V string }{k, tups[k]}
+		r = append(r, Marshal(&s)...)
 	}
-	return ret
+	return r
 }
 
-// issue #10569 - per [PROTOCOL.certkeys] and SSH implementation,
-// we need two length prefixes for a non-empty option value
 func parseTuples(in []byte) (map[string]string, error) {
 	tups := map[string]string{}
 	var lastKey string
 	var haveLastKey bool
 
 	for len(in) > 0 {
-		var key, val, extra []byte
-		var ok bool
-
-		if key, in, ok = parseString(in); !ok {
+		nameBytes, rest, ok := parseString(in)
+		if !ok {
 			return nil, errShortRead
 		}
-		keyStr := string(key)
+		data, rest, ok := parseString(rest)
+		if !ok {
+			return nil, errShortRead
+		}
+		name := string(nameBytes)
+
 		// according to [PROTOCOL.certkeys], the names must be in
 		// lexical order.
-		if haveLastKey && keyStr <= lastKey {
+		if haveLastKey && name <= lastKey {
 			return nil, fmt.Errorf("ssh: certificate options are not in lexical order")
 		}
-		lastKey, haveLastKey = keyStr, true
-		// the next field is a data field, which if non-empty has a string embedded
-		if val, in, ok = parseString(in); !ok {
-			return nil, errShortRead
-		}
-		if len(val) > 0 {
-			val, extra, ok = parseString(val)
-			if !ok {
-				return nil, errShortRead
-			}
-			if len(extra) > 0 {
-				return nil, fmt.Errorf("ssh: unexpected trailing data after certificate option value")
-			}
-			tups[keyStr] = string(val)
-		} else {
-			tups[keyStr] = ""
-		}
+		lastKey, haveLastKey = name, true
+
+		tups[name] = string(data)
+		in = rest
 	}
 	return tups, nil
 }
@@ -369,7 +341,7 @@ func (c *CertChecker) CheckCert(principal string, cert *Certificate) error {
 	if after := int64(cert.ValidAfter); after < 0 || unixNow < int64(cert.ValidAfter) {
 		return fmt.Errorf("ssh: cert is not yet valid")
 	}
-	if before := int64(cert.ValidBefore); cert.ValidBefore != uint64(CertTimeInfinity) && (unixNow >= before || before < 0) {
+	if before := int64(cert.ValidBefore); cert.ValidBefore != CertTimeInfinity && (unixNow >= before || before < 0) {
 		return fmt.Errorf("ssh: cert has expired")
 	}
 	if err := cert.SignatureKey.Verify(cert.bytesForSigning(), cert.Signature); err != nil {
@@ -402,7 +374,6 @@ var certAlgoNames = map[string]string{
 	KeyAlgoECDSA256: CertAlgoECDSA256v01,
 	KeyAlgoECDSA384: CertAlgoECDSA384v01,
 	KeyAlgoECDSA521: CertAlgoECDSA521v01,
-	KeyAlgoED25519:  CertAlgoED25519v01,
 }
 
 // certToPrivAlgo returns the underlying algorithm for a certificate algorithm.
@@ -461,7 +432,7 @@ func (c *Certificate) Marshal() []byte {
 func (c *Certificate) Type() string {
 	algo, ok := certAlgoNames[c.Key.Type()]
 	if !ok {
-		panic("unknown cert key type " + c.Key.Type())
+		panic("unknown cert key type")
 	}
 	return algo
 }

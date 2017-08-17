@@ -6,15 +6,14 @@ package openpgp
 
 import (
 	"crypto"
-	"hash"
-	"io"
-	"strconv"
-	"time"
-
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/errors"
 	"golang.org/x/crypto/openpgp/packet"
 	"golang.org/x/crypto/openpgp/s2k"
+	"hash"
+	"io"
+	"strconv"
+	"time"
 )
 
 // DetachSign signs message with the private key from signer (which must
@@ -177,9 +176,6 @@ func Encrypt(ciphertext io.Writer, to []*Entity, signed *Entity, hints *FileHint
 			return nil, errors.InvalidArgumentError("no valid signing keys")
 		}
 		signer = signKey.PrivateKey
-		if signer == nil {
-			return nil, errors.InvalidArgumentError("no private key in signing key")
-		}
 		if signer.Encrypted {
 			return nil, errors.InvalidArgumentError("signing key must be decrypted")
 		}

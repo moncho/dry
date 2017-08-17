@@ -24,7 +24,7 @@ func TestSymmetricKeyEncrypted(t *testing.T) {
 		t.Error("didn't find SymmetricKeyEncrypted packet")
 		return
 	}
-	key, cipherFunc, err := ske.Decrypt([]byte("password"))
+	err = ske.Decrypt([]byte("password"))
 	if err != nil {
 		t.Error(err)
 		return
@@ -40,7 +40,7 @@ func TestSymmetricKeyEncrypted(t *testing.T) {
 		t.Error("didn't find SymmetricallyEncrypted packet")
 		return
 	}
-	r, err := se.Decrypt(cipherFunc, key)
+	r, err := se.Decrypt(ske.CipherFunc, ske.Key)
 	if err != nil {
 		t.Error(err)
 		return
@@ -64,9 +64,8 @@ const symmetricallyEncryptedContentsHex = "cb1062004d14c4df636f6e74656e74732e0a"
 func TestSerializeSymmetricKeyEncrypted(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	passphrase := []byte("testing")
-	const cipherFunc = CipherAES128
 	config := &Config{
-		DefaultCipher: cipherFunc,
+		DefaultCipher: CipherAES128,
 	}
 
 	key, err := SerializeSymmetricKeyEncrypted(buf, passphrase, config)
@@ -86,18 +85,18 @@ func TestSerializeSymmetricKeyEncrypted(t *testing.T) {
 		return
 	}
 
+	if !ske.Encrypted {
+		t.Errorf("SKE not encrypted but should be")
+	}
 	if ske.CipherFunc != config.DefaultCipher {
 		t.Errorf("SKE cipher function is %d (expected %d)", ske.CipherFunc, config.DefaultCipher)
 	}
-	parsedKey, parsedCipherFunc, err := ske.Decrypt(passphrase)
+	err = ske.Decrypt(passphrase)
 	if err != nil {
 		t.Errorf("failed to decrypt reparsed SKE: %s", err)
 		return
 	}
-	if !bytes.Equal(key, parsedKey) {
-		t.Errorf("keys don't match after Decrypt: %x (original) vs %x (parsed)", key, parsedKey)
-	}
-	if parsedCipherFunc != cipherFunc {
-		t.Errorf("cipher function doesn't match after Decrypt: %d (original) vs %d (parsed)", cipherFunc, parsedCipherFunc)
+	if !bytes.Equal(key, ske.Key) {
+		t.Errorf("keys don't match after Decrpyt: %x (original) vs %x (parsed)", key, ske.Key)
 	}
 }

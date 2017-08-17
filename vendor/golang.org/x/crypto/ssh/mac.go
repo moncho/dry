@@ -9,7 +9,6 @@ package ssh
 import (
 	"crypto/hmac"
 	"crypto/sha1"
-	"crypto/sha256"
 	"hash"
 )
 
@@ -45,9 +44,6 @@ func (t truncatingMAC) Size() int {
 func (t truncatingMAC) BlockSize() int { return t.hmac.BlockSize() }
 
 var macModes = map[string]*macMode{
-	"hmac-sha2-256": {32, func(key []byte) hash.Hash {
-		return hmac.New(sha256.New, key)
-	}},
 	"hmac-sha1": {20, func(key []byte) hash.Hash {
 		return hmac.New(sha1.New, key)
 	}},

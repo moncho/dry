@@ -33,7 +33,6 @@ var supportedCiphers = []string{
 // supportedKexAlgos specifies the supported key-exchange algorithms in
 // preference order.
 var supportedKexAlgos = []string{
-	kexAlgoCurve25519SHA256,
 	// P384 and P521 are not constant-time yet, but since we don't
 	// reuse ephemeral keys, using them for ECDH should be OK.
 	kexAlgoECDH256, kexAlgoECDH384, kexAlgoECDH521,
@@ -48,15 +47,13 @@ var supportedHostKeyAlgos = []string{
 
 	KeyAlgoECDSA256, KeyAlgoECDSA384, KeyAlgoECDSA521,
 	KeyAlgoRSA, KeyAlgoDSA,
-
-	KeyAlgoED25519,
 }
 
 // supportedMACs specifies a default set of MAC algorithms in preference order.
 // This is based on RFC 4253, section 6.4, but with hmac-md5 variants removed
 // because they have reached the end of their useful life.
 var supportedMACs = []string{
-	"hmac-sha2-256", "hmac-sha1", "hmac-sha1-96",
+	"hmac-sha1", "hmac-sha1-96",
 }
 
 var supportedCompressions = []string{compressionNone}
@@ -87,15 +84,27 @@ func parseError(tag uint8) error {
 	return fmt.Errorf("ssh: parse error in message type %d", tag)
 }
 
-func findCommon(what string, client []string, server []string) (common string, err error) {
-	for _, c := range client {
-		for _, s := range server {
-			if c == s {
-				return c, nil
+func findCommonAlgorithm(clientAlgos []string, serverAlgos []string) (commonAlgo string, ok bool) {
+	for _, clientAlgo := range clientAlgos {
+		for _, serverAlgo := range serverAlgos {
+			if clientAlgo == serverAlgo {
+				return clientAlgo, true
 			}
 		}
 	}
-	return "", fmt.Errorf("ssh: no common algorithm for %s; client offered: %v, server offered: %v", what, client, server)
+	return
+}
+
+func findCommonCipher(clientCiphers []string, serverCiphers []string) (commonCipher string, ok bool) {
+	for _, clientCipher := range clientCiphers {
+		for _, serverCipher := range serverCiphers {
+			// reject the cipher if we have no cipherModes definition
+			if clientCipher == serverCipher && cipherModes[clientCipher] != nil {
+				return clientCipher, true
+			}
+		}
+	}
+	return
 }
 
 type directionAlgorithms struct {
@@ -111,50 +120,50 @@ type algorithms struct {
 	r       directionAlgorithms
 }
 
-func findAgreedAlgorithms(clientKexInit, serverKexInit *kexInitMsg) (algs *algorithms, err error) {
+func findAgreedAlgorithms(clientKexInit, serverKexInit *kexInitMsg) (algs *algorithms) {
+	var ok bool
 	result := &algorithms{}
-
-	result.kex, err = findCommon("key exchange", clientKexInit.KexAlgos, serverKexInit.KexAlgos)
-	if err != nil {
+	result.kex, ok = findCommonAlgorithm(clientKexInit.KexAlgos, serverKexInit.KexAlgos)
+	if !ok {
 		return
 	}
 
-	result.hostKey, err = findCommon("host key", clientKexInit.ServerHostKeyAlgos, serverKexInit.ServerHostKeyAlgos)
-	if err != nil {
+	result.hostKey, ok = findCommonAlgorithm(clientKexInit.ServerHostKeyAlgos, serverKexInit.ServerHostKeyAlgos)
+	if !ok {
 		return
 	}
 
-	result.w.Cipher, err = findCommon("client to server cipher", clientKexInit.CiphersClientServer, serverKexInit.CiphersClientServer)
-	if err != nil {
+	result.w.Cipher, ok = findCommonCipher(clientKexInit.CiphersClientServer, serverKexInit.CiphersClientServer)
+	if !ok {
 		return
 	}
 
-	result.r.Cipher, err = findCommon("server to client cipher", clientKexInit.CiphersServerClient, serverKexInit.CiphersServerClient)
-	if err != nil {
+	result.r.Cipher, ok = findCommonCipher(clientKexInit.CiphersServerClient, serverKexInit.CiphersServerClient)
+	if !ok {
 		return
 	}
 
-	result.w.MAC, err = findCommon("client to server MAC", clientKexInit.MACsClientServer, serverKexInit.MACsClientServer)
-	if err != nil {
+	result.w.MAC, ok = findCommonAlgorithm(clientKexInit.MACsClientServer, serverKexInit.MACsClientServer)
+	if !ok {
 		return
 	}
 
-	result.r.MAC, err = findCommon("server to client MAC", clientKexInit.MACsServerClient, serverKexInit.MACsServerClient)
-	if err != nil {
+	result.r.MAC, ok = findCommonAlgorithm(clientKexInit.MACsServerClient, serverKexInit.MACsServerClient)
+	if !ok {
 		return
 	}
 
-	result.w.Compression, err = findCommon("client to server compression", clientKexInit.CompressionClientServer, serverKexInit.CompressionClientServer)
-	if err != nil {
+	result.w.Compression, ok = findCommonAlgorithm(clientKexInit.CompressionClientServer, serverKexInit.CompressionClientServer)
+	if !ok {
 		return
 	}
 
-	result.r.Compression, err = findCommon("server to client compression", clientKexInit.CompressionServerClient, serverKexInit.CompressionServerClient)
-	if err != nil {
+	result.r.Compression, ok = findCommonAlgorithm(clientKexInit.CompressionServerClient, serverKexInit.CompressionServerClient)
+	if !ok {
 		return
 	}
 
-	return result, nil
+	return result
 }
 
 // If rekeythreshold is too small, we can't make any progress sending
@@ -197,14 +206,6 @@ func (c *Config) SetDefaults() {
 	if c.Ciphers == nil {
 		c.Ciphers = supportedCiphers
 	}
-	var ciphers []string
-	for _, c := range c.Ciphers {
-		if cipherModes[c] != nil {
-			// reject the cipher if we have no cipherModes definition
-			ciphers = append(ciphers, c)
-		}
-	}
-	c.Ciphers = ciphers
 
 	if c.KeyExchanges == nil {
 		c.KeyExchanges = supportedKexAlgos

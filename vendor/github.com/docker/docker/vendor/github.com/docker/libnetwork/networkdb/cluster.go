@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	reapInterval     = 60 * time.Second
+	reapInterval     = 30 * time.Minute
 	reapPeriod       = 5 * time.Second
 	retryInterval    = 1 * time.Second
 	nodeReapInterval = 24 * time.Hour
@@ -107,7 +107,7 @@ func (nDB *NetworkDB) clusterInit() error {
 		config.BindPort = nDB.config.BindPort
 	}
 
-	config.ProtocolVersion = memberlist.ProtocolVersionMax
+	config.ProtocolVersion = memberlist.ProtocolVersion2Compatible
 	config.Delegate = &delegate{nDB: nDB}
 	config.Events = &eventDelegate{nDB: nDB}
 	// custom logger that does not add time or date, so they are not
@@ -284,7 +284,6 @@ func (nDB *NetworkDB) reconnectNode() {
 	}
 
 	if err := nDB.sendNodeEvent(NodeEventTypeJoin); err != nil {
-		logrus.Errorf("failed to send node join during reconnect: %v", err)
 		return
 	}
 
@@ -480,26 +479,31 @@ func (nDB *NetworkDB) bulkSyncTables() {
 
 func (nDB *NetworkDB) bulkSync(nodes []string, all bool) ([]string, error) {
 	if !all {
-		// If not all, then just pick one.
-		nodes = nDB.mRandomNodes(1, nodes)
+		// Get 2 random nodes. 2nd node will be tried if the bulk sync to
+		// 1st node fails.
+		nodes = nDB.mRandomNodes(2, nodes)
 	}
 
 	if len(nodes) == 0 {
 		return nil, nil
 	}
 
-	logrus.Debugf("%s: Initiating bulk sync with nodes %v", nDB.config.NodeName, nodes)
 	var err error
 	var networks []string
 	for _, node := range nodes {
 		if node == nDB.config.NodeName {
 			continue
 		}
-
+		logrus.Debugf("%s: Initiating bulk sync with node %v", nDB.config.NodeName, node)
 		networks = nDB.findCommonNetworks(node)
 		err = nDB.bulkSyncNode(networks, node, true)
+		// if its periodic bulksync stop after the first successful sync
+		if !all && err == nil {
+			break
+		}
 		if err != nil {
-			err = fmt.Errorf("bulk sync failed on node %s: %v", node, err)
+			err = fmt.Errorf("bulk sync to node %s failed: %v", node, err)
+			logrus.Warn(err.Error())
 		}
 	}
 

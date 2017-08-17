@@ -7,7 +7,6 @@ package poly1305
 import (
 	"bytes"
 	"testing"
-	"unsafe"
 )
 
 var testData = []struct {
@@ -35,52 +34,41 @@ var testData = []struct {
 	},
 }
 
-func testSum(t *testing.T, unaligned bool) {
+func TestSum(t *testing.T) {
 	var out [16]byte
 	var key [32]byte
 
 	for i, v := range testData {
-		in := v.in
-		if unaligned {
-			in = unalignBytes(in)
-		}
 		copy(key[:], v.k)
-		Sum(&out, in, &key)
+		Sum(&out, v.in, &key)
 		if !bytes.Equal(out[:], v.correct) {
 			t.Errorf("%d: expected %x, got %x", i, v.correct, out[:])
 		}
 	}
 }
 
-func TestSum(t *testing.T)          { testSum(t, false) }
-func TestSumUnaligned(t *testing.T) { testSum(t, true) }
-
-func benchmark(b *testing.B, size int, unaligned bool) {
+func Benchmark1K(b *testing.B) {
+	b.StopTimer()
 	var out [16]byte
 	var key [32]byte
-	in := make([]byte, size)
-	if unaligned {
-		in = unalignBytes(in)
-	}
+	in := make([]byte, 1024)
 	b.SetBytes(int64(len(in)))
-	b.ResetTimer()
+	b.StartTimer()
+
 	for i := 0; i < b.N; i++ {
 		Sum(&out, in, &key)
 	}
 }
 
-func Benchmark64(b *testing.B)          { benchmark(b, 64, false) }
-func Benchmark1K(b *testing.B)          { benchmark(b, 1024, false) }
-func Benchmark64Unaligned(b *testing.B) { benchmark(b, 64, true) }
-func Benchmark1KUnaligned(b *testing.B) { benchmark(b, 1024, true) }
+func Benchmark64(b *testing.B) {
+	b.StopTimer()
+	var out [16]byte
+	var key [32]byte
+	in := make([]byte, 64)
+	b.SetBytes(int64(len(in)))
+	b.StartTimer()
 
-func unalignBytes(in []byte) []byte {
-	out := make([]byte, len(in)+1)
-	if uintptr(unsafe.Pointer(&out[0]))&(unsafe.Alignof(uint32(0))-1) == 0 {
-		out = out[1:]
-	} else {
-		out = out[:len(in)]
+	for i := 0; i < b.N; i++ {
+		Sum(&out, in, &key)
 	}
-	copy(out, in)
-	return out
 }

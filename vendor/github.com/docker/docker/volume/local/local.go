@@ -55,10 +55,10 @@ type activeMount struct {
 // New instantiates a new Root instance with the provided scope. Scope
 // is the base path that the Root instance uses to store its
 // volumes. The base path is created here if it does not exist.
-func New(scope string, rootUID, rootGID int) (*Root, error) {
+func New(scope string, rootIDs idtools.IDPair) (*Root, error) {
 	rootDirectory := filepath.Join(scope, volumesPathName)
 
-	if err := idtools.MkdirAllAs(rootDirectory, 0700, rootUID, rootGID); err != nil {
+	if err := idtools.MkdirAllAndChown(rootDirectory, 0700, rootIDs); err != nil {
 		return nil, err
 	}
 
@@ -66,8 +66,7 @@ func New(scope string, rootUID, rootGID int) (*Root, error) {
 		scope:   scope,
 		path:    rootDirectory,
 		volumes: make(map[string]*localVolume),
-		rootUID: rootUID,
-		rootGID: rootGID,
+		rootIDs: rootIDs,
 	}
 
 	dirs, err := ioutil.ReadDir(rootDirectory)
@@ -125,8 +124,7 @@ type Root struct {
 	scope   string
 	path    string
 	volumes map[string]*localVolume
-	rootUID int
-	rootGID int
+	rootIDs idtools.IDPair
 }
 
 // List lists all the volumes
@@ -167,7 +165,7 @@ func (r *Root) Create(name string, opts map[string]string) (volume.Volume, error
 	}
 
 	path := r.DataPath(name)
-	if err := idtools.MkdirAllAs(path, 0755, r.rootUID, r.rootGID); err != nil {
+	if err := idtools.MkdirAllAndChown(path, 0755, r.rootIDs); err != nil {
 		if os.IsExist(err) {
 			return nil, fmt.Errorf("volume already exists under %s", filepath.Dir(path))
 		}
@@ -216,6 +214,14 @@ func (r *Root) Remove(v volume.Volume) error {
 	lv, ok := v.(*localVolume)
 	if !ok {
 		return fmt.Errorf("unknown volume type %T", v)
+	}
+
+	if lv.active.count > 0 {
+		return fmt.Errorf("volume has active mounts")
+	}
+
+	if err := lv.unmount(); err != nil {
+		return err
 	}
 
 	realPath, err := filepath.EvalSymlinks(lv.path)
@@ -306,6 +312,7 @@ func (v *localVolume) Path() string {
 }
 
 // Mount implements the localVolume interface, returning the data location.
+// If there are any provided mount options, the resources will be mounted at this point
 func (v *localVolume) Mount(id string) (string, error) {
 	v.m.Lock()
 	defer v.m.Unlock()
@@ -321,19 +328,35 @@ func (v *localVolume) Mount(id string) (string, error) {
 	return v.path, nil
 }
 
-// Umount is for satisfying the localVolume interface and does not do anything in this driver.
+// Unmount dereferences the id, and if it is the last reference will unmount any resources
+// that were previously mounted.
 func (v *localVolume) Unmount(id string) error {
 	v.m.Lock()
 	defer v.m.Unlock()
+
+	// Always decrement the count, even if the unmount fails
+	// Essentially docker doesn't care if this fails, it will send an error, but
+	// ultimately there's nothing that can be done. If we don't decrement the count
+	// this volume can never be removed until a daemon restart occurs.
 	if v.opts != nil {
 		v.active.count--
-		if v.active.count == 0 {
-			if err := mount.Unmount(v.path); err != nil {
-				v.active.count++
+	}
+
+	if v.active.count > 0 {
+		return nil
+	}
+
+	return v.unmount()
+}
+
+func (v *localVolume) unmount() error {
+	if v.opts != nil {
+		if err := mount.Unmount(v.path); err != nil {
+			if mounted, mErr := mount.Mounted(v.path); mounted || mErr != nil {
 				return errors.Wrapf(err, "error while unmounting volume path '%s'", v.path)
 			}
-			v.active.mounted = false
 		}
+		v.active.mounted = false
 	}
 	return nil
 }
