@@ -3,6 +3,7 @@ package swarm
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/docker/cli/cli/command/formatter"
@@ -44,6 +45,9 @@ func NewServicesWidget(swarmClient docker.SwarmAPI, y int) *ServicesWidget {
 		height:        appui.MainScreenAvailableHeight(),
 		width:         ui.ActiveScreen.Dimensions.Width}
 	if services, servicesInfo, err := getServiceInfo(swarmClient); err == nil {
+		sort.SliceStable(services, func(i, j int) bool {
+			return services[i].Spec.Name < services[j].Spec.Name
+		})
 		for _, service := range services {
 			w.services = append(w.services, NewServiceRow(service, servicesInfo[service.ID], w.header))
 		}
