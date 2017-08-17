@@ -22,6 +22,7 @@ func (daemon *DockerDaemon) History(id string) ([]image.HistoryResponseItem, err
 //position.
 func (daemon *DockerDaemon) ImageAt(pos int) (*dockerTypes.ImageSummary, error) {
 	daemon.imagesLock.Lock()
+	defer daemon.imagesLock.Unlock()
 	if pos >= len(daemon.images) {
 		return nil, errors.New("Position is higher than number of images")
 	}
