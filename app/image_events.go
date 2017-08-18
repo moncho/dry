@@ -85,7 +85,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
 			go func(image *types.ImageSummary) {
 				events := ui.EventSource{
 					Events: h.eventChan,
-					EventHandledCallback: func() error {
+					EventHandledCallback: func(e termbox.Event) error {
 						h.renderChan <- struct{}{}
 						return nil
 					},
@@ -94,7 +94,10 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
 				dry.widgetRegistry.remove(rw)
 				runCommand := rw.Text()
 				h.passingEvents = false
-				dry.dockerDaemon.RunImage(image, runCommand)
+				if err := dry.dockerDaemon.RunImage(image, runCommand); err != nil {
+					dry.appmessage(err.Error())
+				}
+
 			}(image)
 		}
 	default:
