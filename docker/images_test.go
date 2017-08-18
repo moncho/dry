@@ -9,9 +9,11 @@ import (
 
 func TestImageRun(t *testing.T) {
 	daemon := DockerDaemon{client: mock.ImageAPIClientMock{}}
-	err := daemon.RunImage(&types.ImageSummary{}, "command")
+	err := daemon.RunImage(&types.ImageSummary{
+		RepoTags: []string{"nope:latest"},
+	}, "command")
 
 	if err != nil {
-		t.Errorf("Running an image with the list of swarm nodes resulted in error: %s", err.Error())
+		t.Errorf("Running an image resulted in error %s", err.Error())
 	}
 }

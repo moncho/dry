@@ -6,6 +6,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
 	dockerAPI "github.com/docker/docker/client"
 )
 
@@ -50,4 +52,14 @@ func (m ContainerAPIClientMock) ContainerList(ctx context.Context, options types
 //ContainerInspect returns an empty inspection result.
 func (m ContainerAPIClientMock) ContainerInspect(ctx context.Context, container string) (types.ContainerJSON, error) {
 	return types.ContainerJSON{}, nil
+}
+
+//ContainerCreate mocks container creation
+func (mock ImageAPIClientMock) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, containerName string) (container.ContainerCreateCreatedBody, error) {
+	return container.ContainerCreateCreatedBody{ID: "NewContainer"}, nil
+}
+
+//ContainerStart mock, accepts everything without complains
+func (mock ImageAPIClientMock) ContainerStart(ctx context.Context, container string, options types.ContainerStartOptions) error {
+	return nil
 }
