@@ -65,11 +65,11 @@ mainloop:
 				if i.isMultiLine {
 					i.addString(newLine)
 				} else {
-					event.EventHandledCallback()
+					event.EventHandledCallback(ev)
 					break mainloop
 				}
 			case termbox.KeyEsc:
-				event.EventHandledCallback()
+				event.EventHandledCallback(ev)
 
 				break mainloop
 			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
@@ -101,7 +101,7 @@ mainloop:
 				}
 			}
 		}
-		event.EventHandledCallback()
+		event.EventHandledCallback(ev)
 	}
 	termbox.HideCursor()
 	i.isCapturing = false

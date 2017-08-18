@@ -78,7 +78,7 @@ func Test_TextInput_Focus(t *testing.T) {
 		c := make(chan termbox.Event)
 		events := ui.EventSource{
 			Events:               c,
-			EventHandledCallback: func() error { return nil },
+			EventHandledCallback: func(e termbox.Event) error { return nil },
 		}
 		input := NewTextInput("", false)
 		go func() {
@@ -159,7 +159,7 @@ func Test_TextInput_FocusReleaseWithEvent(t *testing.T) {
 		c := make(chan termbox.Event)
 		events := ui.EventSource{
 			Events:               c,
-			EventHandledCallback: func() error { return nil },
+			EventHandledCallback: func(e termbox.Event) error { return nil },
 		}
 
 		input := NewTextInput("", tt.arg.multi)
@@ -185,7 +185,7 @@ func Test_TextInput_FocusReleaseByClosingChan(t *testing.T) {
 	c := make(chan termbox.Event)
 	events := ui.EventSource{
 		Events:               c,
-		EventHandledCallback: func() error { return nil },
+		EventHandledCallback: func(e termbox.Event) error { return nil },
 	}
 	input := NewTextInput("", false)
 
