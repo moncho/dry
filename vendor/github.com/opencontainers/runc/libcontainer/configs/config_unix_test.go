@@ -10,6 +10,30 @@ import (
 	"testing"
 )
 
+// Checks whether the expected capability is specified in the capabilities.
+func contains(expected string, values []string) bool {
+	for _, v := range values {
+		if v == expected {
+			return true
+		}
+	}
+	return false
+}
+
+func containsDevice(expected *Device, values []*Device) bool {
+	for _, d := range values {
+		if d.Path == expected.Path &&
+			d.Permissions == expected.Permissions &&
+			d.FileMode == expected.FileMode &&
+			d.Major == expected.Major &&
+			d.Minor == expected.Minor &&
+			d.Type == expected.Type {
+			return true
+		}
+	}
+	return false
+}
+
 func loadConfig(name string) (*Config, error) {
 	f, err := os.Open(filepath.Join("../sample_configs", name))
 	if err != nil {
@@ -65,11 +89,11 @@ func TestRemoveNamespace(t *testing.T) {
 	}
 }
 
-func TestHostRootUIDNoUSERNS(t *testing.T) {
+func TestHostUIDNoUSERNS(t *testing.T) {
 	config := &Config{
 		Namespaces: Namespaces{},
 	}
-	uid, err := config.HostRootUID()
+	uid, err := config.HostUID()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +102,7 @@ func TestHostRootUIDNoUSERNS(t *testing.T) {
 	}
 }
 
-func TestHostRootUIDWithUSERNS(t *testing.T) {
+func TestHostUIDWithUSERNS(t *testing.T) {
 	config := &Config{
 		Namespaces: Namespaces{{Type: NEWUSER}},
 		UidMappings: []IDMap{
@@ -89,7 +113,7 @@ func TestHostRootUIDWithUSERNS(t *testing.T) {
 			},
 		},
 	}
-	uid, err := config.HostRootUID()
+	uid, err := config.HostUID()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,11 +122,11 @@ func TestHostRootUIDWithUSERNS(t *testing.T) {
 	}
 }
 
-func TestHostRootGIDNoUSERNS(t *testing.T) {
+func TestHostGIDNoUSERNS(t *testing.T) {
 	config := &Config{
 		Namespaces: Namespaces{},
 	}
-	uid, err := config.HostRootGID()
+	uid, err := config.HostGID()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +135,7 @@ func TestHostRootGIDNoUSERNS(t *testing.T) {
 	}
 }
 
-func TestHostRootGIDWithUSERNS(t *testing.T) {
+func TestHostGIDWithUSERNS(t *testing.T) {
 	config := &Config{
 		Namespaces: Namespaces{{Type: NEWUSER}},
 		GidMappings: []IDMap{
@@ -122,7 +146,7 @@ func TestHostRootGIDWithUSERNS(t *testing.T) {
 			},
 		},
 	}
-	uid, err := config.HostRootGID()
+	uid, err := config.HostGID()
 	if err != nil {
 		t.Fatal(err)
 	}

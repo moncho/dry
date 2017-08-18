@@ -13,8 +13,11 @@ import (
 
 // Various basic signing errors
 var (
+	ErrMissingKey   = errors.New("tuf: missing key")
 	ErrNoSignatures = errors.New("tuf: data has no signatures")
 	ErrInvalid      = errors.New("tuf: signature verification failed")
+	ErrWrongMethod  = errors.New("tuf: invalid signature type")
+	ErrUnknownRole  = errors.New("tuf: unknown role")
 	ErrWrongType    = errors.New("tuf: meta file has wrong type")
 )
 
@@ -24,7 +27,7 @@ func IsExpired(t time.Time) bool {
 }
 
 // VerifyExpiry returns ErrExpired if the metadata is expired
-func VerifyExpiry(s *data.SignedCommon, role data.RoleName) error {
+func VerifyExpiry(s *data.SignedCommon, role string) error {
 	if IsExpired(s.Expires) {
 		logrus.Errorf("Metadata for %s expired", role)
 		return ErrExpired{Role: role, Expired: s.Expires.Format("Mon Jan 2 15:04:05 MST 2006")}

@@ -287,7 +287,7 @@ func TestGetTrustServiceTLSFailure(t *testing.T) {
 
 // Just to ensure that errors are propagated
 func TestGetStoreInvalid(t *testing.T) {
-	config := `{"storage": {"backend": "asdf", "db_url": "does_not_matter_what_value_this_is"}}`
+	config := `{"storage": {"backend": "asdf", "db_url": "doesnt_matter_what_value_this_is"}}`
 
 	var registerCalled = 0
 
@@ -407,7 +407,7 @@ func TestGetGUNPRefixes(t *testing.T) {
 // For sanity, make sure we can always parse the sample config
 func TestSampleConfig(t *testing.T) {
 	var registerCalled = 0
-	_, _, err := parseServerConfig("../../fixtures/server-config.sqlite.json", fakeRegisterer(&registerCalled), false)
+	_, _, err := parseServerConfig("../../fixtures/server-config.json", fakeRegisterer(&registerCalled), false)
 	require.NoError(t, err)
 
 	// once for the DB, once for the trust service

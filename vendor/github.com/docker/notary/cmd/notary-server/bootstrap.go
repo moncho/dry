@@ -3,10 +3,9 @@ package main
 import (
 	"fmt"
 
-	"golang.org/x/net/context"
-
 	"github.com/docker/notary"
 	"github.com/docker/notary/storage"
+	"golang.org/x/net/context"
 )
 
 func bootstrap(ctx context.Context) error {

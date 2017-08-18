@@ -1,0 +1,99 @@
+
+# Gopkg.toml example
+#
+# Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
+# for detailed Gopkg.toml documentation.
+#
+# required = ["github.com/user/thing/cmd/thing"]
+# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
+#
+# [[constraint]]
+#   name = "github.com/user/project"
+#   version = "1.0.0"
+#
+# [[constraint]]
+#   name = "github.com/user/project2"
+#   branch = "dev"
+#   source = "github.com/myfork/project2"
+#
+# [[override]]
+#  name = "github.com/x/y"
+#  version = "2.4.0"
+
+
+[[constraint]]
+  name = "github.com/chzyer/readline"
+  revision = "c914be64f07d9998f52bf0d598ec26d457168c0f"
+
+[[constraint]]
+  name = "github.com/docker/cli"
+
+[[constraint]]
+  name = "github.com/docker/distribution"
+  revision = "c3e06c6069653bf72034ed907d6749d3928fdacb"
+
+[[constraint]]
+  name = "github.com/docker/docker"
+  revision = "d58ffa0364c04d03a8f25704d7f0489ee6cd9634"
+
+[[constraint]]
+  name = "github.com/docker/go-connections"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/docker/go-units"
+  branch = "master"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/gizak/termui"
+
+[[constraint]]
+  name = "github.com/gosuri/uitable"
+  revision = "62e40473eadf9579716227a0033cd8db16e1c500"
+
+[[constraint]]
+  name = "github.com/jessevdk/go-flags"
+  revision = "fc93116606d0a71d7e9de0ad5734fdb4b8eae834"
+
+[[constraint]]
+  name = "github.com/mattn/go-runewidth"
+  revision = "12e0ff74603c9a3209d8bf84f8ab349fe1ad9477"
+
+[[constraint]]
+  name = "github.com/mitchellh/go-homedir"
+  revision = "756f7b183b7ab78acdbbee5c7f392838ed459dda"
+
+[[constraint]]
+  name = "github.com/mitchellh/go-wordwrap"
+  revision = "ad45545899c7b13c020ea92b2072220eefad42b8"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/nsf/termbox-go"
+
+[[constraint]]
+  name = "github.com/olekukonko/tablewriter"
+  revision = "cca8bbc0798408af109aaaa239cbd2634846b340"
+
+[[constraint]]
+  name = "github.com/patrickmn/go-cache"
+  version = "2.0.0"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  revision = "494e70f7620561491c2ca11e185bbef4b70060da"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/sirupsen/logrus"
+  source = "git@github.com:/sirupsen/logrus"
+
+[[override]]
+  name = "github.com/spf13/cobra"
+  source = "git@github.com:/dnephin/cobra"
+  version = "1.5.1"
+
+[[override]]
+  name = "github.com/docker/notary"
+  version = "v0.4.2"

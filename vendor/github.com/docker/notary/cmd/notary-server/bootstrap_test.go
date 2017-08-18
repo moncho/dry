@@ -3,11 +3,10 @@ package main
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
-
 	"github.com/docker/notary"
 	"github.com/docker/notary/tuf/testutils"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/net/context"
 )
 
 func TestBootstrap(t *testing.T) {

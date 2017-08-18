@@ -2,7 +2,6 @@ package testutils
 
 import (
 	store "github.com/docker/notary/storage"
-	"github.com/docker/notary/tuf/data"
 )
 
 // CorruptingMemoryStore corrupts all data returned by GetMeta
@@ -12,7 +11,7 @@ type CorruptingMemoryStore struct {
 
 // NewCorruptingMemoryStore returns a new instance of memory store that
 // corrupts all data requested from it.
-func NewCorruptingMemoryStore(meta map[data.RoleName][]byte) *CorruptingMemoryStore {
+func NewCorruptingMemoryStore(meta map[string][]byte) *CorruptingMemoryStore {
 	s := store.NewMemoryStore(meta)
 	return &CorruptingMemoryStore{MemoryStore: *s}
 }
@@ -35,7 +34,7 @@ type LongMemoryStore struct {
 
 // NewLongMemoryStore returns a new instance of memory store that
 // returns one byte too much data on any request to GetMeta
-func NewLongMemoryStore(meta map[data.RoleName][]byte) *LongMemoryStore {
+func NewLongMemoryStore(meta map[string][]byte) *LongMemoryStore {
 	s := store.NewMemoryStore(meta)
 	return &LongMemoryStore{MemoryStore: *s}
 }
@@ -57,7 +56,7 @@ type ShortMemoryStore struct {
 
 // NewShortMemoryStore returns a new instance of memory store that
 // returns one byte too little data on any request to GetMeta
-func NewShortMemoryStore(meta map[data.RoleName][]byte) *ShortMemoryStore {
+func NewShortMemoryStore(meta map[string][]byte) *ShortMemoryStore {
 	s := store.NewMemoryStore(meta)
 	return &ShortMemoryStore{MemoryStore: *s}
 }

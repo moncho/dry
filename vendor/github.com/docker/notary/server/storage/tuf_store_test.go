@@ -9,7 +9,7 @@ import (
 )
 
 // Produce a series of tufMeta objects and updates given a TUF repo
-func metaFromRepo(t *testing.T, gun data.GUN, version int) map[string]StoredTUFMeta {
+func metaFromRepo(t *testing.T, gun string, version int) map[string]StoredTUFMeta {
 	tufRepo, _, err := testutils.EmptyRepo(gun, "targets/a", "targets/a/b")
 	require.NoError(t, err)
 
@@ -25,7 +25,7 @@ func metaFromRepo(t *testing.T, gun data.GUN, version int) map[string]StoredTUFM
 
 	tufMeta := make(map[string]StoredTUFMeta)
 	for role, tufdata := range metaBytes {
-		tufMeta[role.String()] = SampleCustomTUFObj(gun, role, version, tufdata)
+		tufMeta[role] = SampleCustomTUFObj(gun, role, version, tufdata)
 	}
 
 	return tufMeta
@@ -35,7 +35,7 @@ func metaFromRepo(t *testing.T, gun data.GUN, version int) map[string]StoredTUFM
 // to the snapshot specified in the checksum, to potentially other role metadata by checksum
 func testTUFMetaStoreGetCurrent(t *testing.T, s MetaStore) {
 	tufDBStore := NewTUFMetaStorage(s)
-	var gun data.GUN = "testGUN"
+	gun := "testGUN"
 
 	initialRootTUF := SampleCustomTUFObj(gun, data.CanonicalRootRole, 1, nil)
 	ConsistentEmptyGetCurrentTest(t, tufDBStore, initialRootTUF)
@@ -46,7 +46,7 @@ func testTUFMetaStoreGetCurrent(t *testing.T, s MetaStore) {
 	ConsistentMissingTSAndSnapGetCurrentTest(t, tufDBStore, initialRootTUF)
 
 	// Note that get by checksum succeeds, since it does not try to walk timestamp/snapshot
-	_, _, err := tufDBStore.GetChecksum(gun, data.CanonicalRootRole, initialRootTUF.SHA256)
+	_, _, err := tufDBStore.GetChecksum(gun, data.CanonicalRootRole, initialRootTUF.Sha256)
 	require.NoError(t, err)
 
 	// Now add metadata from a valid TUF repo to ensure that we walk correctly.
@@ -67,7 +67,7 @@ func testTUFMetaStoreGetCurrent(t *testing.T, s MetaStore) {
 	require.NoError(t, s.Delete(gun), "unable to delete metadata")
 	updates = make([]MetaUpdate, 0, len(updates)-1)
 	for role, tufObj := range tufMetaByRole {
-		if role != data.CanonicalSnapshotRole.String() {
+		if role != data.CanonicalSnapshotRole {
 			updates = append(updates, MakeUpdate(tufObj))
 		}
 	}
@@ -87,7 +87,7 @@ func testTUFMetaStoreGetCurrent(t *testing.T, s MetaStore) {
 	require.NoError(t, s.UpdateCurrent(gun, MakeUpdate(orphanedRootTUF)), "unable to create orphaned root in store")
 
 	// a GetCurrent for this gun and root gets us the previous root, which is linked in timestamp and snapshot
-	ConsistentGetCurrentFoundTest(t, tufDBStore, tufMetaByRole[data.CanonicalRootRole.String()])
+	ConsistentGetCurrentFoundTest(t, tufDBStore, tufMetaByRole[data.CanonicalRootRole])
 	// the orphaned root fails on a GetCurrent even though it's in the underlying store
 	ConsistentTSAndSnapGetDifferentCurrentTest(t, tufDBStore, orphanedRootTUF)
 }

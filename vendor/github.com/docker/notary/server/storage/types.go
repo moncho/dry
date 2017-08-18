@@ -1,10 +1,8 @@
 package storage
 
-import "github.com/docker/notary/tuf/data"
-
 // MetaUpdate packages up the fields required to update a TUF record
 type MetaUpdate struct {
-	Role    data.RoleName
+	Role    string
 	Version int
 	Data    []byte
 }

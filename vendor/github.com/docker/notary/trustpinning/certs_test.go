@@ -193,7 +193,11 @@ func TestValidateRootWithPinnedCert(t *testing.T) {
 func TestValidateRootWithPinnedCertAndIntermediates(t *testing.T) {
 	now := time.Now()
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	memStore := trustmanager.NewKeyMemoryStore(passphraseRetriever)
+
+	pass := func(keyName, alias string, createNew bool, attempts int) (passphrase string, giveup bool, err error) {
+		return "password", false, nil
+	}
+	memStore := trustmanager.NewKeyMemoryStore(pass)
 	cs := cryptoservice.NewCryptoService(memStore)
 
 	// generate CA cert
@@ -311,7 +315,7 @@ func TestValidateRootWithPinnedCertAndIntermediates(t *testing.T) {
 				ecdsax509Key.ID(): ecdsax509Key,
 				otherKey.ID():     otherKey,
 			},
-			Roles: map[data.RoleName]*data.RootRole{
+			Roles: map[string]*data.RootRole{
 				"root": {
 					KeyIDs:    []string{ecdsax509Key.ID()},
 					Threshold: 1,
@@ -352,76 +356,6 @@ func TestValidateRootWithPinnedCertAndIntermediates(t *testing.T) {
 		trustpinning.TrustPinConfig{
 			Certs: map[string][]string{
 				"docker.io/notary/test": {ecdsax509Key.ID()},
-			},
-			DisableTOFU: true,
-		},
-	)
-	require.NoError(t, err, "failed to validate certID with intermediate")
-	for idx, sig := range typedSignedRoot.Signatures {
-		if sig.KeyID == ecdsax509Key.ID() {
-			typedSignedRoot.Signatures[idx].IsValid = true
-		}
-	}
-	require.Equal(t, typedSignedRoot, validatedRoot)
-
-	// test it also works with a wildcarded gun in certs
-	validatedRoot, err = trustpinning.ValidateRoot(
-		nil,
-		signedRoot,
-		"docker.io/notary/test",
-		trustpinning.TrustPinConfig{
-			Certs: map[string][]string{
-				"docker.io/notar*": {ecdsax509Key.ID()},
-			},
-			DisableTOFU: true,
-		},
-	)
-	require.NoError(t, err, "failed to validate certID with intermediate")
-	for idx, sig := range typedSignedRoot.Signatures {
-		if sig.KeyID == ecdsax509Key.ID() {
-			typedSignedRoot.Signatures[idx].IsValid = true
-		}
-	}
-	require.Equal(t, typedSignedRoot, validatedRoot)
-
-	// incorrect key id on wildcard match should fail
-	_, err = trustpinning.ValidateRoot(
-		nil,
-		signedRoot,
-		"docker.io/notary/test",
-		trustpinning.TrustPinConfig{
-			Certs: map[string][]string{
-				"docker.io/notar*": {"badID"},
-			},
-			DisableTOFU: true,
-		},
-	)
-	require.Error(t, err, "failed to validate certID with intermediate")
-
-	// exact match should take precedence even if it fails validation
-	_, err = trustpinning.ValidateRoot(
-		nil,
-		signedRoot,
-		"docker.io/notary/test",
-		trustpinning.TrustPinConfig{
-			Certs: map[string][]string{
-				"docker.io/notary/test": {"badID"},
-				"docker.io/notar*":      {ecdsax509Key.ID()},
-			},
-			DisableTOFU: true,
-		},
-	)
-	require.Error(t, err, "failed to validate certID with intermediate")
-
-	// exact match should take precedence
-	validatedRoot, err = trustpinning.ValidateRoot(
-		nil,
-		signedRoot,
-		"docker.io/notary/test",
-		trustpinning.TrustPinConfig{
-			Certs: map[string][]string{
-				"docker.io/notary/test": {ecdsax509Key.ID()},
-				"docker.io/notar*":      {"badID"},
 			},
 			DisableTOFU: true,
 		},
@@ -534,7 +468,7 @@ func TestValidateRootWithPinnedCA(t *testing.T) {
 
 	testRoot, err := data.NewRoot(
 		map[string]data.PublicKey{newRootKey.ID(): newRootKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &rootRole.RootRole,
 			data.CanonicalTimestampRole: &rootRole.RootRole,
 			data.CanonicalTargetsRole:   &rootRole.RootRole,
@@ -638,7 +572,7 @@ func TestValidateSuccessfulRootRotation(t *testing.T) {
 
 func testValidateSuccessfulRootRotation(t *testing.T, keyAlg, rootKeyType string) {
 	// The gun to test
-	var gun data.GUN = "docker.com/notary"
+	gun := "docker.com/notary"
 
 	memKeyStore := trustmanager.NewKeyMemoryStore(passphraseRetriever)
 	cs := cryptoservice.NewCryptoService(memKeyStore)
@@ -652,7 +586,7 @@ func testValidateSuccessfulRootRotation(t *testing.T, keyAlg, rootKeyType string
 
 	origTestRoot, err := data.NewRoot(
 		map[string]data.PublicKey{origRootKey.ID(): origRootKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &origRootRole.RootRole,
 			data.CanonicalTargetsRole:   &origRootRole.RootRole,
 			data.CanonicalSnapshotRole:  &origRootRole.RootRole,
@@ -680,7 +614,7 @@ func testValidateSuccessfulRootRotation(t *testing.T, keyAlg, rootKeyType string
 
 	testRoot, err := data.NewRoot(
 		map[string]data.PublicKey{replRootKey.ID(): replRootKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &rootRole.RootRole,
 			data.CanonicalTimestampRole: &rootRole.RootRole,
 			data.CanonicalTargetsRole:   &rootRole.RootRole,
@@ -722,7 +656,7 @@ func TestValidateRootRotationMissingOrigSig(t *testing.T) {
 }
 
 func testValidateRootRotationMissingOrigSig(t *testing.T, keyAlg, rootKeyType string) {
-	var gun data.GUN = "docker.com/notary"
+	gun := "docker.com/notary"
 
 	memKeyStore := trustmanager.NewKeyMemoryStore(passphraseRetriever)
 	cs := cryptoservice.NewCryptoService(memKeyStore)
@@ -736,7 +670,7 @@ func testValidateRootRotationMissingOrigSig(t *testing.T, keyAlg, rootKeyType st
 
 	origTestRoot, err := data.NewRoot(
 		map[string]data.PublicKey{origRootKey.ID(): origRootKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &origRootRole.RootRole,
 			data.CanonicalTargetsRole:   &origRootRole.RootRole,
 			data.CanonicalSnapshotRole:  &origRootRole.RootRole,
@@ -764,7 +698,7 @@ func testValidateRootRotationMissingOrigSig(t *testing.T, keyAlg, rootKeyType st
 
 	testRoot, err := data.NewRoot(
 		map[string]data.PublicKey{replRootKey.ID(): replRootKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &rootRole.RootRole,
 			data.CanonicalTargetsRole:   &rootRole.RootRole,
 			data.CanonicalSnapshotRole:  &rootRole.RootRole,
@@ -803,7 +737,7 @@ func TestValidateRootRotationMissingNewSig(t *testing.T) {
 }
 
 func testValidateRootRotationMissingNewSig(t *testing.T, keyAlg, rootKeyType string) {
-	var gun data.GUN = "docker.com/notary"
+	gun := "docker.com/notary"
 
 	memKeyStore := trustmanager.NewKeyMemoryStore(passphraseRetriever)
 	cs := cryptoservice.NewCryptoService(memKeyStore)
@@ -817,7 +751,7 @@ func testValidateRootRotationMissingNewSig(t *testing.T, keyAlg, rootKeyType str
 
 	origTestRoot, err := data.NewRoot(
 		map[string]data.PublicKey{origRootKey.ID(): origRootKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &origRootRole.RootRole,
 			data.CanonicalTargetsRole:   &origRootRole.RootRole,
 			data.CanonicalSnapshotRole:  &origRootRole.RootRole,
@@ -845,7 +779,7 @@ func testValidateRootRotationMissingNewSig(t *testing.T, keyAlg, rootKeyType str
 
 	testRoot, err := data.NewRoot(
 		map[string]data.PublicKey{replRootKey.ID(): replRootKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &rootRole.RootRole,
 			data.CanonicalTargetsRole:   &rootRole.RootRole,
 			data.CanonicalSnapshotRole:  &rootRole.RootRole,
@@ -872,7 +806,7 @@ func testValidateRootRotationMissingNewSig(t *testing.T, keyAlg, rootKeyType str
 // the specified trust pinning is respected with the new root for the Certs and TOFUs settings
 func TestValidateRootRotationTrustPinning(t *testing.T) {
 	// The gun to test
-	var gun data.GUN = "docker.com/notary"
+	gun := "docker.com/notary"
 
 	memKeyStore := trustmanager.NewKeyMemoryStore(passphraseRetriever)
 	cs := cryptoservice.NewCryptoService(memKeyStore)
@@ -886,7 +820,7 @@ func TestValidateRootRotationTrustPinning(t *testing.T) {
 
 	origTestRoot, err := data.NewRoot(
 		map[string]data.PublicKey{origRootKey.ID(): origRootKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &origRootRole.RootRole,
 			data.CanonicalTargetsRole:   &origRootRole.RootRole,
 			data.CanonicalSnapshotRole:  &origRootRole.RootRole,
@@ -914,7 +848,7 @@ func TestValidateRootRotationTrustPinning(t *testing.T) {
 
 	testRoot, err := data.NewRoot(
 		map[string]data.PublicKey{replRootKey.ID(): replRootKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &rootRole.RootRole,
 			data.CanonicalTimestampRole: &rootRole.RootRole,
 			data.CanonicalTargetsRole:   &rootRole.RootRole,
@@ -936,7 +870,7 @@ func TestValidateRootRotationTrustPinning(t *testing.T) {
 	// This call to trustpinning.ValidateRoot will fail due to the trust pinning mismatch in certs
 	invalidCertConfig := trustpinning.TrustPinConfig{
 		Certs: map[string][]string{
-			gun.String(): {origRootKey.ID()},
+			gun: {origRootKey.ID()},
 		},
 		DisableTOFU: true,
 	}
@@ -946,7 +880,7 @@ func TestValidateRootRotationTrustPinning(t *testing.T) {
 	// This call will succeed since we include the new root cert ID (and the old one)
 	validCertConfig := trustpinning.TrustPinConfig{
 		Certs: map[string][]string{
-			gun.String(): {origRootKey.ID(), replRootKey.ID()},
+			gun: {origRootKey.ID(), replRootKey.ID()},
 		},
 		DisableTOFU: true,
 	}
@@ -963,7 +897,7 @@ func TestValidateRootRotationTrustPinning(t *testing.T) {
 	// This call will also succeed since we only need the new replacement root ID to be pinned
 	validCertConfig = trustpinning.TrustPinConfig{
 		Certs: map[string][]string{
-			gun.String(): {replRootKey.ID()},
+			gun: {replRootKey.ID()},
 		},
 		DisableTOFU: true,
 	}
@@ -980,7 +914,7 @@ func TestValidateRootRotationTrustPinning(t *testing.T) {
 // TestValidateRootRotationTrustPinningInvalidCA runs a full root certificate rotation but ensures that
 // the specified trust pinning rejects the new root for not being signed by the specified CA
 func TestValidateRootRotationTrustPinningInvalidCA(t *testing.T) {
-	var gun data.GUN = "notary-signer"
+	gun := "notary-signer"
 	keyAlg := data.RSAKey
 	// Temporary directory where test files will be created
 	tempBaseDir, err := ioutil.TempDir("", "notary-test-")
@@ -1003,7 +937,7 @@ func TestValidateRootRotationTrustPinningInvalidCA(t *testing.T) {
 
 	testRoot, err := data.NewRoot(
 		map[string]data.PublicKey{origRootKey.ID(): origRootKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &rootRole.RootRole,
 			data.CanonicalTimestampRole: &rootRole.RootRole,
 			data.CanonicalTargetsRole:   &rootRole.RootRole,
@@ -1041,7 +975,7 @@ func TestValidateRootRotationTrustPinningInvalidCA(t *testing.T) {
 	require.NoError(t, err)
 	newRoot, err := data.NewRoot(
 		map[string]data.PublicKey{replRootKey.ID(): replRootKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &rootRole.RootRole,
 			data.CanonicalTimestampRole: &rootRole.RootRole,
 			data.CanonicalTargetsRole:   &rootRole.RootRole,
@@ -1059,84 +993,26 @@ func TestValidateRootRotationTrustPinningInvalidCA(t *testing.T) {
 
 	// Check that we respect the trust pinning on rotation
 	validCAFilepath := "../fixtures/root-ca.crt"
-	_, err = trustpinning.ValidateRoot(prevRoot, newSignedTestRoot, gun, trustpinning.TrustPinConfig{CA: map[string]string{gun.String(): validCAFilepath}, DisableTOFU: true})
+	_, err = trustpinning.ValidateRoot(prevRoot, newSignedTestRoot, gun, trustpinning.TrustPinConfig{CA: map[string]string{gun: validCAFilepath}, DisableTOFU: true})
 	require.Error(t, err)
 }
 
-func generateTestingCertificate(rootKey data.PrivateKey, gun data.GUN, timeToExpire time.Duration) (*x509.Certificate, error) {
+func generateTestingCertificate(rootKey data.PrivateKey, gun string, timeToExpire time.Duration) (*x509.Certificate, error) {
 	startTime := time.Now()
 	return cryptoservice.GenerateCertificate(rootKey, gun, startTime, startTime.Add(timeToExpire))
 }
 
-func generateExpiredTestingCertificate(rootKey data.PrivateKey, gun data.GUN) (*x509.Certificate, error) {
+func generateExpiredTestingCertificate(rootKey data.PrivateKey, gun string) (*x509.Certificate, error) {
 	startTime := time.Now().AddDate(-10, 0, 0)
 	return cryptoservice.GenerateCertificate(rootKey, gun, startTime, startTime.AddDate(1, 0, 0))
 }
 
-func TestParsePEMPublicKey(t *testing.T) {
-	var gun data.GUN = "notary"
-	memStore := trustmanager.NewKeyMemoryStore(passphraseRetriever)
-	cs := cryptoservice.NewCryptoService(memStore)
-
-	// can parse ECDSA PEM
-	ecdsaPubKey, err := cs.Create("root", "docker.io/notary/test", data.ECDSAKey)
-	require.NoError(t, err)
-	ecdsaPemBytes := pem.EncodeToMemory(&pem.Block{
-		Type:    "PUBLIC KEY",
-		Headers: nil,
-		Bytes:   ecdsaPubKey.Public(),
-	})
-
-	ecdsaParsedPubKey, err := utils.ParsePEMPublicKey(ecdsaPemBytes)
-	require.NoError(t, err, "no key: %s", ecdsaParsedPubKey.Public())
-
-	// can parse certificates
-	ecdsaPrivKey, _, err := memStore.GetKey(ecdsaPubKey.ID())
-	require.NoError(t, err)
-	cert, err := generateTestingCertificate(ecdsaPrivKey, gun, notary.Day*30)
-	require.NoError(t, err)
-	ecdsaPubKeyFromCert, err := utils.ParsePEMPublicKey(utils.CertToPEM(cert))
-	require.NoError(t, err)
-
-	thatData := []byte{1, 2, 3, 4}
-	sig, err := ecdsaPrivKey.Sign(rand.Reader, thatData, nil)
-	require.NoError(t, err)
-	err = signed.ECDSAVerifier{}.Verify(ecdsaPubKeyFromCert, sig, thatData)
-	require.NoError(t, err)
-
-	// can parse RSA PEM
-	rsaPubKey, err := cs.Create("root", "docker.io/notary/test2", data.RSAKey)
-	require.NoError(t, err)
-	rsaPemBytes := pem.EncodeToMemory(&pem.Block{
-		Type:    "PUBLIC KEY",
-		Headers: nil,
-		Bytes:   rsaPubKey.Public(),
-	})
-	_, err = utils.ParsePEMPublicKey(rsaPemBytes)
-	require.NoError(t, err)
-
-	// unsupported key type
-	unsupportedPemBytes := pem.EncodeToMemory(&pem.Block{
-		Type:    "PRIVATE KEY",
-		Headers: nil,
-		Bytes:   []byte{0, 0, 0, 0},
-	})
-	_, err = utils.ParsePEMPublicKey(unsupportedPemBytes)
-	require.Error(t, err)
-
-	// bad key
-	badPemBytes := pem.EncodeToMemory(&pem.Block{
-		Type:    "PUBLIC KEY",
-		Headers: nil,
-		Bytes:   []byte{0, 0, 0, 0},
-	})
-	_, err = utils.ParsePEMPublicKey(badPemBytes)
-	require.Error(t, err)
-}
-
 func TestCheckingCertExpiry(t *testing.T) {
-	var gun data.GUN = "notary"
-	memStore := trustmanager.NewKeyMemoryStore(passphraseRetriever)
+	gun := "notary"
+	pass := func(keyName, alias string, createNew bool, attempts int) (passphrase string, giveup bool, err error) {
+		return "password", false, nil
+	}
+	memStore := trustmanager.NewKeyMemoryStore(pass)
 	cs := cryptoservice.NewCryptoService(memStore)
 	testPubKey, err := cs.Create(data.CanonicalRootRole, gun, data.ECDSAKey)
 	require.NoError(t, err)
@@ -1159,7 +1035,7 @@ func TestCheckingCertExpiry(t *testing.T) {
 	require.NoError(t, err)
 	testRoot, err := data.NewRoot(
 		map[string]data.PublicKey{almostExpiredPubKey.ID(): almostExpiredPubKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &rootRole.RootRole,
 			data.CanonicalTimestampRole: &rootRole.RootRole,
 			data.CanonicalTargetsRole:   &rootRole.RootRole,
@@ -1188,7 +1064,7 @@ func TestCheckingCertExpiry(t *testing.T) {
 	require.NoError(t, err)
 	testRoot, err = data.NewRoot(
 		map[string]data.PublicKey{expiredPubKey.ID(): expiredPubKey},
-		map[data.RoleName]*data.RootRole{
+		map[string]*data.RootRole{
 			data.CanonicalRootRole:      &rootRole.RootRole,
 			data.CanonicalTimestampRole: &rootRole.RootRole,
 			data.CanonicalTargetsRole:   &rootRole.RootRole,
@@ -1212,7 +1088,11 @@ func TestCheckingCertExpiry(t *testing.T) {
 func TestValidateRootWithExpiredIntermediate(t *testing.T) {
 	now := time.Now()
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	memStore := trustmanager.NewKeyMemoryStore(passphraseRetriever)
+
+	pass := func(keyName, alias string, createNew bool, attempts int) (passphrase string, giveup bool, err error) {
+		return "password", false, nil
+	}
+	memStore := trustmanager.NewKeyMemoryStore(pass)
 	cs := cryptoservice.NewCryptoService(memStore)
 
 	// generate CA cert
@@ -1330,7 +1210,7 @@ func TestValidateRootWithExpiredIntermediate(t *testing.T) {
 				ecdsax509Key.ID(): ecdsax509Key,
 				otherKey.ID():     otherKey,
 			},
-			Roles: map[data.RoleName]*data.RootRole{
+			Roles: map[string]*data.RootRole{
 				"root": {
 					KeyIDs:    []string{ecdsax509Key.ID()},
 					Threshold: 1,
@@ -1368,80 +1248,4 @@ func TestValidateRootWithExpiredIntermediate(t *testing.T) {
 		trustpinning.TrustPinConfig{},
 	)
 	require.Error(t, err, "failed to invalidate expired intermediate certificate")
-}
-
-func TestCheckingWildcardCert(t *testing.T) {
-	memStore := trustmanager.NewKeyMemoryStore(passphraseRetriever)
-	cs := cryptoservice.NewCryptoService(memStore)
-	testPubKey, err := cs.Create(data.CanonicalRootRole, "docker.io/notary/*", data.ECDSAKey)
-	require.NoError(t, err)
-	testPrivKey, _, err := memStore.GetKey(testPubKey.ID())
-	require.NoError(t, err)
-
-	testCert, err := generateTestingCertificate(testPrivKey, "docker.io/notary/*", notary.Year)
-	require.NoError(t, err)
-	testCertPubKey, err := utils.ParsePEMPublicKey(utils.CertToPEM(testCert))
-	require.NoError(t, err)
-
-	rootRole, err := data.NewRole(data.CanonicalRootRole, 1, []string{testCertPubKey.ID()}, nil)
-	require.NoError(t, err)
-	testRoot, err := data.NewRoot(
-		map[string]data.PublicKey{testCertPubKey.ID(): testCertPubKey},
-		map[data.RoleName]*data.RootRole{
-			data.CanonicalRootRole:      &rootRole.RootRole,
-			data.CanonicalTimestampRole: &rootRole.RootRole,
-			data.CanonicalTargetsRole:   &rootRole.RootRole,
-			data.CanonicalSnapshotRole:  &rootRole.RootRole},
-		false,
-	)
-	testRoot.Signed.Version = 1
-	require.NoError(t, err, "Failed to create new root")
-
-	signedTestRoot, err := testRoot.ToSigned()
-	require.NoError(t, err)
-
-	err = signed.Sign(cs, signedTestRoot, []data.PublicKey{testCertPubKey}, 1, nil)
-	require.NoError(t, err)
-
-	_, err = trustpinning.ValidateRoot(
-		nil,
-		signedTestRoot,
-		"docker.io/notary/test",
-		trustpinning.TrustPinConfig{},
-	)
-	require.NoError(t, err, "expected wildcard cert to validate")
-
-	_, err = trustpinning.ValidateRoot(
-		nil,
-		signedTestRoot,
-		"docker.io/not-a-match",
-		trustpinning.TrustPinConfig{},
-	)
-	require.Error(t, err, "expected wildcard cert not to validate")
-}
-
-func TestWildcardMatching(t *testing.T) {
-	var wildcardTests = []struct {
-		CN  string
-		gun string
-		out bool
-	}{
-		{"docker.com/*", "docker.com/notary", true},
-		{"docker.com/**", "docker.com/notary", true},
-		{"*", "docker.com/any", true},
-		{"*", "", true},
-		{"**", "docker.com/any", true},
-		{"test/*******", "test/many/wildcard", true},
-		{"test/**/*/", "test/test", false},
-		{"test/*/wild", "test/test/wild", false},
-		{"*/all", "test/all", false},
-		{"docker.com/*/*", "docker.com/notary/test", false},
-		{"docker.com/*/**", "docker.com/notary/test", false},
-		{"", "*", false},
-		{"*abc*", "abc", false},
-		{"test/*/wild*", "test/test/wild", false},
-	}
-	for _, tt := range wildcardTests {
-		require.Equal(t, trustpinning.MatchCNToGun(tt.CN, data.GUN(tt.gun)), tt.out)
-	}
 }

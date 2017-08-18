@@ -8,9 +8,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
-
 	"github.com/docker/notary"
 	"github.com/docker/notary/server/storage"
 	store "github.com/docker/notary/storage"
@@ -18,6 +15,8 @@ import (
 	"github.com/docker/notary/tuf/signed"
 	"github.com/docker/notary/tuf/testutils"
 	"github.com/docker/notary/tuf/validation"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/net/context"
 )
 
 // Ensures that the httpstore can interpret the errors returned from the server
@@ -49,8 +48,8 @@ func TestValidationErrorFormat(t *testing.T) {
 	// No snapshot is passed, and the server doesn't have the snapshot key,
 	// so ErrBadHierarchy
 	err = client.SetMulti(map[string][]byte{
-		data.CanonicalRootRole.String():    rs,
-		data.CanonicalTargetsRole.String(): rt,
+		data.CanonicalRootRole:    rs,
+		data.CanonicalTargetsRole: rt,
 	})
 	require.Error(t, err)
 	require.IsType(t, validation.ErrBadHierarchy{}, err)

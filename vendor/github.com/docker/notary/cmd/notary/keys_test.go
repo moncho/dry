@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 
+	"path/filepath"
+
 	"github.com/docker/notary"
 	"github.com/docker/notary/client"
 	"github.com/docker/notary/cryptoservice"
@@ -276,10 +278,10 @@ func TestRotateKeyTargetCannotBeServerManaged(t *testing.T) {
 	k := &keyCommander{
 		configGetter:           func() (*viper.Viper, error) { return viper.New(), nil },
 		getRetriever:           func() notary.PassRetriever { return passphrase.ConstantRetriever("pass") },
-		rotateKeyRole:          data.CanonicalTargetsRole.String(),
+		rotateKeyRole:          data.CanonicalTargetsRole,
 		rotateKeyServerManaged: true,
 	}
-	err := k.keysRotate(&cobra.Command{}, []string{"gun", data.CanonicalTargetsRole.String()})
+	err := k.keysRotate(&cobra.Command{}, []string{"gun", data.CanonicalTargetsRole})
 	require.Error(t, err)
 	require.IsType(t, client.ErrInvalidRemoteRole{}, err)
 }
@@ -290,10 +292,10 @@ func TestRotateKeyTimestampCannotBeLocallyManaged(t *testing.T) {
 	k := &keyCommander{
 		configGetter:           func() (*viper.Viper, error) { return viper.New(), nil },
 		getRetriever:           func() notary.PassRetriever { return passphrase.ConstantRetriever("pass") },
-		rotateKeyRole:          data.CanonicalTimestampRole.String(),
+		rotateKeyRole:          data.CanonicalTimestampRole,
 		rotateKeyServerManaged: false,
 	}
-	err := k.keysRotate(&cobra.Command{}, []string{"gun", data.CanonicalTimestampRole.String()})
+	err := k.keysRotate(&cobra.Command{}, []string{"gun", data.CanonicalTimestampRole})
 	require.Error(t, err)
 	require.IsType(t, client.ErrInvalidLocalRole{}, err)
 }
@@ -304,7 +306,7 @@ func TestRotateKeyNoGUN(t *testing.T) {
 	k := &keyCommander{
 		configGetter:  func() (*viper.Viper, error) { return viper.New(), nil },
 		getRetriever:  func() notary.PassRetriever { return passphrase.ConstantRetriever("pass") },
-		rotateKeyRole: data.CanonicalTargetsRole.String(),
+		rotateKeyRole: data.CanonicalTargetsRole,
 	}
 	err := k.keysRotate(&cobra.Command{}, []string{})
 	require.Error(t, err)
@@ -312,8 +314,8 @@ func TestRotateKeyNoGUN(t *testing.T) {
 }
 
 // initialize a repo with keys, so they can be rotated
-func setUpRepo(t *testing.T, tempBaseDir string, gun data.GUN, ret notary.PassRetriever) (
-	*httptest.Server, map[string]data.RoleName) {
+func setUpRepo(t *testing.T, tempBaseDir, gun string, ret notary.PassRetriever) (
+	*httptest.Server, map[string]string) {
 
 	// Set up server
 	ctx := context.WithValue(
@@ -332,11 +334,11 @@ func setUpRepo(t *testing.T, tempBaseDir string, gun data.GUN, ret notary.PassRe
 	cryptoService := cryptoservice.NewCryptoService(trustmanager.NewKeyMemoryStore(ret))
 	ts := httptest.NewServer(server.RootHandler(ctx, nil, cryptoService, nil, nil, nil))
 
-	repo, err := client.NewFileCachedNotaryRepository(
+	repo, err := client.NewNotaryRepository(
 		tempBaseDir, gun, ts.URL, http.DefaultTransport, ret, trustpinning.TrustPinConfig{})
 	require.NoError(t, err, "error creating repo: %s", err)
 
-	rootPubKey, err := repo.CryptoService.Create(data.CanonicalRootRole, "", data.ECDSAKey)
+	rootPubKey, err := repo.CryptoService.Create("root", "", data.ECDSAKey)
 	require.NoError(t, err, "error generating root key: %s", err)
 
 	err = repo.Initialize([]string{rootPubKey.ID()})
@@ -349,13 +351,13 @@ func setUpRepo(t *testing.T, tempBaseDir string, gun data.GUN, ret notary.PassRe
 // that the correct config variables are passed for the client to request a key
 // from the remote server.
 func TestRotateKeyRemoteServerManagesKey(t *testing.T) {
-	for _, role := range []string{data.CanonicalSnapshotRole.String(), data.CanonicalTimestampRole.String()} {
+	for _, role := range []string{data.CanonicalSnapshotRole, data.CanonicalTimestampRole} {
 		setUp(t)
 		// Temporary directory where test files will be created
 		tempBaseDir, err := ioutil.TempDir("", "notary-test-")
 		defer os.RemoveAll(tempBaseDir)
 		require.NoError(t, err, "failed to create a temporary directory: %s", err)
-		var gun data.GUN = "docker.com/notary"
+		gun := "docker.com/notary"
 
 		ret := passphrase.ConstantRetriever("pass")
 
@@ -373,9 +375,9 @@ func TestRotateKeyRemoteServerManagesKey(t *testing.T) {
 			getRetriever:           func() notary.PassRetriever { return ret },
 			rotateKeyServerManaged: true,
 		}
-		require.NoError(t, k.keysRotate(&cobra.Command{}, []string{gun.String(), role, "-r"}))
+		require.NoError(t, k.keysRotate(&cobra.Command{}, []string{gun, role, "-r"}))
 
-		repo, err := client.NewFileCachedNotaryRepository(tempBaseDir, data.GUN(gun), ts.URL, http.DefaultTransport, ret, trustpinning.TrustPinConfig{})
+		repo, err := client.NewNotaryRepository(tempBaseDir, gun, ts.URL, http.DefaultTransport, ret, trustpinning.TrustPinConfig{})
 		require.NoError(t, err, "error creating repo: %s", err)
 
 		cl, err := repo.GetChangelist()
@@ -384,7 +386,7 @@ func TestRotateKeyRemoteServerManagesKey(t *testing.T) {
 
 		finalKeys := repo.CryptoService.ListAllKeys()
 		// no keys have been created, since a remote key was specified
-		if role == data.CanonicalSnapshotRole.String() {
+		if role == data.CanonicalSnapshotRole {
 			require.Len(t, finalKeys, 2)
 			for k, r := range initialKeys {
 				if r != data.CanonicalSnapshotRole {
@@ -410,7 +412,7 @@ func TestRotateKeyBothKeys(t *testing.T) {
 	tempBaseDir, err := ioutil.TempDir("", "notary-test-")
 	defer os.RemoveAll(tempBaseDir)
 	require.NoError(t, err, "failed to create a temporary directory: %s", err)
-	var gun data.GUN = "docker.com/notary"
+	gun := "docker.com/notary"
 
 	ret := passphrase.ConstantRetriever("pass")
 
@@ -426,10 +428,10 @@ func TestRotateKeyBothKeys(t *testing.T) {
 		},
 		getRetriever: func() notary.PassRetriever { return ret },
 	}
-	require.NoError(t, k.keysRotate(&cobra.Command{}, []string{gun.String(), data.CanonicalTargetsRole.String()}))
-	require.NoError(t, k.keysRotate(&cobra.Command{}, []string{gun.String(), data.CanonicalSnapshotRole.String()}))
+	require.NoError(t, k.keysRotate(&cobra.Command{}, []string{gun, data.CanonicalTargetsRole}))
+	require.NoError(t, k.keysRotate(&cobra.Command{}, []string{gun, data.CanonicalSnapshotRole}))
 
-	repo, err := client.NewFileCachedNotaryRepository(tempBaseDir, data.GUN(gun), ts.URL, nil, ret, trustpinning.TrustPinConfig{})
+	repo, err := client.NewNotaryRepository(tempBaseDir, gun, ts.URL, nil, ret, trustpinning.TrustPinConfig{})
 	require.NoError(t, err, "error creating repo: %s", err)
 
 	cl, err := repo.GetChangelist()
@@ -453,7 +455,7 @@ func TestRotateKeyBothKeys(t *testing.T) {
 		}
 	}
 
-	found := make(map[data.RoleName]bool)
+	found := make(map[string]bool)
 	for _, role := range newKeys {
 		found[role] = true
 	}
@@ -469,7 +471,7 @@ func TestRotateKeyRootIsInteractive(t *testing.T) {
 	tempBaseDir, err := ioutil.TempDir("", "notary-test-")
 	defer os.RemoveAll(tempBaseDir)
 	require.NoError(t, err, "failed to create a temporary directory: %s", err)
-	var gun data.GUN = "docker.com/notary"
+	gun := "docker.com/notary"
 
 	ret := passphrase.ConstantRetriever("pass")
 
@@ -490,11 +492,11 @@ func TestRotateKeyRootIsInteractive(t *testing.T) {
 	out := bytes.NewBuffer(make([]byte, 0, 10))
 	c.SetOutput(out)
 
-	require.NoError(t, k.keysRotate(c, []string{gun.String(), data.CanonicalRootRole.String()}))
+	require.NoError(t, k.keysRotate(c, []string{gun, data.CanonicalRootRole}))
 
 	require.Contains(t, out.String(), "Aborting action")
 
-	repo, err := client.NewFileCachedNotaryRepository(tempBaseDir, gun, ts.URL, nil, ret, trustpinning.TrustPinConfig{})
+	repo, err := client.NewNotaryRepository(tempBaseDir, gun, ts.URL, nil, ret, trustpinning.TrustPinConfig{})
 	require.NoError(t, err, "error creating repo: %s", err)
 
 	// There should still just be one root key (and one targets and one snapshot)
@@ -531,7 +533,7 @@ func TestChangeKeyPassphraseNonexistentID(t *testing.T) {
 		getRetriever: func() notary.PassRetriever { return passphrase.ConstantRetriever("pass") },
 	}
 	// Valid ID size, but does not exist as a key ID
-	err := k.keyPassphraseChange(&cobra.Command{}, []string{strings.Repeat("x", notary.SHA256HexSize)})
+	err := k.keyPassphraseChange(&cobra.Command{}, []string{strings.Repeat("x", notary.Sha256HexSize)})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "could not retrieve local key for key ID provided")
 }
@@ -555,17 +557,11 @@ func TestExportKeys(t *testing.T) {
 	err = output.Close() // close so export can open
 	require.NoError(t, err)
 
-	keyHeaders := make(map[string]string)
-	keyHeaders["gun"] = "discworld"
-	b := &pem.Block{
-		Headers: keyHeaders,
-	}
+	b := &pem.Block{}
 	b.Bytes = make([]byte, 1000)
 	rand.Read(b.Bytes)
 
-	c := &pem.Block{
-		Headers: keyHeaders,
-	}
+	c := &pem.Block{}
 	c.Bytes = make([]byte, 1000)
 	rand.Read(c.Bytes)
 
@@ -575,9 +571,9 @@ func TestExportKeys(t *testing.T) {
 
 	fileStore, err := store.NewPrivateKeyFileStorage(tempBaseDir, notary.KeyExtension)
 	require.NoError(t, err)
-	err = fileStore.Set("ankh", bBytes)
+	err = fileStore.Set(filepath.Join(notary.NonRootKeysSubdir, "discworld/ankh"), bBytes)
 	require.NoError(t, err)
-	err = fileStore.Set("morpork", cBytes)
+	err = fileStore.Set(filepath.Join(notary.NonRootKeysSubdir, "discworld/morpork"), cBytes)
 	require.NoError(t, err)
 
 	err = k.exportKeys(&cobra.Command{}, nil)
@@ -588,12 +584,12 @@ func TestExportKeys(t *testing.T) {
 
 	block, rest := pem.Decode(outRes)
 	require.Equal(t, b.Bytes, block.Bytes)
-	require.Equal(t, "ankh", block.Headers["path"])
+	require.Equal(t, filepath.Join(notary.NonRootKeysSubdir, "discworld/ankh"), block.Headers["path"])
 	require.Equal(t, "discworld", block.Headers["gun"])
 
 	block, rest = pem.Decode(rest)
 	require.Equal(t, c.Bytes, block.Bytes)
-	require.Equal(t, "morpork", block.Headers["path"])
+	require.Equal(t, filepath.Join(notary.NonRootKeysSubdir, "discworld/morpork"), block.Headers["path"])
 	require.Equal(t, "discworld", block.Headers["gun"])
 	require.Len(t, rest, 0)
 
@@ -630,50 +626,39 @@ func TestExportKeysByGUN(t *testing.T) {
 	require.NoError(t, err)
 	k.exportGUNs = []string{"ankh"}
 
-	keyHeaders := make(map[string]string)
-	keyHeaders["gun"] = "ankh"
-	keyHeaders["role"] = "snapshot"
-	b := &pem.Block{
-		Headers: keyHeaders,
-	}
+	b := &pem.Block{}
 	b.Bytes = make([]byte, 1000)
 	rand.Read(b.Bytes)
 
-	b2 := &pem.Block{
-		Headers: keyHeaders,
-	}
+	b2 := &pem.Block{}
 	b2.Bytes = make([]byte, 1000)
 	rand.Read(b2.Bytes)
 
-	otherHeaders := make(map[string]string)
-	otherHeaders["gun"] = "morpork"
-	otherHeaders["role"] = "snapshot"
-	c := &pem.Block{
-		Headers: otherHeaders,
-	}
+	c := &pem.Block{}
 	c.Bytes = make([]byte, 1000)
 	rand.Read(c.Bytes)
 
 	bBytes := pem.EncodeToMemory(b)
 	b2Bytes := pem.EncodeToMemory(b2)
 	cBytes := pem.EncodeToMemory(c)
+	require.NoError(t, err)
 
 	fileStore, err := store.NewPrivateKeyFileStorage(tempBaseDir, notary.KeyExtension)
 	require.NoError(t, err)
 	// we have to manually prepend the NonRootKeysSubdir because
 	// KeyStore would be expected to do this for us.
 	err = fileStore.Set(
-		"12345",
+		filepath.Join(notary.NonRootKeysSubdir, "ankh/one"),
 		bBytes,
 	)
 	require.NoError(t, err)
 	err = fileStore.Set(
-		"23456",
+		filepath.Join(notary.NonRootKeysSubdir, "ankh/two"),
 		b2Bytes,
 	)
 	require.NoError(t, err)
 	err = fileStore.Set(
-		"34567",
+		filepath.Join(notary.NonRootKeysSubdir, "morpork/three"),
 		cBytes,
 	)
 	require.NoError(t, err)
@@ -688,7 +673,7 @@ func TestExportKeysByGUN(t *testing.T) {
 	require.Equal(t, b.Bytes, block.Bytes)
 	require.Equal(
 		t,
-		"12345",
+		filepath.Join(notary.NonRootKeysSubdir, "ankh/one"),
 		block.Headers["path"],
 	)
 
@@ -696,7 +681,7 @@ func TestExportKeysByGUN(t *testing.T) {
 	require.Equal(t, b2.Bytes, block.Bytes)
 	require.Equal(
 		t,
-		"23456",
+		filepath.Join(notary.NonRootKeysSubdir, "ankh/two"),
 		block.Headers["path"],
 	)
 	require.Len(t, rest, 0)
@@ -740,11 +725,11 @@ func TestExportKeysByID(t *testing.T) {
 
 	fileStore, err := store.NewPrivateKeyFileStorage(tempBaseDir, notary.KeyExtension)
 	require.NoError(t, err)
-	err = fileStore.Set("one", bBytes)
+	err = fileStore.Set("ankh/one", bBytes)
 	require.NoError(t, err)
-	err = fileStore.Set("two", b2Bytes)
+	err = fileStore.Set("ankh/two", b2Bytes)
 	require.NoError(t, err)
-	err = fileStore.Set("three", cBytes)
+	err = fileStore.Set("morpork/three", cBytes)
 	require.NoError(t, err)
 
 	err = k.exportKeys(&cobra.Command{}, nil)
@@ -755,11 +740,11 @@ func TestExportKeysByID(t *testing.T) {
 
 	block, rest := pem.Decode(outRes)
 	require.Equal(t, b.Bytes, block.Bytes)
-	require.Equal(t, "one", block.Headers["path"])
+	require.Equal(t, "ankh/one", block.Headers["path"])
 
 	block, rest = pem.Decode(rest)
 	require.Equal(t, c.Bytes, block.Bytes)
-	require.Equal(t, "three", block.Headers["path"])
+	require.Equal(t, "morpork/three", block.Headers["path"])
 	require.Len(t, rest, 0)
 }
 

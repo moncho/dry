@@ -14,12 +14,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNewFilesystemStore(t *testing.T) {
+	testDir, err := ioutil.TempDir("", "testdir")
+	require.NoError(t, err)
+	defer os.RemoveAll(testDir)
+
+	_, err = NewFilesystemStore(testDir, "metadata", "json")
+	require.Nil(t, err, "Initializing FilesystemStore returned unexpected error: %v", err)
+
+	info, err := os.Stat(filepath.Join(testDir, "metadata"))
+	require.Nil(t, err, "Error attempting to stat metadata dir: %v", err)
+	require.NotNil(t, info, "Nil FileInfo from stat on metadata dir")
+	require.True(t, 0700&info.Mode() != 0, "Metadata directory is not writable")
+}
+
 func TestSet(t *testing.T) {
 	testDir, err := ioutil.TempDir("", "testdir")
 	require.NoError(t, err)
 	defer os.RemoveAll(testDir)
 
-	s, err := NewFileStore(filepath.Join(testDir, "metadata"), "json")
+	s, err := NewFilesystemStore(testDir, "metadata", "json")
 	require.Nil(t, err, "Initializing FilesystemStore returned unexpected error: %v", err)
 	defer os.RemoveAll(testDir)
 
@@ -38,7 +52,7 @@ func TestSetWithNoParentDirectory(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(testDir)
 
-	s, err := NewFileStore(filepath.Join(testDir, "metadata"), "json")
+	s, err := NewFilesystemStore(testDir, "metadata", "json")
 	require.Nil(t, err, "Initializing FilesystemStore returned unexpected error: %v", err)
 	defer os.RemoveAll(testDir)
 
@@ -58,7 +72,7 @@ func TestSetRemovesExistingFileBeforeWriting(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(testDir)
 
-	s, err := NewFileStore(filepath.Join(testDir, "metadata"), "json")
+	s, err := NewFilesystemStore(testDir, "metadata", "json")
 	require.Nil(t, err, "Initializing FilesystemStore returned unexpected error: %v", err)
 	defer os.RemoveAll(testDir)
 
@@ -79,7 +93,7 @@ func TestGetSized(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(testDir)
 
-	s, err := NewFileStore(filepath.Join(testDir, "metadata"), "json")
+	s, err := NewFilesystemStore(testDir, "metadata", "json")
 	require.Nil(t, err, "Initializing FilesystemStore returned unexpected error: %v", err)
 	defer os.RemoveAll(testDir)
 
@@ -109,7 +123,7 @@ func TestGetSizedSet(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(testDir)
 
-	s, err := NewFileStore(filepath.Join(testDir, "metadata"), "json")
+	s, err := NewFilesystemStore(testDir, "metadata", "json")
 	require.NoError(t, err, "Initializing FilesystemStore returned unexpected error", err)
 	defer os.RemoveAll(testDir)
 
@@ -121,7 +135,7 @@ func TestRemove(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(testDir)
 
-	s, err := NewFileStore(filepath.Join(testDir, "metadata"), "json")
+	s, err := NewFilesystemStore(testDir, "metadata", "json")
 	require.NoError(t, err, "Initializing FilesystemStore returned unexpected error", err)
 	defer os.RemoveAll(testDir)
 
@@ -133,7 +147,7 @@ func TestRemoveAll(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(testDir)
 
-	s, err := NewFileStore(filepath.Join(testDir, "metadata"), "json")
+	s, err := NewFilesystemStore(testDir, "metadata", "json")
 	require.Nil(t, err, "Initializing FilesystemStore returned unexpected error: %v", err)
 	defer os.RemoveAll(testDir)
 
@@ -161,6 +175,7 @@ func TestAddFile(t *testing.T) {
 	testData := []byte("This test data should be part of the file.")
 	testName := "docker.com/notary/certificate"
 	testExt := ".crt"
+	perms := os.FileMode(0755)
 
 	// Temporary directory where test files will be created
 	tempBaseDir, err := ioutil.TempDir("", "notary-test-")
@@ -174,6 +189,7 @@ func TestAddFile(t *testing.T) {
 	store := &FilesystemStore{
 		baseDir: tempBaseDir,
 		ext:     testExt,
+		perms:   perms,
 	}
 
 	// Call the Set function
@@ -206,6 +222,7 @@ func TestRemoveFile(t *testing.T) {
 	store := &FilesystemStore{
 		baseDir: tempBaseDir,
 		ext:     testExt,
+		perms:   perms,
 	}
 
 	// Call the Remove function
@@ -241,6 +258,7 @@ func TestListFiles(t *testing.T) {
 	store := &FilesystemStore{
 		baseDir: tempBaseDir,
 		ext:     testExt,
+		perms:   perms,
 	}
 
 	// Call the List function. Expect 10 files
@@ -250,11 +268,13 @@ func TestListFiles(t *testing.T) {
 
 func TestGetPath(t *testing.T) {
 	testExt := ".crt"
+	perms := os.FileMode(0755)
 
 	// Create our FilesystemStore
 	store := &FilesystemStore{
 		baseDir: "",
 		ext:     testExt,
+		perms:   perms,
 	}
 
 	firstPath := "diogomonica.com/openvpn/0xdeadbeef.crt"
@@ -269,11 +289,13 @@ func TestGetPath(t *testing.T) {
 
 func TestGetPathProtection(t *testing.T) {
 	testExt := ".crt"
+	perms := os.FileMode(0755)
 
 	// Create our FilesystemStore
 	store := &FilesystemStore{
 		baseDir: "/path/to/filestore/",
 		ext:     testExt,
+		perms:   perms,
 	}
 
 	// Should deny requests for paths outside the filestore
@@ -295,6 +317,7 @@ func TestGetPathProtection(t *testing.T) {
 	relStore := &FilesystemStore{
 		baseDir: "relative/file/path",
 		ext:     testExt,
+		perms:   perms,
 	}
 
 	// Should deny requests for paths outside the filestore
@@ -332,6 +355,7 @@ func TestGetData(t *testing.T) {
 	store := &FilesystemStore{
 		baseDir: tempBaseDir,
 		ext:     testExt,
+		perms:   perms,
 	}
 	testData, err := store.Get(testName)
 	require.NoError(t, err, "failed to get data from: %s", testName)
@@ -349,7 +373,7 @@ func TestCreateDirectory(t *testing.T) {
 	dirPath := filepath.Join(tempBaseDir, testDir)
 
 	// Call createDirectory
-	createDirectory(dirPath, notary.PrivExecPerms)
+	createDirectory(dirPath, notary.PubCertPerms)
 
 	// Check to see if file exists
 	fi, err := os.Stat(dirPath)
@@ -359,7 +383,7 @@ func TestCreateDirectory(t *testing.T) {
 	require.True(t, fi.IsDir(), "expected to be directory: %s", dirPath)
 
 	// Check to see if the permissions match
-	require.Equal(t, "drwx------", fi.Mode().String(), "permissions are wrong for: %s. Got: %s", dirPath, fi.Mode().String())
+	require.Equal(t, "drwxr-xr-x", fi.Mode().String(), "permissions are wrong for: %s. Got: %s", dirPath, fi.Mode().String())
 }
 
 func TestCreatePrivateDirectory(t *testing.T) {
@@ -373,7 +397,7 @@ func TestCreatePrivateDirectory(t *testing.T) {
 	dirPath := filepath.Join(tempBaseDir, testDir)
 
 	// Call createDirectory
-	createDirectory(dirPath, notary.PrivExecPerms)
+	createDirectory(dirPath, notary.PrivKeyPerms)
 
 	// Check to see if file exists
 	fi, err := os.Stat(dirPath)

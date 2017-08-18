@@ -7,7 +7,6 @@ import (
 	"errors"
 	"github.com/docker/notary"
 	"github.com/docker/notary/trustmanager"
-	"github.com/docker/notary/tuf/data"
 	"github.com/docker/notary/tuf/utils"
 )
 
@@ -40,7 +39,7 @@ func (s *YubiImport) Set(name string, bytes []byte) error {
 	}
 	ki := trustmanager.KeyInfo{
 		// GUN is ignored by YubiStore
-		Role: data.RoleName(role),
+		Role: role,
 	}
 	privKey, err := utils.ParsePEMPrivateKey(bytes, "")
 	if err != nil {
@@ -48,7 +47,7 @@ func (s *YubiImport) Set(name string, bytes []byte) error {
 			s.passRetriever,
 			bytes,
 			name,
-			ki.Role.String(),
+			ki.Role,
 		)
 		if err != nil {
 			return err

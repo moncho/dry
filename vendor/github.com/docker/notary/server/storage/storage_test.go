@@ -12,14 +12,14 @@ import (
 )
 
 type StoredTUFMeta struct {
-	Gun     data.GUN
-	Role    data.RoleName
-	SHA256  string
+	Gun     string
+	Role    string
+	Sha256  string
 	Data    []byte
 	Version int
 }
 
-func SampleCustomTUFObj(gun data.GUN, role data.RoleName, version int, tufdata []byte) StoredTUFMeta {
+func SampleCustomTUFObj(gun, role string, version int, tufdata []byte) StoredTUFMeta {
 	if tufdata == nil {
 		tufdata = []byte(fmt.Sprintf("%s_%s_%d", gun, role, version))
 	}
@@ -29,7 +29,7 @@ func SampleCustomTUFObj(gun data.GUN, role data.RoleName, version int, tufdata [
 		Gun:     gun,
 		Role:    role,
 		Version: version,
-		SHA256:  hexChecksum,
+		Sha256:  hexChecksum,
 		Data:    tufdata,
 	}
 }
@@ -78,7 +78,7 @@ func assertExpectedTUFMetaInStore(t *testing.T, s MetaStore, expected []StoredTU
 func testUpdateCurrentEmptyStore(t *testing.T, s MetaStore) []StoredTUFMeta {
 	expected := make([]StoredTUFMeta, 0, 10)
 	for _, role := range append(data.BaseRoles, "targets/a") {
-		for _, gun := range []data.GUN{"gun1", "gun2"} {
+		for _, gun := range []string{"gun1", "gun2"} {
 			// Adding a new TUF file should succeed
 			tufObj := SampleCustomTUFObj(gun, role, 1, nil)
 			require.NoError(t, s.UpdateCurrent(tufObj.Gun, MakeUpdate(tufObj)))
@@ -94,7 +94,7 @@ func testUpdateCurrentEmptyStore(t *testing.T, s MetaStore) []StoredTUFMeta {
 // but will return an error if there is an older version of a TUF file.  oldVersionExists
 // specifies whether the older version should already exist in the DB or not.
 func testUpdateCurrentVersionCheck(t *testing.T, s MetaStore, oldVersionExists bool) []StoredTUFMeta {
-	role, gun := data.CanonicalRootRole, data.GUN("testGUN")
+	role, gun := data.CanonicalRootRole, "testGUN"
 
 	expected := []StoredTUFMeta{
 		SampleCustomTUFObj(gun, role, 1, nil),
@@ -126,30 +126,10 @@ func testUpdateCurrentVersionCheck(t *testing.T, s MetaStore, oldVersionExists b
 	return expected
 }
 
-// GetVersion should successfully retrieve a version of an existing TUF file,
-// but will return an error if the requested version does not exist.
-func testGetVersion(t *testing.T, s MetaStore) {
-	_, _, err := s.GetVersion("gun", "role", 2)
-	require.IsType(t, ErrNotFound{}, err, "Expected error to be ErrNotFound")
-
-	s.UpdateCurrent("gun", MetaUpdate{"role", 2, []byte("version2")})
-	_, d, err := s.GetVersion("gun", "role", 2)
-	require.Nil(t, err, "Expected error to be nil")
-	require.Equal(t, []byte("version2"), d, "Data was incorrect")
-
-	// Getting newer version fails
-	_, _, err = s.GetVersion("gun", "role", 3)
-	require.IsType(t, ErrNotFound{}, err, "Expected error to be ErrNotFound")
-
-	// Getting another gun/role fails
-	_, _, err = s.GetVersion("badgun", "badrole", 2)
-	require.IsType(t, ErrNotFound{}, err, "Expected error to be ErrNotFound")
-}
-
 // UpdateMany succeeds if the updates do not conflict with each other or with what's
 // already in the DB
 func testUpdateManyNoConflicts(t *testing.T, s MetaStore) []StoredTUFMeta {
-	var gun data.GUN = "testGUN"
+	gun := "testGUN"
 	firstBatch := make([]StoredTUFMeta, 4)
 	updates := make([]MetaUpdate, 4)
 	for i, role := range data.BaseRoles {
@@ -195,7 +175,7 @@ func testUpdateManyNoConflicts(t *testing.T, s MetaStore) []StoredTUFMeta {
 // UpdateMany does not insert any rows (or at least rolls them back) if there
 // are any conflicts.
 func testUpdateManyConflictRollback(t *testing.T, s MetaStore) []StoredTUFMeta {
-	var gun data.GUN = "testGUN"
+	gun := "testGUN"
 	successBatch := make([]StoredTUFMeta, 4)
 	updates := make([]MetaUpdate, 4)
 	for i, role := range data.BaseRoles {
@@ -204,11 +184,6 @@ func testUpdateManyConflictRollback(t *testing.T, s MetaStore) []StoredTUFMeta {
 	}
 
 	require.NoError(t, s.UpdateMany(gun, updates))
-
-	before, err := s.GetChanges("0", 1000, "")
-	if _, ok := s.(RethinkDB); !ok {
-		require.NoError(t, err)
-	}
 
 	// conflicts with what's in DB
 	badBatch := make([]StoredTUFMeta, 4)
@@ -222,14 +197,7 @@ func testUpdateManyConflictRollback(t *testing.T, s MetaStore) []StoredTUFMeta {
 		updates[i] = MakeUpdate(badBatch[i])
 	}
 
-	// check no changes were written when there was a conflict+rollback
-	after, err := s.GetChanges("0", 1000, "")
-	if _, ok := s.(RethinkDB); !ok {
-		require.NoError(t, err)
-	}
-	require.Equal(t, len(before), len(after))
-
-	err = s.UpdateMany(gun, updates)
+	err := s.UpdateMany(gun, updates)
 	require.Error(t, err)
 	require.IsType(t, ErrOldVersion{}, err)
 
@@ -256,7 +224,7 @@ func testUpdateManyConflictRollback(t *testing.T, s MetaStore) []StoredTUFMeta {
 
 // Delete will remove all TUF metadata, all versions, associated with a gun
 func testDeleteSuccess(t *testing.T, s MetaStore) {
-	var gun data.GUN = "testGUN"
+	gun := "testGUN"
 	// If there is nothing in the DB, delete is a no-op success
 	require.NoError(t, s.Delete(gun))
 
@@ -295,159 +263,4 @@ func testDeleteSuccess(t *testing.T, s MetaStore) {
 
 	// And delete them again successfully
 	require.NoError(t, s.Delete(gun))
-}
-
-func testGetChanges(t *testing.T, s MetaStore) {
-	// non-int changeID
-	c, err := s.GetChanges("foo", 10, "")
-	require.Error(t, err)
-	require.Len(t, c, 0)
-
-	// add some records
-	require.NoError(t, s.UpdateMany("alpine", []MetaUpdate{
-		{
-			Role:    data.CanonicalTimestampRole,
-			Version: 1,
-			Data:    []byte{'1'},
-		},
-		{
-			Role:    data.CanonicalTimestampRole,
-			Version: 2,
-			Data:    []byte{'2'},
-		},
-		{
-			Role:    data.CanonicalTimestampRole,
-			Version: 3,
-			Data:    []byte{'3'},
-		},
-		{
-			Role:    data.CanonicalTimestampRole,
-			Version: 4,
-			Data:    []byte{'4'},
-		},
-	}))
-	require.NoError(t, s.UpdateMany("busybox", []MetaUpdate{
-		{
-			Role:    data.CanonicalTimestampRole,
-			Version: 1,
-			Data:    []byte{'5'},
-		},
-		{
-			Role:    data.CanonicalTimestampRole,
-			Version: 2,
-			Data:    []byte{'6'},
-		},
-		{
-			Role:    data.CanonicalTimestampRole,
-			Version: 3,
-			Data:    []byte{'7'},
-		},
-		{
-			Role:    data.CanonicalTimestampRole,
-			Version: 4,
-			Data:    []byte{'8'},
-		},
-	}))
-
-	// check non-error cases
-	c, err = s.GetChanges("0", 8, "")
-	require.NoError(t, err)
-	require.Len(t, c, 8)
-
-	for i := 0; i < 4; i++ {
-		require.Equal(t, uint(i+1), c[i].ID)
-		require.Equal(t, "alpine", c[i].GUN)
-		require.Equal(t, i+1, c[i].Version)
-	}
-	for i := 4; i < 8; i++ {
-		require.Equal(t, uint(i+1), c[i].ID)
-		require.Equal(t, "busybox", c[i].GUN)
-		require.Equal(t, i-3, c[i].Version)
-	}
-
-	c, err = s.GetChanges("-1", 4, "")
-	require.NoError(t, err)
-	require.Len(t, c, 4)
-	for i := 0; i < 4; i++ {
-		require.Equal(t, uint(i+5), c[i].ID)
-		require.Equal(t, "busybox", c[i].GUN)
-		require.Equal(t, i+1, c[i].Version)
-	}
-
-	c, err = s.GetChanges("10", 4, "")
-	require.NoError(t, err)
-	require.Len(t, c, 0)
-
-	c, err = s.GetChanges("10", -4, "")
-	require.NoError(t, err)
-	require.Len(t, c, 4)
-	for i := 0; i < 4; i++ {
-		require.Equal(t, uint(i+5), c[i].ID)
-		require.Equal(t, "busybox", c[i].GUN)
-		require.Equal(t, i+1, c[i].Version)
-	}
-
-	c, err = s.GetChanges("7", -4, "")
-	require.NoError(t, err)
-	require.Len(t, c, 4)
-	for i := 0; i < 2; i++ {
-		require.Equal(t, uint(i+3), c[i].ID)
-		require.Equal(t, "alpine", c[i].GUN)
-		require.Equal(t, i+3, c[i].Version)
-	}
-	for i := 2; i < 4; i++ {
-		require.Equal(t, uint(i+3), c[i].ID)
-		require.Equal(t, "busybox", c[i].GUN)
-		require.Equal(t, i-1, c[i].Version)
-	}
-
-	c, err = s.GetChanges("0", 8, "busybox")
-	require.NoError(t, err)
-	require.Len(t, c, 4)
-	for i := 0; i < 4; i++ {
-		require.Equal(t, uint(i+5), c[i].ID)
-		require.Equal(t, "busybox", c[i].GUN)
-		require.Equal(t, i+1, c[i].Version)
-	}
-
-	c, err = s.GetChanges("-1", -8, "busybox")
-	require.NoError(t, err)
-	require.Len(t, c, 4)
-	for i := 0; i < 4; i++ {
-		require.Equal(t, uint(i+5), c[i].ID)
-		require.Equal(t, "busybox", c[i].GUN)
-		require.Equal(t, i+1, c[i].Version)
-	}
-
-	// update a snapshot and confirm the most recent item of the changelist
-	// hasn't changed (only timestamps should create changes)
-	before, err := s.GetChanges("-1", -1, "")
-	require.NoError(t, err)
-	require.NoError(t, s.UpdateMany("alpine", []MetaUpdate{
-		{
-			Role:    data.CanonicalSnapshotRole,
-			Version: 1,
-			Data:    []byte{'1'},
-		},
-	}))
-	after, err := s.GetChanges("-1", -1, "")
-	require.NoError(t, err)
-	require.Equal(t, before, after)
-
-	// do a deletion and check is shows up.
-	require.NoError(t, s.Delete("alpine"))
-	c, err = s.GetChanges("-1", -1, "")
-	require.NoError(t, err)
-	require.Len(t, c, 1)
-	require.Equal(t, changeCategoryDeletion, c[0].Category)
-	require.Equal(t, "alpine", c[0].GUN)
-
-	// do another deletion and check it doesn't show up because no records were deleted
-	// after the first one
-	require.NoError(t, s.Delete("alpine"))
-	c, err = s.GetChanges("-1", -2, "")
-	require.NoError(t, err)
-	require.Len(t, c, 2)
-	require.NotEqual(t, changeCategoryDeletion, c[0].Category)
-	require.NotEqual(t, "alpine", c[0].GUN)
 }

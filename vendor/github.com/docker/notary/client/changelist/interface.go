@@ -1,7 +1,5 @@
 package changelist
 
-import "github.com/docker/notary/tuf/data"
-
 // Changelist is the interface for all TUF change lists
 type Changelist interface {
 	// List returns the ordered list of changes
@@ -27,9 +25,6 @@ type Changelist interface {
 	// NewIterator returns an iterator for walking through the list
 	// of changes currently stored
 	NewIterator() (ChangeIterator, error)
-
-	// Location returns the place the changelist is stores
-	Location() string
 }
 
 const (
@@ -48,7 +43,7 @@ type Change interface {
 
 	// Where the change should be made.
 	// For TUF this will be the role
-	Scope() data.RoleName
+	Scope() string
 
 	// The content type being affected.
 	// For TUF this will be "target", or "delegation".

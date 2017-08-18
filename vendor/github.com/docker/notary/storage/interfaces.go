@@ -1,9 +1,5 @@
 package storage
 
-import (
-	"github.com/docker/notary/tuf/data"
-)
-
 // NoSizeLimit is represented as -1 for arguments to GetMeta
 const NoSizeLimit int64 = -1
 
@@ -19,8 +15,8 @@ type MetadataStore interface {
 
 // PublicKeyStore must be implemented by a key service
 type PublicKeyStore interface {
-	GetKey(role data.RoleName) ([]byte, error)
-	RotateKey(role data.RoleName) ([]byte, error)
+	GetKey(role string) ([]byte, error)
+	RotateKey(role string) ([]byte, error)
 }
 
 // RemoteStore is similar to LocalStore with the added expectation that it should

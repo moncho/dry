@@ -21,7 +21,7 @@ import (
 // found. It attempts to handle the race condition that may occur if 2 servers try to
 // create the key at the same time by simply querying the store a second time if it
 // receives a conflict when writing.
-func GetOrCreateTimestampKey(gun data.GUN, store storage.MetaStore, crypto signed.CryptoService, createAlgorithm string) (data.PublicKey, error) {
+func GetOrCreateTimestampKey(gun string, store storage.MetaStore, crypto signed.CryptoService, createAlgorithm string) (data.PublicKey, error) {
 	_, rootJSON, err := store.GetCurrent(gun, data.CanonicalRootRole)
 	if err != nil {
 		// If the error indicates we couldn't find the root, create a new key
@@ -56,7 +56,7 @@ func GetOrCreateTimestampKey(gun data.GUN, store storage.MetaStore, crypto signe
 }
 
 // RotateTimestampKey attempts to rotate a timestamp key in the signer, but might be rate-limited by the signer
-func RotateTimestampKey(gun data.GUN, store storage.MetaStore, crypto signed.CryptoService, createAlgorithm string) (data.PublicKey, error) {
+func RotateTimestampKey(gun string, store storage.MetaStore, crypto signed.CryptoService, createAlgorithm string) (data.PublicKey, error) {
 	// Always attempt to create a new key, but this might be rate-limited
 	key, err := crypto.Create(data.CanonicalTimestampRole, gun, createAlgorithm)
 	if err != nil {
@@ -71,7 +71,7 @@ func RotateTimestampKey(gun data.GUN, store storage.MetaStore, crypto signed.Cry
 // one has expired. Once generated, the timestamp is saved in the store.
 // Additionally, if we had to generate a new snapshot for this timestamp,
 // it is also saved in the store
-func GetOrCreateTimestamp(gun data.GUN, store storage.MetaStore, cryptoService signed.CryptoService) (
+func GetOrCreateTimestamp(gun string, store storage.MetaStore, cryptoService signed.CryptoService) (
 	*time.Time, []byte, error) {
 
 	updates := []storage.MetaUpdate{}
@@ -91,12 +91,12 @@ func GetOrCreateTimestamp(gun data.GUN, store storage.MetaStore, cryptoService s
 	if err != nil || snapChecksums == nil {
 		return nil, nil, err
 	}
-	snapshotSHA256Bytes, ok := snapChecksums.Hashes[notary.SHA256]
+	snapshotSha256Bytes, ok := snapChecksums.Hashes[notary.SHA256]
 	if !ok {
-		return nil, nil, data.ErrMissingMeta{Role: data.CanonicalSnapshotRole.String()}
+		return nil, nil, data.ErrMissingMeta{Role: data.CanonicalSnapshotRole}
 	}
-	snapshotSHA256Hex := hex.EncodeToString(snapshotSHA256Bytes[:])
-	snapshotTime, snapshot, err := snapshot.GetOrCreateSnapshot(gun, snapshotSHA256Hex, store, cryptoService)
+	snapshotSha256Hex := hex.EncodeToString(snapshotSha256Bytes[:])
+	snapshotTime, snapshot, err := snapshot.GetOrCreateSnapshot(gun, snapshotSha256Hex, store, cryptoService)
 	if err != nil {
 		logrus.Debug("Previous timestamp, but no valid snapshot for GUN ", gun)
 		return nil, nil, err
@@ -141,15 +141,15 @@ func timestampExpired(ts *data.SignedTimestamp) bool {
 func snapshotExpired(ts *data.SignedTimestamp, snapshot []byte) bool {
 	// If this check failed, it means the current snapshot was not exactly what we expect
 	// via the timestamp. So we can consider it to be "expired."
-	return data.CheckHashes(snapshot, data.CanonicalSnapshotRole.String(),
-		ts.Signed.Meta[data.CanonicalSnapshotRole.String()].Hashes) != nil
+	return data.CheckHashes(snapshot, data.CanonicalSnapshotRole,
+		ts.Signed.Meta[data.CanonicalSnapshotRole].Hashes) != nil
 }
 
 // CreateTimestamp creates a new timestamp. If a prev timestamp is provided, it
 // is assumed this is the immediately previous one, and the new one will have a
 // version number one higher than prev. The store is used to lookup the current
 // snapshot, this function does not save the newly generated timestamp.
-func createTimestamp(gun data.GUN, prev *data.SignedTimestamp, snapshot []byte, store storage.MetaStore,
+func createTimestamp(gun string, prev *data.SignedTimestamp, snapshot []byte, store storage.MetaStore,
 	cryptoService signed.CryptoService) (*storage.MetaUpdate, error) {
 
 	builder := tuf.NewRepoBuilder(gun, cryptoService, trustpinning.TrustPinConfig{})

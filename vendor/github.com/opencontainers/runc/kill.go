@@ -8,7 +8,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/urfave/cli"
+	"github.com/codegangsta/cli"
 )
 
 var signalMap = map[string]syscall.Signal{
@@ -52,32 +52,19 @@ var signalMap = map[string]syscall.Signal{
 var killCommand = cli.Command{
 	Name:  "kill",
 	Usage: "kill sends the specified signal (default: SIGTERM) to the container's init process",
-	ArgsUsage: `<container-id> [signal]
+	ArgsUsage: `<container-id> <signal>
 
 Where "<container-id>" is the name for the instance of the container and
-"[signal]" is the signal to be sent to the init process.
-
-EXAMPLE:
+"<signal>" is the signal to be sent to the init process.
+	 
 For example, if the container id is "ubuntu01" the following will send a "KILL"
 signal to the init process of the "ubuntu01" container:
 	 
        # runc kill ubuntu01 KILL`,
-	Flags: []cli.Flag{
-		cli.BoolFlag{
-			Name:  "all, a",
-			Usage: "send the specified signal to all processes inside the container",
-		},
-	},
-	Action: func(context *cli.Context) error {
-		if err := checkArgs(context, 1, minArgs); err != nil {
-			return err
-		}
-		if err := checkArgs(context, 2, maxArgs); err != nil {
-			return err
-		}
+	Action: func(context *cli.Context) {
 		container, err := getContainer(context)
 		if err != nil {
-			return err
+			fatal(err)
 		}
 
 		sigstr := context.Args().Get(1)
@@ -87,25 +74,19 @@ signal to the init process of the "ubuntu01" container:
 
 		signal, err := parseSignal(sigstr)
 		if err != nil {
-			return err
+			fatal(err)
 		}
-		if err := container.Signal(signal, context.Bool("all")); err != nil {
-			return err
+
+		if err := container.Signal(signal); err != nil {
+			fatal(err)
 		}
-		return nil
 	},
 }
 
 func parseSignal(rawSignal string) (syscall.Signal, error) {
 	s, err := strconv.Atoi(rawSignal)
 	if err == nil {
-		sig := syscall.Signal(s)
-		for _, msig := range signalMap {
-			if sig == msig {
-				return sig, nil
-			}
-		}
-		return -1, fmt.Errorf("unknown signal %q", rawSignal)
+		return syscall.Signal(s), nil
 	}
 	signal, ok := signalMap[strings.TrimPrefix(strings.ToUpper(rawSignal), "SIG")]
 	if !ok {

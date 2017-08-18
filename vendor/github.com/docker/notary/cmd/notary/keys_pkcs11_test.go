@@ -48,7 +48,8 @@ func TestImportWithYubikey(t *testing.T) {
 	pubK, err := cs.Create(data.CanonicalRootRole, "ankh", data.ECDSAKey)
 	require.NoError(t, err)
 	bID := pubK.ID() // need to check presence in yubikey later
-	bytes, err := memStore.Get(pubK.ID())
+	require.NoError(t, err)
+	bytes, err := memStore.Get(notary.RootKeysSubdir + "/" + pubK.ID())
 	require.NoError(t, err)
 	b, _ := pem.Decode(bytes)
 	b.Headers["path"] = "ankh"
@@ -57,7 +58,7 @@ func TestImportWithYubikey(t *testing.T) {
 	pubK, err = cs.Create(data.CanonicalTargetsRole, "morpork", data.ECDSAKey)
 	require.NoError(t, err)
 	cID := pubK.ID()
-	bytes, err = memStore.Get(pubK.ID())
+	bytes, err = memStore.Get(notary.NonRootKeysSubdir + "/morpork/" + pubK.ID())
 	require.NoError(t, err)
 	c, _ := pem.Decode(bytes)
 	c.Headers["path"] = "morpork"

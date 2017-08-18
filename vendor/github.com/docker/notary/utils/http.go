@@ -8,14 +8,13 @@ import (
 	ctxu "github.com/docker/distribution/context"
 	"github.com/docker/distribution/registry/api/errcode"
 	"github.com/docker/distribution/registry/auth"
-	"github.com/gorilla/mux"
-	"golang.org/x/net/context"
-
 	"github.com/docker/notary"
 	"github.com/docker/notary/tuf/signed"
+	"github.com/gorilla/mux"
+	"golang.org/x/net/context"
 )
 
-// ContextHandler defines an alternate HTTP handler interface which takes in
+// ContextHandler defines an alterate HTTP handler interface which takes in
 // a context for authorization and returns an HTTP application error.
 type ContextHandler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 
@@ -27,10 +26,8 @@ type rootHandler struct {
 	actions []string
 	context context.Context
 	trust   signed.CryptoService
+	//cachePool redis.Pool
 }
-
-// AuthWrapper wraps a Handler with and Auth requirement
-type AuthWrapper func(ContextHandler, ...string) *rootHandler
 
 // RootHandlerFactory creates a new rootHandler factory  using the given
 // Context creator and authorizer.  The returned factory allows creating
@@ -50,77 +47,54 @@ func RootHandlerFactory(ctx context.Context, auth auth.AccessController, trust s
 
 // ServeHTTP serves an HTTP request and implements the http.Handler interface.
 func (root *rootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var (
-		err  error
-		ctx  = ctxu.WithRequest(root.context, r)
-		log  = ctxu.GetRequestLogger(ctx)
-		vars = mux.Vars(r)
-	)
+	vars := mux.Vars(r)
+	ctx := ctxu.WithRequest(root.context, r)
+	log := ctxu.GetRequestLogger(ctx)
 	ctx, w = ctxu.WithResponseWriter(ctx, w)
 	ctx = ctxu.WithLogger(ctx, log)
+	ctx = context.WithValue(ctx, notary.CtxKeyRepo, vars["imageName"])
 	ctx = context.WithValue(ctx, notary.CtxKeyCryptoSvc, root.trust)
 
-	defer func(ctx context.Context) {
+	defer func() {
 		ctxu.GetResponseLogger(ctx).Info("response completed")
-	}(ctx)
+	}()
 
 	if root.auth != nil {
-		ctx = context.WithValue(ctx, notary.CtxKeyRepo, vars["gun"])
-		if ctx, err = root.doAuth(ctx, vars["gun"], w); err != nil {
-			// errors have already been logged/output to w inside doAuth
-			// just return
+		access := buildAccessRecords(vars["imageName"], root.actions...)
+		var authCtx context.Context
+		var err error
+		if authCtx, err = root.auth.Authorized(ctx, access...); err != nil {
+			if challenge, ok := err.(auth.Challenge); ok {
+				// Let the challenge write the response.
+				challenge.SetHeaders(w)
+
+				if err := errcode.ServeJSON(w, errcode.ErrorCodeUnauthorized.WithDetail(access)); err != nil {
+					log.Errorf("failed to serve challenge response: %s", err.Error())
+				}
+				return
+			}
+			errcode.ServeJSON(w, errcode.ErrorCodeUnauthorized)
 			return
 		}
+		ctx = authCtx
 	}
 	if err := root.handler(ctx, w, r); err != nil {
-		serveError(log, w, err)
-	}
-}
-
-func serveError(log ctxu.Logger, w http.ResponseWriter, err error) {
-	if httpErr, ok := err.(errcode.Error); ok {
-		// info level logging for non-5XX http errors
-		httpErrCode := httpErr.ErrorCode().Descriptor().HTTPStatusCode
-		if httpErrCode >= http.StatusInternalServerError {
-			// error level logging for 5XX http errors
-			log.Errorf("%s: %s: %v", httpErr.ErrorCode().Error(), httpErr.Message, httpErr.Detail)
-		} else {
-			log.Infof("%s: %s: %v", httpErr.ErrorCode().Error(), httpErr.Message, httpErr.Detail)
-		}
-	}
-	e := errcode.ServeJSON(w, err)
-	if e != nil {
-		log.Error(e)
-	}
-	return
-}
-
-func (root *rootHandler) doAuth(ctx context.Context, gun string, w http.ResponseWriter) (context.Context, error) {
-	var access []auth.Access
-	if gun == "" {
-		access = buildCatalogRecord(root.actions...)
-	} else {
-		access = buildAccessRecords(gun, root.actions...)
-	}
-
-	log := ctxu.GetRequestLogger(ctx)
-	var authCtx context.Context
-	var err error
-	if authCtx, err = root.auth.Authorized(ctx, access...); err != nil {
-		if challenge, ok := err.(auth.Challenge); ok {
-			// Let the challenge write the response.
-			challenge.SetHeaders(w)
-
-			if err := errcode.ServeJSON(w, errcode.ErrorCodeUnauthorized.WithDetail(access)); err != nil {
-				log.Errorf("failed to serve challenge response: %s", err.Error())
-				return nil, err
+		if httpErr, ok := err.(errcode.ErrorCoder); ok {
+			// info level logging for non-5XX http errors
+			httpErrCode := httpErr.ErrorCode().Descriptor().HTTPStatusCode
+			if httpErrCode >= http.StatusInternalServerError {
+				// error level logging for 5XX http errors
+				log.Error(httpErr)
+			} else {
+				log.Info(httpErr)
 			}
-			return nil, err
 		}
-		errcode.ServeJSON(w, errcode.ErrorCodeUnauthorized)
-		return nil, err
+		e := errcode.ServeJSON(w, err)
+		if e != nil {
+			log.Error(e)
+		}
+		return
 	}
-	return authCtx, nil
 }
 
 func buildAccessRecords(repo string, actions ...string) []auth.Access {
@@ -134,21 +108,6 @@ func buildAccessRecords(repo string, actions ...string) []auth.Access {
 			Action: action,
 		})
 	}
-	return requiredAccess
-}
-
-// buildCatalogRecord returns the only valid format for the catalog
-// resource. Only admins can get this access level from the token
-// server.
-func buildCatalogRecord(actions ...string) []auth.Access {
-	requiredAccess := []auth.Access{{
-		Resource: auth.Resource{
-			Type: "registry",
-			Name: "catalog",
-		},
-		Action: "*",
-	}}
-
 	return requiredAccess
 }
 

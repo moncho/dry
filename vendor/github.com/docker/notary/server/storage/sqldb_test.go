@@ -19,8 +19,8 @@ func SetupSQLDB(t *testing.T, dbtype, dburl string) *SQLStorage {
 	require.NoError(t, err)
 
 	// Create the DB tables
-	require.NoError(t, CreateTUFTable(dbStore.DB))
-	require.NoError(t, CreateChangefeedTable(dbStore.DB))
+	err = CreateTUFTable(dbStore.DB)
+	require.NoError(t, err)
 
 	// verify that the tables are empty
 	var count int
@@ -39,10 +39,10 @@ func assertExpectedGormTUFMeta(t *testing.T, expected []StoredTUFMeta, gormDB go
 	for i, tufObj := range expected {
 		expectedGorm[i] = TUFFile{
 			Model:   gorm.Model{ID: uint(i + 1)},
-			Gun:     tufObj.Gun.String(),
-			Role:    tufObj.Role.String(),
+			Gun:     tufObj.Gun,
+			Role:    tufObj.Role,
 			Version: tufObj.Version,
-			SHA256:  tufObj.SHA256,
+			Sha256:  tufObj.Sha256,
 			Data:    tufObj.Data,
 		}
 	}
@@ -239,18 +239,4 @@ func TestSQLTUFMetaStoreGetCurrent(t *testing.T) {
 	defer cleanup()
 
 	testTUFMetaStoreGetCurrent(t, dbStore)
-}
-
-func TestSQLGetChanges(t *testing.T) {
-	s, cleanup := sqldbSetup(t)
-	defer cleanup()
-
-	testGetChanges(t, s)
-}
-
-func TestSQLDBGetVersion(t *testing.T) {
-	dbStore, cleanup := sqldbSetup(t)
-	defer cleanup()
-
-	testGetVersion(t, dbStore)
 }

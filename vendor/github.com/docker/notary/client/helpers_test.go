@@ -10,7 +10,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/docker/notary/client/changelist"
-	"github.com/docker/notary/storage"
 	"github.com/docker/notary/tuf/data"
 	"github.com/docker/notary/tuf/testutils"
 	"github.com/stretchr/testify/require"
@@ -226,7 +225,7 @@ func TestApplyTargetsDelegationCreateDelete(t *testing.T) {
 	role := tgts.Signed.Delegations.Roles[0]
 	require.Len(t, role.KeyIDs, 1)
 	require.Equal(t, newKey.ID(), role.KeyIDs[0])
-	require.EqualValues(t, "targets/level1", role.Name)
+	require.Equal(t, "targets/level1", role.Name)
 	require.Equal(t, "level1", role.Paths[0])
 
 	// delete delegation
@@ -309,14 +308,14 @@ func TestApplyTargetsDelegationCreate2SharedKey(t *testing.T) {
 	role1 := tgts.Signed.Delegations.Roles[0]
 	require.Len(t, role1.KeyIDs, 1)
 	require.Equal(t, newKey.ID(), role1.KeyIDs[0])
-	require.EqualValues(t, "targets/level1", role1.Name)
-	require.EqualValues(t, "level1", role1.Paths[0])
+	require.Equal(t, "targets/level1", role1.Name)
+	require.Equal(t, "level1", role1.Paths[0])
 
 	role2 := tgts.Signed.Delegations.Roles[1]
 	require.Len(t, role2.KeyIDs, 1)
 	require.Equal(t, newKey.ID(), role2.KeyIDs[0])
-	require.EqualValues(t, "targets/level2", role2.Name)
-	require.EqualValues(t, "level2", role2.Paths[0])
+	require.Equal(t, "targets/level2", role2.Name)
+	require.Equal(t, "level2", role2.Paths[0])
 
 	// delete one delegation, ensure shared key remains
 	td = &changelist.TUFDelegation{
@@ -418,8 +417,8 @@ func TestApplyTargetsDelegationCreateEdit(t *testing.T) {
 	role := tgts.Signed.Delegations.Roles[0]
 	require.Len(t, role.KeyIDs, 1)
 	require.Equal(t, newKey2.ID(), role.KeyIDs[0])
-	require.EqualValues(t, "targets/level1", role.Name)
-	require.EqualValues(t, "level1", role.Paths[0])
+	require.Equal(t, "targets/level1", role.Name)
+	require.Equal(t, "level1", role.Paths[0])
 }
 
 func TestApplyTargetsDelegationEditNonExisting(t *testing.T) {
@@ -702,8 +701,8 @@ func TestApplyTargetsDelegationCreate2Deep(t *testing.T) {
 	role := tgts.Signed.Delegations.Roles[0]
 	require.Len(t, role.KeyIDs, 1)
 	require.Equal(t, newKey.ID(), role.KeyIDs[0])
-	require.EqualValues(t, "targets/level1", role.Name)
-	require.EqualValues(t, "level1", role.Paths[0])
+	require.Equal(t, "targets/level1", role.Name)
+	require.Equal(t, "level1", role.Paths[0])
 
 	// init delegations targets file. This would be done as part of a publish
 	// operation
@@ -739,8 +738,8 @@ func TestApplyTargetsDelegationCreate2Deep(t *testing.T) {
 	role = tgts.Signed.Delegations.Roles[0]
 	require.Len(t, role.KeyIDs, 1)
 	require.Equal(t, newKey.ID(), role.KeyIDs[0])
-	require.EqualValues(t, "targets/level1/level2", role.Name)
-	require.EqualValues(t, "level1/level2", role.Paths[0])
+	require.Equal(t, "targets/level1/level2", role.Name)
+	require.Equal(t, "level1/level2", role.Paths[0])
 }
 
 // Applying a delegation whose parent doesn't exist fails.
@@ -1024,20 +1023,13 @@ func TestAllNotNearExpiry(t *testing.T) {
 }
 
 func TestRotateRemoteKeyOffline(t *testing.T) {
-	// http store requires an absolute baseURL
-	_, err := getRemoteStore("invalidURL", "gun", nil)
-	require.Error(t, err)
-
 	// without a valid roundtripper, rotation should fail since we cannot initialize a HTTPStore
-	var remote storage.RemoteStore = storage.OfflineStore{}
-	key, err := rotateRemoteKey(data.CanonicalSnapshotRole, remote)
+	key, err := rotateRemoteKey("invalidURL", "gun", data.CanonicalSnapshotRole, nil)
 	require.Error(t, err)
 	require.Nil(t, key)
 
 	// if the underlying remote store is faulty and cannot rotate keys, we should get back the error
-	remote, err = getRemoteStore("https://notary-server", "gun", http.DefaultTransport)
-	require.NoError(t, err)
-	key, err = rotateRemoteKey(data.CanonicalSnapshotRole, remote)
+	key, err = rotateRemoteKey("https://notary-server", "gun", data.CanonicalSnapshotRole, http.DefaultTransport)
 	require.Error(t, err)
 	require.Nil(t, key)
 }

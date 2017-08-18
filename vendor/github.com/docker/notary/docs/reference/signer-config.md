@@ -114,8 +114,8 @@ Example:
 
 ## storage section (required)
 
-This is used to store encrypted private keys.  We only support MySQL, PostgreSQL
-or an in-memory store, currently.
+This is used to store encrypted private keys.  We only support MySQL or an
+in-memory store, currently.
 
 Example:
 
@@ -136,7 +136,7 @@ Example:
 	<tr>
 		<td valign="top"><code>backend</code></td>
 		<td valign="top">yes</td>
-		<td valign="top">Must be <code>"mysql"</code>, <code>"postgres"</code> or <code>"memory"</code>.
+		<td valign="top">Must be <code>"mysql"</code> or <code>"memory"</code>.
 			If <code>"memory"</code> is selected, the <code>db_url</code>
 			is ignored.</td>
 	</tr>
@@ -145,7 +145,7 @@ Example:
 		<td valign="top">yes if not <code>memory</code></td>
 		<td valign="top">The <a href="https://github.com/go-sql-driver/mysql">
 			the Data Source Name used to access the DB.</a>
-			(note: please include <code>parseTime=true</code> as part of the DSN)</td>
+			(note: please include <code>parseTime=true</code> as part of the the DSN)</td>
 	</tr>
 	<tr>
 		<td valign="top"><code>default_alias</code></td>
@@ -175,7 +175,7 @@ If this configuration is used, then you must:
 
 `export NOTARY_SIGNER_PASSWORDALIAS1=mypassword`
 
-so that the Notary signer knows to encrypt all keys with the passphrase
+so that that Notary signer knows to encrypt all keys with the passphrase
 `mypassword`, and to decrypt any private key stored with password alias
 `passwordalias1` with the passphrase `mypassword`.
 

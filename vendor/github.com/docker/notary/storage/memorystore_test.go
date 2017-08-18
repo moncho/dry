@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"testing"
 
-	"github.com/docker/notary/tuf/data"
 	"github.com/docker/notary/tuf/utils"
 	"github.com/stretchr/testify/require"
 )
@@ -28,16 +27,15 @@ func TestMemoryStoreMetadataOperations(t *testing.T) {
 	require.NoError(t, s.SetMulti(map[string][]byte{"multi1": metaContent, "multi2": metaContent}))
 
 	for _, metaName := range []string{"exists", "multi1", "multi2"} {
-		role := data.RoleName(metaName)
 		meta, err := s.GetSized(metaName, metaSize)
 		require.NoError(t, err)
 		require.Equal(t, metaContent, meta)
 
-		meta, err = s.GetSized(utils.ConsistentName(role.String(), shasum[:]), metaSize)
+		meta, err = s.GetSized(utils.ConsistentName(metaName, shasum[:]), metaSize)
 		require.NoError(t, err)
 		require.Equal(t, metaContent, meta)
 
-		_, err = s.GetSized(utils.ConsistentName(role.String(), invalidShasum[:]), metaSize)
+		_, err = s.GetSized(utils.ConsistentName(metaName, invalidShasum[:]), metaSize)
 		require.Error(t, err)
 		require.IsType(t, ErrMetaNotFound{}, err)
 	}
@@ -53,7 +51,7 @@ func TestMemoryStoreMetadataOperations(t *testing.T) {
 
 func TestMemoryStoreGetSized(t *testing.T) {
 	content := []byte("content")
-	s := NewMemoryStore(map[data.RoleName][]byte{"content": content})
+	s := NewMemoryStore(map[string][]byte{"content": content})
 
 	// we can get partial size
 	meta, err := s.GetSized("content", 3)

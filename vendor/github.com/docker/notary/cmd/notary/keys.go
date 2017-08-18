@@ -76,9 +76,8 @@ type keyCommander struct {
 	// these are for command line parsing - no need to set
 	rotateKeyRole          string
 	rotateKeyServerManaged bool
-	rotateKeyFiles         []string
-	legacyVersions         int
-	input                  io.Reader
+
+	input io.Reader
 
 	keysImportRole string
 	keysImportGUN  string
@@ -98,14 +97,6 @@ func (k *keyCommander) GetCommand() *cobra.Command {
 		false, "Signing and key management will be handled by the remote server "+
 			"(no key will be generated or stored locally). "+
 			"Required for timestamp role, optional for snapshot role")
-	cmdRotateKey.Flags().IntVarP(&k.legacyVersions, "legacy", "l", 0, "Number of old version's root roles to sign with to support old clients")
-	cmdRotateKey.Flags().StringSliceVarP(
-		&k.rotateKeyFiles,
-		"key",
-		"k",
-		nil,
-		"New key(s) to rotate to. If not specified, one will be generated.",
-	)
 	cmd.AddCommand(cmdRotateKey)
 
 	cmdKeysImport := cmdKeyImportTemplate.ToCommand(k.importKeys)
@@ -215,8 +206,8 @@ func (k *keyCommander) keysRotate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	gun := data.GUN(args[0])
-	rotateKeyRole := data.RoleName(args[1])
+	gun := args[0]
+	rotateKeyRole := args[1]
 
 	rt, err := getTransport(config, gun, admin)
 	if err != nil {
@@ -228,30 +219,19 @@ func (k *keyCommander) keysRotate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	nRepo, err := notaryclient.NewFileCachedNotaryRepository(
+	nRepo, err := notaryclient.NewNotaryRepository(
 		config.GetString("trust_dir"), gun, getRemoteTrustServer(config),
 		rt, k.getRetriever(), trustPin)
 	if err != nil {
 		return err
 	}
 
-	var keyList []string
-
-	for _, keyFile := range k.rotateKeyFiles {
-		privKey, err := readKey(rotateKeyRole, keyFile, k.getRetriever())
-		if err != nil {
-			return err
-		}
-		err = nRepo.CryptoService.AddKey(rotateKeyRole, gun, privKey)
-		if err != nil {
-			return fmt.Errorf("Error importing key: %v", err)
-		}
-		keyList = append(keyList, privKey.ID())
-	}
-
 	if rotateKeyRole == data.CanonicalRootRole {
 		cmd.Print("Warning: you are about to rotate your root key.\n\n" +
-			"You must use your old key to sign this root rotation.\n" +
+			"You must use your old key to sign this root rotation. We recommend that\n" +
+			"you sign all your future root changes with this key as well, so that\n" +
+			"clients can have a smoother update process. Please do not delete\n" +
+			"this key after rotating.\n\n" +
 			"Are you sure you want to proceed?  (yes/no)  ")
 
 		if !askConfirm(k.input) {
@@ -259,8 +239,8 @@ func (k *keyCommander) keysRotate(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 	}
-	nRepo.LegacyVersions = k.legacyVersions
-	if err := nRepo.RotateKey(rotateKeyRole, k.rotateKeyServerManaged, keyList); err != nil {
+
+	if err := nRepo.RotateKey(rotateKeyRole, k.rotateKeyServerManaged); err != nil {
 		return err
 	}
 	cmd.Printf("Successfully rotated %s key for repository %s\n", rotateKeyRole, gun)
@@ -277,7 +257,7 @@ func removeKeyInteractively(keyStores []trustmanager.KeyStore, keyID string,
 		for keypath, keyInfo := range store.ListKeys() {
 			if filepath.Base(keypath) == keyID {
 				foundKeys = append(foundKeys,
-					[]string{keypath, keyInfo.Role.String(), store.Name()})
+					[]string{keypath, keyInfo.Role, store.Name()})
 				storesByIndex = append(storesByIndex, store)
 			}
 		}
@@ -348,7 +328,7 @@ func (k *keyCommander) keyRemove(cmd *cobra.Command, args []string) error {
 	keyID := args[0]
 
 	// This is an invalid ID
-	if len(keyID) != notary.SHA256HexSize {
+	if len(keyID) != notary.Sha256HexSize {
 		return fmt.Errorf("invalid key ID provided: %s", keyID)
 	}
 	cmd.Println("")
@@ -376,7 +356,7 @@ func (k *keyCommander) keyPassphraseChange(cmd *cobra.Command, args []string) er
 	keyID := args[0]
 
 	// This is an invalid ID
-	if len(keyID) != notary.SHA256HexSize {
+	if len(keyID) != notary.Sha256HexSize {
 		return fmt.Errorf("invalid key ID provided: %s", keyID)
 	}
 
@@ -437,7 +417,7 @@ func (k *keyCommander) importKeys(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	for _, file := range args {
-		from, err := os.OpenFile(file, os.O_RDONLY, notary.PrivExecPerms)
+		from, err := os.OpenFile(file, os.O_RDONLY, notary.PrivKeyPerms)
 		if err != nil {
 			return err
 		}
@@ -466,7 +446,7 @@ func (k *keyCommander) exportKeys(cmd *cobra.Command, args []string) error {
 	if k.outFile == "" {
 		out = cmd.Out()
 	} else {
-		f, err := os.OpenFile(k.outFile, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, notary.PrivExecPerms)
+		f, err := os.OpenFile(k.outFile, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, notary.PrivKeyPerms)
 		if err != nil {
 			return err
 		}
@@ -484,7 +464,8 @@ func (k *keyCommander) exportKeys(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("Only the --gun or --key flag may be provided, not a mix of the two flags")
 		}
 		for _, gun := range k.exportGUNs {
-			return utils.ExportKeysByGUN(out, fileStore, gun)
+			gunPath := filepath.Join(notary.NonRootKeysSubdir, gun)
+			return utils.ExportKeysByGUN(out, fileStore, gunPath)
 		}
 	} else if len(k.exportKeyIDs) > 0 {
 		return utils.ExportKeysByID(out, fileStore, k.exportKeyIDs)

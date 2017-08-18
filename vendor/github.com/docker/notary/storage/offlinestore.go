@@ -1,9 +1,5 @@
 package storage
 
-import (
-	"github.com/docker/notary/tuf/data"
-)
-
 // ErrOffline is used to indicate we are operating offline
 type ErrOffline struct{}
 
@@ -38,12 +34,12 @@ func (es OfflineStore) Remove(name string) error {
 }
 
 // GetKey returns ErrOffline
-func (es OfflineStore) GetKey(role data.RoleName) ([]byte, error) {
+func (es OfflineStore) GetKey(role string) ([]byte, error) {
 	return nil, err
 }
 
 // RotateKey returns ErrOffline
-func (es OfflineStore) RotateKey(role data.RoleName) ([]byte, error) {
+func (es OfflineStore) RotateKey(role string) ([]byte, error) {
 	return nil, err
 }
 

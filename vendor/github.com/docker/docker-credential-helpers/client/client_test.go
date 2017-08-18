@@ -56,6 +56,8 @@ func (m *mockProgram) Output() ([]byte, error) {
 			return []byte(credentials.NewErrCredentialsNotFound().Error()), errProgramExited
 		case invalidServerAddress:
 			return []byte("program failed"), errProgramExited
+		case "":
+			return []byte(credentials.NewErrCredentialsMissingServerURL().Error()), errProgramExited
 		}
 	case "store":
 		var c credentials.Credentials
@@ -158,12 +160,16 @@ func TestGet(t *testing.T) {
 		}
 	}
 
+	missingServerURLErr := credentials.NewErrCredentialsMissingServerURL()
+
 	invalid := []struct {
 		serverURL string
 		err       string
 	}{
 		{missingCredsAddress, credentials.NewErrCredentialsNotFound().Error()},
 		{invalidServerAddress, "error getting credentials - err: exited 1, out: `program failed`"},
+		{"", fmt.Sprintf("error getting credentials - err: %s, out: `%s`",
+			missingServerURLErr.Error(), missingServerURLErr.Error())},
 	}
 
 	for _, v := range invalid {

@@ -1,12 +1,7 @@
 # Changelog
 
-## [v0.5.0](https://github.com/docker/notary/releases/tag/v0.5.0) 11/14/2016
-+ Non-certificate public keys in PEM format can now be added to delegation roles [#965](https://github.com/docker/notary/pull/965)
-+ PostgreSQL support as a storage backend for Server and Signer [#920](https://github.com/docker/notary/pull/920)
-+ Notary server's health check now fails if it cannot connect to the signer, since no new repositories can be created and existing repositories cannot be updated if the server cannot reach the signer [#952](https://github.com/docker/notary/pull/952)
-+ Server runs its connectivity healthcheck to the server once every 10 seconds instead of once every minute. [#902](https://github.com/docker/notary/pull/902)
-+ The keys on disk are now stored in the `~/.notary/private` directory, rather than in a key hierarchy that separates them by GUN and by role.  Notary will automatically migrate old-style directory layouts to the new style.  **This is not forwards-compatible against notary<0.4.2 and docker<=1.12** [#872](https://github.com/docker/notary/pull/872)
-+ A new changefeed API has been added to Notary Server. It is only supported when using one of the relational database backends: MySQL, PostgreSQL, or SQLite.[#1019](https://github.com/docker/notary/pull/1019)
+## [v0.4.4](https://github.com/docker/notary/releases/tag/v0.4.3) 1/6/2017
++ Bump gorethink dependency to v3.0.0, which only affects the server and signer [#1075](https://github.com/docker/notary/pull/1075)
 
 ## [v0.4.3](https://github.com/docker/notary/releases/tag/v0.4.3) 1/3/2017
 + Fix build tags for static notary client binaries in linux [#1039](https://github.com/docker/notary/pull/1039)
@@ -20,7 +15,7 @@
 + Output message to CLI when repo changes have been successfully published [#974](https://github.com/docker/notary/pull/974)
 + Improved error messages for client authentication errors and for the witness command [#972](https://github.com/docker/notary/pull/972)
 + Support for finding keys that are anywhere in the notary directory's "private" directory, not just under "private/root_keys" or "private/tuf_keys" [#981](https://github.com/docker/notary/pull/981)
-+ Previously, on any error updating, the client would fall back on the cache.  Now we only do so if there is a network error or if the server is unavailable or missing the TUF data. Invalid TUF data will cause the update to fail - for example if there was an invalid root rotation. [#884](https://github.com/docker/notary/pull/884) [#982](https://github.com/docker/notary/pull/982)
++ Previously, on any error updating, the client would fall back on the cache.  Now we only do so if there is a network error or if the server is unavailable or missing the TUF data. Invalid TUF data will cause the update to fail - for example if there was an invalid root rotation. [#982](https://github.com/docker/notary/pull/982)
 
 ## [v0.4.0](https://github.com/docker/notary/releases/tag/v0.4.0) 9/21/2016
 + Server-managed key rotations [#889](https://github.com/docker/notary/pull/889)

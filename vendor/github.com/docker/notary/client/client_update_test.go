@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-
+	"path"
 	"reflect"
 	"strconv"
 	"strings"
@@ -31,16 +31,16 @@ func newBlankRepo(t *testing.T, url string) *NotaryRepository {
 	tempBaseDir, err := ioutil.TempDir("", "notary-test-")
 	require.NoError(t, err, "failed to create a temporary directory: %s", err)
 
-	repo, err := NewFileCachedNotaryRepository(tempBaseDir, "docker.com/notary", url,
+	repo, err := NewNotaryRepository(tempBaseDir, "docker.com/notary", url,
 		http.DefaultTransport, passphrase.ConstantRetriever("pass"), trustpinning.TrustPinConfig{})
 	require.NoError(t, err)
 	return repo
 }
 
-var metadataDelegations = []data.RoleName{"targets/a", "targets/a/b", "targets/b", "targets/a/b/c", "targets/b/c"}
-var delegationsWithNonEmptyMetadata = []data.RoleName{"targets/a", "targets/a/b", "targets/b"}
+var metadataDelegations = []string{"targets/a", "targets/a/b", "targets/b", "targets/a/b/c", "targets/b/c"}
+var delegationsWithNonEmptyMetadata = []string{"targets/a", "targets/a/b", "targets/b"}
 
-func newServerSwizzler(t *testing.T) (map[data.RoleName][]byte, *testutils.MetadataSwizzler) {
+func newServerSwizzler(t *testing.T) (map[string][]byte, *testutils.MetadataSwizzler) {
 	serverMeta, cs, err := testutils.NewRepoMetadata("docker.com/notary", metadataDelegations...)
 	require.NoError(t, err)
 
@@ -62,17 +62,11 @@ func bumpVersions(t *testing.T, s *testutils.MetadataSwizzler, offset int) {
 }
 
 // create a server that just serves static metadata files from a metaStore
-func readOnlyServer(t *testing.T, cache store.MetadataStore, notFoundStatus int, gun data.GUN) *httptest.Server {
+func readOnlyServer(t *testing.T, cache store.MetadataStore, notFoundStatus int, gun string) *httptest.Server {
 	m := mux.NewRouter()
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		var role string
-		if vars["version"] != "" {
-			role = fmt.Sprintf("%s.%s", vars["version"], vars["role"])
-		} else {
-			role = vars["role"]
-		}
-		metaBytes, err := cache.GetSized(role, store.NoSizeLimit)
+		metaBytes, err := cache.GetSized(vars["role"], store.NoSizeLimit)
 		if _, ok := err.(store.ErrMetaNotFound); ok {
 			w.WriteHeader(notFoundStatus)
 		} else {
@@ -80,7 +74,6 @@ func readOnlyServer(t *testing.T, cache store.MetadataStore, notFoundStatus int,
 			w.Write(metaBytes)
 		}
 	}
-	m.HandleFunc(fmt.Sprintf("/v2/%s/_trust/tuf/{version:[0-9]+}.{role:.*}.json", gun), handler)
 	m.HandleFunc(fmt.Sprintf("/v2/%s/_trust/tuf/{role:.*}.{checksum:.*}.json", gun), handler)
 	m.HandleFunc(fmt.Sprintf("/v2/%s/_trust/tuf/{role:.*}.json", gun), handler)
 	return httptest.NewServer(m)
@@ -88,11 +81,11 @@ func readOnlyServer(t *testing.T, cache store.MetadataStore, notFoundStatus int,
 
 type unwritableStore struct {
 	store.MetadataStore
-	roleToNotWrite data.RoleName
+	roleToNotWrite string
 }
 
 func (u *unwritableStore) Set(role string, serverMeta []byte) error {
-	if role == u.roleToNotWrite.String() {
+	if role == u.roleToNotWrite {
 		return fmt.Errorf("Non-writable")
 	}
 	return u.MetadataStore.Set(role, serverMeta)
@@ -113,12 +106,12 @@ func TestUpdateSucceedsEvenIfCannotWriteNewRepo(t *testing.T) {
 
 	for role := range serverMeta {
 		repo := newBlankRepo(t, ts.URL)
-		repo.cache = &unwritableStore{MetadataStore: repo.cache, roleToNotWrite: role}
+		repo.fileStore = &unwritableStore{MetadataStore: repo.fileStore, roleToNotWrite: role}
 		err := repo.Update(false)
 		require.NoError(t, err)
 
 		for r, expected := range serverMeta {
-			actual, err := repo.cache.GetSized(r.String(), store.NoSizeLimit)
+			actual, err := repo.fileStore.GetSized(r, store.NoSizeLimit)
 			if r == role {
 				require.Error(t, err)
 				require.IsType(t, store.ErrMetaNotFound{}, err,
@@ -151,7 +144,7 @@ func TestUpdateSucceedsEvenIfCannotWriteExistingRepo(t *testing.T) {
 	err := repo.Update(false)
 	require.NoError(t, err)
 
-	origFileStore := repo.cache
+	origFileStore := repo.fileStore
 
 	for role := range serverMeta {
 		for _, forWrite := range []bool{true, false} {
@@ -159,29 +152,20 @@ func TestUpdateSucceedsEvenIfCannotWriteExistingRepo(t *testing.T) {
 			bumpVersions(t, serverSwizzler, 1)
 
 			// update fileStore
-			repo.cache = &unwritableStore{MetadataStore: origFileStore, roleToNotWrite: role}
+			repo.fileStore = &unwritableStore{MetadataStore: origFileStore, roleToNotWrite: role}
 			err := repo.Update(forWrite)
 
 			require.NoError(t, err)
 
-			for r := range serverMeta {
-				expected, err := serverSwizzler.MetadataCache.GetSized(r.String(), store.NoSizeLimit)
-				require.NoError(t, err)
-				if r != data.CanonicalRootRole && strings.Contains(r.String(), "root") {
-					// don't fetch versioned root roles here
-					continue
-				}
-				if strings.ContainsAny(r.String(), "123456789") {
-					continue
-				}
-				actual, err := repo.cache.GetSized(r.String(), store.NoSizeLimit)
-				require.NoError(t, err, "problem getting repo metadata for %s", r.String())
+			for r, expected := range serverMeta {
+				actual, err := repo.fileStore.GetSized(r, store.NoSizeLimit)
+				require.NoError(t, err, "problem getting repo metadata for %s", r)
 				if role == r {
 					require.False(t, bytes.Equal(expected, actual),
-						"%s: expected to not update because %s was unwritable", r.String(), role)
+						"%s: expected to not update because %s was unwritable", r, role)
 				} else {
 					require.True(t, bytes.Equal(expected, actual),
-						"%s: expected to update since only %s was unwritable", r.String(), role)
+						"%s: expected to update since only %s was unwritable", r, role)
 				}
 			}
 		}
@@ -207,7 +191,7 @@ func TestUpdateInOfflineMode(t *testing.T) {
 	require.NoError(t, err, "failed to create a temporary directory: %s", err)
 	defer os.RemoveAll(tempBaseDir)
 
-	offlineRepo, err := NewFileCachedNotaryRepository(tempBaseDir, "docker.com/notary", "https://nope",
+	offlineRepo, err := NewNotaryRepository(tempBaseDir, "docker.com/notary", "https://nope",
 		nil, passphrase.ConstantRetriever("pass"), trustpinning.TrustPinConfig{})
 	require.NoError(t, err)
 	err = offlineRepo.Update(false)
@@ -218,8 +202,8 @@ func TestUpdateInOfflineMode(t *testing.T) {
 	serverMeta, _, err := testutils.NewRepoMetadata("docker.com/notary", metadataDelegations...)
 	require.NoError(t, err)
 	for name, metaBytes := range serverMeta {
-		require.NoError(t, invalidURLRepo.cache.Set(name.String(), metaBytes))
-		require.NoError(t, offlineRepo.cache.Set(name.String(), metaBytes))
+		require.NoError(t, invalidURLRepo.fileStore.Set(name, metaBytes))
+		require.NoError(t, offlineRepo.fileStore.Set(name, metaBytes))
 	}
 
 	// both of these can read from cache and load repo
@@ -227,7 +211,7 @@ func TestUpdateInOfflineMode(t *testing.T) {
 	require.NoError(t, offlineRepo.Update(false))
 }
 
-type swizzleFunc func(*testutils.MetadataSwizzler, data.RoleName) error
+type swizzleFunc func(*testutils.MetadataSwizzler, string) error
 type swizzleExpectations struct {
 	desc       string
 	swizzle    swizzleFunc
@@ -281,7 +265,7 @@ func TestUpdateReplacesCorruptOrMissingMetadata(t *testing.T) {
 
 	// we want to swizzle the local cache, not the server, so create a new one
 	repoSwizzler := testutils.NewMetadataSwizzler("docker.com/notary", serverMeta, cs)
-	repoSwizzler.MetadataCache = repo.cache
+	repoSwizzler.MetadataCache = repo.fileStore
 
 	origMeta := testutils.CopyRepoMetadata(serverMeta)
 
@@ -299,12 +283,12 @@ func TestUpdateReplacesCorruptOrMissingMetadata(t *testing.T) {
 					require.Error(t, err, "%s for %s: expected to error when bootstrapping root", text, role)
 					// revert our original metadata
 					for role := range origMeta {
-						require.NoError(t, repo.cache.Set(role.String(), origMeta[role]))
+						require.NoError(t, repo.fileStore.Set(role, origMeta[role]))
 					}
 				} else {
 					require.NoError(t, err)
 					for r, expected := range serverMeta {
-						actual, err := repo.cache.GetSized(r.String(), store.NoSizeLimit)
+						actual, err := repo.fileStore.GetSized(r, store.NoSizeLimit)
 						require.NoError(t, err, "problem getting repo metadata for %s", role)
 						require.True(t, bytes.Equal(expected, actual),
 							"%s for %s: expected to recover after update", text, role)
@@ -344,7 +328,7 @@ func TestUpdateFailsIfServerRootKeyChangedWithoutMultiSign(t *testing.T) {
 
 	// we want to swizzle the local cache, not the server, so create a new one
 	repoSwizzler := &testutils.MetadataSwizzler{
-		MetadataCache: repo.cache,
+		MetadataCache: repo.fileStore,
 		CryptoService: serverSwizzler.CryptoService,
 		Roles:         serverSwizzler.Roles,
 	}
@@ -353,7 +337,7 @@ func TestUpdateFailsIfServerRootKeyChangedWithoutMultiSign(t *testing.T) {
 		text, messItUp := expt.desc, expt.swizzle
 		for _, forWrite := range []bool{true, false} {
 			require.NoError(t, messItUp(repoSwizzler, data.CanonicalRootRole), "could not fuzz root (%s)", text)
-			messedUpMeta, err := repo.cache.GetSized(data.CanonicalRootRole.String(), store.NoSizeLimit)
+			messedUpMeta, err := repo.fileStore.GetSized(data.CanonicalRootRole, store.NoSizeLimit)
 
 			if _, ok := err.(store.ErrMetaNotFound); ok { // one of the ways to mess up is to delete metadata
 
@@ -362,7 +346,7 @@ func TestUpdateFailsIfServerRootKeyChangedWithoutMultiSign(t *testing.T) {
 				require.NoError(t, err)
 				// revert our original metadata
 				for role := range origMeta {
-					require.NoError(t, repo.cache.Set(role.String(), origMeta[role]))
+					require.NoError(t, repo.fileStore.Set(role, origMeta[role]))
 				}
 			} else {
 
@@ -376,8 +360,8 @@ func TestUpdateFailsIfServerRootKeyChangedWithoutMultiSign(t *testing.T) {
 				// same because it has failed to update.
 				for role, expected := range origMeta {
 					if role != data.CanonicalTimestampRole && role != data.CanonicalSnapshotRole {
-						actual, err := repo.cache.GetSized(role.String(), store.NoSizeLimit)
-						require.NoError(t, err, "problem getting repo metadata for %s", role.String())
+						actual, err := repo.fileStore.GetSized(role, store.NoSizeLimit)
+						require.NoError(t, err, "problem getting repo metadata for %s", role)
 
 						if role == data.CanonicalRootRole {
 							expected = messedUpMeta
@@ -391,17 +375,17 @@ func TestUpdateFailsIfServerRootKeyChangedWithoutMultiSign(t *testing.T) {
 
 			// revert our original root metadata
 			require.NoError(t,
-				repo.cache.Set(data.CanonicalRootRole.String(), origMeta[data.CanonicalRootRole]))
+				repo.fileStore.Set(data.CanonicalRootRole, origMeta[data.CanonicalRootRole]))
 		}
 	}
 }
 
 type updateOpts struct {
-	notFoundCode     int           // what code to return when the cache doesn't have the metadata
-	serverHasNewData bool          // whether the server should have the same or new version than the local cache
-	localCache       bool          // whether the repo should have a local cache before updating
-	forWrite         bool          // whether the update is for writing or not (force check remote root.json)
-	role             data.RoleName // the role to mess up on the server
+	notFoundCode     int    // what code to return when the cache doesn't have the metadata
+	serverHasNewData bool   // whether the server should have the same or new version than the local cache
+	localCache       bool   // whether the repo should have a local cache before updating
+	forWrite         bool   // whether the update is for writing or not (force check remote root.json)
+	role             string // the role to mess up on the server
 
 	checkRepo func(*NotaryRepository, *testutils.MetadataSwizzler) // a callback that can examine the repo at the end
 }
@@ -709,7 +693,7 @@ func testUpdateRemoteNon200Error(t *testing.T, opts updateOpts, errExpected inte
 		require.IsType(t, errExpected, err, "wrong update error when %s is %v (forWrite: %v)",
 			opts.role, opts.notFoundCode, opts.forWrite)
 		if notFound, ok := err.(store.ErrMetaNotFound); ok {
-			require.True(t, strings.HasPrefix(notFound.Resource, opts.role.String()), "wrong resource missing (forWrite: %v)", opts.forWrite)
+			require.True(t, strings.HasPrefix(notFound.Resource, opts.role), "wrong resource missing (forWrite: %v)", opts.forWrite)
 		}
 	}
 }
@@ -860,7 +844,7 @@ var waysToMessUpServerBadMeta = []swizzleExpectations{
 
 	{desc: "lower metadata version", expectErrs: []interface{}{
 		&trustpinning.ErrValidationFail{}, signed.ErrLowVersion{}, data.ErrInvalidMetadata{}},
-		swizzle: func(s *testutils.MetadataSwizzler, role data.RoleName) error {
+		swizzle: func(s *testutils.MetadataSwizzler, role string) error {
 			return s.OffsetMetadataVersion(role, -3)
 		}},
 }
@@ -876,7 +860,7 @@ var waysToMessUpServerBadSigs = []swizzleExpectations{
 
 	{desc: "insufficient signatures", expectErrs: []interface{}{
 		&trustpinning.ErrValidationFail{}, signed.ErrRoleThreshold{}},
-		swizzle: func(s *testutils.MetadataSwizzler, role data.RoleName) error {
+		swizzle: func(s *testutils.MetadataSwizzler, role string) error {
 			return s.SetThreshold(role, 2)
 		}},
 }
@@ -904,7 +888,7 @@ func waysToMessUpServerRoot() []swizzleExpectations {
 					desc: fmt.Sprintf("no %s keys", roleName),
 					expectErrs: []interface{}{
 						&trustpinning.ErrValidationFail{}, signed.ErrRoleThreshold{}},
-					swizzle: func(s *testutils.MetadataSwizzler, role data.RoleName) error {
+					swizzle: func(s *testutils.MetadataSwizzler, role string) error {
 						return s.MutateRoot(func(r *data.Root) {
 							r.Roles[roleName].KeyIDs = []string{}
 						})
@@ -912,7 +896,7 @@ func waysToMessUpServerRoot() []swizzleExpectations {
 				swizzleExpectations{
 					desc:       fmt.Sprintf("no %s role", roleName),
 					expectErrs: []interface{}{data.ErrInvalidMetadata{}},
-					swizzle: func(s *testutils.MetadataSwizzler, role data.RoleName) error {
+					swizzle: func(s *testutils.MetadataSwizzler, role string) error {
 						return s.MutateRoot(func(r *data.Root) { delete(r.Roles, roleName) })
 					}},
 			)
@@ -988,48 +972,48 @@ func TestUpdateRootRemoteCorruptedCannotUseLocalCache(t *testing.T) {
 
 func waysToMessUpServerNonRootPerRole(t *testing.T) map[string][]swizzleExpectations {
 	perRoleSwizzling := make(map[string][]swizzleExpectations)
-	for _, missing := range []data.RoleName{data.CanonicalRootRole, data.CanonicalTargetsRole} {
-		perRoleSwizzling[data.CanonicalSnapshotRole.String()] = append(
-			perRoleSwizzling[data.CanonicalSnapshotRole.String()],
+	for _, missing := range []string{data.CanonicalRootRole, data.CanonicalTargetsRole} {
+		perRoleSwizzling[data.CanonicalSnapshotRole] = append(
+			perRoleSwizzling[data.CanonicalSnapshotRole],
 			swizzleExpectations{
 				desc:       fmt.Sprintf("snapshot missing root meta checksum"),
 				expectErrs: []interface{}{data.ErrInvalidMetadata{}},
-				swizzle: func(s *testutils.MetadataSwizzler, role data.RoleName) error {
+				swizzle: func(s *testutils.MetadataSwizzler, role string) error {
 					return s.MutateSnapshot(func(sn *data.Snapshot) {
-						delete(sn.Meta, missing.String())
+						delete(sn.Meta, missing)
 					})
 				},
 			})
 	}
-	perRoleSwizzling[data.CanonicalTargetsRole.String()] = []swizzleExpectations{{
+	perRoleSwizzling[data.CanonicalTargetsRole] = []swizzleExpectations{{
 		desc:       fmt.Sprintf("target missing delegations data"),
 		expectErrs: []interface{}{data.ErrMismatchedChecksum{}},
-		swizzle: func(s *testutils.MetadataSwizzler, role data.RoleName) error {
+		swizzle: func(s *testutils.MetadataSwizzler, role string) error {
 			return s.MutateTargets(func(tg *data.Targets) {
 				tg.Delegations.Roles = tg.Delegations.Roles[1:]
 			})
 		},
 	}}
-	perRoleSwizzling[data.CanonicalTimestampRole.String()] = []swizzleExpectations{{
+	perRoleSwizzling[data.CanonicalTimestampRole] = []swizzleExpectations{{
 		desc:       fmt.Sprintf("timestamp missing snapshot meta checksum"),
 		expectErrs: []interface{}{data.ErrInvalidMetadata{}},
-		swizzle: func(s *testutils.MetadataSwizzler, role data.RoleName) error {
+		swizzle: func(s *testutils.MetadataSwizzler, role string) error {
 			return s.MutateTimestamp(func(ts *data.Timestamp) {
-				delete(ts.Meta, data.CanonicalSnapshotRole.String())
+				delete(ts.Meta, data.CanonicalSnapshotRole)
 			})
 		},
 	}}
 	perRoleSwizzling["targets/a"] = []swizzleExpectations{{
 		desc:       fmt.Sprintf("delegation has invalid role"),
 		expectErrs: []interface{}{data.ErrInvalidMetadata{}},
-		swizzle: func(s *testutils.MetadataSwizzler, role data.RoleName) error {
+		swizzle: func(s *testutils.MetadataSwizzler, role string) error {
 			return s.MutateTargets(func(tg *data.Targets) {
 				var keyIDs []string
 				for k := range tg.Delegations.Keys {
 					keyIDs = append(keyIDs, k)
 				}
 				// add the keys from root too
-				rootMeta, err := s.MetadataCache.GetSized(data.CanonicalRootRole.String(), store.NoSizeLimit)
+				rootMeta, err := s.MetadataCache.GetSized(data.CanonicalRootRole, store.NoSizeLimit)
 				require.NoError(t, err)
 
 				signedRoot := &data.SignedRoot{}
@@ -1079,32 +1063,31 @@ func TestUpdateNonRootRemoteCorruptedNoLocalCache(t *testing.T) {
 		for _, testData := range append(waysToMessUpServerBadSigs, wayToMessUpServerBadExpiry) {
 			testUpdateRemoteCorruptValidChecksum(t, updateOpts{
 				role:      role,
-				checkRepo: checkBadDelegationRoleSkipped(t, role.String()),
+				checkRepo: checkBadDelegationRoleSkipped(t, role),
 			}, testData, false)
 		}
 	}
 
 	for role, expectations := range waysToMessUpServerNonRootPerRole(t) {
 		for _, testData := range expectations {
-			roleName := data.RoleName(role)
-			switch roleName {
+			switch role {
 			case data.CanonicalSnapshotRole:
 				testUpdateRemoteCorruptValidChecksum(t, updateOpts{
-					role: roleName,
+					role: role,
 				}, testData, true)
 			case data.CanonicalTargetsRole:
 				// if there are no delegation target roles, we're fine, we just don't
 				// download them
 				testUpdateRemoteCorruptValidChecksum(t, updateOpts{
-					role: roleName,
+					role: role,
 				}, testData, false)
 			case data.CanonicalTimestampRole:
 				testUpdateRemoteCorruptValidChecksum(t, updateOpts{
-					role: roleName,
+					role: role,
 				}, testData, true)
-			case data.RoleName("targets/a"):
+			case "targets/a":
 				testUpdateRemoteCorruptValidChecksum(t, updateOpts{
-					role: roleName,
+					role: role,
 				}, testData, true)
 			}
 		}
@@ -1142,27 +1125,27 @@ func TestUpdateNonRootRemoteCorruptedCanUseLocalCache(t *testing.T) {
 	}
 	for role, expectations := range waysToMessUpServerNonRootPerRole(t) {
 		for _, testData := range expectations {
-			roleName := data.RoleName(role)
-			switch roleName {
+
+			switch role {
 			case data.CanonicalSnapshotRole:
 				testUpdateRemoteCorruptValidChecksum(t, updateOpts{
 					localCache: true,
-					role:       roleName,
+					role:       role,
 				}, testData, false)
 			case data.CanonicalTargetsRole:
 				testUpdateRemoteCorruptValidChecksum(t, updateOpts{
 					localCache: true,
-					role:       roleName,
+					role:       role,
 				}, testData, false)
 			case data.CanonicalTimestampRole:
 				testUpdateRemoteCorruptValidChecksum(t, updateOpts{
 					localCache: true,
-					role:       roleName,
+					role:       role,
 				}, testData, true)
-			case data.RoleName("targets/a"):
+			case "targets/a":
 				testUpdateRemoteCorruptValidChecksum(t, updateOpts{
 					localCache: true,
-					role:       roleName,
+					role:       role,
 				}, testData, false)
 			}
 		}
@@ -1178,7 +1161,7 @@ func checkBadDelegationRoleSkipped(t *testing.T, delgRoleName string) func(*Nota
 				continue
 			}
 			_, hasTarget := repo.tufRepo.Targets[roleName]
-			require.Equal(t, !strings.HasPrefix(roleName.String(), delgRoleName), hasTarget)
+			require.Equal(t, !strings.HasPrefix(roleName, delgRoleName), hasTarget)
 		}
 
 		require.NotNil(t, repo.tufRepo.Root)
@@ -1226,20 +1209,19 @@ func TestUpdateNonRootRemoteCorruptedCannotUseLocalCache(t *testing.T) {
 				serverHasNewData: true,
 				localCache:       true,
 				role:             role,
-				checkRepo:        checkBadDelegationRoleSkipped(t, role.String()),
+				checkRepo:        checkBadDelegationRoleSkipped(t, role),
 			}, testData, false)
 		}
 	}
 
 	for role, expectations := range waysToMessUpServerNonRootPerRole(t) {
 		for _, testData := range expectations {
-			roleName := data.RoleName(role)
-			switch roleName {
+			switch role {
 			case data.CanonicalSnapshotRole:
 				testUpdateRemoteCorruptValidChecksum(t, updateOpts{
 					serverHasNewData: true,
 					localCache:       true,
-					role:             roleName,
+					role:             role,
 				}, testData, true)
 			case data.CanonicalTargetsRole:
 				// if there are no delegation target roles, we're fine, we just don't
@@ -1247,7 +1229,7 @@ func TestUpdateNonRootRemoteCorruptedCannotUseLocalCache(t *testing.T) {
 				testUpdateRemoteCorruptValidChecksum(t, updateOpts{
 					serverHasNewData: true,
 					localCache:       true,
-					role:             roleName,
+					role:             role,
 				}, testData, false)
 			case data.CanonicalTimestampRole:
 				// we only default to the previous cached version of the timestamp if
@@ -1255,13 +1237,13 @@ func TestUpdateNonRootRemoteCorruptedCannotUseLocalCache(t *testing.T) {
 				testUpdateRemoteCorruptValidChecksum(t, updateOpts{
 					serverHasNewData: true,
 					localCache:       true,
-					role:             roleName,
+					role:             role,
 				}, testData, true)
-			case data.RoleName("targets/a"):
+			case "targets/a":
 				testUpdateRemoteCorruptValidChecksum(t, updateOpts{
 					serverHasNewData: true,
 					localCache:       true,
-					role:             roleName,
+					role:             role,
 				}, testData, true)
 			}
 		}
@@ -1312,23 +1294,15 @@ func testUpdateRemoteCorruptValidChecksum(t *testing.T, opts updateOpts, expt sw
 		}
 	}
 	err := repo.Update(opts.forWrite)
-	checkErrors(t, err, shouldErr, expt.expectErrs, msg)
-
-	if opts.checkRepo != nil {
-		opts.checkRepo(repo, serverSwizzler)
-	}
-}
-
-func checkErrors(t *testing.T, err error, shouldErr bool, expectedErrs []interface{}, msg string) {
 	if shouldErr {
 		require.Error(t, err, "expected failure updating when %s", msg)
 
 		errType := reflect.TypeOf(err)
 		isExpectedType := false
 		var expectedTypes []string
-		for _, expectErr := range expectedErrs {
+		for _, expectErr := range expt.expectErrs {
 			expectedType := reflect.TypeOf(expectErr)
-			isExpectedType = isExpectedType || reflect.DeepEqual(errType, expectedType)
+			isExpectedType = isExpectedType || errType == expectedType
 			expectedTypes = append(expectedTypes, expectedType.String())
 		}
 		require.True(t, isExpectedType, "expected one of %v when %s: got %s",
@@ -1336,6 +1310,10 @@ func checkErrors(t *testing.T, err error, shouldErr bool, expectedErrs []interfa
 
 	} else {
 		require.NoError(t, err, "expected no failure updating when %s", msg)
+	}
+
+	if opts.checkRepo != nil {
+		opts.checkRepo(repo, serverSwizzler)
 	}
 }
 
@@ -1366,7 +1344,7 @@ func testUpdateLocalAndRemoteRootCorrupt(t *testing.T, forWrite bool, localExpt,
 	require.NoError(t, err)
 	repoSwizzler := &testutils.MetadataSwizzler{
 		Gun:           serverSwizzler.Gun,
-		MetadataCache: repo.cache,
+		MetadataCache: repo.fileStore,
 		CryptoService: serverSwizzler.CryptoService,
 		Roles:         serverSwizzler.Roles,
 	}
@@ -1423,7 +1401,7 @@ func TestUpdateRemoteKeyRotated(t *testing.T) {
 	}
 }
 
-func testUpdateRemoteKeyRotated(t *testing.T, role data.RoleName) {
+func testUpdateRemoteKeyRotated(t *testing.T, role string) {
 	_, serverSwizzler := newServerSwizzler(t)
 	ts := readOnlyServer(t, serverSwizzler.MetadataCache, http.StatusNotFound, "docker.com/notary")
 	defer ts.Close()
@@ -1440,7 +1418,7 @@ func testUpdateRemoteKeyRotated(t *testing.T, role data.RoleName) {
 	require.NoError(t, err)
 
 	// bump the version
-	bumpRole := role.Parent()
+	bumpRole := path.Dir(role)
 	if !data.IsDelegation(role) {
 		bumpRole = data.CanonicalRootRole
 	}
@@ -1460,7 +1438,7 @@ func testUpdateRemoteKeyRotated(t *testing.T, role data.RoleName) {
 	// invalid signatures are ok - the delegation is just skipped
 	if data.IsDelegation(role) {
 		require.NoError(t, err)
-		checkBadDelegationRoleSkipped(t, role.String())(repo, serverSwizzler)
+		checkBadDelegationRoleSkipped(t, role)(repo, serverSwizzler)
 		return
 	}
 	require.Error(t, err, "expected failure updating when %s", msg)
@@ -1489,18 +1467,11 @@ func signSerializeAndUpdateRoot(t *testing.T, signedRoot data.SignedRoot,
 	require.NoError(t, signed.Sign(serverSwizzler.CryptoService, signedObj, keys, len(keys), nil))
 	rootBytes, err := json.Marshal(signedObj)
 	require.NoError(t, err)
-	require.NoError(t, serverSwizzler.MetadataCache.Set(data.CanonicalRootRole.String(), rootBytes))
+	require.NoError(t, serverSwizzler.MetadataCache.Set(data.CanonicalRootRole, rootBytes))
 
 	// update the hashes on both snapshot and timestamp
 	require.NoError(t, serverSwizzler.UpdateSnapshotHashes())
 	require.NoError(t, serverSwizzler.UpdateTimestampHash())
-}
-
-func requireRootSignatures(t *testing.T, serverSwizzler *testutils.MetadataSwizzler, num int) {
-	updatedRootBytes, _ := serverSwizzler.MetadataCache.GetSized(data.CanonicalRootRole.String(), -1)
-	updatedRoot := &data.SignedRoot{}
-	require.NoError(t, json.Unmarshal(updatedRootBytes, updatedRoot))
-	require.EqualValues(t, len(updatedRoot.Signatures), num)
 }
 
 // A valid root rotation only cares about the immediately previous old root keys,
@@ -1521,13 +1492,13 @@ func TestValidateRootRotationWithOldRole(t *testing.T) {
 	// --- key is saved, but doesn't matter at all for rotation if we're already on
 	// --- the root metadata with the 3 keys)
 
-	rootBytes, err := serverSwizzler.MetadataCache.GetSized(data.CanonicalRootRole.String(), store.NoSizeLimit)
+	rootBytes, err := serverSwizzler.MetadataCache.GetSized(data.CanonicalRootRole, store.NoSizeLimit)
 	require.NoError(t, err)
 	signedRoot := data.SignedRoot{}
 	require.NoError(t, json.Unmarshal(rootBytes, &signedRoot))
 
 	// save the old role to prove that it is not needed for client updates
-	oldVersion := data.RoleName(fmt.Sprintf("%v.%v", data.CanonicalRootRole, signedRoot.Signed.Version))
+	oldVersion := fmt.Sprintf("%v.%v", data.CanonicalRootRole, signedRoot.Signed.Version)
 	signedRoot.Signed.Roles[oldVersion] = &data.RootRole{
 		Threshold: 1,
 		KeyIDs:    signedRoot.Signed.Roles[data.CanonicalRootRole].KeyIDs,
@@ -1602,200 +1573,6 @@ func TestValidateRootRotationWithOldRole(t *testing.T) {
 	require.NoError(t, repo.Update(false))
 }
 
-// A valid root role is signed by the current root role keys and the previous root role keys
-func TestRootRoleInvariant(t *testing.T) {
-	// start with a repo
-	_, serverSwizzler := newServerSwizzler(t)
-	ts := readOnlyServer(t, serverSwizzler.MetadataCache, http.StatusNotFound, "docker.com/notary")
-	defer ts.Close()
-
-	repo := newBlankRepo(t, ts.URL)
-	defer os.RemoveAll(repo.baseDir)
-
-	// --- setup so that the root starts with a role with 1 keys, and threshold of 1
-	rootBytes, err := serverSwizzler.MetadataCache.GetSized(data.CanonicalRootRole.String(), store.NoSizeLimit)
-	require.NoError(t, err)
-	signedRoot := data.SignedRoot{}
-	require.NoError(t, json.Unmarshal(rootBytes, &signedRoot))
-
-	// save the old role to prove that it is not needed for client updates
-	oldVersion := data.RoleName(fmt.Sprintf("%v.%v", data.CanonicalRootRole.String(), signedRoot.Signed.Version))
-	signedRoot.Signed.Roles[oldVersion] = &data.RootRole{
-		Threshold: 1,
-		KeyIDs:    signedRoot.Signed.Roles[data.CanonicalRootRole].KeyIDs,
-	}
-
-	threeKeys := make([]data.PublicKey, 3)
-	keyIDs := make([]string, len(threeKeys))
-	for i := 0; i < len(threeKeys); i++ {
-		threeKeys[i], err = testutils.CreateKey(
-			serverSwizzler.CryptoService, "docker.com/notary", data.CanonicalRootRole, data.ECDSAKey)
-		require.NoError(t, err)
-		keyIDs[i] = threeKeys[i].ID()
-	}
-	signedRoot.Signed.Version++
-	signedRoot.Signed.Keys[keyIDs[0]] = threeKeys[0]
-	signedRoot.Signed.Roles[data.CanonicalRootRole].KeyIDs = []string{keyIDs[0]}
-	signedRoot.Signed.Roles[data.CanonicalRootRole].Threshold = 1
-	// sign with the first key only
-	signSerializeAndUpdateRoot(t, signedRoot, serverSwizzler, []data.PublicKey{threeKeys[0]})
-
-	// Load this root for the first time with 1 key
-	require.NoError(t, repo.Update(false))
-
-	// --- First root rotation: replace the first key with a different key
-	signedRoot.Signed.Version++
-	signedRoot.Signed.Keys[keyIDs[1]] = threeKeys[1]
-	signedRoot.Signed.Roles[data.CanonicalRootRole].KeyIDs = []string{keyIDs[1]}
-
-	// --- If the current role is satisfied but the previous one is not, root rotation
-	// --- will fail.  Signing with just the second key will not satisfy the first role.
-	signSerializeAndUpdateRoot(t, signedRoot, serverSwizzler, []data.PublicKey{threeKeys[1]})
-	require.Error(t, repo.Update(false))
-	requireRootSignatures(t, serverSwizzler, 1)
-
-	// --- If both the current and previous roles are satisfied, then the root rotation
-	// --- will succeed (signing with the first and second keys will satisfy both)
-	signSerializeAndUpdateRoot(t, signedRoot, serverSwizzler, threeKeys[:2])
-	require.NoError(t, repo.Update(false))
-	requireRootSignatures(t, serverSwizzler, 2)
-
-	// --- Second root rotation: replace the second key with a third
-	signedRoot.Signed.Version++
-	signedRoot.Signed.Keys[keyIDs[2]] = threeKeys[2]
-	signedRoot.Signed.Roles[data.CanonicalRootRole].KeyIDs = []string{keyIDs[2]}
-
-	// --- If the current role is satisfied but the previous one is not, root rotation
-	// --- will fail.  Signing with just the second key will not satisfy the first role.
-	signSerializeAndUpdateRoot(t, signedRoot, serverSwizzler, []data.PublicKey{threeKeys[2]})
-	require.Error(t, repo.Update(false))
-	requireRootSignatures(t, serverSwizzler, 1)
-
-	// --- If both the current and previous roles are satisfied, then the root rotation
-	// --- will succeed (signing with the second and third keys will satisfy both)
-	signSerializeAndUpdateRoot(t, signedRoot, serverSwizzler, threeKeys[1:])
-	require.NoError(t, repo.Update(false))
-	requireRootSignatures(t, serverSwizzler, 2)
-
-	// -- If signed with all previous roles, update will succeed
-	signSerializeAndUpdateRoot(t, signedRoot, serverSwizzler, threeKeys)
-	require.NoError(t, repo.Update(false))
-	requireRootSignatures(t, serverSwizzler, 3)
-}
-
-// All intermediate roots must be signed by the previous root role
-func TestBadIntermediateTransitions(t *testing.T) {
-	// start with a repo
-	_, serverSwizzler := newServerSwizzler(t)
-	ts := readOnlyServer(t, serverSwizzler.MetadataCache, http.StatusNotFound, "docker.com/notary")
-	defer ts.Close()
-
-	repo := newBlankRepo(t, ts.URL)
-	defer os.RemoveAll(repo.baseDir)
-
-	// --- setup so that the root starts with a role with 1 keys, and threshold of 1
-	rootBytes, err := serverSwizzler.MetadataCache.GetSized(data.CanonicalRootRole.String(), store.NoSizeLimit)
-	require.NoError(t, err)
-	signedRoot := data.SignedRoot{}
-	require.NoError(t, json.Unmarshal(rootBytes, &signedRoot))
-
-	// generate keys for testing
-	threeKeys := make([]data.PublicKey, 3)
-	keyIDs := make([]string, len(threeKeys))
-	for i := 0; i < len(threeKeys); i++ {
-		threeKeys[i], err = testutils.CreateKey(
-			serverSwizzler.CryptoService, "docker.com/notary", data.CanonicalRootRole, data.ECDSAKey)
-		require.NoError(t, err)
-		keyIDs[i] = threeKeys[i].ID()
-	}
-
-	// increment the root version and sign with the first key only
-	signedRoot.Signed.Version++
-	signedRoot.Signed.Keys[keyIDs[0]] = threeKeys[0]
-	signedRoot.Signed.Roles[data.CanonicalRootRole].KeyIDs = []string{keyIDs[0]}
-	signedRoot.Signed.Roles[data.CanonicalRootRole].Threshold = 1
-	signSerializeAndUpdateRoot(t, signedRoot, serverSwizzler, []data.PublicKey{threeKeys[0]})
-
-	require.NoError(t, repo.Update(false))
-
-	// increment the root version and sign with the second key only
-	signedRoot.Signed.Version++
-	delete(signedRoot.Signed.Keys, keyIDs[0])
-	signedRoot.Signed.Keys[keyIDs[1]] = threeKeys[1]
-	signedRoot.Signed.Roles[data.CanonicalRootRole].KeyIDs = []string{keyIDs[1]}
-	signedRoot.Signed.Roles[data.CanonicalRootRole].Threshold = 1
-	signSerializeAndUpdateRoot(t, signedRoot, serverSwizzler, []data.PublicKey{threeKeys[1]})
-
-	// increment the root version and sign with all three keys
-	signedRoot.Signed.Version++
-	signedRoot.Signed.Keys[keyIDs[0]] = threeKeys[0]
-	signedRoot.Signed.Keys[keyIDs[1]] = threeKeys[1]
-	signedRoot.Signed.Keys[keyIDs[2]] = threeKeys[2]
-	signedRoot.Signed.Roles[data.CanonicalRootRole].KeyIDs = []string{keyIDs[0], keyIDs[1], keyIDs[2]}
-	signedRoot.Signed.Roles[data.CanonicalRootRole].Threshold = 1
-	signSerializeAndUpdateRoot(t, signedRoot, serverSwizzler, []data.PublicKey{threeKeys[1]})
-	requireRootSignatures(t, serverSwizzler, 1)
-
-	// Update fails because version 1 -> 2 is invalid.
-	require.Error(t, repo.Update(false))
-}
-
-// All intermediate roots must be signed by the previous root role
-func TestExpiredIntermediateTransitions(t *testing.T) {
-	// start with a repo
-	_, serverSwizzler := newServerSwizzler(t)
-	ts := readOnlyServer(t, serverSwizzler.MetadataCache, http.StatusNotFound, "docker.com/notary")
-	defer ts.Close()
-
-	repo := newBlankRepo(t, ts.URL)
-	defer os.RemoveAll(repo.baseDir)
-
-	// --- setup so that the root starts with a role with 1 keys, and threshold of 1
-	rootBytes, err := serverSwizzler.MetadataCache.GetSized(data.CanonicalRootRole.String(), store.NoSizeLimit)
-	require.NoError(t, err)
-	signedRoot := data.SignedRoot{}
-	require.NoError(t, json.Unmarshal(rootBytes, &signedRoot))
-
-	// generate keys for testing
-	threeKeys := make([]data.PublicKey, 3)
-	keyIDs := make([]string, len(threeKeys))
-	for i := 0; i < len(threeKeys); i++ {
-		threeKeys[i], err = testutils.CreateKey(
-			serverSwizzler.CryptoService, "docker.com/notary", data.CanonicalRootRole, data.ECDSAKey)
-		require.NoError(t, err)
-		keyIDs[i] = threeKeys[i].ID()
-	}
-
-	// increment the root version and sign with the first key only
-	signedRoot.Signed.Version++
-	signedRoot.Signed.Keys[keyIDs[0]] = threeKeys[0]
-	signedRoot.Signed.Roles[data.CanonicalRootRole].KeyIDs = []string{keyIDs[0]}
-	signedRoot.Signed.Roles[data.CanonicalRootRole].Threshold = 1
-	signSerializeAndUpdateRoot(t, signedRoot, serverSwizzler, []data.PublicKey{threeKeys[0]})
-
-	require.NoError(t, repo.Update(false))
-
-	// increment the root version and sign with the first and second keys, but set metadata to be expired.
-	signedRoot.Signed.Version++
-	signedRoot.Signed.Keys[keyIDs[1]] = threeKeys[1]
-	signedRoot.Signed.Roles[data.CanonicalRootRole].KeyIDs = []string{keyIDs[0], keyIDs[1]}
-	signedRoot.Signed.Roles[data.CanonicalRootRole].Threshold = 1
-	signedRoot.Signed.Expires = time.Now().AddDate(0, -1, 0)
-	signSerializeAndUpdateRoot(t, signedRoot, serverSwizzler, []data.PublicKey{threeKeys[0], threeKeys[1]})
-
-	// increment the root version and sign with all three keys
-	signedRoot.Signed.Version++
-	signedRoot.Signed.Keys[keyIDs[2]] = threeKeys[2]
-	signedRoot.Signed.Roles[data.CanonicalRootRole].KeyIDs = []string{keyIDs[0], keyIDs[1], keyIDs[2]}
-	signedRoot.Signed.Roles[data.CanonicalRootRole].Threshold = 1
-	signedRoot.Signed.Expires = time.Now().AddDate(0, 1, 0)
-	signSerializeAndUpdateRoot(t, signedRoot, serverSwizzler, threeKeys[:3])
-	requireRootSignatures(t, serverSwizzler, 3)
-
-	// Update succeeds despite version 2 being expired.
-	require.NoError(t, repo.Update(false))
-}
-
 // TestDownloadTargetsLarge: Check that we can download very large targets metadata files,
 // which may be caused by adding a large number of targets.
 // This test is slow, so it will not run in short mode.
@@ -1835,7 +1612,7 @@ func TestDownloadTargetsLarge(t *testing.T) {
 }
 
 func TestDownloadTargetsDeep(t *testing.T) {
-	delegations := []data.RoleName{
+	delegations := []string{
 		// left subtree
 		"targets/level1",
 		"targets/level1/a",
@@ -1904,7 +1681,7 @@ func TestDownloadSnapshotLargeDelegationsMany(t *testing.T) {
 	// This can also be done by adding legitimate delegations but it will be much slower
 	// 75,000 delegation roles results in > 5MB (~7.3MB on recent runs)
 	for i := 0; i < numSnapsnotMeta; i++ {
-		roleName := data.RoleName(fmt.Sprintf("targets/%d", i))
+		roleName := fmt.Sprintf("targets/%d", i)
 		// for a tiny fraction of the delegations,  make sure role is added, so the meta is downloaded
 		if i%1000 == 0 {
 			require.NoError(t, tufRepo.UpdateDelegationKeys(roleName, data.KeyList{delgKey}, nil, 1))
@@ -1967,7 +1744,7 @@ func TestRootOnDiskTrustPinning(t *testing.T) {
 	defer os.RemoveAll(repo.baseDir)
 	repo.trustPinning = restrictiveTrustPinning
 	// put root on disk
-	require.NoError(t, repo.cache.Set(data.CanonicalRootRole.String(), meta[data.CanonicalRootRole]))
+	require.NoError(t, repo.fileStore.Set(data.CanonicalRootRole, meta[data.CanonicalRootRole]))
 
 	require.NoError(t, repo.Update(false))
 }

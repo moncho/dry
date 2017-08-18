@@ -23,6 +23,7 @@ import (
 const (
 	Cert = "../../fixtures/notary-signer.crt"
 	Key  = "../../fixtures/notary-signer.key"
+	Root = "../../fixtures/root-ca.crt"
 )
 
 // initializes a viper object with test configuration
@@ -237,8 +238,8 @@ func TestSetupGRPCServerSuccess(t *testing.T) {
 		TLSConfig:      &tlsConf,
 		CryptoServices: make(signer.CryptoServiceIndex),
 	})
-	require.NoError(t, err)
 	defer lis.Close()
+	require.NoError(t, err)
 	require.Equal(t, "[::]:7899", lis.Addr().String())
 	require.Equal(t, "tcp", lis.Addr().Network())
 	require.NotNil(t, grpcServer)

@@ -107,27 +107,15 @@ func TestExportKeys(t *testing.T) {
 func TestExportKeysByGUN(t *testing.T) {
 	s := NewTestExportStore()
 
-	keyHeaders := make(map[string]string)
-	keyHeaders["gun"] = "ankh"
-	keyHeaders["role"] = "snapshot"
-	b := &pem.Block{
-		Headers: keyHeaders,
-	}
+	b := &pem.Block{}
 	b.Bytes = make([]byte, 1000)
 	rand.Read(b.Bytes)
 
-	b2 := &pem.Block{
-		Headers: keyHeaders,
-	}
+	b2 := &pem.Block{}
 	b2.Bytes = make([]byte, 1000)
 	rand.Read(b2.Bytes)
 
-	otherHeaders := make(map[string]string)
-	otherHeaders["gun"] = "morpork"
-	otherHeaders["role"] = "snapshot"
-	c := &pem.Block{
-		Headers: otherHeaders,
-	}
+	c := &pem.Block{}
 	c.Bytes = make([]byte, 1000)
 	rand.Read(c.Bytes)
 
@@ -135,9 +123,9 @@ func TestExportKeysByGUN(t *testing.T) {
 	b2Bytes := pem.EncodeToMemory(b2)
 	cBytes := pem.EncodeToMemory(c)
 
-	s.data["one"] = bBytes
-	s.data["two"] = b2Bytes
-	s.data["three"] = cBytes
+	s.data["ankh/one"] = bBytes
+	s.data["ankh/two"] = b2Bytes
+	s.data["morpork/three"] = cBytes
 
 	buf := bytes.NewBuffer(nil)
 
@@ -149,11 +137,11 @@ func TestExportKeysByGUN(t *testing.T) {
 
 	bFinal, rest := pem.Decode(out)
 	require.Equal(t, b.Bytes, bFinal.Bytes)
-	require.Equal(t, "one", bFinal.Headers["path"])
+	require.Equal(t, "ankh/one", bFinal.Headers["path"])
 
 	b2Final, rest := pem.Decode(rest)
 	require.Equal(t, b2.Bytes, b2Final.Bytes)
-	require.Equal(t, "two", b2Final.Headers["path"])
+	require.Equal(t, "ankh/two", b2Final.Headers["path"])
 	require.Len(t, rest, 0)
 }
 
@@ -239,7 +227,7 @@ func TestExport2InOneFile(t *testing.T) {
 func TestImportKeys(t *testing.T) {
 	s := NewTestImportStore()
 
-	from, _ := os.OpenFile("../fixtures/secure.example.com.key", os.O_RDONLY, notary.PrivExecPerms)
+	from, _ := os.OpenFile("../fixtures/secure.example.com.key", os.O_RDONLY, notary.PrivKeyPerms)
 	b := &pem.Block{
 		Headers: make(map[string]string),
 	}
@@ -253,7 +241,7 @@ func TestImportKeys(t *testing.T) {
 	c.Bytes, _ = ioutil.ReadAll(from)
 	rand.Read(c.Bytes)
 	c.Headers["path"] = "morpork"
-	c.Headers["role"] = data.CanonicalSnapshotRole.String()
+	c.Headers["role"] = data.CanonicalSnapshotRole
 	c.Headers["gun"] = "somegun"
 
 	bBytes := pem.EncodeToMemory(b)
@@ -279,7 +267,7 @@ func TestImportKeys(t *testing.T) {
 	require.Equal(t, c.Bytes, cFinal.Bytes)
 	_, ok = cFinal.Headers["path"]
 	require.False(t, ok, "expected no path header, should have been removed at import")
-	require.EqualValues(t, data.CanonicalSnapshotRole, cFinal.Headers["role"])
+	require.Equal(t, data.CanonicalSnapshotRole, cFinal.Headers["role"])
 	require.Equal(t, "somegun", cFinal.Headers["gun"])
 	require.Len(t, cRest, 0)
 }
@@ -287,18 +275,18 @@ func TestImportKeys(t *testing.T) {
 func TestImportNoPath(t *testing.T) {
 	s := NewTestImportStore()
 
-	from, _ := os.OpenFile("../fixtures/secure.example.com.key", os.O_RDONLY, notary.PrivExecPerms)
+	from, _ := os.OpenFile("../fixtures/secure.example.com.key", os.O_RDONLY, notary.PrivKeyPerms)
 	defer from.Close()
 	fromBytes, _ := ioutil.ReadAll(from)
 
 	in := bytes.NewBuffer(fromBytes)
 
-	err := ImportKeys(in, []Importer{s}, data.CanonicalRootRole.String(), "", passphraseRetriever)
+	err := ImportKeys(in, []Importer{s}, data.CanonicalRootRole, "", passphraseRetriever)
 	require.NoError(t, err)
 
 	for key := range s.data {
 		// no path but role included should work
-		require.Equal(t, "12ba0e0a8e05e177bc2c3489bdb6d28836879469f078e68a4812fc8a2d521497", key)
+		require.Equal(t, key, filepath.Join(notary.RootKeysSubdir, "12ba0e0a8e05e177bc2c3489bdb6d28836879469f078e68a4812fc8a2d521497"))
 	}
 
 	s = NewTestImportStore()
@@ -312,29 +300,29 @@ func TestImportNoPath(t *testing.T) {
 func TestNonRootPathInference(t *testing.T) {
 	s := NewTestImportStore()
 
-	from, _ := os.OpenFile("../fixtures/secure.example.com.key", os.O_RDONLY, notary.PrivExecPerms)
+	from, _ := os.OpenFile("../fixtures/secure.example.com.key", os.O_RDONLY, notary.PrivKeyPerms)
 	defer from.Close()
 	fromBytes, _ := ioutil.ReadAll(from)
 
 	in := bytes.NewBuffer(fromBytes)
 
-	err := ImportKeys(in, []Importer{s}, data.CanonicalSnapshotRole.String(), "somegun", passphraseRetriever)
+	err := ImportKeys(in, []Importer{s}, data.CanonicalSnapshotRole, "somegun", passphraseRetriever)
 	require.NoError(t, err)
 
 	for key := range s.data {
 		// no path but role included should work and 12ba0e0a8e05e177bc2c3489bdb6d28836879469f078e68a4812fc8a2d521497 is the key ID of the fixture
-		require.Equal(t, "12ba0e0a8e05e177bc2c3489bdb6d28836879469f078e68a4812fc8a2d521497", key)
+		require.Equal(t, key, filepath.Join(notary.NonRootKeysSubdir, "somegun", "12ba0e0a8e05e177bc2c3489bdb6d28836879469f078e68a4812fc8a2d521497"))
 	}
 }
 
 func TestBlockHeaderPrecedenceRoleAndGun(t *testing.T) {
 	s := NewTestImportStore()
 
-	from, _ := os.OpenFile("../fixtures/secure.example.com.key", os.O_RDONLY, notary.PrivExecPerms)
+	from, _ := os.OpenFile("../fixtures/secure.example.com.key", os.O_RDONLY, notary.PrivKeyPerms)
 	defer from.Close()
 	fromBytes, _ := ioutil.ReadAll(from)
 	b, _ := pem.Decode(fromBytes)
-	b.Headers["role"] = data.CanonicalSnapshotRole.String()
+	b.Headers["role"] = data.CanonicalSnapshotRole
 	b.Headers["gun"] = "anothergun"
 	bBytes := pem.EncodeToMemory(b)
 
@@ -346,7 +334,7 @@ func TestBlockHeaderPrecedenceRoleAndGun(t *testing.T) {
 	require.Len(t, s.data, 1)
 	for key := range s.data {
 		// block header role= root should take precedence over command line flag
-		require.Equal(t, "12ba0e0a8e05e177bc2c3489bdb6d28836879469f078e68a4812fc8a2d521497", key)
+		require.Equal(t, key, filepath.Join(notary.NonRootKeysSubdir, "anothergun", "12ba0e0a8e05e177bc2c3489bdb6d28836879469f078e68a4812fc8a2d521497"))
 		final, rest := pem.Decode(s.data[key])
 		require.Len(t, rest, 0)
 		require.Equal(t, final.Headers["role"], "snapshot")
@@ -355,14 +343,13 @@ func TestBlockHeaderPrecedenceRoleAndGun(t *testing.T) {
 }
 
 func TestBlockHeaderPrecedenceGunFromPath(t *testing.T) {
-	// this is a proof of concept that if we have legacy fixtures with nested paths, we infer the gun from them correctly
 	s := NewTestImportStore()
 
-	from, _ := os.OpenFile("../fixtures/secure.example.com.key", os.O_RDONLY, notary.PrivExecPerms)
+	from, _ := os.OpenFile("../fixtures/secure.example.com.key", os.O_RDONLY, notary.PrivKeyPerms)
 	defer from.Close()
 	fromBytes, _ := ioutil.ReadAll(from)
 	b, _ := pem.Decode(fromBytes)
-	b.Headers["role"] = data.CanonicalSnapshotRole.String()
+	b.Headers["role"] = data.CanonicalSnapshotRole
 	b.Headers["path"] = filepath.Join(notary.NonRootKeysSubdir, "anothergun", "12ba0e0a8e05e177bc2c3489bdb6d28836879469f078e68a4812fc8a2d521497")
 	bBytes := pem.EncodeToMemory(b)
 
@@ -374,7 +361,7 @@ func TestBlockHeaderPrecedenceGunFromPath(t *testing.T) {
 	require.Len(t, s.data, 1)
 	for key := range s.data {
 		// block header role= root should take precedence over command line flag
-		require.Equal(t, "12ba0e0a8e05e177bc2c3489bdb6d28836879469f078e68a4812fc8a2d521497", key)
+		require.Equal(t, key, filepath.Join(notary.NonRootKeysSubdir, "anothergun", "12ba0e0a8e05e177bc2c3489bdb6d28836879469f078e68a4812fc8a2d521497"))
 		final, rest := pem.Decode(s.data[key])
 		require.Len(t, rest, 0)
 		require.Equal(t, "snapshot", final.Headers["role"])
@@ -441,17 +428,17 @@ func TestImportKeys2InOneFile(t *testing.T) {
 func TestImportKeys2InOneFileNoPath(t *testing.T) {
 	s := NewTestImportStore()
 
-	from, _ := os.OpenFile("../fixtures/secure.example.com.key", os.O_RDONLY, notary.PrivExecPerms)
+	from, _ := os.OpenFile("../fixtures/secure.example.com.key", os.O_RDONLY, notary.PrivKeyPerms)
 	defer from.Close()
 	fromBytes, _ := ioutil.ReadAll(from)
 	b, _ := pem.Decode(fromBytes)
 	b.Headers["gun"] = "testgun"
-	b.Headers["role"] = data.CanonicalSnapshotRole.String()
+	b.Headers["role"] = data.CanonicalSnapshotRole
 	bBytes := pem.EncodeToMemory(b)
 
 	b2, _ := pem.Decode(fromBytes)
 	b2.Headers["gun"] = "testgun"
-	b2.Headers["role"] = data.CanonicalSnapshotRole.String()
+	b2.Headers["role"] = data.CanonicalSnapshotRole
 	b2Bytes := pem.EncodeToMemory(b2)
 
 	c := &pem.Block{
@@ -471,7 +458,7 @@ func TestImportKeys2InOneFileNoPath(t *testing.T) {
 	err := ImportKeys(in, []Importer{s}, "", "", passphraseRetriever)
 	require.NoError(t, err)
 
-	bFinal, bRest := pem.Decode(s.data["12ba0e0a8e05e177bc2c3489bdb6d28836879469f078e68a4812fc8a2d521497"])
+	bFinal, bRest := pem.Decode(s.data[filepath.Join(notary.NonRootKeysSubdir, "testgun", "12ba0e0a8e05e177bc2c3489bdb6d28836879469f078e68a4812fc8a2d521497")])
 	require.Equal(t, b.Headers["gun"], bFinal.Headers["gun"])
 	require.Equal(t, b.Headers["role"], bFinal.Headers["role"])
 
@@ -511,11 +498,11 @@ func TestEncryptedKeyImportSuccess(t *testing.T) {
 	originalKey := privKey.Private()
 	require.NoError(t, err)
 
-	pemBytes, err := utils.EncryptPrivateKey(privKey, data.CanonicalSnapshotRole, "somegun", cannedPassphrase)
+	pemBytes, err := utils.EncryptPrivateKey(privKey, data.CanonicalSnapshotRole, "", cannedPassphrase)
 	require.NoError(t, err)
 
 	b, _ := pem.Decode(pemBytes)
-	b.Headers["path"] = privKey.ID()
+	b.Headers["path"] = filepath.Join(notary.NonRootKeysSubdir, "somegun", "encryptedkey")
 	pemBytes = pem.EncodeToMemory(b)
 
 	in := bytes.NewBuffer(pemBytes)
@@ -523,7 +510,7 @@ func TestEncryptedKeyImportSuccess(t *testing.T) {
 	_ = ImportKeys(in, []Importer{s}, "", "", passphraseRetriever)
 	require.Len(t, s.data, 1)
 
-	keyBytes := s.data[privKey.ID()]
+	keyBytes := s.data[filepath.Join(notary.NonRootKeysSubdir, "somegun", "encryptedkey")]
 
 	bFinal, bRest := pem.Decode(keyBytes)
 	require.Equal(t, "somegun", bFinal.Headers["gun"])
@@ -555,7 +542,7 @@ func TestEncryption(t *testing.T) {
 	_ = ImportKeys(in, []Importer{s}, "", "", passphraseRetriever)
 	require.Len(t, s.data, 1)
 
-	shouldBeEnc, ok := s.data[privKey.ID()]
+	shouldBeEnc, ok := s.data[filepath.Join(notary.NonRootKeysSubdir, privKey.ID())]
 	// we should have got a key imported to this location
 	require.True(t, ok)
 

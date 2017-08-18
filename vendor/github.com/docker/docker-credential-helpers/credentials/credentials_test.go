@@ -73,6 +73,46 @@ func TestStore(t *testing.T) {
 	}
 }
 
+func TestStoreMissingServerURL(t *testing.T) {
+	creds := &Credentials{
+		ServerURL: "",
+		Username:  "foo",
+		Secret:    "bar",
+	}
+
+	b, err := json.Marshal(creds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := bytes.NewReader(b)
+
+	h := newMemoryStore()
+
+	if err := Store(h, in); IsCredentialsMissingServerURL(err) == false {
+		t.Fatal(err)
+	}
+}
+
+func TestStoreMissingUsername(t *testing.T) {
+	creds := &Credentials{
+		ServerURL: "https://index.docker.io/v1/",
+		Username:  "",
+		Secret:    "bar",
+	}
+
+	b, err := json.Marshal(creds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := bytes.NewReader(b)
+
+	h := newMemoryStore()
+
+	if err := Store(h, in); IsCredentialsMissingUsername(err) == false {
+		t.Fatal(err)
+	}
+}
+
 func TestGet(t *testing.T) {
 	serverURL := "https://index.docker.io/v1/"
 	creds := &Credentials{
@@ -115,6 +155,32 @@ func TestGet(t *testing.T) {
 	}
 }
 
+func TestGetMissingServerURL(t *testing.T) {
+	serverURL := "https://index.docker.io/v1/"
+	creds := &Credentials{
+		ServerURL: serverURL,
+		Username:  "foo",
+		Secret:    "bar",
+	}
+	b, err := json.Marshal(creds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := bytes.NewReader(b)
+
+	h := newMemoryStore()
+	if err := Store(h, in); err != nil {
+		t.Fatal(err)
+	}
+
+	buf := strings.NewReader("")
+	w := new(bytes.Buffer)
+
+	if err := Get(h, buf, w); IsCredentialsMissingServerURL(err) == false {
+		t.Fatal(err)
+	}
+}
+
 func TestErase(t *testing.T) {
 	serverURL := "https://index.docker.io/v1/"
 	creds := &Credentials{
@@ -141,6 +207,30 @@ func TestErase(t *testing.T) {
 	w := new(bytes.Buffer)
 	if err := Get(h, buf, w); err == nil {
 		t.Fatal("expected error getting missing creds, got empty")
+	}
+}
+
+func TestEraseMissingServerURL(t *testing.T) {
+	serverURL := "https://index.docker.io/v1/"
+	creds := &Credentials{
+		ServerURL: serverURL,
+		Username:  "foo",
+		Secret:    "bar",
+	}
+	b, err := json.Marshal(creds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := bytes.NewReader(b)
+
+	h := newMemoryStore()
+	if err := Store(h, in); err != nil {
+		t.Fatal(err)
+	}
+
+	buf := strings.NewReader("")
+	if err := Erase(h, buf); IsCredentialsMissingServerURL(err) == false {
+		t.Fatal(err)
 	}
 }
 

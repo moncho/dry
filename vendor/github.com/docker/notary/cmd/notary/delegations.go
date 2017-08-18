@@ -91,7 +91,7 @@ func (d *delegationCommander) delegationPurgeKeys(cmd *cobra.Command, args []str
 		return fmt.Errorf("Please provide at least one key ID to be removed using the --key flag")
 	}
 
-	gun := data.GUN(args[0])
+	gun := args[0]
 
 	config, err := d.configGetter()
 	if err != nil {
@@ -103,7 +103,7 @@ func (d *delegationCommander) delegationPurgeKeys(cmd *cobra.Command, args []str
 		return err
 	}
 
-	nRepo, err := notaryclient.NewFileCachedNotaryRepository(
+	nRepo, err := notaryclient.NewNotaryRepository(
 		config.GetString("trust_dir"),
 		gun,
 		getRemoteTrustServer(config),
@@ -140,7 +140,7 @@ func (d *delegationCommander) delegationsList(cmd *cobra.Command, args []string)
 		return err
 	}
 
-	gun := data.GUN(args[0])
+	gun := args[0]
 
 	rt, err := getTransport(config, gun, readOnly)
 	if err != nil {
@@ -153,7 +153,7 @@ func (d *delegationCommander) delegationsList(cmd *cobra.Command, args []string)
 	}
 
 	// initialize repo with transport to get latest state of the world before listing delegations
-	nRepo, err := notaryclient.NewFileCachedNotaryRepository(
+	nRepo, err := notaryclient.NewNotaryRepository(
 		config.GetString("trust_dir"), gun, getRemoteTrustServer(config), rt, d.retriever, trustPin)
 	if err != nil {
 		return err
@@ -172,9 +172,38 @@ func (d *delegationCommander) delegationsList(cmd *cobra.Command, args []string)
 
 // delegationRemove removes a public key from a specific role in a GUN
 func (d *delegationCommander) delegationRemove(cmd *cobra.Command, args []string) error {
-	config, gun, role, keyIDs, err := delegationAddInput(d, cmd, args)
+	if len(args) < 2 {
+		cmd.Usage()
+		return fmt.Errorf("must specify the Global Unique Name and the role of the delegation along with optional keyIDs and/or a list of paths to remove")
+	}
+
+	config, err := d.configGetter()
 	if err != nil {
 		return err
+	}
+
+	gun := args[0]
+	role := args[1]
+
+	// Check if role is valid delegation name before requiring any user input
+	if !data.IsDelegation(role) {
+		return fmt.Errorf("invalid delegation name %s", role)
+	}
+
+	// If we're only given the gun and the role, attempt to remove all data for this delegation
+	if len(args) == 2 && d.paths == nil && !d.allPaths {
+		d.removeAll = true
+	}
+
+	keyIDs := []string{}
+
+	if len(args) > 2 {
+		keyIDs = args[2:]
+	}
+
+	// If the user passes --all-paths, don't use any of the passed in --paths
+	if d.allPaths {
+		d.paths = nil
 	}
 
 	trustPin, err := getTrustPinning(config)
@@ -184,7 +213,7 @@ func (d *delegationCommander) delegationRemove(cmd *cobra.Command, args []string
 
 	// no online operations are performed by add so the transport argument
 	// should be nil
-	nRepo, err := notaryclient.NewFileCachedNotaryRepository(
+	nRepo, err := notaryclient.NewNotaryRepository(
 		config.GetString("trust_dir"), gun, getRemoteTrustServer(config), nil, d.retriever, trustPin)
 	if err != nil {
 		return err
@@ -220,51 +249,9 @@ func (d *delegationCommander) delegationRemove(cmd *cobra.Command, args []string
 		}
 	}
 
-	delegationRemoveOutput(cmd, d, gun, role, keyIDs)
-
-	return maybeAutoPublish(cmd, d.autoPublish, gun, config, d.retriever)
-}
-
-func delegationAddInput(d *delegationCommander, cmd *cobra.Command, args []string) (
-	config *viper.Viper, gun data.GUN, role data.RoleName, keyIDs []string, error error) {
-	if len(args) < 2 {
-		cmd.Usage()
-		return nil, "", "", nil, fmt.Errorf("must specify the Global Unique Name and the role of the delegation along with optional keyIDs and/or a list of paths to remove")
-	}
-
-	config, err := d.configGetter()
-	if err != nil {
-		return nil, "", "", nil, err
-	}
-
-	gun = data.GUN(args[0])
-	role = data.RoleName(args[1])
-	// Check if role is valid delegation name before requiring any user input
-	if !data.IsDelegation(role) {
-		return nil, "", "", nil, fmt.Errorf("invalid delegation name %s", role)
-	}
-
-	// If we're only given the gun and the role, attempt to remove all data for this delegation
-	if len(args) == 2 && d.paths == nil && !d.allPaths {
-		d.removeAll = true
-	}
-
-	if len(args) > 2 {
-		keyIDs = args[2:]
-	}
-
-	// If the user passes --all-paths, don't use any of the passed in --paths
-	if d.allPaths {
-		d.paths = nil
-	}
-
-	return config, gun, role, keyIDs, nil
-}
-
-func delegationRemoveOutput(cmd *cobra.Command, d *delegationCommander, gun data.GUN, role data.RoleName, keyIDs []string) {
 	cmd.Println("")
 	if d.removeAll {
-		cmd.Printf("Forced removal (including all keys and paths) of delegation role %s to repository \"%s\" staged for next publish.\n", role.String(), gun.String())
+		cmd.Printf("Forced removal (including all keys and paths) of delegation role %s to repository \"%s\" staged for next publish.\n", role, gun)
 	} else {
 		removingItems := ""
 		if len(keyIDs) > 0 {
@@ -279,9 +266,11 @@ func delegationRemoveOutput(cmd *cobra.Command, d *delegationCommander, gun data
 				strings.Join(prettyPaths(d.paths), "\n"),
 			)
 		}
-		cmd.Printf("Removal of delegation role %s %sto repository \"%s\" staged for next publish.\n", role.String(), removingItems, gun.String())
+		cmd.Printf("Removal of delegation role %s %sto repository \"%s\" staged for next publish.\n", role, removingItems, gun)
 	}
 	cmd.Println("")
+
+	return maybeAutoPublish(cmd, d.autoPublish, gun, config, d.retriever)
 }
 
 // delegationAdd creates a new delegation by adding a public key from a certificate to a specific role in a GUN
@@ -297,15 +286,42 @@ func (d *delegationCommander) delegationAdd(cmd *cobra.Command, args []string) e
 		return err
 	}
 
-	gun := data.GUN(args[0])
-	role := data.RoleName(args[1])
+	gun := args[0]
+	role := args[1]
 
-	pubKeys, err := ingestPublicKeys(args)
-	if err != nil {
-		return err
+	pubKeys := []data.PublicKey{}
+	if len(args) > 2 {
+		pubKeyPaths := args[2:]
+		for _, pubKeyPath := range pubKeyPaths {
+			// Read public key bytes from PEM file
+			pubKeyBytes, err := ioutil.ReadFile(pubKeyPath)
+			if err != nil {
+				if os.IsNotExist(err) {
+					return fmt.Errorf("file for public key does not exist: %s", pubKeyPath)
+				}
+				return fmt.Errorf("unable to read public key from file: %s", pubKeyPath)
+			}
+
+			// Parse PEM bytes into type PublicKey
+			pubKey, err := utils.ParsePEMPublicKey(pubKeyBytes)
+			if err != nil {
+				return fmt.Errorf("unable to parse valid public key certificate from PEM file %s: %v", pubKeyPath, err)
+			}
+			pubKeys = append(pubKeys, pubKey)
+		}
 	}
 
-	checkAllPaths(d)
+	for _, path := range d.paths {
+		if path == "" {
+			d.allPaths = true
+			break
+		}
+	}
+
+	// If the user passes --all-paths (or gave the "" path in --paths), give the "" path
+	if d.allPaths {
+		d.paths = []string{""}
+	}
 
 	trustPin, err := getTrustPinning(config)
 	if err != nil {
@@ -314,7 +330,7 @@ func (d *delegationCommander) delegationAdd(cmd *cobra.Command, args []string) e
 
 	// no online operations are performed by add so the transport argument
 	// should be nil
-	nRepo, err := notaryclient.NewFileCachedNotaryRepository(
+	nRepo, err := notaryclient.NewNotaryRepository(
 		config.GetString("trust_dir"), gun, getRemoteTrustServer(config), nil, d.retriever, trustPin)
 	if err != nil {
 		return err
@@ -353,42 +369,4 @@ func (d *delegationCommander) delegationAdd(cmd *cobra.Command, args []string) e
 	cmd.Println("")
 
 	return maybeAutoPublish(cmd, d.autoPublish, gun, config, d.retriever)
-}
-
-func checkAllPaths(d *delegationCommander) {
-	for _, path := range d.paths {
-		if path == "" {
-			d.allPaths = true
-			break
-		}
-	}
-	// If the user passes --all-paths (or gave the "" path in --paths), give the "" path
-	if d.allPaths {
-		d.paths = []string{""}
-	}
-}
-
-func ingestPublicKeys(args []string) ([]data.PublicKey, error) {
-	pubKeys := []data.PublicKey{}
-	if len(args) > 2 {
-		pubKeyPaths := args[2:]
-		for _, pubKeyPath := range pubKeyPaths {
-			// Read public key bytes from PEM file
-			pubKeyBytes, err := ioutil.ReadFile(pubKeyPath)
-			if err != nil {
-				if os.IsNotExist(err) {
-					return nil, fmt.Errorf("file for public key does not exist: %s", pubKeyPath)
-				}
-				return nil, fmt.Errorf("unable to read public key from file: %s", pubKeyPath)
-			}
-
-			// Parse PEM bytes into type PublicKey
-			pubKey, err := utils.ParsePEMPublicKey(pubKeyBytes)
-			if err != nil {
-				return nil, fmt.Errorf("unable to parse valid public key certificate from PEM file %s: %v", pubKeyPath, err)
-			}
-			pubKeys = append(pubKeys, pubKey)
-		}
-	}
-	return pubKeys, nil
 }

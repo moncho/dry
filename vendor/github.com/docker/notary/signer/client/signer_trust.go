@@ -12,13 +12,12 @@ import (
 	"net"
 	"time"
 
-	"github.com/docker/notary"
 	pb "github.com/docker/notary/proto"
 	"github.com/docker/notary/tuf/data"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 // RemotePrivateKey is a key that is on a remote service, so no private
@@ -99,55 +98,6 @@ func (pk *RemotePrivateKey) CryptoSigner() crypto.Signer {
 type NotarySigner struct {
 	kmClient pb.KeyManagementClient
 	sClient  pb.SignerClient
-
-	healthClient healthpb.HealthClient
-}
-
-func healthCheck(d time.Duration, hc healthpb.HealthClient, serviceName string) (*healthpb.HealthCheckResponse, error) {
-	ctx, _ := context.WithTimeout(context.Background(), d)
-	req := &healthpb.HealthCheckRequest{
-		Service: serviceName,
-	}
-	return hc.Check(ctx, req)
-}
-
-func healthCheckKeyManagement(d time.Duration, hc healthpb.HealthClient) error {
-	out, err := healthCheck(d, hc, notary.HealthCheckKeyManagement)
-	if err != nil {
-		return err
-	}
-	if out.Status != healthpb.HealthCheckResponse_SERVING {
-		return fmt.Errorf("Got the serving status of %s: %s, want %s", "KeyManagement", out.Status, healthpb.HealthCheckResponse_SERVING)
-	}
-	return nil
-}
-
-func healthCheckSigner(d time.Duration, hc healthpb.HealthClient) error {
-	out, err := healthCheck(d, hc, notary.HealthCheckSigner)
-	if err != nil {
-		return err
-	}
-	if out.Status != healthpb.HealthCheckResponse_SERVING {
-		return fmt.Errorf("Got the serving status of %s: %s, want %s", "Signer", out.Status, healthpb.HealthCheckResponse_SERVING)
-	}
-	return nil
-}
-
-// CheckHealth are used to probe whether the server is able to handle rpcs.
-func (trust *NotarySigner) CheckHealth(d time.Duration, serviceName string) error {
-	switch serviceName {
-	case notary.HealthCheckKeyManagement:
-		return healthCheckKeyManagement(d, trust.healthClient)
-	case notary.HealthCheckSigner:
-		return healthCheckSigner(d, trust.healthClient)
-	case notary.HealthCheckOverall:
-		if err := healthCheckKeyManagement(d, trust.healthClient); err != nil {
-			return err
-		}
-		return healthCheckSigner(d, trust.healthClient)
-	default:
-		return fmt.Errorf("Unknown grpc service %s", serviceName)
-	}
 }
 
 // NewGRPCConnection is a convenience method that returns GRPC Client Connection given a hostname, endpoint, and TLS options
@@ -163,19 +113,16 @@ func NewGRPCConnection(hostname string, port string, tlsConfig *tls.Config) (*gr
 func NewNotarySigner(conn *grpc.ClientConn) *NotarySigner {
 	kmClient := pb.NewKeyManagementClient(conn)
 	sClient := pb.NewSignerClient(conn)
-	hc := healthpb.NewHealthClient(conn)
-
 	return &NotarySigner{
-		kmClient:     kmClient,
-		sClient:      sClient,
-		healthClient: hc,
+		kmClient: kmClient,
+		sClient:  sClient,
 	}
 }
 
 // Create creates a remote key and returns the PublicKey associated with the remote private key
-func (trust *NotarySigner) Create(role data.RoleName, gun data.GUN, algorithm string) (data.PublicKey, error) {
+func (trust *NotarySigner) Create(role, gun, algorithm string) (data.PublicKey, error) {
 	publicKey, err := trust.kmClient.CreateKey(context.Background(),
-		&pb.CreateKeyRequest{Algorithm: algorithm, Role: role.String(), Gun: gun.String()})
+		&pb.CreateKeyRequest{Algorithm: algorithm, Role: role, Gun: gun})
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +131,7 @@ func (trust *NotarySigner) Create(role data.RoleName, gun data.GUN, algorithm st
 }
 
 // AddKey adds a key
-func (trust *NotarySigner) AddKey(role data.RoleName, gun data.GUN, k data.PrivateKey) error {
+func (trust *NotarySigner) AddKey(role, gun string, k data.PrivateKey) error {
 	return errors.New("Adding a key to NotarySigner is not supported")
 }
 
@@ -203,17 +150,17 @@ func (trust *NotarySigner) GetKey(keyid string) data.PublicKey {
 	return pubKey
 }
 
-func (trust *NotarySigner) getKeyInfo(keyid string) (data.PublicKey, data.RoleName, error) {
+func (trust *NotarySigner) getKeyInfo(keyid string) (data.PublicKey, string, error) {
 	keyInfo, err := trust.kmClient.GetKeyInfo(context.Background(), &pb.KeyID{ID: keyid})
 	if err != nil {
 		return nil, "", err
 	}
-	return data.NewPublicKey(keyInfo.KeyInfo.Algorithm.Algorithm, keyInfo.PublicKey), data.RoleName(keyInfo.Role), nil
+	return data.NewPublicKey(keyInfo.KeyInfo.Algorithm.Algorithm, keyInfo.PublicKey), keyInfo.Role, nil
 }
 
 // GetPrivateKey retrieves by ID an object that can be used to sign, but that does
 // not contain any private bytes.  If the key doesn't exist, returns an error.
-func (trust *NotarySigner) GetPrivateKey(keyid string) (data.PrivateKey, data.RoleName, error) {
+func (trust *NotarySigner) GetPrivateKey(keyid string) (data.PrivateKey, string, error) {
 	pubKey, role, err := trust.getKeyInfo(keyid)
 	if err != nil {
 		return nil, "", err
@@ -222,11 +169,31 @@ func (trust *NotarySigner) GetPrivateKey(keyid string) (data.PrivateKey, data.Ro
 }
 
 // ListKeys not supported for NotarySigner
-func (trust *NotarySigner) ListKeys(role data.RoleName) []string {
+func (trust *NotarySigner) ListKeys(role string) []string {
 	return []string{}
 }
 
 // ListAllKeys not supported for NotarySigner
-func (trust *NotarySigner) ListAllKeys() map[string]data.RoleName {
-	return map[string]data.RoleName{}
+func (trust *NotarySigner) ListAllKeys() map[string]string {
+	return map[string]string{}
+}
+
+// CheckHealth checks the health of one of the clients, since both clients run
+// from the same GRPC server.
+func (trust *NotarySigner) CheckHealth(timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	status, err := trust.kmClient.CheckHealth(ctx, &pb.Void{})
+	defer cancel()
+	if err == nil && len(status.Status) > 0 {
+		var stats string
+		for k, v := range status.Status {
+			stats += k + ":" + v + "; "
+		}
+		return fmt.Errorf("Trust is not healthy: %s", stats)
+	}
+	if err != nil && grpc.Code(err) == codes.DeadlineExceeded {
+		return fmt.Errorf("Timed out reaching trust service after %s", timeout)
+	}
+
+	return err
 }

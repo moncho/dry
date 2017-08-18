@@ -16,9 +16,11 @@ import (
 
 type keyInfoMap map[string]KeyInfo
 
-type cachedKey struct {
-	role data.RoleName
-	key  data.PrivateKey
+// KeyInfo stores the role, path, and gun for a corresponding private key ID
+// It is assumed that each private key ID is unique
+type KeyInfo struct {
+	Gun  string
+	Role string
 }
 
 // GenericKeyStore is a wrapper for Storage instances that provides
@@ -78,6 +80,40 @@ func generateKeyInfoMap(s Storage) map[string]KeyInfo {
 	return keyInfoMap
 }
 
+// Attempts to infer the keyID, role, and GUN from the specified key path.
+// Note that non-root roles can only be inferred if this is a legacy style filename: KEYID_ROLE.key
+func inferKeyInfoFromKeyPath(keyPath string) (string, string, string) {
+	var keyID, role, gun string
+	keyID = filepath.Base(keyPath)
+	underscoreIndex := strings.LastIndex(keyID, "_")
+
+	// This is the legacy KEYID_ROLE filename
+	// The keyID is the first part of the keyname
+	// The keyRole is the second part of the keyname
+	// in a key named abcde_root, abcde is the keyID and root is the KeyAlias
+	if underscoreIndex != -1 {
+		role = keyID[underscoreIndex+1:]
+		keyID = keyID[:underscoreIndex]
+	}
+
+	if filepath.HasPrefix(keyPath, notary.RootKeysSubdir+"/") {
+		return keyID, data.CanonicalRootRole, ""
+	}
+
+	keyPath = strings.TrimPrefix(keyPath, notary.NonRootKeysSubdir+"/")
+	gun = getGunFromFullID(keyPath)
+	return keyID, role, gun
+}
+
+func getGunFromFullID(fullKeyID string) string {
+	keyGun := filepath.Dir(fullKeyID)
+	// If the gun is empty, Dir will return .
+	if keyGun == "." {
+		keyGun = ""
+	}
+	return keyGun
+}
+
 func (s *GenericKeyStore) loadKeyInfo() {
 	s.keyInfoMap = generateKeyInfoMap(s.store)
 }
@@ -103,9 +139,9 @@ func (s *GenericKeyStore) AddKey(keyInfo KeyInfo, privKey data.PrivateKey) error
 	if keyInfo.Role == data.CanonicalRootRole || data.IsDelegation(keyInfo.Role) || !data.ValidRole(keyInfo.Role) {
 		keyInfo.Gun = ""
 	}
-	keyID := privKey.ID()
+	name := filepath.Join(keyInfo.Gun, privKey.ID())
 	for attempts := 0; ; attempts++ {
-		chosenPassphrase, giveup, err = s.PassRetriever(keyID, keyInfo.Role.String(), true, attempts)
+		chosenPassphrase, giveup, err = s.PassRetriever(name, keyInfo.Role, true, attempts)
 		if err == nil {
 			break
 		}
@@ -117,15 +153,15 @@ func (s *GenericKeyStore) AddKey(keyInfo KeyInfo, privKey data.PrivateKey) error
 	if chosenPassphrase != "" {
 		pemPrivKey, err = utils.EncryptPrivateKey(privKey, keyInfo.Role, keyInfo.Gun, chosenPassphrase)
 	} else {
-		pemPrivKey, err = utils.KeyToPEM(privKey, keyInfo.Role, keyInfo.Gun)
+		pemPrivKey, err = utils.KeyToPEM(privKey, keyInfo.Role)
 	}
 
 	if err != nil {
 		return err
 	}
 
-	s.cachedKeys[keyID] = &cachedKey{role: keyInfo.Role, key: privKey}
-	err = s.store.Set(keyID, pemPrivKey)
+	s.cachedKeys[name] = &cachedKey{alias: keyInfo.Role, key: privKey}
+	err = s.store.Set(filepath.Join(getSubdir(keyInfo.Role), name), pemPrivKey)
 	if err != nil {
 		return err
 	}
@@ -134,21 +170,15 @@ func (s *GenericKeyStore) AddKey(keyInfo KeyInfo, privKey data.PrivateKey) error
 }
 
 // GetKey returns the PrivateKey given a KeyID
-func (s *GenericKeyStore) GetKey(keyID string) (data.PrivateKey, data.RoleName, error) {
+func (s *GenericKeyStore) GetKey(name string) (data.PrivateKey, string, error) {
 	s.Lock()
 	defer s.Unlock()
-
-	cachedKeyEntry, ok := s.cachedKeys[keyID]
+	cachedKeyEntry, ok := s.cachedKeys[name]
 	if ok {
-		return cachedKeyEntry.key, cachedKeyEntry.role, nil
+		return cachedKeyEntry.key, cachedKeyEntry.alias, nil
 	}
 
-	role, err := getKeyRole(s.store, keyID)
-	if err != nil {
-		return nil, "", err
-	}
-
-	keyBytes, err := s.store.Get(keyID)
+	keyBytes, _, keyAlias, err := getKey(s.store, name)
 	if err != nil {
 		return nil, "", err
 	}
@@ -156,13 +186,13 @@ func (s *GenericKeyStore) GetKey(keyID string) (data.PrivateKey, data.RoleName, 
 	// See if the key is encrypted. If its encrypted we'll fail to parse the private key
 	privKey, err := utils.ParsePEMPrivateKey(keyBytes, "")
 	if err != nil {
-		privKey, _, err = GetPasswdDecryptBytes(s.PassRetriever, keyBytes, keyID, string(role))
+		privKey, _, err = GetPasswdDecryptBytes(s.PassRetriever, keyBytes, name, string(keyAlias))
 		if err != nil {
 			return nil, "", err
 		}
 	}
-	s.cachedKeys[keyID] = &cachedKey{role: role, key: privKey}
-	return privKey, role, nil
+	s.cachedKeys[name] = &cachedKey{alias: keyAlias, key: privKey}
+	return privKey, keyAlias, nil
 }
 
 // ListKeys returns a list of unique PublicKeys present on the KeyFileStore, by returning a copy of the keyInfoMap
@@ -174,14 +204,24 @@ func (s *GenericKeyStore) ListKeys() map[string]KeyInfo {
 func (s *GenericKeyStore) RemoveKey(keyID string) error {
 	s.Lock()
 	defer s.Unlock()
+
+	_, filename, _, err := getKey(s.store, keyID)
+	switch err.(type) {
+	case ErrKeyNotFound, nil:
+		break
+	default:
+		return err
+	}
+
 	delete(s.cachedKeys, keyID)
 
-	err := s.store.Remove(keyID)
+	err = s.store.Remove(filename) // removing a file that doesn't exist doesn't fail
 	if err != nil {
 		return err
 	}
 
-	delete(s.keyInfoMap, keyID)
+	// Remove this key from our keyInfo map if we removed from our filesystem
+	delete(s.keyInfoMap, filepath.Base(keyID))
 	return nil
 }
 
@@ -202,35 +242,55 @@ func copyKeyInfoMap(keyInfoMap map[string]KeyInfo) map[string]KeyInfo {
 
 // KeyInfoFromPEM attempts to get a keyID and KeyInfo from the filename and PEM bytes of a key
 func KeyInfoFromPEM(pemBytes []byte, filename string) (string, KeyInfo, error) {
-	var keyID string
-	keyID = filepath.Base(filename)
-	block, _ := pem.Decode(pemBytes)
-	if block == nil {
-		return "", KeyInfo{}, fmt.Errorf("could not decode PEM block for key %s", filename)
+	keyID, role, gun := inferKeyInfoFromKeyPath(filename)
+	if role == "" {
+		block, _ := pem.Decode(pemBytes)
+		if block == nil {
+			return "", KeyInfo{}, fmt.Errorf("could not decode PEM block for key %s", filename)
+		}
+		if keyRole, ok := block.Headers["role"]; ok {
+			role = keyRole
+		}
 	}
-	return keyID, KeyInfo{Gun: data.GUN(block.Headers["gun"]), Role: data.RoleName(block.Headers["role"])}, nil
+	return keyID, KeyInfo{Gun: gun, Role: role}, nil
 }
 
-// getKeyRole finds the role for the given keyID. It attempts to look
-// both in the newer format PEM headers, and also in the legacy filename
-// format. It returns: the role, and an error
-func getKeyRole(s Storage, keyID string) (data.RoleName, error) {
+// getKey finds the key and role for the given keyID. It attempts to
+// look both in the newer format PEM headers, and also in the legacy filename
+// format. It returns: the key bytes, the filename it was found under, the role,
+// and an error
+func getKey(s Storage, keyID string) ([]byte, string, string, error) {
 	name := strings.TrimSpace(strings.TrimSuffix(filepath.Base(keyID), filepath.Ext(keyID)))
 
 	for _, file := range s.ListFiles() {
 		filename := filepath.Base(file)
+
 		if strings.HasPrefix(filename, name) {
 			d, err := s.Get(file)
 			if err != nil {
-				return "", err
+				return nil, "", "", err
 			}
 			block, _ := pem.Decode(d)
 			if block != nil {
-				return data.RoleName(block.Headers["role"]), nil
+				if role, ok := block.Headers["role"]; ok {
+					return d, file, role, nil
+				}
 			}
+
+			role := strings.TrimPrefix(filename, name+"_")
+			return d, file, role, nil
 		}
 	}
-	return "", ErrKeyNotFound{KeyID: keyID}
+
+	return nil, "", "", ErrKeyNotFound{KeyID: keyID}
+}
+
+// Assumes 2 subdirectories, 1 containing root keys and 1 containing TUF keys
+func getSubdir(alias string) string {
+	if alias == data.CanonicalRootRole {
+		return notary.RootKeysSubdir
+	}
+	return notary.NonRootKeysSubdir
 }
 
 // GetPasswdDecryptBytes gets the password to decrypt the given pem bytes.

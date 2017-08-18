@@ -1,8 +1,8 @@
 package wincred
 
 import (
-	"testing"
 	"strings"
+	"testing"
 
 	"github.com/docker/docker-credential-helpers/credentials"
 )
@@ -63,7 +63,7 @@ func TestWinCredHelper(t *testing.T) {
 	}
 
 	auths, err := helper.List()
-	if err != nil || len(auths) - len(oldauths) != 1 {
+	if err != nil || len(auths)-len(oldauths) != 1 {
 		t.Fatal(err)
 	}
 

@@ -6,11 +6,10 @@ import "testing"
 
 func TestStateStatus(t *testing.T) {
 	states := map[containerState]Status{
-		&stoppedState{}:  Stopped,
+		&stoppedState{}:  Destroyed,
 		&runningState{}:  Running,
 		&restoredState{}: Running,
 		&pausedState{}:   Paused,
-		&createdState{}:  Created,
 	}
 	for s, status := range states {
 		if s.status() != status {

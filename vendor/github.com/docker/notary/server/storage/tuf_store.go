@@ -33,7 +33,7 @@ type storedMeta struct {
 }
 
 // GetCurrent gets a specific TUF record, by walking from the current Timestamp to other metadata by checksum
-func (tms TUFMetaStorage) GetCurrent(gun data.GUN, tufRole data.RoleName) (*time.Time, []byte, error) {
+func (tms TUFMetaStorage) GetCurrent(gun, tufRole string) (*time.Time, []byte, error) {
 	timestampTime, timestampJSON, err := tms.MetaStore.GetCurrent(gun, data.CanonicalTimestampRole)
 	if err != nil {
 		return nil, nil, err
@@ -52,26 +52,26 @@ func (tms TUFMetaStorage) GetCurrent(gun data.GUN, tufRole data.RoleName) (*time
 	if err != nil || snapshotChecksums == nil {
 		return nil, nil, fmt.Errorf("could not retrieve latest snapshot checksum")
 	}
-	snapshotSHA256Bytes, ok := snapshotChecksums.Hashes[notary.SHA256]
+	snapshotSha256Bytes, ok := snapshotChecksums.Hashes[notary.SHA256]
 	if !ok {
 		return nil, nil, fmt.Errorf("could not retrieve latest snapshot sha256")
 	}
-	snapshotSHA256Hex := hex.EncodeToString(snapshotSHA256Bytes[:])
+	snapshotSha256Hex := hex.EncodeToString(snapshotSha256Bytes[:])
 
 	// Check the cache if we have our snapshot data
 	var snapshotTime *time.Time
 	var snapshotJSON []byte
-	if cachedSnapshotData, ok := tms.cachedMeta[snapshotSHA256Hex]; ok {
+	if cachedSnapshotData, ok := tms.cachedMeta[snapshotSha256Hex]; ok {
 		snapshotTime = cachedSnapshotData.createupdate
 		snapshotJSON = cachedSnapshotData.data
 	} else {
 		// Get the snapshot from the underlying store by checksum if it isn't cached yet
-		snapshotTime, snapshotJSON, err = tms.GetChecksum(gun, data.CanonicalSnapshotRole, snapshotSHA256Hex)
+		snapshotTime, snapshotJSON, err = tms.GetChecksum(gun, data.CanonicalSnapshotRole, snapshotSha256Hex)
 		if err != nil {
 			return nil, nil, err
 		}
 		// cache for subsequent lookups
-		tms.cachedMeta[snapshotSHA256Hex] = &storedMeta{data: snapshotJSON, createupdate: snapshotTime}
+		tms.cachedMeta[snapshotSha256Hex] = &storedMeta{data: snapshotJSON, createupdate: snapshotTime}
 	}
 	// If we wanted data for the snapshot role, we're done here
 	if tufRole == data.CanonicalSnapshotRole {
@@ -87,27 +87,27 @@ func (tms TUFMetaStorage) GetCurrent(gun data.GUN, tufRole data.RoleName) (*time
 	if err != nil {
 		return nil, nil, err
 	}
-	roleSHA256Bytes, ok := roleMeta.Hashes[notary.SHA256]
+	roleSha256Bytes, ok := roleMeta.Hashes[notary.SHA256]
 	if !ok {
 		return nil, nil, fmt.Errorf("could not retrieve latest %s sha256", tufRole)
 	}
-	roleSHA256Hex := hex.EncodeToString(roleSHA256Bytes[:])
+	roleSha256Hex := hex.EncodeToString(roleSha256Bytes[:])
 	// check if we can retrieve this data from cache
-	if cachedRoleData, ok := tms.cachedMeta[roleSHA256Hex]; ok {
+	if cachedRoleData, ok := tms.cachedMeta[roleSha256Hex]; ok {
 		return cachedRoleData.createupdate, cachedRoleData.data, nil
 	}
 
-	roleTime, roleJSON, err := tms.MetaStore.GetChecksum(gun, tufRole, roleSHA256Hex)
+	roleTime, roleJSON, err := tms.MetaStore.GetChecksum(gun, tufRole, roleSha256Hex)
 	if err != nil {
 		return nil, nil, err
 	}
 	// cache for subsequent lookups
-	tms.cachedMeta[roleSHA256Hex] = &storedMeta{data: roleJSON, createupdate: roleTime}
+	tms.cachedMeta[roleSha256Hex] = &storedMeta{data: roleJSON, createupdate: roleTime}
 	return roleTime, roleJSON, nil
 }
 
 // GetChecksum gets a specific TUF record by checksum, also checking the internal cache
-func (tms TUFMetaStorage) GetChecksum(gun data.GUN, tufRole data.RoleName, checksum string) (*time.Time, []byte, error) {
+func (tms TUFMetaStorage) GetChecksum(gun, tufRole, checksum string) (*time.Time, []byte, error) {
 	if cachedRoleData, ok := tms.cachedMeta[checksum]; ok {
 		return cachedRoleData.createupdate, cachedRoleData.data, nil
 	}

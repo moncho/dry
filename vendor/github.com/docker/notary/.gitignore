@@ -1,10 +1,7 @@
 /.vscode
 /cmd/notary-server/notary-server
-/cmd/notary-server/local.config.*
-/cmd/notary-signer/notary-signer
-/cmd/notary-signer/local.config.*
-/cmd/escrow/escrow
-/cmd/escrow/local.config.*
+/cmd/notary-server/local.config.json
+/cmd/notary-signer/local.config.json
 cover
 bin
 cross
@@ -13,4 +10,4 @@ cross
 .idea
 *.iml
 *.test
-coverage*.txt
+coverage.out

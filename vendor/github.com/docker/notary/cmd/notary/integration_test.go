@@ -106,8 +106,6 @@ func TestInitWithRootKey(t *testing.T) {
 	// create encrypted root key
 	privKey, err := utils.GenerateECDSAKey(rand.Reader)
 	require.NoError(t, err)
-
-	// if the key has a root role, AddKey sets the gun to "" so we have done the same here
 	encryptedPEMPrivKey, err := utils.EncryptPrivateKey(privKey, data.CanonicalRootRole, "", testPassphrase)
 	require.NoError(t, err)
 	encryptedPEMKeyFilename := filepath.Join(tempDir, "encrypted_key.key")
@@ -143,7 +141,7 @@ func TestInitWithRootKey(t *testing.T) {
 	// check error if unencrypted PEM used
 	unencryptedPrivKey, err := utils.GenerateECDSAKey(rand.Reader)
 	require.NoError(t, err)
-	unencryptedPEMPrivKey, err := utils.KeyToPEM(unencryptedPrivKey, data.CanonicalRootRole, "")
+	unencryptedPEMPrivKey, err := utils.KeyToPEM(unencryptedPrivKey, data.CanonicalRootRole)
 	require.NoError(t, err)
 	unencryptedPEMKeyFilename := filepath.Join(tempDir, "unencrypted_key.key")
 	err = ioutil.WriteFile(unencryptedPEMKeyFilename, unencryptedPEMPrivKey, 0644)
@@ -156,8 +154,6 @@ func TestInitWithRootKey(t *testing.T) {
 	// instead of using a new retriever, we create a new key with a different pass
 	badPassPrivKey, err := utils.GenerateECDSAKey(rand.Reader)
 	require.NoError(t, err)
-
-	// Blank gun name since it is a root key
 	badPassPEMPrivKey, err := utils.EncryptPrivateKey(badPassPrivKey, data.CanonicalRootRole, "", "bad_pass")
 	require.NoError(t, err)
 	badPassPEMKeyFilename := filepath.Join(tempDir, "badpass_key.key")
@@ -170,7 +166,7 @@ func TestInitWithRootKey(t *testing.T) {
 	// check error if wrong role specified
 	snapshotPrivKey, err := utils.GenerateECDSAKey(rand.Reader)
 	require.NoError(t, err)
-	snapshotPEMPrivKey, err := utils.KeyToPEM(snapshotPrivKey, data.CanonicalSnapshotRole, "gun2")
+	snapshotPEMPrivKey, err := utils.KeyToPEM(snapshotPrivKey, data.CanonicalSnapshotRole)
 	require.NoError(t, err)
 	snapshotPEMKeyFilename := filepath.Join(tempDir, "snapshot_key.key")
 	err = ioutil.WriteFile(snapshotPEMKeyFilename, snapshotPEMPrivKey, 0644)
@@ -385,7 +381,7 @@ func TestClientDeleteTUFInteraction(t *testing.T) {
 
 func assertLocalMetadataForGun(t *testing.T, configDir, gun string, shouldExist bool) {
 	for _, role := range data.BaseRoles {
-		fileInfo, err := os.Stat(filepath.Join(configDir, "tuf", gun, "metadata", role.String()+".json"))
+		fileInfo, err := os.Stat(filepath.Join(configDir, "tuf", gun, "metadata", role+".json"))
 		if shouldExist {
 			require.NoError(t, err)
 			require.NotNil(t, fileInfo)
@@ -410,7 +406,7 @@ func TestClientTUFAddByHashInteraction(t *testing.T) {
 
 	targetData := []byte{'a', 'b', 'c'}
 	target256Bytes := sha256.Sum256(targetData)
-	targetSHA256Hex := hex.EncodeToString(target256Bytes[:])
+	targetSha256Hex := hex.EncodeToString(target256Bytes[:])
 	target512Bytes := sha512.Sum512(targetData)
 	targetSha512Hex := hex.EncodeToString(target512Bytes[:])
 
@@ -430,7 +426,7 @@ func TestClientTUFAddByHashInteraction(t *testing.T) {
 	require.NoError(t, err)
 
 	// add a target just by sha256
-	_, err = runCommand(t, tempDir, "addhash", "gun", target1, "3", "--sha256", targetSHA256Hex)
+	_, err = runCommand(t, tempDir, "addhash", "gun", target1, "3", "--sha256", targetSha256Hex)
 	require.NoError(t, err)
 
 	// check status - see target
@@ -507,7 +503,7 @@ func TestClientTUFAddByHashInteraction(t *testing.T) {
 	require.NoError(t, err)
 
 	// add a target by sha256 and sha512
-	_, err = runCommand(t, tempDir, "addhash", "gun", target3, "3", "--sha256", targetSHA256Hex, "--sha512", targetSha512Hex)
+	_, err = runCommand(t, tempDir, "addhash", "gun", target3, "3", "--sha256", targetSha256Hex, "--sha512", targetSha512Hex)
 	require.NoError(t, err)
 
 	// check status - see target
@@ -906,16 +902,15 @@ func TestClientDelegationsPublishing(t *testing.T) {
 	// Setup certificate for delegation role
 	tempFile, err := ioutil.TempFile("", "pemfile")
 	require.NoError(t, err)
-
 	cert, privKey, canonicalKeyID := generateCertPrivKeyPair(t, "gun", data.RSAKey)
 	_, err = tempFile.Write(utils.CertToPEM(cert))
 	require.NoError(t, err)
 	tempFile.Close()
 	defer os.Remove(tempFile.Name())
 
-	privKeyBytesNoRole, err := utils.KeyToPEM(privKey, "", "")
+	privKeyBytesNoRole, err := utils.KeyToPEM(privKey, "")
 	require.NoError(t, err)
-	privKeyBytesWithRole, err := utils.KeyToPEM(privKey, "user", "")
+	privKeyBytesWithRole, err := utils.KeyToPEM(privKey, "user")
 	require.NoError(t, err)
 
 	// Set up targets for publishing
@@ -972,12 +967,11 @@ func TestClientDelegationsPublishing(t *testing.T) {
 	require.NotContains(t, output, "No delegations present in this repository.")
 
 	// remove the targets key to demonstrate that delegates don't need this key
-	keyDir := filepath.Join(tempDir, notary.PrivDir)
-	require.NoError(t, os.Remove(filepath.Join(keyDir, targetKeyID+".key")))
+	keyDir := filepath.Join(tempDir, "private", "tuf_keys")
+	require.NoError(t, os.Remove(filepath.Join(keyDir, "gun", targetKeyID+".key")))
 
 	// Note that we need to use the canonical key ID, followed by the base of the role here
-	// Since, for a delegation- the filename is the canonical key ID. We have no role header in the PEM
-	err = ioutil.WriteFile(filepath.Join(keyDir, canonicalKeyID+".key"), privKeyBytesNoRole, 0700)
+	err = ioutil.WriteFile(filepath.Join(keyDir, canonicalKeyID+"_releases.key"), privKeyBytesNoRole, 0700)
 	require.NoError(t, err)
 
 	// add a target using the delegation -- will only add to targets/releases
@@ -1016,7 +1010,7 @@ func TestClientDelegationsPublishing(t *testing.T) {
 
 	// Try adding a target with a different key style - private/tuf_keys/canonicalKeyID.key with "user" set as the "role" PEM header
 	// First remove the old key and add the new style
-	require.NoError(t, os.Remove(filepath.Join(keyDir, canonicalKeyID+".key")))
+	require.NoError(t, os.Remove(filepath.Join(keyDir, canonicalKeyID+"_releases.key")))
 	err = ioutil.WriteFile(filepath.Join(keyDir, canonicalKeyID+".key"), privKeyBytesWithRole, 0700)
 	require.NoError(t, err)
 
@@ -1152,7 +1146,7 @@ func getUniqueKeys(t *testing.T, tempDir string) ([]string, []string) {
 			placeToGo map[string]bool
 			keyID     string
 		)
-		if strings.TrimSpace(parts[0]) == data.CanonicalRootRole.String() {
+		if strings.TrimSpace(parts[0]) == data.CanonicalRootRole {
 			// no gun, so there are only 3 fields
 			placeToGo, keyID = rootMap, parts[1]
 		} else {
@@ -1189,7 +1183,7 @@ func assertNumKeys(t *testing.T, tempDir string, numRoot, numSigning int,
 	require.Len(t, signing, numSigning)
 	for _, rootKeyID := range root {
 		_, err := os.Stat(filepath.Join(
-			tempDir, notary.PrivDir, rootKeyID+".key"))
+			tempDir, "private", "root_keys", rootKeyID+".key"))
 		// os.IsExist checks to see if the error is because a file already
 		// exists, and hence it isn't actually the right function to use here
 		require.Equal(t, rootOnDisk, !os.IsNotExist(err))
@@ -1259,9 +1253,9 @@ func TestClientKeyGenerationRotation(t *testing.T) {
 	assertSuccessfullyPublish(t, tempDir, server.URL, "gun", target, tempfiles[0])
 
 	// rotate the signing keys
-	_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalSnapshotRole.String())
+	_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalSnapshotRole)
 	require.NoError(t, err)
-	_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalTargetsRole.String())
+	_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalTargetsRole)
 	require.NoError(t, err)
 	root, sign := assertNumKeys(t, tempDir, 1, 2, true)
 	require.Equal(t, origRoot[0], root[0])
@@ -1282,186 +1276,11 @@ func TestClientKeyGenerationRotation(t *testing.T) {
 
 	// rotate the snapshot and timestamp keys on the server, multiple times
 	for i := 0; i < 10; i++ {
-		_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalSnapshotRole.String(), "-r")
+		_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalSnapshotRole, "-r")
 		require.NoError(t, err)
-		_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalTimestampRole.String(), "-r")
+		_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalTimestampRole, "-r")
 		require.NoError(t, err)
 	}
-}
-
-// Tests key rotation
-func TestKeyRotation(t *testing.T) {
-	// -- setup --
-	setUp(t)
-
-	tempDir := tempDirWithConfig(t, "{}")
-	defer os.RemoveAll(tempDir)
-
-	tempfiles := make([]string, 2)
-	for i := 0; i < 2; i++ {
-		tempFile, err := ioutil.TempFile("", "targetfile")
-		require.NoError(t, err)
-		tempFile.Close()
-		tempfiles[i] = tempFile.Name()
-		defer os.Remove(tempFile.Name())
-	}
-
-	server := setupServer()
-	defer server.Close()
-
-	var target = "sdgkadga"
-
-	// -- tests --
-
-	// starts out with no keys
-	assertNumKeys(t, tempDir, 0, 0, true)
-
-	// generate root key produces a single root key and no other keys
-	_, err := runCommand(t, tempDir, "key", "generate", data.ECDSAKey)
-	require.NoError(t, err)
-	assertNumKeys(t, tempDir, 1, 0, true)
-
-	// initialize a repo, should have signing keys and no new root key
-	_, err = runCommand(t, tempDir, "-s", server.URL, "init", "gun")
-	require.NoError(t, err)
-	assertNumKeys(t, tempDir, 1, 2, true)
-
-	// publish using the original keys
-	assertSuccessfullyPublish(t, tempDir, server.URL, "gun", target, tempfiles[0])
-
-	// invalid keys
-	badKeyFile, err := ioutil.TempFile("", "badKey")
-	require.NoError(t, err)
-	defer os.Remove(badKeyFile.Name())
-	_, err = badKeyFile.Write([]byte{0, 0, 0, 0})
-	require.NoError(t, err)
-	badKeyFile.Close()
-
-	_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalRootRole.String(), "--key", "123")
-	require.Error(t, err)
-	_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalRootRole.String(), "--key", badKeyFile.Name())
-	require.Error(t, err)
-
-	// create encrypted root keys
-	rootPrivKey1, err := utils.GenerateECDSAKey(rand.Reader)
-	require.NoError(t, err)
-	encryptedPEMPrivKey1, err := utils.EncryptPrivateKey(rootPrivKey1, data.CanonicalRootRole, "", testPassphrase)
-	require.NoError(t, err)
-	encryptedPEMKeyFilename1 := filepath.Join(tempDir, "encrypted_key.key")
-	err = ioutil.WriteFile(encryptedPEMKeyFilename1, encryptedPEMPrivKey1, 0644)
-	require.NoError(t, err)
-
-	rootPrivKey2, err := utils.GenerateECDSAKey(rand.Reader)
-	require.NoError(t, err)
-	encryptedPEMPrivKey2, err := utils.EncryptPrivateKey(rootPrivKey2, data.CanonicalRootRole, "", testPassphrase)
-	require.NoError(t, err)
-	encryptedPEMKeyFilename2 := filepath.Join(tempDir, "encrypted_key2.key")
-	err = ioutil.WriteFile(encryptedPEMKeyFilename2, encryptedPEMPrivKey2, 0644)
-	require.NoError(t, err)
-
-	// rotate the root key
-	_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalRootRole.String(), "--key", encryptedPEMKeyFilename1, "--key", encryptedPEMKeyFilename2)
-	require.NoError(t, err)
-	// 3 root keys - 1 prev, 1 new
-	assertNumKeys(t, tempDir, 3, 2, true)
-
-	// rotate the root key again
-	_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalRootRole.String())
-	require.NoError(t, err)
-	// 3 root keys, 2 prev, 1 new
-	assertNumKeys(t, tempDir, 3, 2, true)
-
-	// publish using the new keys
-	output := assertSuccessfullyPublish(
-		t, tempDir, server.URL, "gun", target+"2", tempfiles[1])
-	// assert that the previous target is still there
-	require.True(t, strings.Contains(string(output), target))
-}
-
-// Tests rotating non-root keys
-func TestKeyRotationNonRoot(t *testing.T) {
-	// -- setup --
-	setUp(t)
-
-	tempDir := tempDirWithConfig(t, "{}")
-	defer os.RemoveAll(tempDir)
-
-	tempfiles := make([]string, 2)
-	for i := 0; i < 2; i++ {
-		tempFile, err := ioutil.TempFile("", "targetfile")
-		require.NoError(t, err)
-		tempFile.Close()
-		tempfiles[i] = tempFile.Name()
-		defer os.Remove(tempFile.Name())
-	}
-
-	server := setupServer()
-	defer server.Close()
-
-	var target = "sdgkadgad"
-
-	// -- tests --
-
-	// starts out with no keys
-	assertNumKeys(t, tempDir, 0, 0, true)
-
-	// generate root key produces a single root key and no other keys
-	_, err := runCommand(t, tempDir, "key", "generate", data.ECDSAKey)
-	require.NoError(t, err)
-	assertNumKeys(t, tempDir, 1, 0, true)
-
-	// initialize a repo, should have signing keys and no new root key
-	_, err = runCommand(t, tempDir, "-s", server.URL, "init", "gun")
-	require.NoError(t, err)
-	assertNumKeys(t, tempDir, 1, 2, true)
-
-	// publish using the original keys
-	assertSuccessfullyPublish(t, tempDir, server.URL, "gun", target, tempfiles[0])
-
-	// create new target keys
-	tempFile, err := ioutil.TempFile("", "pemfile")
-	require.NoError(t, err)
-	defer os.Remove(tempFile.Name())
-
-	privKey, err := utils.GenerateECDSAKey(rand.Reader)
-	require.NoError(t, err)
-
-	pemBytes, err := utils.EncryptPrivateKey(privKey, data.CanonicalTargetsRole, "", testPassphrase)
-	require.NoError(t, err)
-
-	nBytes, err := tempFile.Write(pemBytes)
-	require.NoError(t, err)
-	tempFile.Close()
-	require.Equal(t, len(pemBytes), nBytes)
-
-	tempFile2, err := ioutil.TempFile("", "pemfile2")
-	require.NoError(t, err)
-	defer os.Remove(tempFile2.Name())
-
-	privKey2, err := utils.GenerateECDSAKey(rand.Reader)
-	require.NoError(t, err)
-
-	pemBytes2, err := utils.KeyToPEM(privKey2, data.CanonicalTargetsRole, "")
-	require.NoError(t, err)
-
-	nBytes2, err := tempFile2.Write(pemBytes2)
-	require.NoError(t, err)
-	tempFile2.Close()
-	require.Equal(t, len(pemBytes2), nBytes2)
-
-	// rotate the targets key
-	_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalTargetsRole.String(), "--key", tempFile.Name(), "--key", tempFile2.Name())
-	require.NoError(t, err)
-
-	// publish using the new keys
-	output := assertSuccessfullyPublish(
-		t, tempDir, server.URL, "gun", target+"2", tempfiles[1])
-	// assert that the previous target is still there
-	require.True(t, strings.Contains(string(output), target))
-
-	// rotate to nonexistant key
-	_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalTargetsRole.String(), "--key", "nope.pem")
-	require.Error(t, err)
 }
 
 // Tests default root key generation
@@ -1692,7 +1511,7 @@ func TestWitness(t *testing.T) {
 	err = keyStore.AddKey(
 		trustmanager.KeyInfo{
 			Gun:  "gun",
-			Role: data.RoleName(delgName),
+			Role: delgName,
 		},
 		privKey,
 	)
@@ -1754,7 +1573,7 @@ func TestWitness(t *testing.T) {
 	err = keyStore.AddKey(
 		trustmanager.KeyInfo{
 			Gun:  "gun",
-			Role: data.RoleName(delgName),
+			Role: delgName,
 		},
 		privKey2,
 	)
@@ -1781,7 +1600,7 @@ func TestWitness(t *testing.T) {
 	require.Error(t, err)
 
 	// 12. check non-targets base roles all fail
-	for _, role := range []string{data.CanonicalRootRole.String(), data.CanonicalSnapshotRole.String(), data.CanonicalTimestampRole.String()} {
+	for _, role := range []string{data.CanonicalRootRole, data.CanonicalSnapshotRole, data.CanonicalTimestampRole} {
 		// clear any pending changes to ensure errors are only related to the specific role we're trying to witness
 		_, err = runCommand(t, tempDir, "reset", "gun", "--all")
 		require.NoError(t, err)
@@ -1843,7 +1662,7 @@ func generateCertPrivKeyPair(t *testing.T, gun, keyAlgorithm string) (*x509.Cert
 	require.NoError(t, err)
 	startTime := time.Now()
 	endTime := startTime.AddDate(10, 0, 0)
-	cert, err := cryptoservice.GenerateCertificate(privKey, data.GUN(gun), startTime, endTime)
+	cert, err := cryptoservice.GenerateCertificate(privKey, gun, startTime, endTime)
 	require.NoError(t, err)
 	parsedPubKey, _ := utils.ParsePEMPublicKey(utils.CertToPEM(cert))
 	keyID, err := utils.CanonicalKeyID(parsedPubKey)
@@ -1899,7 +1718,7 @@ func TestClientTUFInitWithAutoPublish(t *testing.T) {
 	// list repo - expect error
 	_, err = runCommand(t, tempDir, "-s", server.URL, "list", gunNoPublish)
 	require.NotNil(t, err)
-	require.IsType(t, client.ErrRepositoryNotExist{}, err)
+	require.Equal(t, err, nstorage.ErrMetaNotFound{Resource: data.CanonicalRootRole})
 }
 
 func TestClientTUFAddWithAutoPublish(t *testing.T) {
@@ -2209,7 +2028,7 @@ func TestClientTUFAddByHashWithAutoPublish(t *testing.T) {
 
 	targetData := []byte{'a', 'b', 'c'}
 	target256Bytes := sha256.Sum256(targetData)
-	targetSHA256Hex := hex.EncodeToString(target256Bytes[:])
+	targetSha256Hex := hex.EncodeToString(target256Bytes[:])
 
 	err := ioutil.WriteFile(filepath.Join(tempDir, "tempfile"), targetData, 0644)
 	require.NoError(t, err)
@@ -2225,7 +2044,7 @@ func TestClientTUFAddByHashWithAutoPublish(t *testing.T) {
 	require.NoError(t, err)
 
 	// add a target just by sha256
-	_, err = runCommand(t, tempDir, "-s", server.URL, "addhash", "-p", "gun", target1, "3", "--sha256", targetSHA256Hex)
+	_, err = runCommand(t, tempDir, "-s", server.URL, "addhash", "-p", "gun", target1, "3", "--sha256", targetSha256Hex)
 	require.NoError(t, err)
 
 	// check status - no targets
@@ -2306,7 +2125,7 @@ func TestClientKeyImport(t *testing.T) {
 	require.Equal(t, len(pemBytes), nBytes)
 
 	// import the key
-	_, err = runCommand(t, tempDir, "key", "import", tempFile2.Name(), "-r", data.CanonicalRootRole.String())
+	_, err = runCommand(t, tempDir, "key", "import", tempFile2.Name(), "-r", data.CanonicalRootRole)
 	require.NoError(t, err)
 
 	// if there is hardware available, root will only be on hardware, and not
@@ -2338,7 +2157,7 @@ func TestClientKeyImport(t *testing.T) {
 	// if there is hardware available, root will only be on hardware, and not
 	// on disk
 	assertNumKeys(t, tempDir, 2, 1, !rootOnHardware())
-	file, err := os.OpenFile(filepath.Join(tempDir, notary.PrivDir, privKey.ID()+".key"), os.O_RDONLY, notary.PrivExecPerms)
+	file, err := os.OpenFile(filepath.Join(tempDir, "private", notary.NonRootKeysSubdir, privKey.ID()+".key"), os.O_RDONLY, notary.PrivKeyPerms)
 	require.NoError(t, err)
 	filebytes, _ := ioutil.ReadAll(file)
 	require.Contains(t, string(filebytes), ("role: " + notary.DefaultImportRole))
@@ -2360,6 +2179,7 @@ func TestClientKeyImport(t *testing.T) {
 	require.NoError(t, err)
 	tempFile4.Close()
 	require.Equal(t, len(pemBytes), nBytes)
+	newKeyID := privKey.ID()
 
 	// import the key
 	_, err = runCommand(t, tempDir, "key", "import", tempFile4.Name(), "-r", "somerole", "-g", "somegun")
@@ -2368,11 +2188,8 @@ func TestClientKeyImport(t *testing.T) {
 	// if there is hardware available, root will only be on hardware, and not
 	// on disk
 	assertNumKeys(t, tempDir, 2, 2, !rootOnHardware())
-	file, err = os.OpenFile(filepath.Join(tempDir, notary.PrivDir, privKey.ID()+".key"), os.O_RDONLY, notary.PrivExecPerms)
+	_, err = os.Open(filepath.Join(tempDir, "private", notary.NonRootKeysSubdir, newKeyID+".key"))
 	require.NoError(t, err)
-	filebytes, _ = ioutil.ReadAll(file)
-	require.Contains(t, string(filebytes), ("role: " + "somerole"))
-	require.NotContains(t, string(filebytes), ("gun: " + "somegun"))
 
 	// test 5, no path non root role with canonical role and gun flag with unencrypted key
 
@@ -2391,19 +2208,17 @@ func TestClientKeyImport(t *testing.T) {
 	require.NoError(t, err)
 	tempFile5.Close()
 	require.Equal(t, len(pemBytes), nBytes)
+	newKeyID = privKey.ID()
 
 	// import the key
-	_, err = runCommand(t, tempDir, "key", "import", tempFile5.Name(), "-r", data.CanonicalSnapshotRole.String(), "-g", "somegun")
+	_, err = runCommand(t, tempDir, "key", "import", tempFile5.Name(), "-r", data.CanonicalSnapshotRole, "-g", "somegun")
 	require.NoError(t, err)
 
 	// if there is hardware available, root will only be on hardware, and not
 	// on disk
 	assertNumKeys(t, tempDir, 2, 3, !rootOnHardware())
-	file, err = os.OpenFile(filepath.Join(tempDir, notary.PrivDir, privKey.ID()+".key"), os.O_RDONLY, notary.PrivExecPerms)
+	_, err = os.Open(filepath.Join(tempDir, "private", notary.NonRootKeysSubdir, "somegun", newKeyID+".key"))
 	require.NoError(t, err)
-	filebytes, _ = ioutil.ReadAll(file)
-	require.Contains(t, string(filebytes), ("role: " + data.CanonicalSnapshotRole.String()))
-	require.Contains(t, string(filebytes), ("gun: " + "somegun"))
 
 	// test6, no path but role=root included with encrypted key, should fail since we don't know what keyid to save to
 
@@ -2448,6 +2263,7 @@ func TestClientKeyImport(t *testing.T) {
 	require.NoError(t, err)
 	tempFile7.Close()
 	require.Equal(t, len(pemBytes), nBytes)
+	newKeyID = privKey.ID()
 
 	// import the key
 	_, err = runCommand(t, tempDir, "key", "import", tempFile7.Name(), "-r", "somerole")
@@ -2456,10 +2272,8 @@ func TestClientKeyImport(t *testing.T) {
 	// if there is hardware available, root will only be on hardware, and not
 	// on disk
 	assertNumKeys(t, tempDir, 2, 4, !rootOnHardware())
-	file, err = os.OpenFile(filepath.Join(tempDir, notary.PrivDir, privKey.ID()+".key"), os.O_RDONLY, notary.PrivExecPerms)
+	_, err = os.Open(filepath.Join(tempDir, "private", notary.NonRootKeysSubdir, newKeyID+".key"))
 	require.NoError(t, err)
-	filebytes, _ = ioutil.ReadAll(file)
-	require.Contains(t, string(filebytes), ("role: " + "somerole"))
 
 	// test 8, non root canonical key with no gun
 
@@ -2478,7 +2292,7 @@ func TestClientKeyImport(t *testing.T) {
 	require.NoError(t, err)
 	tempFile8.Close()
 	require.Equal(t, len(pemBytes), nBytes)
-	newKeyID := privKey.ID()
+	newKeyID = privKey.ID()
 
 	// import the key
 	_, err = runCommand(t, tempDir, "key", "import", tempFile8.Name())
@@ -2487,7 +2301,7 @@ func TestClientKeyImport(t *testing.T) {
 	// if there is hardware available, root will only be on hardware, and not
 	// on disk
 	assertNumKeys(t, tempDir, 2, 4, !rootOnHardware())
-	_, err = os.Open(filepath.Join(tempDir, notary.PrivDir, newKeyID+".key"))
+	_, err = os.Open(filepath.Join(tempDir, "private", notary.NonRootKeysSubdir, newKeyID+".key"))
 	require.Error(t, err)
 }
 
@@ -2559,7 +2373,7 @@ func TestAddDelImportKeyPublishFlow(t *testing.T) {
 	assertNumKeys(t, tempDir, 1, 2, true)
 
 	// rotate the snapshot key to server
-	_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalSnapshotRole.String(), "-r")
+	_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalSnapshotRole, "-r")
 	require.NoError(t, err)
 
 	// publish repo
@@ -2586,7 +2400,8 @@ func TestAddDelImportKeyPublishFlow(t *testing.T) {
 	require.NotContains(t, output, "No delegations present in this repository.")
 
 	// remove the targets key to demonstrate that delegates don't need this key
-	require.NoError(t, os.Remove(filepath.Join(tempDir, notary.PrivDir, targetKeyID+".key")))
+	keyDir := filepath.Join(tempDir, "private", "tuf_keys")
+	require.NoError(t, os.Remove(filepath.Join(keyDir, "gun", targetKeyID+".key")))
 
 	// we are now set up with the first part, now import the delegation key- add a target- publish
 
@@ -2631,7 +2446,7 @@ func TestAddDelImportKeyPublishFlow(t *testing.T) {
 	// make sure that it has been imported fine
 	// if there is hardware available, root will only be on hardware, and not
 	// on disk
-	_, err = os.Open(filepath.Join(tempDir, notary.PrivDir, privKey.ID()+".key"))
+	_, err = os.Open(filepath.Join(tempDir, "private", notary.NonRootKeysSubdir, privKey.ID()+".key"))
 	require.NoError(t, err)
 
 	// now try to publish
@@ -2680,7 +2495,7 @@ func TestExportImportFlow(t *testing.T) {
 	require.NoError(t, err)
 
 	// make sure the export has been done properly
-	from, err := os.OpenFile(filepath.Join(tempDir, "exported"), os.O_RDONLY, notary.PrivExecPerms)
+	from, err := os.OpenFile(filepath.Join(tempDir, "exported"), os.O_RDONLY, notary.PrivKeyPerms)
 	require.NoError(t, err)
 	defer from.Close()
 	fromBytes, _ := ioutil.ReadAll(from)
@@ -2719,7 +2534,7 @@ func TestExportImportFlow(t *testing.T) {
 
 	if !rootOnHardware() {
 		// validate root is imported correctly
-		rootKey, err := os.OpenFile(filepath.Join(newTempDir, notary.PrivDir, root[0]+".key"), os.O_RDONLY, notary.PrivExecPerms)
+		rootKey, err := os.OpenFile(filepath.Join(newTempDir, "private", notary.RootKeysSubdir, root[0]+".key"), os.O_RDONLY, notary.PrivKeyPerms)
 		require.NoError(t, err)
 		defer rootKey.Close()
 		rootBytes, _ := ioutil.ReadAll(rootKey)
@@ -2730,7 +2545,7 @@ func TestExportImportFlow(t *testing.T) {
 	}
 
 	// validate snapshot is imported correctly
-	snapKey, err := os.OpenFile(filepath.Join(newTempDir, notary.PrivDir, signing[0]+".key"), os.O_RDONLY, notary.PrivExecPerms)
+	snapKey, err := os.OpenFile(filepath.Join(newTempDir, "private", notary.NonRootKeysSubdir, "gun", signing[0]+".key"), os.O_RDONLY, notary.PrivKeyPerms)
 	require.NoError(t, err)
 	defer snapKey.Close()
 	snapBytes, _ := ioutil.ReadAll(snapKey)
@@ -2739,7 +2554,7 @@ func TestExportImportFlow(t *testing.T) {
 	require.True(t, strings.Contains(snapString, "role: snapshot") || strings.Contains(snapString, "role: target"))
 
 	// validate targets is imported correctly
-	targKey, err := os.OpenFile(filepath.Join(newTempDir, notary.PrivDir, signing[1]+".key"), os.O_RDONLY, notary.PrivExecPerms)
+	targKey, err := os.OpenFile(filepath.Join(newTempDir, "private", notary.NonRootKeysSubdir, "gun", signing[1]+".key"), os.O_RDONLY, notary.PrivKeyPerms)
 	require.NoError(t, err)
 	defer targKey.Close()
 	targBytes, _ := ioutil.ReadAll(targKey)

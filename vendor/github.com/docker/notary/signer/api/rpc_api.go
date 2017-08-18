@@ -19,11 +19,13 @@ import (
 //KeyManagementServer implements the KeyManagementServer grpc interface
 type KeyManagementServer struct {
 	CryptoServices signer.CryptoServiceIndex
+	HealthChecker  func() map[string]string
 }
 
 //SignerServer implements the SignerServer grpc interface
 type SignerServer struct {
 	CryptoServices signer.CryptoServiceIndex
+	HealthChecker  func() map[string]string
 }
 
 //CreateKey returns a PublicKey created using KeyManagementServer's SigningService
@@ -40,7 +42,7 @@ func (s *KeyManagementServer) CreateKey(ctx context.Context, req *pb.CreateKeyRe
 	var tufKey data.PublicKey
 	var err error
 
-	tufKey, err = service.Create(data.RoleName(req.Role), data.GUN(req.Gun), req.Algorithm)
+	tufKey, err = service.Create(req.Role, req.Gun, req.Algorithm)
 	if err != nil {
 		logger.Error("CreateKey: failed to create key: ", err)
 		return nil, grpc.Errorf(codes.Internal, "Key creation failed")
@@ -88,7 +90,14 @@ func (s *KeyManagementServer) GetKeyInfo(ctx context.Context, keyID *pb.KeyID) (
 			Algorithm: &pb.Algorithm{Algorithm: privKey.Algorithm()},
 		},
 		PublicKey: privKey.Public(),
-		Role:      role.String(),
+		Role:      role,
+	}, nil
+}
+
+//CheckHealth returns the HealthStatus with the service
+func (s *KeyManagementServer) CheckHealth(ctx context.Context, v *pb.Void) (*pb.HealthStatus, error) {
+	return &pb.HealthStatus{
+		Status: s.HealthChecker(),
 	}, nil
 }
 
@@ -128,4 +137,11 @@ func (s *SignerServer) Sign(ctx context.Context, sr *pb.SignatureRequest) (*pb.S
 	}
 
 	return signature, nil
+}
+
+//CheckHealth returns the HealthStatus with the service
+func (s *SignerServer) CheckHealth(ctx context.Context, v *pb.Void) (*pb.HealthStatus, error) {
+	return &pb.HealthStatus{
+		Status: s.HealthChecker(),
+	}, nil
 }

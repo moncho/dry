@@ -12,14 +12,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
-
-	"github.com/docker/notary/tuf/data"
 )
 
 func TestTokenAuth(t *testing.T) {
 	var (
-		baseTransport          = &http.Transport{}
-		gun           data.GUN = "test"
+		baseTransport = &http.Transport{}
+		gun           = "test"
 	)
 	auth, err := tokenAuth("https://localhost:9999", baseTransport, gun, readOnly)
 	require.NoError(t, err)
@@ -28,18 +26,23 @@ func TestTokenAuth(t *testing.T) {
 
 func TestAdminTokenAuth(t *testing.T) {
 	var (
-		baseTransport          = &http.Transport{}
-		gun           data.GUN = "test"
+		baseTransport = &http.Transport{}
+		gun           = "test"
 	)
 	auth, err := tokenAuth("https://localhost:9999", baseTransport, gun, admin)
 	require.NoError(t, err)
 	require.Nil(t, auth)
 }
 
+func StatusOKTestHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(200)
+	w.Write([]byte("{}"))
+}
+
 func TestTokenAuth200Status(t *testing.T) {
 	var (
-		baseTransport          = &http.Transport{}
-		gun           data.GUN = "test"
+		baseTransport = &http.Transport{}
+		gun           = "test"
 	)
 	s := httptest.NewServer(http.HandlerFunc(NotAuthorizedTestHandler))
 	defer s.Close()
@@ -51,8 +54,8 @@ func TestTokenAuth200Status(t *testing.T) {
 
 func TestAdminTokenAuth200Status(t *testing.T) {
 	var (
-		baseTransport          = &http.Transport{}
-		gun           data.GUN = "test"
+		baseTransport = &http.Transport{}
+		gun           = "test"
 	)
 	s := httptest.NewServer(http.HandlerFunc(NotAuthorizedTestHandler))
 	defer s.Close()
@@ -68,8 +71,8 @@ func NotAuthorizedTestHandler(w http.ResponseWriter, r *http.Request) {
 
 func TestTokenAuth401Status(t *testing.T) {
 	var (
-		baseTransport          = &http.Transport{}
-		gun           data.GUN = "test"
+		baseTransport = &http.Transport{}
+		gun           = "test"
 	)
 	s := httptest.NewServer(http.HandlerFunc(NotAuthorizedTestHandler))
 	defer s.Close()
@@ -81,8 +84,8 @@ func TestTokenAuth401Status(t *testing.T) {
 
 func TestAdminTokenAuth401Status(t *testing.T) {
 	var (
-		baseTransport          = &http.Transport{}
-		gun           data.GUN = "test"
+		baseTransport = &http.Transport{}
+		gun           = "test"
 	)
 	s := httptest.NewServer(http.HandlerFunc(NotAuthorizedTestHandler))
 	defer s.Close()
@@ -98,8 +101,8 @@ func NotFoundTestHandler(w http.ResponseWriter, r *http.Request) {
 
 func TestTokenAuthNon200Non401Status(t *testing.T) {
 	var (
-		baseTransport          = &http.Transport{}
-		gun           data.GUN = "test"
+		baseTransport = &http.Transport{}
+		gun           = "test"
 	)
 	s := httptest.NewServer(http.HandlerFunc(NotFoundTestHandler))
 	defer s.Close()
@@ -111,8 +114,8 @@ func TestTokenAuthNon200Non401Status(t *testing.T) {
 
 func TestAdminTokenAuthNon200Non401Status(t *testing.T) {
 	var (
-		baseTransport          = &http.Transport{}
-		gun           data.GUN = "test"
+		baseTransport = &http.Transport{}
+		gun           = "test"
 	)
 	s := httptest.NewServer(http.HandlerFunc(NotFoundTestHandler))
 	defer s.Close()
@@ -206,6 +209,7 @@ func TestGetTrustPinningErrors(t *testing.T) {
 	require.Error(t, tc.tufStatus(&cobra.Command{}, []string{"gun"}))
 	tc.resetAll = true
 	require.Error(t, tc.tufReset(&cobra.Command{}, []string{"gun"}))
+	require.Error(t, tc.tufDeleteGUN(&cobra.Command{}, []string{"gun"}))
 	require.Error(t, tc.tufInit(&cobra.Command{}, []string{"gun"}))
 	require.Error(t, tc.tufPublish(&cobra.Command{}, []string{"gun"}))
 	require.Error(t, tc.tufVerify(&cobra.Command{}, []string{"gun", "target", "file"}))

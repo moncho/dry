@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
 	"testing"
 	"time"
@@ -14,13 +15,13 @@ import (
 	"github.com/docker/notary/tuf/utils"
 	"github.com/stretchr/testify/require"
 
-	"github.com/docker/notary/tuf"
+	tuf "github.com/docker/notary/tuf"
 	"github.com/docker/notary/tuf/signed"
 )
 
 // CreateKey creates a new key inside the cryptoservice for the given role and gun,
 // returning the public key.  If the role is a root role, create an x509 key.
-func CreateKey(cs signed.CryptoService, gun data.GUN, role data.RoleName, keyAlgorithm string) (data.PublicKey, error) {
+func CreateKey(cs signed.CryptoService, gun, role, keyAlgorithm string) (data.PublicKey, error) {
 	key, err := cs.Create(role, gun, keyAlgorithm)
 	if err != nil {
 		return nil, err
@@ -53,7 +54,7 @@ func CreateKey(cs signed.CryptoService, gun data.GUN, role data.RoleName, keyAlg
 }
 
 // CopyKeys copies keys of a particular role to a new cryptoservice, and returns that cryptoservice
-func CopyKeys(t *testing.T, from signed.CryptoService, roles ...data.RoleName) signed.CryptoService {
+func CopyKeys(t *testing.T, from signed.CryptoService, roles ...string) signed.CryptoService {
 	memKeyStore := trustmanager.NewKeyMemoryStore(passphrase.ConstantRetriever("pass"))
 	for _, role := range roles {
 		for _, keyID := range from.ListKeys(role) {
@@ -68,11 +69,11 @@ func CopyKeys(t *testing.T, from signed.CryptoService, roles ...data.RoleName) s
 // EmptyRepo creates an in memory crypto service
 // and initializes a repo with no targets.  Delegations are only created
 // if delegation roles are passed in.
-func EmptyRepo(gun data.GUN, delegationRoles ...data.RoleName) (*tuf.Repo, signed.CryptoService, error) {
+func EmptyRepo(gun string, delegationRoles ...string) (*tuf.Repo, signed.CryptoService, error) {
 	cs := cryptoservice.NewCryptoService(trustmanager.NewKeyMemoryStore(passphrase.ConstantRetriever("")))
 	r := tuf.NewRepo(cs)
 
-	baseRoles := map[data.RoleName]data.BaseRole{}
+	baseRoles := map[string]data.BaseRole{}
 	for _, role := range data.BaseRoles {
 		key, err := CreateKey(cs, gun, role, data.ECDSAKey)
 		if err != nil {
@@ -98,25 +99,17 @@ func EmptyRepo(gun data.GUN, delegationRoles ...data.RoleName) (*tuf.Repo, signe
 
 	// sort the delegation roles so that we make sure to create the parents
 	// first
-	// TODO: go back and fix this when we upgrade to Go 1.8 with the new
-	//       slice sorting support. We should only need to define a `Less(i, j {}interface)`
-	//       on RoleName to be able to call sort.Slice(delegationRoles) (or something like that)
-	var roleNames []string
-	for _, role := range delegationRoles {
-		roleNames = append(roleNames, role.String())
-	}
-
-	sort.Strings(roleNames)
-	for _, delgName := range roleNames {
+	sort.Strings(delegationRoles)
+	for _, delgName := range delegationRoles {
 		// create a delegations key and a delegation in the TUF repo
-		delgKey, err := CreateKey(cs, gun, data.RoleName(delgName), data.ECDSAKey)
+		delgKey, err := CreateKey(cs, gun, delgName, data.ECDSAKey)
 		if err != nil {
 			return nil, nil, err
 		}
-		if err := r.UpdateDelegationKeys(data.RoleName(delgName), []data.PublicKey{delgKey}, []string{}, 1); err != nil {
+		if err := r.UpdateDelegationKeys(delgName, []data.PublicKey{delgKey}, []string{}, 1); err != nil {
 			return nil, nil, err
 		}
-		if err := r.UpdateDelegationPaths(data.RoleName(delgName), []string{""}, []string{}, false); err != nil {
+		if err := r.UpdateDelegationPaths(delgName, []string{""}, []string{}, false); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -125,7 +118,7 @@ func EmptyRepo(gun data.GUN, delegationRoles ...data.RoleName) (*tuf.Repo, signe
 }
 
 // NewRepoMetadata creates a TUF repo and returns the metadata
-func NewRepoMetadata(gun data.GUN, delegationRoles ...data.RoleName) (map[data.RoleName][]byte, signed.CryptoService, error) {
+func NewRepoMetadata(gun string, delegationRoles ...string) (map[string][]byte, signed.CryptoService, error) {
 	tufRepo, cs, err := EmptyRepo(gun, delegationRoles...)
 	if err != nil {
 		return nil, nil, err
@@ -140,17 +133,28 @@ func NewRepoMetadata(gun data.GUN, delegationRoles ...data.RoleName) (map[data.R
 }
 
 // CopyRepoMetadata makes a copy of a metadata->bytes mapping
-func CopyRepoMetadata(from map[data.RoleName][]byte) map[data.RoleName][]byte {
-	copied := make(map[data.RoleName][]byte)
+func CopyRepoMetadata(from map[string][]byte) map[string][]byte {
+	copied := make(map[string][]byte)
 	for roleName, metaBytes := range from {
 		copied[roleName] = metaBytes
 	}
 	return copied
 }
 
+// RandomByteSlice generates some random data to be used for testing only
+func RandomByteSlice(maxSize int) []byte {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	contentSize := r.Intn(maxSize)
+	content := make([]byte, contentSize)
+	for i := range content {
+		content[i] = byte(r.Int63() & 0xff)
+	}
+	return content
+}
+
 // SignAndSerialize calls Sign and then Serialize to get the repo metadata out
-func SignAndSerialize(tufRepo *tuf.Repo) (map[data.RoleName][]byte, error) {
-	meta := make(map[data.RoleName][]byte)
+func SignAndSerialize(tufRepo *tuf.Repo) (map[string][]byte, error) {
+	meta := make(map[string][]byte)
 
 	for delgName := range tufRepo.Targets {
 		// we'll sign targets later
@@ -192,11 +196,11 @@ func SignAndSerialize(tufRepo *tuf.Repo) (map[data.RoleName][]byte, error) {
 
 // Sign signs all top level roles in a repo in the appropriate order
 func Sign(repo *tuf.Repo) (root, targets, snapshot, timestamp *data.Signed, err error) {
-	root, err = repo.SignRoot(data.DefaultExpires("root"), nil)
+	root, err = repo.SignRoot(data.DefaultExpires("root"))
 	if _, ok := err.(data.ErrInvalidRole); err != nil && !ok {
 		return nil, nil, nil, nil, err
 	}
-	targets, err = repo.SignTargets(data.CanonicalTargetsRole, data.DefaultExpires("targets"))
+	targets, err = repo.SignTargets("targets", data.DefaultExpires("targets"))
 	if _, ok := err.(data.ErrInvalidRole); err != nil && !ok {
 		return nil, nil, nil, nil, err
 	}

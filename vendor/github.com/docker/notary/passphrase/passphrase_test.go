@@ -1,7 +1,6 @@
 package passphrase
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
@@ -110,25 +109,25 @@ func TestRolePromptingAndCaching(t *testing.T) {
 
 	retriever := PromptRetrieverWithInOut(&in, &out, nil)
 
-	assertAskOnceForKey(t, &in, &out, retriever, "rootpassword", data.CanonicalRootRole.String())
-	assertAskOnceForKey(t, &in, &out, retriever, "targetspassword", data.CanonicalTargetsRole.String())
-	assertAskOnceForKey(t, &in, &out, retriever, "snapshotpassword", data.CanonicalSnapshotRole.String())
+	assertAskOnceForKey(t, &in, &out, retriever, "rootpassword", data.CanonicalRootRole)
+	assertAskOnceForKey(t, &in, &out, retriever, "targetspassword", data.CanonicalTargetsRole)
+	assertAskOnceForKey(t, &in, &out, retriever, "snapshotpassword", data.CanonicalSnapshotRole)
 	assertAskOnceForKey(t, &in, &out, retriever, "delegationpass", "targets/delegation")
 
 	// ask for root password, but it should already be cached
-	pass, giveUp, err := retriever("repo/0123456789abcdef", data.CanonicalRootRole.String(), false, 0)
+	pass, giveUp, err := retriever("repo/0123456789abcdef", data.CanonicalRootRole, false, 0)
 	require.NoError(t, err)
 	require.False(t, giveUp)
 	require.Equal(t, "rootpassword", pass)
 
 	// ask for targets password, but it should already be cached
-	pass, giveUp, err = retriever("repo/0123456789abcdef", data.CanonicalTargetsRole.String(), false, 0)
+	pass, giveUp, err = retriever("repo/0123456789abcdef", data.CanonicalTargetsRole, false, 0)
 	require.NoError(t, err)
 	require.False(t, giveUp)
 	require.Equal(t, "targetspassword", pass)
 
 	// ask for snapshot password, but it should already be cached
-	pass, giveUp, err = retriever("repo/0123456789abcdef", data.CanonicalSnapshotRole.String(), false, 0)
+	pass, giveUp, err = retriever("repo/0123456789abcdef", data.CanonicalSnapshotRole, false, 0)
 	require.NoError(t, err)
 	require.False(t, giveUp)
 	require.Equal(t, "snapshotpassword", pass)
@@ -153,17 +152,4 @@ func TestPromptRetrieverNeedsTerminal(t *testing.T) {
 	_, _, err := prompt("repo/0123456789abcdef", "targets/delegation/new", false, 0)
 	require.Error(t, err)
 	require.IsType(t, ErrNoInput, err)
-}
-
-// TestGetPassphrase checks getting passphrase from stdin
-func TestGetPassphrase(t *testing.T) {
-	var in bytes.Buffer
-
-	_, err := in.WriteString("passphrase\n")
-	require.NoError(t, err)
-
-	stdin := bufio.NewReader(&in)
-	passphrase, err := GetPassphrase(stdin)
-	require.NoError(t, err)
-	require.Equal(t, string(passphrase), "passphrase\n")
 }

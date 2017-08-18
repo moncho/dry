@@ -212,6 +212,10 @@ func parseStatusFile(path string) (map[string]string, error) {
 	status := make(map[string]string)
 
 	for s.Scan() {
+		if err := s.Err(); err != nil {
+			return nil, err
+		}
+
 		text := s.Text()
 		parts := strings.Split(text, ":")
 
@@ -221,9 +225,5 @@ func parseStatusFile(path string) (map[string]string, error) {
 
 		status[parts[0]] = parts[1]
 	}
-	if err := s.Err(); err != nil {
-		return nil, err
-	}
-
 	return status, nil
 }

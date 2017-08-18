@@ -10,16 +10,16 @@ import (
 )
 
 // Canonical base role names
-var (
-	CanonicalRootRole      RoleName = "root"
-	CanonicalTargetsRole   RoleName = "targets"
-	CanonicalSnapshotRole  RoleName = "snapshot"
-	CanonicalTimestampRole RoleName = "timestamp"
+const (
+	CanonicalRootRole      = "root"
+	CanonicalTargetsRole   = "targets"
+	CanonicalSnapshotRole  = "snapshot"
+	CanonicalTimestampRole = "timestamp"
 )
 
 // BaseRoles is an easy to iterate list of the top level
 // roles.
-var BaseRoles = []RoleName{
+var BaseRoles = []string{
 	CanonicalRootRole,
 	CanonicalTargetsRole,
 	CanonicalSnapshotRole,
@@ -31,7 +31,7 @@ var delegationRegexp = regexp.MustCompile("^[-a-z0-9_/]+$")
 
 // ErrNoSuchRole indicates the roles doesn't exist
 type ErrNoSuchRole struct {
-	Role RoleName
+	Role string
 }
 
 func (e ErrNoSuchRole) Error() string {
@@ -42,7 +42,7 @@ func (e ErrNoSuchRole) Error() string {
 // something like a role for which sone of the public keys were
 // not found in the TUF repo.
 type ErrInvalidRole struct {
-	Role   RoleName
+	Role   string
 	Reason string
 }
 
@@ -56,7 +56,7 @@ func (e ErrInvalidRole) Error() string {
 // ValidRole only determines the name is semantically
 // correct. For target delegated roles, it does NOT check
 // the the appropriate parent roles exist.
-func ValidRole(name RoleName) bool {
+func ValidRole(name string) bool {
 	if IsDelegation(name) {
 		return true
 	}
@@ -70,25 +70,24 @@ func ValidRole(name RoleName) bool {
 }
 
 // IsDelegation checks if the role is a delegation or a root role
-func IsDelegation(role RoleName) bool {
-	strRole := role.String()
+func IsDelegation(role string) bool {
 	targetsBase := CanonicalTargetsRole + "/"
 
-	whitelistedChars := delegationRegexp.MatchString(strRole)
+	whitelistedChars := delegationRegexp.MatchString(role)
 
 	// Limit size of full role string to 255 chars for db column size limit
 	correctLength := len(role) < 256
 
 	// Removes ., .., extra slashes, and trailing slash
-	isClean := path.Clean(strRole) == strRole
-	return strings.HasPrefix(strRole, targetsBase.String()) &&
+	isClean := path.Clean(role) == role
+	return strings.HasPrefix(role, targetsBase) &&
 		whitelistedChars &&
 		correctLength &&
 		isClean
 }
 
 // IsBaseRole checks if the role is a base role
-func IsBaseRole(role RoleName) bool {
+func IsBaseRole(role string) bool {
 	for _, baseRole := range BaseRoles {
 		if role == baseRole {
 			return true
@@ -101,11 +100,11 @@ func IsBaseRole(role RoleName) bool {
 // path, i.e. targets/*, targets/foo/*.
 // The wildcard may only appear as the final part of the delegation and must
 // be a whole segment, i.e. targets/foo* is not a valid wildcard delegation.
-func IsWildDelegation(role RoleName) bool {
-	if path.Clean(role.String()) != role.String() {
+func IsWildDelegation(role string) bool {
+	if path.Clean(role) != role {
 		return false
 	}
-	base := role.Parent()
+	base := path.Dir(role)
 	if !(IsDelegation(base) || base == CanonicalTargetsRole) {
 		return false
 	}
@@ -115,12 +114,12 @@ func IsWildDelegation(role RoleName) bool {
 // BaseRole is an internal representation of a root/targets/snapshot/timestamp role, with its public keys included
 type BaseRole struct {
 	Keys      map[string]PublicKey
-	Name      RoleName
+	Name      string
 	Threshold int
 }
 
 // NewBaseRole creates a new BaseRole object with the provided parameters
-func NewBaseRole(name RoleName, threshold int, keys ...PublicKey) BaseRole {
+func NewBaseRole(name string, threshold int, keys ...PublicKey) BaseRole {
 	r := BaseRole{
 		Name:      name,
 		Threshold: threshold,
@@ -200,7 +199,7 @@ func (d DelegationRole) Restrict(child DelegationRole) (DelegationRole, error) {
 // determined by delegation name.
 // Ex: targets/a is a direct parent of targets/a/b, but targets/a is not a direct parent of targets/a/b/c
 func (d DelegationRole) IsParentOf(child DelegationRole) bool {
-	return path.Dir(child.Name.String()) == d.Name.String()
+	return path.Dir(child.Name) == d.Name
 }
 
 // CheckPaths checks if a given path is valid for the role
@@ -252,12 +251,12 @@ type RootRole struct {
 // Eventually should only be used for immediately before and after serialization/deserialization
 type Role struct {
 	RootRole
-	Name  RoleName `json:"name"`
+	Name  string   `json:"name"`
 	Paths []string `json:"paths,omitempty"`
 }
 
 // NewRole creates a new Role object from the given parameters
-func NewRole(name RoleName, threshold int, keyIDs, paths []string) (*Role, error) {
+func NewRole(name string, threshold int, keyIDs, paths []string) (*Role, error) {
 	if IsDelegation(name) {
 		if len(paths) == 0 {
 			logrus.Debugf("role %s with no Paths will never be able to publish content until one or more are added", name)

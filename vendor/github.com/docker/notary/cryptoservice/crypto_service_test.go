@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -27,9 +28,9 @@ var algoToSigType = map[string]data.SigAlgorithm{
 var passphraseRetriever = func(string, string, bool, int) (string, bool, error) { return "", false, nil }
 
 type CryptoServiceTester struct {
-	role    data.RoleName
+	role    string
 	keyAlgo string
-	gun     data.GUN
+	gun     string
 }
 
 func (c CryptoServiceTester) cryptoServiceFactory() *CryptoService {
@@ -72,6 +73,9 @@ func (c CryptoServiceTester) TestCreateAndGetWhenMultipleKeystores(t *testing.T)
 
 	// Only the first keystore should have the key
 	keyPath := tufKey.ID()
+	if c.role != data.CanonicalRootRole && c.gun != "" {
+		keyPath = filepath.Join(c.gun, keyPath)
+	}
 	_, _, err = cryptoService.keyStores[0].GetKey(keyPath)
 	require.NoError(t, err, c.errorMsg(
 		"First keystore does not have the key %s", keyPath))
@@ -294,7 +298,7 @@ func (c CryptoServiceTester) TestListFromMultipleKeystores(t *testing.T) {
 	for k, role := range keyMap {
 		_, ok := expectedKeysIDs[k]
 		require.True(t, ok)
-		require.Equal(t, data.RoleName("root"), role)
+		require.Equal(t, "root", role)
 	}
 }
 
@@ -360,8 +364,8 @@ func (c CryptoServiceTester) errorMsg(message string, args ...interface{}) strin
 		c.keyAlgo, fmt.Sprintf(message, args...))
 }
 
-func testCryptoService(t *testing.T, gun data.GUN) {
-	roles := []data.RoleName{
+func testCryptoService(t *testing.T, gun string) {
+	roles := []string{
 		data.CanonicalRootRole,
 		data.CanonicalTargetsRole,
 		data.CanonicalSnapshotRole,

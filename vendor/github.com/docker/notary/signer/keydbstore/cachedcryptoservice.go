@@ -14,7 +14,7 @@ type cachedKeyService struct {
 }
 
 type cachedKey struct {
-	role data.RoleName
+	role string
 	key  data.PrivateKey
 }
 
@@ -29,7 +29,7 @@ func NewCachedKeyService(baseKeyService signed.CryptoService) signed.CryptoServi
 
 // AddKey stores the contents of a private key. Both role and gun are ignored,
 // we always use Key IDs as name, and don't support aliases
-func (s *cachedKeyService) AddKey(role data.RoleName, gun data.GUN, privKey data.PrivateKey) error {
+func (s *cachedKeyService) AddKey(role, gun string, privKey data.PrivateKey) error {
 	if err := s.CryptoService.AddKey(role, gun, privKey); err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (s *cachedKeyService) AddKey(role data.RoleName, gun data.GUN, privKey data
 }
 
 // GetKey returns the PrivateKey given a KeyID
-func (s *cachedKeyService) GetPrivateKey(keyID string) (data.PrivateKey, data.RoleName, error) {
+func (s *cachedKeyService) GetPrivateKey(keyID string) (data.PrivateKey, string, error) {
 	cachedKeyEntry, ok := s.cachedKeys[keyID]
 	if ok {
 		return cachedKeyEntry.key, cachedKeyEntry.role, nil

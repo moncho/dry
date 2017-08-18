@@ -89,13 +89,7 @@ var (
 	ErrInvalidGUN = errcode.Register(errGroup, errcode.ErrorDescriptor{
 		Value:          "INVALID_GUN",
 		Message:        "The server does not support actions on images of this name.",
-		Description:    "The server does not support actions on images of this name.",
-		HTTPStatusCode: http.StatusBadRequest,
-	})
-	ErrInvalidParams = errcode.Register(errGroup, errcode.ErrorDescriptor{
-		Value:          "INVALID_PARAMETERS",
-		Message:        "The parameters provided are not valid.",
-		Description:    "The parameters provided are not valid.",
+		Description:    "The server does not support actions on images of this name",
 		HTTPStatusCode: http.StatusBadRequest,
 	})
 	ErrUnknown = errcode.ErrorCodeUnknown
