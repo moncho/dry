@@ -7,6 +7,7 @@ PKG := github.com/moncho/dry
 VERSION := $(shell cat APPVERSION)
 GITCOMMIT := $(shell git rev-parse --short HEAD)
 GITUNTRACKEDCHANGES := $(shell git status --porcelain --untracked-files=no)
+OS := $(shell uname)
 ifneq ($(GITUNTRACKEDCHANGES),)
 	GITCOMMIT := $(GITCOMMIT)-dirty
 endif
@@ -23,9 +24,9 @@ run: ## Runs dry
 
 vendor: ## Runs dep ensure
 	dep ensure
-	# TODO(eric): kill it with fire once https://github.com/golang/dep/issues/433 is resolved
+	# TODO remove once https://github.com/golang/dep/issues/433 is resolved
 	# Workaround for OSX sed behaving differently
-	case "${PLATFORM}" in \
+	case "${OS}" in \
 		Darwin) find vendor -type f -name "*.go" -print0 | xargs -0 sed -i '' 's/Sirupsen\/logrus/sirupsen\/logrus/g' ;;\
 		*)      find vendor -type f -name "*.go" -print0 | xargs -0 sed -i    's/Sirupsen\/logrus/sirupsen\/logrus/g' ;;\
 	esac ;\
