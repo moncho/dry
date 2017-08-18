@@ -20,7 +20,7 @@ Deleted containers: 0
 Deleted images: 0 
 Deleted networks: 0 
 Deleted volumes: 0 
-Total reclaimed space: 0 B 
+Total reclaimed space: 0B 
 
 `
 

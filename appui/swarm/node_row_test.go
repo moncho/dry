@@ -43,7 +43,7 @@ func TestNodeRow(t *testing.T) {
 	if row.CPU.Text != "2" {
 		t.Error("NodeRow does not have 2 CPUs")
 	}
-	if row.Memory.Text != "1 MiB" {
+	if row.Memory.Text != "1MiB" {
 		t.Errorf("NodeRow does not have 1 MiB of memory, got %s", row.Memory.Text)
 	}
 	if row.Engine.Text != "1.0" {
