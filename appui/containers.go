@@ -50,6 +50,8 @@ func NewContainersWidget(y int) *ContainersWidget {
 
 //PrepareToRender prepares this widget for rendering
 func (s *ContainersWidget) PrepareToRender(data *DockerPsRenderData) {
+	s.Lock()
+	defer s.Unlock()
 	s.data = data
 	var containers []*ContainerRow
 	for _, container := range data.containers {
