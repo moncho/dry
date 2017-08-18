@@ -1,7 +1,7 @@
 package daemon
 
 import (
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	swarmtypes "github.com/docker/docker/api/types/swarm"
 )
 

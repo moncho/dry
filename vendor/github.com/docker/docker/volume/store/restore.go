@@ -3,7 +3,7 @@ package store
 import (
 	"sync"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/boltdb/bolt"
 	"github.com/docker/docker/volume"
 	"github.com/docker/docker/volume/drivers"

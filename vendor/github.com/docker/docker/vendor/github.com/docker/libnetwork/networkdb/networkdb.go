@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/armon/go-radix"
 	"github.com/docker/go-events"
 	"github.com/docker/libnetwork/types"

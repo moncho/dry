@@ -3,7 +3,7 @@ package image
 import (
 	"runtime"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/docker/docker/layer"
 )
 

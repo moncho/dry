@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/containerd/containerd/osutils"
 	"github.com/containerd/containerd/specs"
 	"golang.org/x/sys/unix"

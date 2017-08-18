@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/templates"
 	"github.com/pkg/errors"

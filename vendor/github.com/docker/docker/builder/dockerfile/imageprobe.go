@@ -1,7 +1,7 @@
 package dockerfile
 
 import (
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/builder"
 )

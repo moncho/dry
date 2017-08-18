@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/Microsoft/hcsshim"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // Mode is the operational mode, both requested, and actual after verification

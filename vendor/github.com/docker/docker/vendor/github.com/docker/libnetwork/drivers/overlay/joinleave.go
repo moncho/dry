@@ -5,7 +5,7 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/docker/libnetwork/driverapi"
 	"github.com/docker/libnetwork/ns"
 	"github.com/docker/libnetwork/types"

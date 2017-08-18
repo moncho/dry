@@ -3,7 +3,7 @@ package ipvlan
 import (
 	"fmt"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/docker/libnetwork/osl"
 	"github.com/docker/libnetwork/types"
 )

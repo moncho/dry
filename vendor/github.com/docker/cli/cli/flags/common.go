@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	cliconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/opts"
 	"github.com/docker/go-connections/tlsconfig"

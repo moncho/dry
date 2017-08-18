@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	ctxu "github.com/docker/distribution/context"
 	"github.com/docker/notary"
 	"github.com/docker/notary/client"

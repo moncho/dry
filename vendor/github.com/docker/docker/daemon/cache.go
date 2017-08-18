@@ -1,7 +1,7 @@
 package daemon
 
 import (
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/docker/docker/builder"
 	"github.com/docker/docker/image/cache"
 )

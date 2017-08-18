@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/docker/distribution"
 	"github.com/docker/docker/pkg/ioutils"
 	"github.com/opencontainers/go-digest"

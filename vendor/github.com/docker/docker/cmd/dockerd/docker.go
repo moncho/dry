@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/daemon/config"
 	"github.com/docker/docker/dockerversion"

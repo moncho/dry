@@ -5,7 +5,7 @@ package libnetwork
 import (
 	"net"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/docker/libnetwork/common"
 )
 

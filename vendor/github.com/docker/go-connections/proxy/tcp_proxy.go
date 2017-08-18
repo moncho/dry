@@ -5,7 +5,7 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // TCPProxy is a proxy for TCP connections. It implements the Proxy interface to

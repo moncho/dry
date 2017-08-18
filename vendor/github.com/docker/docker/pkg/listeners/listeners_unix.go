@@ -9,7 +9,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/coreos/go-systemd/activation"
 	"github.com/docker/go-connections/sockets"
 )

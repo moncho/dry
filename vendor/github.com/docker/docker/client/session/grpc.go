@@ -4,7 +4,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"golang.org/x/net/http2"

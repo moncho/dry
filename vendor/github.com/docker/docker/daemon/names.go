@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/docker/docker/api"
 	"github.com/docker/docker/container"
 	"github.com/docker/docker/pkg/namesgenerator"

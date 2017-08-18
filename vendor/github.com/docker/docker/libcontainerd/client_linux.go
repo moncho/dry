@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	containerd "github.com/containerd/containerd/api/grpc/types"
 	containerd_runtime_types "github.com/containerd/containerd/runtime"
 	"github.com/docker/docker/pkg/ioutils"
