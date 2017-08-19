@@ -28,8 +28,10 @@ func Test_TextInput_Build(t *testing.T) {
 
 	for _, tt := range tests {
 		input := NewTextInput(tt.arg.text, tt.arg.multi)
-		if input.Text() != tt.want {
-			t.Errorf("%q. NewTextInput().Text() = %v, want %v", tt.name, input.Text(), tt.want)
+		text, _ := input.Text()
+
+		if text != tt.want {
+			t.Errorf("%q. NewTextInput().Text() = %v, want %v", tt.name, text, tt.want)
 
 		}
 	}
@@ -92,8 +94,10 @@ func Test_TextInput_Focus(t *testing.T) {
 			t.Errorf("Got an error on Focus: %s", err.Error())
 		}
 
-		if input.Text() != tt.want {
-			t.Errorf("%q. NewTextInput().Text() = %v, want %v", tt.name, input.Text(), tt.want)
+		text, _ := input.Text()
+
+		if text != tt.want {
+			t.Errorf("%q. NewTextInput().Text() = %v, want %v", tt.name, text, tt.want)
 
 		}
 	}
@@ -106,9 +110,10 @@ func Test_TextInput_FocusReleaseWithEvent(t *testing.T) {
 		multi  bool
 	}
 	tests := []struct {
-		name string
-		arg  arg
-		want string
+		name         string
+		arg          arg
+		expectedText string
+		cancelByUser bool
 	}{
 		{"Enter key releases Focus on single line input",
 			arg{
@@ -119,7 +124,8 @@ func Test_TextInput_FocusReleaseWithEvent(t *testing.T) {
 				},
 				false,
 			},
-			""},
+			"",
+			false},
 		{"Esc key releases Focus on single line input",
 			arg{
 				[]termbox.Event{
@@ -129,7 +135,8 @@ func Test_TextInput_FocusReleaseWithEvent(t *testing.T) {
 				},
 				false,
 			},
-			""},
+			"",
+			true},
 		{"Esc key releases Focus on multi line input",
 			arg{
 				[]termbox.Event{
@@ -139,7 +146,7 @@ func Test_TextInput_FocusReleaseWithEvent(t *testing.T) {
 				},
 				true,
 			},
-			""},
+			"", true},
 		{"Enter key does not release Focus on multi line input",
 			arg{
 				[]termbox.Event{
@@ -152,7 +159,8 @@ func Test_TextInput_FocusReleaseWithEvent(t *testing.T) {
 				},
 				true,
 			},
-			"\n"},
+			"\n",
+			true},
 	}
 
 	for _, tt := range tests {
@@ -173,9 +181,13 @@ func Test_TextInput_FocusReleaseWithEvent(t *testing.T) {
 		if err != nil {
 			t.Errorf("Got an error on Focus: %s", err.Error())
 		}
+		text, cancelByUser := input.Text()
+		if text != tt.expectedText {
+			t.Errorf("%q. NewTextInput().Text() = %v, want %v", tt.name, text, tt.expectedText)
 
-		if input.Text() != tt.want {
-			t.Errorf("%q. NewTextInput().Text() = %v, want %v", tt.name, input.Text(), tt.want)
+		}
+		if cancelByUser != tt.cancelByUser {
+			t.Errorf("%q. NewTextInput().Text() says cancelByUser = %t, but expected %t", tt.name, cancelByUser, tt.cancelByUser)
 
 		}
 	}

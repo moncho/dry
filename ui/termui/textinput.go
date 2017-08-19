@@ -29,6 +29,7 @@ type TextInput struct {
 	cursorLinePos   int
 	isMultiLine     bool
 	lines           []string
+	escaped         bool //tracks if the input process was finished (i.e. user pressed Enter) or exited (i.e. user pressed Esc)
 }
 
 //NewTextInput creates a new TextInput
@@ -54,6 +55,7 @@ func NewTextInput(s string, isMultiLine bool) *TextInput {
 //sent a closing event (i.e. KeyEnter on single line mode, KeyEsc on any mode).
 func (i *TextInput) OnFocus(event ui.EventSource) error {
 	i.isCapturing = true
+	i.escaped = false
 
 mainloop:
 	for ev := range event.Events {
@@ -70,7 +72,7 @@ mainloop:
 				}
 			case termbox.KeyEsc:
 				event.EventHandledCallback(ev)
-
+				i.escaped = true
 				break mainloop
 			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
 				i.moveLeft()
@@ -109,15 +111,15 @@ mainloop:
 }
 
 // Text returns the text of the input field as a string
-func (i *TextInput) Text() string {
+func (i *TextInput) Text() (string, bool) {
 	if len(i.lines) == 0 {
-		return ""
+		return "", i.escaped
 	}
 
 	if i.isMultiLine {
-		return strings.Join(i.lines, newLine)
+		return strings.Join(i.lines, newLine), i.escaped
 	}
-	return i.lines[0]
+	return i.lines[0], i.escaped
 }
 
 func (i *TextInput) setText(text string) {
