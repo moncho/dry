@@ -97,6 +97,13 @@ func (daemon *DockerDaemon) Services() ([]swarm.Service, error) {
 	return daemon.client.ServiceList(ctx, types.ServiceListOptions{})
 }
 
+//ServiceRemove removes the service with the given in
+func (daemon *DockerDaemon) ServiceRemove(id string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	return daemon.client.ServiceRemove(ctx, id)
+}
+
 //ServiceTasks returns the tasks being run that belong to the given list of services
 func (daemon *DockerDaemon) ServiceTasks(services ...string) ([]swarm.Task, error) {
 

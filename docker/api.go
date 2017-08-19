@@ -80,6 +80,7 @@ type SwarmAPI interface {
 	Service(id string) (*swarm.Service, error)
 	ServiceLogs(id string) (io.ReadCloser, error)
 	Services() ([]swarm.Service, error)
+	ServiceRemove(id string) error
 	ServiceTasks(services ...string) ([]swarm.Task, error)
 }
 

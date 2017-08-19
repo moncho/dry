@@ -281,6 +281,11 @@ func (_m *DockerDaemonMock) Services() ([]swarm.Service, error) {
 	return nil, nil
 }
 
+//ServiceRemove mock
+func (_m *DockerDaemonMock) ServiceRemove(id string) error {
+	return nil
+}
+
 //ServiceTasks mock
 func (_m *DockerDaemonMock) ServiceTasks(services ...string) ([]swarm.Task, error) {
 	return nil, nil
