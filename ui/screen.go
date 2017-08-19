@@ -3,7 +3,6 @@ package ui
 import (
 	"strings"
 	"sync"
-	"time"
 
 	termui "github.com/gizak/termui"
 	"github.com/nsf/termbox-go"
@@ -15,9 +14,8 @@ var ActiveScreen *Screen
 // Screen is thin wrapper aroung Termbox library to provide basic display
 // capabilities as required by dry.
 type Screen struct {
-	markup   *Markup // Pointer to markup processor (gets created by screen).
-	pausedAt *time.Time
-	Cursor   *Cursor // Pointer to cursor (gets created by screen).
+	markup *Markup // Pointer to markup processor (gets created by screen).
+	Cursor *Cursor // Pointer to cursor (gets created by screen).
 	sync.RWMutex
 	theme      *ColorTheme
 	Dimensions *Dimensions

@@ -238,7 +238,7 @@ func (v *View) Word(x, y int) (string, error) {
 	} else {
 		nr = nr + x
 	}
-	return string(l[nl:nr]), nil
+	return l[nl:nr], nil
 }
 
 //CursorDown moves the cursor down one line

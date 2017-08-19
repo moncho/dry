@@ -14,14 +14,12 @@ import (
 	"github.com/moncho/dry/docker"
 )
 
-type diskUsageColumn struct {
-	name  string // The name of the field in the struct.
-	title string // Title to display in the tableHeader.
-}
+//column represents a column in a table
+type column string
 
 //DockerDiskUsageRenderer renderer for Docker disk usage
 type DockerDiskUsageRenderer struct {
-	columns                []diskUsageColumn
+	columns                []column
 	diskUsageTableTemplate *template.Template
 	diskUsage              *types.DiskUsage
 	pruneReport            *docker.PruneReport
@@ -33,12 +31,12 @@ type DockerDiskUsageRenderer struct {
 func NewDockerDiskUsageRenderer(screenHeight int) *DockerDiskUsageRenderer {
 	r := &DockerDiskUsageRenderer{}
 
-	r.columns = []diskUsageColumn{
-		{`Type`, `TYPE`},
-		{`Total`, `TOTAL`},
-		{`Active`, `ACTIVE`},
-		{`Size`, `SIZE`},
-		{`Reclaimable`, `RECLAIMABLE`},
+	r.columns = []column{
+		`TYPE`,
+		`TOTAL`,
+		`ACTIVE`,
+		`SIZE`,
+		`RECLAIMABLE`,
 	}
 
 	r.diskUsageTableTemplate = buildDiskUsageTableTemplate()
@@ -103,7 +101,7 @@ func (r *DockerDiskUsageRenderer) pruneTable() string {
 func (r *DockerDiskUsageRenderer) tableHeader() string {
 	columns := make([]string, len(r.columns))
 	for i, col := range r.columns {
-		columns[i] = col.title
+		columns[i] = string(col)
 	}
 	return "<green>" + strings.Join(columns, "\t") + "</>"
 }

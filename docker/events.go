@@ -1,9 +1,7 @@
 package docker
 
 import (
-	"encoding/json"
 	"errors"
-	"io"
 
 	"golang.org/x/net/context"
 
@@ -29,20 +27,6 @@ func logEvents(log *EventLog) eventProcessor {
 }
 
 type eventProcessor func(event events.Message) error
-
-func decodeEvents(
-	ctx context.Context,
-	input io.Reader,
-	processors ...eventProcessor) error {
-	dec := json.NewDecoder(input)
-	var event events.Message
-	err := dec.Decode(&event)
-	if err != nil && err == io.EOF {
-		return nil
-	}
-	return handleEvent(ctx, event, processors...)
-
-}
 
 func handleEvent(
 	ctx context.Context,

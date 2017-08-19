@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
-	"github.com/docker/go-units"
 	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/go-units"
 	"github.com/moncho/dry/ui"
 )
 
@@ -92,7 +91,7 @@ func (r *infoRenderer) Render() string {
 			writeKV(buffer, "  Election Tick", info.Swarm.Cluster.Spec.Raft.ElectionTick)
 			buffer.WriteString("<white> Dispatcher:</>")
 
-			writeKV(buffer, "  Heartbeat Period", units.HumanDuration(time.Duration(info.Swarm.Cluster.Spec.Dispatcher.HeartbeatPeriod)))
+			writeKV(buffer, "  Heartbeat Period", units.HumanDuration(info.Swarm.Cluster.Spec.Dispatcher.HeartbeatPeriod))
 			buffer.WriteString("<white> CA Configuration:</>")
 			writeKV(buffer, "  Expiry Duration", units.HumanDuration(info.Swarm.Cluster.Spec.CAConfig.NodeCertExpiry))
 			if len(info.Swarm.Cluster.Spec.CAConfig.ExternalCAs) > 0 {

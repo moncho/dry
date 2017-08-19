@@ -19,7 +19,6 @@ const inactiveRowText = "-"
 
 //ContainerStatsRow is a Grid row showing runtime information about a container
 type ContainerStatsRow struct {
-	table     drytermui.Table
 	container *docker.Container
 	Status    *drytermui.ParColumn
 	Name      *drytermui.ParColumn

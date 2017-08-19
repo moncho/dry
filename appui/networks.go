@@ -14,7 +14,6 @@ import (
 )
 
 type networksColumn struct {
-	name  string // The name of the field in the struct.
 	title string // Title to display in the tableHeader.
 	mode  docker.SortNetworksMode
 }
@@ -36,11 +35,11 @@ func NewDockerNetworksRenderer(daemon docker.ContainerDaemon, cursor *ui.Cursor,
 	r := &DockerNetworksRenderer{}
 
 	r.columns = []networksColumn{
-		{`NetworkID`, `NETWORK ID`, docker.SortNetworksByID},
-		{`Name`, `NAME`, docker.SortNetworksByName},
-		{`Driver`, `DRIVER`, docker.SortNetworksByDriver},
-		{`Containers`, `CONTAINERS`, docker.NoSortNetworks},
-		{`Scope`, `SCOPE`, docker.NoSortNetworks},
+		{`NETWORK ID`, docker.SortNetworksByID},
+		{`NAME`, docker.SortNetworksByName},
+		{`DRIVER`, docker.SortNetworksByDriver},
+		{`CONTAINERS`, docker.NoSortNetworks},
+		{`SCOPE`, docker.NoSortNetworks},
 	}
 
 	r.networksTemplate = buildNetworksTemplate()

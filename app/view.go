@@ -1,7 +1,5 @@
 package app
 
-type onViewChange func(d *Dry) error
-
 //ViewMode represents dry possible views
 type viewMode uint16
 

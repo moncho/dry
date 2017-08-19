@@ -15,7 +15,6 @@ const (
 
 //ContainerRow is a Grid row showing runtime information about a container
 type ContainerRow struct {
-	table     drytermui.Table
 	container *docker.Container
 	Indicator *drytermui.ParColumn
 	ID        *drytermui.ParColumn

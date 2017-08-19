@@ -57,7 +57,7 @@ func (s *StatusBar) StatusMessage(msg string, clearDelay time.Duration) {
 		s.setClearTimer(time.AfterFunc(clearDelay, func() {
 			clearMessage := strings.Repeat(" ", len(msg))
 			s.lastMessage = ""
-			renderString(0, s.screenPos, s.screenWidth, string(clearMessage), termbox.Attribute(s.markup.theme.Fg), termbox.Attribute(s.markup.theme.Bg))
+			renderString(0, s.screenPos, s.screenWidth, clearMessage, termbox.Attribute(s.markup.theme.Fg), termbox.Attribute(s.markup.theme.Bg))
 		}))
 	}
 }

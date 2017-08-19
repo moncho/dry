@@ -3,15 +3,14 @@ package appui
 import (
 	"image"
 
-	termui "github.com/gizak/termui"
 	"github.com/docker/docker/api/types"
+	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker/formatter"
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
 //ImageRow is a Grid row showing information about a Docker image
 type ImageRow struct {
-	table        drytermui.Table
 	image        types.ImageSummary
 	Repository   *drytermui.ParColumn
 	Tag          *drytermui.ParColumn

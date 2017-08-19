@@ -17,7 +17,7 @@ const (
 //represented as an int64 nanosecond count.
 func DurationForHumans(duration int64) string {
 	return units.HumanDuration(time.Now().UTC().Sub(
-		time.Unix(int64(duration), 0)))
+		time.Unix(duration, 0)))
 
 }
 

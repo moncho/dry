@@ -4,8 +4,8 @@ import (
 	"strings"
 	"sync"
 
-	gizaktermui "github.com/gizak/termui"
 	"github.com/docker/docker/api/types"
+	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
@@ -42,7 +42,6 @@ type DockerImagesWidget struct {
 	data                 *DockerImageRenderData
 	header               *termui.TableHeader
 	selectedIndex        int
-	offset               int
 	x, y                 int
 	height, width        int
 	startIndex, endIndex int

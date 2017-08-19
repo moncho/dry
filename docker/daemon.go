@@ -44,7 +44,6 @@ type DockerDaemon struct {
 	images       []dockerTypes.ImageSummary
 	networks     []dockerTypes.NetworkResource
 	err          error // Errors, if any.
-	connected    bool
 	dockerEnv    *Env
 	version      *dockerTypes.Version
 	swarmMode    bool

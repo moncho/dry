@@ -29,7 +29,6 @@ type ContainersWidget struct {
 	containers           []*ContainerRow
 	header               *termui.TableHeader
 	selectedIndex        int
-	offset               int
 	x, y                 int
 	height, width        int
 	startIndex, endIndex int

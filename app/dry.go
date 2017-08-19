@@ -51,7 +51,6 @@ type Dry struct {
 	inspectedNetwork   types.NetworkResource
 	lastRefresh        time.Time
 	networks           []types.NetworkResource
-	orderedCids        []string
 	output             chan string
 	refreshTimerMutex  sync.Locker
 	state              *state
