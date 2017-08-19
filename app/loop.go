@@ -70,6 +70,13 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	defer close(keyboardQueue)
 	defer close(keyboardQueueForView)
 	defer close(viewClosed)
+	//make the global refreshScreen a noop before closing
+	defer func() {
+		refreshScreen = func() error {
+			return nil
+		}
+	}()
+
 	defer close(renderChan)
 
 	//tracks if the main loop has the focus (and responds to events),
@@ -80,9 +87,10 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	//renders dry on message until renderChan is closed
 	go func() {
 		for range renderChan {
-			screen.Clear()
-			Render(dry, screen, statusBar)
-
+			if !screen.Closing() {
+				screen.Clear()
+				Render(dry, screen, statusBar)
+			}
 		}
 	}()
 
@@ -118,7 +126,6 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 		for range viewClosed {
 			focus.flip()
 			dry.ShowMainView()
-			renderChan <- struct{}{}
 		}
 	}()
 

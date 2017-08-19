@@ -19,6 +19,7 @@ type Screen struct {
 	sync.RWMutex
 	theme      *ColorTheme
 	Dimensions *Dimensions
+	closing    bool
 }
 
 //NewScreen initializes Termbox, creates screen along with layout and markup, and
@@ -45,8 +46,16 @@ func screenDimensions() *Dimensions {
 
 // Close gets called upon program termination to close the Termbox.
 func (screen *Screen) Close() *Screen {
+	screen.closing = true
+	screen.Lock()
+	defer screen.Unlock()
 	termbox.Close()
 	return screen
+}
+
+// Closing returns true if this this screen is closing
+func (screen *Screen) Closing() bool {
+	return screen.closing
 }
 
 // Resize recalculates active screen dimensions.
