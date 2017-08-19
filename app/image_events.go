@@ -91,8 +91,11 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
 				}
 				rw.OnFocus(events)
 				dry.widgetRegistry.remove(rw)
-				runCommand := rw.Text()
+				runCommand, canceled := rw.Text()
 				h.passingEvents = false
+				if canceled {
+					return
+				}
 				if err := dry.dockerDaemon.RunImage(image, runCommand); err != nil {
 					dry.appmessage(err.Error())
 				}
