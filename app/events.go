@@ -31,8 +31,7 @@ type eventHandler interface {
 	initialize(dry *Dry,
 		screen *ui.Screen,
 		keyboardQueueForView chan termbox.Event,
-		viewClosedChan chan struct{},
-		renderChan chan<- struct{})
+		viewClosedChan chan struct{})
 }
 
 type baseEventHandler struct {
@@ -40,7 +39,6 @@ type baseEventHandler struct {
 	screen        *ui.Screen
 	eventChan     chan termbox.Event
 	closeViewChan chan struct{}
-	renderChan    chan<- struct{}
 	focus         bool
 	sync.RWMutex
 }
@@ -48,13 +46,11 @@ type baseEventHandler struct {
 func (b *baseEventHandler) initialize(dry *Dry,
 	screen *ui.Screen,
 	keyboardQueueForView chan termbox.Event,
-	closeViewChan chan struct{},
-	renderChan chan<- struct{}) {
+	closeViewChan chan struct{}) {
 	b.dry = dry
 	b.screen = screen
 	b.eventChan = keyboardQueueForView
 	b.closeViewChan = closeViewChan
-	b.renderChan = renderChan
 }
 
 func (b *baseEventHandler) hasFocus() bool {
@@ -123,7 +119,7 @@ func (b *baseEventHandler) handle(event termbox.Event) {
 
 	b.setFocus(focus)
 	if b.hasFocus() {
-		b.renderChan <- struct{}{}
+		refreshScreen()
 	}
 }
 
@@ -132,7 +128,6 @@ type eventHandlerFactory struct {
 	screen               *ui.Screen
 	keyboardQueueForView chan termbox.Event
 	viewClosed           chan struct{}
-	renderChan           chan<- struct{}
 	handlers             map[viewMode]eventHandler
 	once                 sync.Once
 }
@@ -142,10 +137,10 @@ func (eh *eventHandlerFactory) handlerFor(view viewMode) eventHandler {
 
 	eh.once.Do(func() {
 		defaultHandler = &baseEventHandler{}
-		defaultHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
+		defaultHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed)
 		eh.handlers = viewsToHandlers
 		for _, handler := range eh.handlers {
-			handler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed, eh.renderChan)
+			handler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed)
 		}
 	})
 	if handler, ok := eh.handlers[view]; ok {

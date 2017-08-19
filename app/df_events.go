@@ -35,7 +35,7 @@ func (h *diskUsageScreenEventHandler) handle(event termbox.Event) {
 	if handled {
 		h.setFocus(true)
 		if !ignored {
-			h.renderChan <- struct{}{}
+			refreshScreen()
 		}
 	} else {
 		h.baseEventHandler.handle(event)

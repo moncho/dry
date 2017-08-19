@@ -35,8 +35,10 @@ func TestDryRefresh(t *testing.T) {
 
 func newDryForTest() *Dry {
 	dry := &Dry{}
+	refreshScreen = func() error {
+		return nil
+	}
 	dry.state = &state{
-		changed:              true,
 		showingAllContainers: false,
 		sortMode:             docker.SortByContainerID,
 		viewMode:             Main,

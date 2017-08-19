@@ -29,7 +29,7 @@ func (h *imagesScreenEventHandler) handle(event termbox.Event) {
 	if handled {
 		h.setFocus(keepFocus)
 		if h.hasFocus() {
-			h.renderChan <- struct{}{}
+			refreshScreen()
 		}
 	} else {
 		h.baseEventHandler.handle(event)
@@ -86,8 +86,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
 				events := ui.EventSource{
 					Events: h.eventChan,
 					EventHandledCallback: func(e termbox.Event) error {
-						h.renderChan <- struct{}{}
-						return nil
+						return refreshScreen()
 					},
 				}
 				rw.OnFocus(events)
@@ -97,7 +96,6 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
 				if err := dry.dockerDaemon.RunImage(image, runCommand); err != nil {
 					dry.appmessage(err.Error())
 				}
-
 			}(image)
 		}
 	default:

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 	"sync"
 	"time"
 
@@ -24,7 +23,6 @@ const (
 
 // state tracks dry state
 type state struct {
-	changed       bool
 	filter        drydocker.ContainerFilter
 	filterPattern string
 	sync.RWMutex
@@ -61,13 +59,6 @@ type Dry struct {
 	cache *cache.Cache
 }
 
-//Changed is true if the application state has changed
-func (d *Dry) Changed() bool {
-	d.state.RLock()
-	defer d.state.RUnlock()
-	return d.state.changed
-}
-
 //changeViewMode changes the view mode of dry
 func (d *Dry) changeViewMode(newViewMode viewMode) {
 	d.state.Lock()
@@ -78,7 +69,7 @@ func (d *Dry) changeViewMode(newViewMode viewMode) {
 		d.state.previousViewMode = newViewMode
 	}
 	d.state.viewMode = newViewMode
-	d.state.changed = true
+	refreshScreen()
 }
 
 //Close closes dry, releasing any resources held by it
@@ -284,7 +275,7 @@ func (d *Dry) doRefresh() {
 	case Main:
 		f := func(err error) {
 			if err == nil {
-				d.state.changed = true
+				refreshScreen()
 			} else {
 				d.appmessage("There was an error refreshing: " + err.Error())
 			}
@@ -301,6 +292,8 @@ func (d *Dry) doRefresh() {
 	}
 	if err != nil {
 		d.appmessage("There was an error refreshing: " + err.Error())
+	} else {
+		refreshScreen()
 	}
 }
 
@@ -535,7 +528,7 @@ func (d *Dry) Sort() {
 		d.state.sortMode = drydocker.SortByContainerID
 	default:
 	}
-	d.state.changed = true
+	refreshScreen()
 }
 
 //SortImages rotates to the next sort mode.
@@ -556,7 +549,7 @@ func (d *Dry) SortImages() {
 	default:
 	}
 	d.dockerDaemon.SortImages(d.state.sortImagesMode)
-	d.state.changed = true
+	refreshScreen()
 
 }
 
@@ -575,20 +568,12 @@ func (d *Dry) SortNetworks() {
 	default:
 	}
 	d.dockerDaemon.SortNetworks(d.state.sortNetworksMode)
-	d.state.changed = true
+	refreshScreen()
 }
 
 func (d *Dry) startDry() {
-	go func() {
-		for event := range d.dockerEvents {
-			//exec_ messages are sent continuously if docker is checking
-			//a container health, this events are not shown to the user
-			if !strings.Contains(event.Action, "exec_") {
-				d.doRefresh()
-				d.appmessage(fmt.Sprintf("Docker daemon: %s %s", event.Action, event.ID))
-			}
-		}
-	}()
+	de := dockerEventsListener{d}
+	de.init()
 
 	go func() {
 		for range time.Tick(TimeBetweenRefresh) {
@@ -692,18 +677,12 @@ func (d *Dry) viewMode() viewMode {
 	return d.state.viewMode
 }
 
-func (d *Dry) setChanged(changed bool) {
-	d.state.Lock()
-	defer d.state.Unlock()
-	d.state.changed = changed
-}
 func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 	dockerEvents, dockerEventsDone, err := d.Events()
 	c := cache.New(5*time.Minute, 30*time.Second)
 	if err == nil {
 
 		state := &state{
-			changed:              true,
 			showingAllContainers: false,
 			sortMode:             drydocker.SortByContainerID,
 			sortImagesMode:       drydocker.SortImagesByRepo,

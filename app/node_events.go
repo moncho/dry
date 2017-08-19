@@ -13,8 +13,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 	case termbox.KeyEnter:
 		showServices := func(nodeID string) error {
 			h.dry.ShowTasks(nodeID)
-			h.renderChan <- struct{}{}
-			return nil
+			return refreshScreen()
 		}
 		if err := h.dry.state.activeWidget.OnEvent(showServices); err == nil {
 			handled = true

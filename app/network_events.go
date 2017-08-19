@@ -48,7 +48,7 @@ func (h *networksScreenEventHandler) handle(event termbox.Event) {
 	if handled {
 		h.setFocus(focus)
 		if h.hasFocus() {
-			h.renderChan <- struct{}{}
+			refreshScreen()
 		}
 	} else {
 		h.baseEventHandler.handle(event)

@@ -180,7 +180,6 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	for _, widget := range d.widgetRegistry.activeWidgets {
 		screen.RenderBufferer(widget)
 	}
-	d.setChanged(false)
 
 	screen.Flush()
 }

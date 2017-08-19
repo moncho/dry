@@ -10,6 +10,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type refresh func() error
+
+var refreshScreen refresh
+
 type focusTracker struct {
 	mutex sync.Locker
 	focus bool
@@ -47,6 +51,10 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	viewClosed := make(chan struct{})
 	//On receive dry is rendered
 	renderChan := make(chan struct{}, 1)
+	refreshScreen = func() error {
+		renderChan <- struct{}{}
+		return nil
+	}
 
 	keyboardQueueForView := make(chan termbox.Event)
 	dryOutputChan := dry.OuputChannel()
@@ -55,8 +63,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 		dry:                  dry,
 		screen:               screen,
 		keyboardQueueForView: keyboardQueueForView,
-		viewClosed:           viewClosed,
-		renderChan:           renderChan}
+		viewClosed:           viewClosed}
 
 	defer timer.Stop()
 	defer close(done)
@@ -72,18 +79,14 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 
 	//renders dry on message until renderChan is closed
 	go func() {
-		for {
-			_, ok := <-renderChan
-			if ok {
-				screen.Clear()
-				Render(dry, screen, statusBar)
-			} else {
-				return
-			}
+		for range renderChan {
+			screen.Clear()
+			Render(dry, screen, statusBar)
+
 		}
 	}()
 
-	renderChan <- struct{}{}
+	refreshScreen()
 
 	//timer and status bar are shown if the main loop has the focus
 	go func(focus *focusTracker) {
@@ -99,11 +102,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 				if ok {
 					if focus.hasFocus() {
 						statusBar.StatusMessage(dryMessage, 10*time.Second)
-						if dry.Changed() {
-							renderChan <- struct{}{}
-						} else {
-							statusBar.Render()
-						}
+						statusBar.Render()
 					} else {
 						//stop the status bar until the focus is retrieved
 						statusBar.Stop()

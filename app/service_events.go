@@ -17,7 +17,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 	case termbox.KeyEnter:
 		showServices := func(serviceID string) error {
 			h.dry.ShowServiceTasks(serviceID)
-			h.renderChan <- struct{}{}
+			refreshScreen()
 			return nil
 		}
 		h.dry.state.activeWidget.OnEvent(showServices)
