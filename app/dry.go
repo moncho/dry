@@ -283,16 +283,16 @@ func (d *Dry) doRefresh() {
 	case Images:
 		err = d.dockerDaemon.RefreshImages()
 		d.dockerDaemon.SortImages(d.state.sortImagesMode)
+		refreshScreen()
 
 	case Networks:
 		err = d.dockerDaemon.RefreshNetworks()
 		d.dockerDaemon.SortNetworks(d.state.sortNetworksMode)
+		refreshScreen()
 
 	}
 	if err != nil {
 		d.appmessage("There was an error refreshing: " + err.Error())
-	} else {
-		refreshScreen()
 	}
 }
 
