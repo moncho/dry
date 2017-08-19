@@ -115,7 +115,8 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			what = "Services"
 			count = services.RowCount()
 			updateCursorPosition(screen.Cursor, count)
-			keymap = swarmMapping
+			keymap = serviceKeyMappings
+
 		}
 	case Tasks:
 		{

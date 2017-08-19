@@ -1,6 +1,9 @@
 package app
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
 	termbox "github.com/nsf/termbox-go"
@@ -46,6 +49,46 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 				return err
 			}
 			h.dry.state.activeWidget.OnEvent(removeService)
+		}()
+
+	case termbox.KeyCtrlS:
+
+		rw := appui.NewAskForConfirmation("Scale service. Number of replicas?")
+		h.passingEvents = true
+		handled = true
+		dry.widgetRegistry.add(rw)
+		go func() {
+			events := ui.EventSource{
+				Events: h.eventChan,
+				EventHandledCallback: func(e termbox.Event) error {
+					return refreshScreen()
+				},
+			}
+			rw.OnFocus(events)
+			dry.widgetRegistry.remove(rw)
+			replicas, canceled := rw.Text()
+			h.passingEvents = false
+			if canceled {
+				return
+			}
+			scaleTo, err := strconv.Atoi(replicas)
+			if err != nil || scaleTo < 0 {
+				dry.appmessage(
+					fmt.Sprintf("Cannot scale service, invalid number of replicas: %s", replicas))
+				return
+			}
+
+			scaleService := func(serviceID string) error {
+				var err error
+				err = dry.dockerDaemon.ServiceScale(serviceID, uint64(scaleTo))
+
+				if err == nil {
+					dry.appmessage(fmt.Sprintf("Service %s scaled to %d replicas", serviceID, scaleTo))
+				}
+				refreshScreen()
+				return err
+			}
+			h.dry.state.activeWidget.OnEvent(scaleService)
 		}()
 
 	case termbox.KeyEnter:

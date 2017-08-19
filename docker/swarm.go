@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 
+	"upspin.io/errors"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
@@ -102,6 +104,33 @@ func (daemon *DockerDaemon) ServiceRemove(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 	return daemon.client.ServiceRemove(ctx, id)
+}
+
+//ServiceScale scales the given service by the given number of replicas
+func (daemon *DockerDaemon) ServiceScale(id string, replicas uint64) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+
+	service, _, err := daemon.client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{})
+	if err != nil {
+		return err
+	}
+
+	serviceMode := &service.Spec.Mode
+	if serviceMode.Replicated == nil {
+		return errors.Errorf("scale can only be used with replicated mode")
+	}
+
+	serviceMode.Replicated.Replicas = &replicas
+
+	_, err = daemon.client.ServiceUpdate(
+		ctx,
+		id,
+		service.Version,
+		service.Spec,
+		types.ServiceUpdateOptions{})
+	return err
+
 }
 
 //ServiceTasks returns the tasks being run that belong to the given list of services

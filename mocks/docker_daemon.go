@@ -286,6 +286,11 @@ func (_m *DockerDaemonMock) ServiceRemove(id string) error {
 	return nil
 }
 
+//ServiceScale mock
+func (_m *DockerDaemonMock) ServiceScale(id string, scale uint64) error {
+	return nil
+}
+
 //ServiceTasks mock
 func (_m *DockerDaemonMock) ServiceTasks(services ...string) ([]swarm.Task, error) {
 	return nil, nil

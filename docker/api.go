@@ -81,6 +81,7 @@ type SwarmAPI interface {
 	ServiceLogs(id string) (io.ReadCloser, error)
 	Services() ([]swarm.Service, error)
 	ServiceRemove(id string) error
+	ServiceScale(id string, replicas uint64) error
 	ServiceTasks(services ...string) ([]swarm.Task, error)
 }
 

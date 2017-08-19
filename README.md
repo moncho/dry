@@ -89,6 +89,7 @@ Keybinding           | Description
 ---------------------|---------------------------------------
 <kbd>l</kbd>         | service logs
 <kbd>Ctrl+r</kbd>    | remove service
+<kbd>Ctrl+s</kbd>    | scale service
 <kbd>Enter</kbd>     | show service tasks
 
 
