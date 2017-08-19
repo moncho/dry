@@ -31,7 +31,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>5</>         To service list (in Swarm mode)
 	<white>m</>         Show container monitor mode
 	<white>h</>         Shows this help screen
-	<white>Crtl+c</>    Quits <white>dry</> inmediately
+	<white>Ctrl+c</>    Quits <white>dry</> inmediately
 	<white>q</>         Quits <white>dry</>
 	<white>esc</>       Goes back to the main screen
 
@@ -41,19 +41,19 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>F3</>        Filters containers by its name	
 	<white>F5</>        Refreshes container list
 	<white>e</>         Removes the selected container
-	<white>Crtl+e</>    Removes all stopped containers
-	<white>Crtl+k</>    Kills the selected container
+	<white>Ctrl+e</>    Removes all stopped containers
+	<white>Ctrl+k</>    Kills the selected container
 	<white>l</>         Displays the logs of the selected container
 	<white>Ctrl+r</>    Restarts selected container
 	<white>s</>         Displays a live stream of the selected container resource usage statistics
-	<white>Crtl+t</>    Stops selected container (noop if it is not running)
+	<white>Ctrl+t</>    Stops selected container (noop if it is not running)
 	<white>Enter</>     Returns low-level information of the selected container
 
 <yellow>Image list keybinds</>
 	<white>F1</>        Cycles through images sort modes (by Repo | by Id | by Creation date | by Size)
 	<white>F5</>        Refresh the image list
-	<white>Crtl+e</>    Removes the selected image
-	<white>Crtl+f</>    Forces removal of the selected image
+	<white>Ctrl+e</>    Removes the selected image
+	<white>Ctrl+f</>    Forces removal of the selected image
 	<white>i</>         Shows image history
 	<white>Enter</>     Returns low-level information of the selected image
 
@@ -66,6 +66,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 <yellow>Service list keybinds</>
 	<white>Enter</>     Shows the list of taks that are part of the selected service
 	<white>l</>         Displays the logs of the selected service
+	<white>Ctrl+R</>    Removes the selected service
 	
 <yellow>Move around in lists</>
 	<white>ArrowUp</>   Moves the cursor one line up
@@ -101,12 +102,12 @@ const (
 	imagesKeyMappings = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
 		"<b>[1]:<darkgrey>Containers</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <blue>|</>" +
-		"<b>[Crtl+D]:<darkgrey>Remove Dangling</> <b>[Crtl+E]:<darkgrey>Remove</> <b>[Crtl+F]:<darkgrey>Force Remove</> <b>[I]:<darkgrey>History</>"
+		"<b>[Ctrl+D]:<darkgrey>Remove Dangling</> <b>[Ctrl+E]:<darkgrey>Remove</> <b>[Ctrl+F]:<darkgrey>Force Remove</> <b>[I]:<darkgrey>History</>"
 
 	networkKeyMappings = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
 		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <blue>|</>" +
-		"<b>[Crtl+E]:<darkgrey>Remove</> <b>[Enter]:<darkgrey>Inspect</>"
+		"<b>[Ctrl+E]:<darkgrey>Remove</> <b>[Enter]:<darkgrey>Inspect</>"
 
 	diskUsageKeyMappings = commonMappings +
 		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <blue>|</>" +

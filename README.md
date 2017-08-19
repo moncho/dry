@@ -56,12 +56,12 @@ Keybinding           | Description
 <kbd>F2</kbd>        | toggle on/off showing stopped containers
 <kbd>F3</kbd>        | filter containers
 <kbd>i</kbd>         | inspect
-<kbd>Ctrl+k</kbd>    | kill
-<kbd>l</kbd>         | logs
+<kbd>l</kbd>         | container logs
 <kbd>e</kbd>         | remove
-<kbd>Ctrl+e</kbd>    | remove all stopped containers
-<kbd>Ctrl+r</kbd>    | start/restart
 <kbd>s</kbd>         | stats
+<kbd>Ctrl+e</kbd>    | remove all stopped containers
+<kbd>Ctrl+k</kbd>    | kill
+<kbd>Ctrl+r</kbd>    | start/restart
 <kbd>Ctrl+t</kbd>    | stop
 
 
@@ -82,6 +82,14 @@ Keybinding           | Description
 ---------------------|---------------------------------------
 <kbd>Ctrl+e</kbd>    | remove network
 <kbd>Enter</kbd>     | inspect
+
+#### Service commands
+
+Keybinding           | Description
+---------------------|---------------------------------------
+<kbd>l</kbd>         | service logs
+<kbd>Ctrl+r</kbd>    | remove service
+<kbd>Enter</kbd>     | show service tasks
 
 
 #### Moving around buffers
