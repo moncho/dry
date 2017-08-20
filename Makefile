@@ -47,7 +47,7 @@ benchmark: ## Run benchmarks
 define buildpretty
 $(if $(and $(filter-out darwin_arm,$(1)_$(2)), $(filter-out windows_arm,$(1)_$(2)), $(filter-out windows_386,$(1)_$(2))), \
 	mkdir -p ${PREFIX}/cross/$(1)/$(2);
-	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build -o ${PREFIX}/cross/$(1)/$(2)/dry -a -tags "static_build netgo" -installsuffix netgo ${GO_LDFLAGS_STATIC} .;
+	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build -o ${PREFIX}/cross/$(1)/$(2)/dry -a ${GO_LDFLAGS_STATIC} .;
 )
 endef
 
@@ -57,7 +57,7 @@ cross: *.go VERSION ## Cross compiles dry
 define buildrelease
 $(if $(and $(filter-out darwin_arm,$(1)_$(2)), $(filter-out windows_arm,$(1)_$(2)), $(filter-out windows_386,$(1)_$(2))), \
 	mkdir -p ${PREFIX}/cross/$(1)/$(2);
-	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build -o ${PREFIX}/cross/dry-$(1)-$(2) -a -tags "static_build netgo" -installsuffix netgo ${GO_LDFLAGS_STATIC} .;
+	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build -o ${PREFIX}/cross/dry-$(1)-$(2) -a ${GO_LDFLAGS_STATIC} .;
 )
 endef
 
