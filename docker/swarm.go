@@ -2,9 +2,8 @@ package docker
 
 import (
 	"context"
+	"errors"
 	"io"
-
-	"upspin.io/errors"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -118,7 +117,7 @@ func (daemon *DockerDaemon) ServiceScale(id string, replicas uint64) error {
 
 	serviceMode := &service.Spec.Mode
 	if serviceMode.Replicated == nil {
-		return errors.Errorf("scale can only be used with replicated mode")
+		return errors.New("scale can only be used with replicated mode")
 	}
 
 	serviceMode.Replicated.Replicas = &replicas
