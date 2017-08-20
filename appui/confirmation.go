@@ -14,7 +14,7 @@ type AskForConfirmation struct {
 //NewAskForConfirmation creates a new AskForConfirmation for the given image
 func NewAskForConfirmation(question string) *AskForConfirmation {
 	w := &AskForConfirmation{
-		TextInput: *termui.NewTextInput("", false),
+		TextInput: *termui.NewTextInput(""),
 	}
 	w.Height = 3
 	w.Width = len(question) + 4

@@ -17,7 +17,7 @@ type ImageRunWidget struct {
 func NewImageRunWidget(image *types.ImageSummary) *ImageRunWidget {
 	w := &ImageRunWidget{
 		image:     image,
-		TextInput: *termui.NewTextInput("", false),
+		TextInput: *termui.NewTextInput(""),
 	}
 	w.Height = 3
 	w.Width = ui.ActiveScreen.Dimensions.Width / 2
