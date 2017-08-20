@@ -1,8 +1,7 @@
 FROM alpine:latest
 
 LABEL maintainer "Moncho"
-
-VERSION 0.8-beta.4
+LABEL VERSION 0.8-beta.4
 
 RUN set -x && \
     apk update && \
