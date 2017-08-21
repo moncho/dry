@@ -17,6 +17,30 @@ import (
 
 var defaultNodeTableHeader = nodeTableHeader()
 
+var nodeTableFieldWidths = map[string]int{
+	"NAME":           0,
+	"ROLE":           12,
+	"LABELS":         0,
+	"CPU":            4,
+	"MEMORY":         12,
+	"DOCKER ENGINE":  16,
+	"IP ADDRESS":     16,
+	"STATUS":         16,
+	"AVAILABILITY":   16,
+	"MANAGER STATUS": 0,
+}
+
+var nodeTableFields = []string{"NAME",
+	"ROLE",
+	"LABELS",
+	"CPU",
+	"MEMORY",
+	"DOCKER ENGINE",
+	"IP ADDRESS",
+	"STATUS",
+	"AVAILABILITY",
+	"MANAGER STATUS"}
+
 //NodesWidget presents Docker swarm information
 type NodesWidget struct {
 	swarmClient          docker.SwarmAPI
@@ -174,32 +198,11 @@ func (s *NodesWidget) visibleRows() []*NodeRow {
 }
 
 func nodeTableHeader() *termui.TableHeader {
-	fieldWidths := map[string]int{
-		"NAME":           0,
-		"ROLE":           12,
-		"LABELS":         0,
-		"CPU":            4,
-		"MEMORY":         12,
-		"DOCKER ENGINE":  16,
-		"IP ADDRESS":     16,
-		"STATUS":         16,
-		"MANAGER STATUS": 0,
-	}
-
-	fields := []string{"NAME",
-		"ROLE",
-		"LABELS",
-		"CPU",
-		"MEMORY",
-		"DOCKER ENGINE",
-		"IP ADDRESS",
-		"STATUS",
-		"MANAGER STATUS"}
 
 	header := termui.NewHeader(appui.DryTheme)
 	header.ColumnSpacing = appui.DefaultColumnSpacing
-	for _, f := range fields {
-		width := fieldWidths[f]
+	for _, f := range nodeTableFields {
+		width := nodeTableFieldWidths[f]
 		if width == 0 {
 			header.AddColumn(f)
 		} else {

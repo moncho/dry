@@ -55,4 +55,7 @@ func TestNodeRow(t *testing.T) {
 	if row.Status.Text != string(node.Status.State) {
 		t.Errorf("Unexpected NodeRow state, got %s, expected %s", row.Status.Text, node.Status.State)
 	}
+	if row.Availability.Text != string(node.Spec.Availability) {
+		t.Errorf("Unexpected NodeRow availability, got %s, expected %s", row.Availability.Text, node.Spec.Availability)
+	}
 }

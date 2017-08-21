@@ -24,6 +24,7 @@ type NodeRow struct {
 	IPAddress     *drytermui.ParColumn
 	Status        *drytermui.ParColumn
 	ManagerStatus *drytermui.ParColumn
+	Availability  *drytermui.ParColumn
 
 	drytermui.Row
 }
@@ -41,6 +42,7 @@ func NewNodeRow(node swarm.Node, table drytermui.Table) *NodeRow {
 		IPAddress:     drytermui.NewThemedParColumn(appui.DryTheme, node.Status.Addr),
 		Status:        drytermui.NewThemedParColumn(appui.DryTheme, string(node.Status.State)),
 		ManagerStatus: drytermui.NewThemedParColumn(appui.DryTheme, managerStatus(node)),
+		Availability:  drytermui.NewThemedParColumn(appui.DryTheme, string(node.Spec.Availability)),
 	}
 	row.Height = 1
 	row.Table = table
@@ -54,6 +56,7 @@ func NewNodeRow(node swarm.Node, table drytermui.Table) *NodeRow {
 		row.Engine,
 		row.IPAddress,
 		row.Status,
+		row.Availability,
 		row.ManagerStatus,
 	}
 	row.updateStatusColumn()
@@ -110,7 +113,8 @@ func (row *NodeRow) changeTextColor(fg, bg termui.Attribute) {
 	row.Status.TextBgColor = bg
 	row.ManagerStatus.TextFgColor = fg
 	row.ManagerStatus.TextBgColor = bg
-
+	row.Availability.TextFgColor = fg
+	row.Availability.TextBgColor = bg
 }
 
 func (row *NodeRow) updateStatusColumn() {
@@ -129,8 +133,13 @@ func cpus(node swarm.Node) string {
 }
 
 func managerStatus(node swarm.Node) string {
-	if node.ManagerStatus != nil && node.ManagerStatus.Leader {
-		return "Leader"
+	reachability := ""
+	if node.ManagerStatus != nil {
+		if node.ManagerStatus.Leader {
+			reachability = "Leader"
+		} else {
+			reachability = string(node.ManagerStatus.Reachability)
+		}
 	}
-	return ""
+	return reachability
 }
