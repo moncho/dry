@@ -14,7 +14,7 @@ func (el *dockerEventsListener) init() {
 	go func() {
 		for event := range el.dry.dockerEvents {
 			//exec_ messages are sent continuously if docker is checking
-			//a container health, so they are ignored
+			//a container's health, so they are ignored
 			if strings.Contains(event.Action, "exec_") {
 				continue
 			}
