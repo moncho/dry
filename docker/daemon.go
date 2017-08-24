@@ -93,9 +93,7 @@ func (daemon *DockerDaemon) DockerEnv() *Env {
 // Events returns a channel to receive Docker events.
 func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct{}, error) {
 
-	options := dockerTypes.EventsOptions{
-	//Since: time.Now().String(),
-	}
+	options := dockerTypes.EventsOptions{}
 	ctx, cancel := context.WithCancel(context.Background())
 	events, err := daemon.client.Events(ctx, options)
 

@@ -23,6 +23,23 @@ func (daemon *DockerDaemon) Node(id string) (*swarm.Node, error) {
 	return nil, pkgError.Wrapf(err, "Error retrieving node with id %s", id)
 }
 
+//NodeChangeAvailabiliy changes the availability of the given node
+func (daemon *DockerDaemon) NodeChangeAvailabiliy(nodeID string, availabilty swarm.NodeAvailability) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	node, _, err := daemon.client.NodeInspectWithRaw(ctx, nodeID)
+	if err != nil {
+		return err
+	}
+
+	node.Spec.Availability = availabilty
+	err = daemon.client.NodeUpdate(ctx, nodeID, node.Version, node.Spec)
+	if err == nil {
+		return nil
+	}
+	return pkgError.Wrapf(err, "Error changing node %s availability", nodeID)
+}
+
 //Nodes returns the nodes that are part of the Swarm
 func (daemon *DockerDaemon) Nodes() ([]swarm.Node, error) {
 
@@ -148,4 +165,9 @@ func (daemon *DockerDaemon) ServiceTasks(services ...string) ([]swarm.Task, erro
 		return nodeTasks, nil
 	}
 	return nil, pkgError.Wrap(err, "Error retrieving task list")
+}
+
+//NewNodeAvailability builds NodeAvailability from the given string
+func NewNodeAvailability(availability string) swarm.NodeAvailability {
+	return swarm.NodeAvailability(availability)
 }

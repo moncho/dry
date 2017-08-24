@@ -73,6 +73,7 @@ type ImageAPI interface {
 //SwarmAPI defines the API for Docker Swarm
 type SwarmAPI interface {
 	Node(id string) (*swarm.Node, error)
+	NodeChangeAvailabiliy(nodeID string, availabilty swarm.NodeAvailability) error
 	Nodes() ([]swarm.Node, error)
 	NodeTasks(nodeID string) ([]swarm.Task, error)
 	ResolveNode(id string) (string, error)

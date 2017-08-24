@@ -178,6 +178,11 @@ func (_m *DockerDaemonMock) Node(id string) (*swarm.Node, error) {
 	return nil, nil
 }
 
+//NodeChangeAvailabiliy mock
+func (_m *DockerDaemonMock) NodeChangeAvailabiliy(nodeID string, availabilty swarm.NodeAvailability) error {
+	return nil
+}
+
 //Nodes mock
 func (_m *DockerDaemonMock) Nodes() ([]swarm.Node, error) {
 	return nil, nil
