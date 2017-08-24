@@ -93,7 +93,16 @@ func (daemon *DockerDaemon) DockerEnv() *Env {
 // Events returns a channel to receive Docker events.
 func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct{}, error) {
 
-	options := dockerTypes.EventsOptions{}
+	args := filters.NewArgs()
+
+	if daemon.swarmMode {
+		args.Add("scope", "swarm")
+	} else {
+		args.Add("scope", "local")
+	}
+	options := dockerTypes.EventsOptions{
+		Filters: args,
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	events, err := daemon.client.Events(ctx, options)
 
