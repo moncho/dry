@@ -15,25 +15,25 @@ type refresh func() error
 var refreshScreen refresh
 
 type focusTracker struct {
-	mutex sync.Locker
+	sync.Mutex
 	focus bool
 }
 
 func (f *focusTracker) set(b bool) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
+	f.Lock()
+	defer f.Unlock()
 	f.focus = b
 }
 
 func (f *focusTracker) hasFocus() bool {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
+	f.Lock()
+	defer f.Unlock()
 	return f.focus
 }
 
 func (f *focusTracker) flip() {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
+	f.Lock()
+	defer f.Unlock()
 	f.focus = !f.focus
 }
 
@@ -82,7 +82,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	//tracks if the main loop has the focus (and responds to events),
 	//or if events have to be delegated.
 	//creation belongs outside the loop
-	focus := &focusTracker{&sync.Mutex{}, true}
+	focus := &focusTracker{focus: true}
 
 	//renders dry on message until renderChan is closed
 	go func() {
