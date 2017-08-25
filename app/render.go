@@ -109,14 +109,14 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Services:
 		{
-			services := swarm.NewServicesWidget(d.dockerDaemon, viewStartingLine)
-			d.state.activeWidget = services
-			bufferers = append(bufferers, services)
+			servicesWidget := d.widgetRegistry.ServiceList
+			servicesWidget.Mount()
+			d.state.activeWidget = servicesWidget
+			bufferers = append(bufferers, servicesWidget)
 			what = "Services"
-			count = services.RowCount()
+			count = servicesWidget.RowCount()
 			updateCursorPosition(screen.Cursor, count)
 			keymap = serviceKeyMappings
-
 		}
 	case Tasks:
 		{

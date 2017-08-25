@@ -30,6 +30,7 @@ type ServicesWidget struct {
 	x, y                 int
 	height, width        int
 	startIndex, endIndex int
+	mounted              bool
 	sync.RWMutex
 }
 
@@ -44,18 +45,29 @@ func NewServicesWidget(swarmClient docker.SwarmAPI, y int) *ServicesWidget {
 		y:             y,
 		height:        appui.MainScreenAvailableHeight(),
 		width:         ui.ActiveScreen.Dimensions.Width}
-	if services, servicesInfo, err := getServiceInfo(swarmClient); err == nil {
-		sort.SliceStable(services, func(i, j int) bool {
-			return services[i].Spec.Name < services[j].Spec.Name
-		})
-		for _, service := range services {
-			w.services = append(w.services, NewServiceRow(service, servicesInfo[service.ID], w.header))
-		}
-	}
-	w.align()
 
 	return w
 
+}
+
+//Mount prepares this widget for rendering
+func (s *ServicesWidget) Mount() {
+	s.Lock()
+	defer s.Unlock()
+	if !s.mounted {
+		s.mounted = true
+		var rows []*ServiceRow
+		if services, servicesInfo, err := getServiceInfo(s.swarmClient); err == nil {
+			sort.SliceStable(services, func(i, j int) bool {
+				return services[i].Spec.Name < services[j].Spec.Name
+			})
+			for _, service := range services {
+				rows = append(rows, NewServiceRow(service, servicesInfo[service.ID], s.header))
+			}
+		}
+		s.services = rows
+	}
+	s.align()
 }
 
 //Align aligns rows

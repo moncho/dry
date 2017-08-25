@@ -19,7 +19,8 @@ func TestNodeRow(t *testing.T) {
 			},
 		},
 		Spec: swarm.NodeSpec{
-			Role: swarm.NodeRoleManager,
+			Role:         swarm.NodeRoleManager,
+			Availability: swarm.NodeAvailabilityActive,
 		},
 		Status: swarm.NodeStatus{
 			State: swarm.NodeStateReady,
