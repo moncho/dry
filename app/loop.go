@@ -51,8 +51,17 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	viewClosed := make(chan struct{})
 	//On receive dry is rendered
 	renderChan := make(chan struct{}, 1)
+	refreshing := false
+	//tracks if the main loop has the focus (and responds to events),
+	//or if events have to be delegated.
+	focus := &focusTracker{focus: true}
+
 	refreshScreen = func() error {
-		renderChan <- struct{}{}
+		if focus.hasFocus() && !refreshing {
+			refreshing = true
+			renderChan <- struct{}{}
+			refreshing = false
+		}
 		return nil
 	}
 
@@ -78,11 +87,6 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	}()
 
 	defer close(renderChan)
-
-	//tracks if the main loop has the focus (and responds to events),
-	//or if events have to be delegated.
-	//creation belongs outside the loop
-	focus := &focusTracker{focus: true}
 
 	//renders dry on message until renderChan is closed
 	go func() {
