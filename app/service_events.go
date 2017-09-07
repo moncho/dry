@@ -110,9 +110,11 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 			return err
 		}
 		//TODO show error on screen
-		if err := h.dry.state.activeWidget.OnEvent(showServiceLogs); err == nil {
-			handled = true
-			focus = false
+		if h.dry.state.activeWidget != nil {
+			if err := h.dry.state.activeWidget.OnEvent(showServiceLogs); err == nil {
+				handled = true
+				focus = false
+			}
 		}
 	}
 	if !handled {
