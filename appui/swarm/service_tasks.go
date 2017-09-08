@@ -30,19 +30,19 @@ type ServiceTasksWidget struct {
 
 //NewServiceTasksWidget creates a TasksWidget
 func NewServiceTasksWidget(swarmClient docker.SwarmAPI, serviceID string, y int) *ServiceTasksWidget {
+	w := &ServiceTasksWidget{
+		swarmClient:   swarmClient,
+		header:        defaultTasksTableHeader,
+		selectedIndex: 0,
+		offset:        0,
+		x:             0,
+		y:             y,
+		width:         ui.ActiveScreen.Dimensions.Width}
 	if service, err := swarmClient.Service(serviceID); err == nil {
 		serviceInfo := NewServiceInfoWidget(swarmClient, service, y)
-		w := &ServiceTasksWidget{
-			swarmClient:   swarmClient,
-			service:       service,
-			info:          serviceInfo,
-			header:        defaultTasksTableHeader,
-			selectedIndex: 0,
-			offset:        0,
-			x:             0,
-			y:             y,
-			height:        appui.MainScreenAvailableHeight() - serviceInfo.GetHeight(),
-			width:         ui.ActiveScreen.Dimensions.Width}
+		w.height = appui.MainScreenAvailableHeight() - serviceInfo.GetHeight()
+		w.service = service
+		w.info = serviceInfo
 
 		if tasks, err := swarmClient.ServiceTasks(serviceID); err == nil {
 			w.tableTitle = createTableTitle(serviceInfo.serviceName, len(tasks))
@@ -51,9 +51,8 @@ func NewServiceTasksWidget(swarmClient docker.SwarmAPI, serviceID string, y int)
 			}
 		}
 		w.align()
-		return w
 	}
-	return nil
+	return w
 }
 
 //Align aligns rows
@@ -81,8 +80,10 @@ func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
 	y := s.y
 
 	buf := gizaktermui.NewBuffer()
-	buf.Merge(s.info.Buffer())
-	y += s.info.GetHeight()
+	if s.info != nil {
+		buf.Merge(s.info.Buffer())
+		y += s.info.GetHeight()
+	}
 	s.tableTitle.SetY(y)
 	buf.Merge(s.tableTitle.Buffer())
 	y += s.tableTitle.GetHeight()

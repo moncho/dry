@@ -60,6 +60,19 @@ func (s *ContainersWidget) PrepareToRender(data *DockerPsRenderData) {
 	s.align()
 }
 
+func (s *ContainersWidget) Mount() error {
+	return nil
+}
+
+func (s *ContainersWidget) Name() string {
+	return ""
+}
+
+func (s *ContainersWidget) Unmount() error {
+	return nil
+
+}
+
 //Align aligns rows
 func (s *ContainersWidget) align() {
 	y := s.y

@@ -109,6 +109,19 @@ func (s *NodesWidget) align() {
 	}
 }
 
+func (s *NodesWidget) Mount() error {
+	return nil
+}
+
+func (s *NodesWidget) Name() string {
+	return ""
+}
+
+func (s *NodesWidget) Unmount() error {
+	return nil
+
+}
+
 //Buffer returns the content of this widget as a termui.Buffer
 func (s *NodesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()

@@ -51,7 +51,7 @@ func NewServicesWidget(swarmClient docker.SwarmAPI, y int) *ServicesWidget {
 }
 
 //Mount prepares this widget for rendering
-func (s *ServicesWidget) Mount() {
+func (s *ServicesWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
 	if !s.mounted {
@@ -68,6 +68,21 @@ func (s *ServicesWidget) Mount() {
 		s.services = rows
 	}
 	s.align()
+	return nil
+}
+
+func (s *ServicesWidget) Name() string {
+	return ""
+}
+
+//Unmount marks this widget as unmounted
+func (s *ServicesWidget) Unmount() error {
+	s.Lock()
+	defer s.Unlock()
+
+	s.mounted = false
+	return nil
+
 }
 
 //Align aligns rows
