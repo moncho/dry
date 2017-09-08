@@ -1,6 +1,7 @@
 package swarm
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/docker/docker/api/types/swarm"
@@ -17,6 +18,7 @@ var defaultTasksTableHeader = taskTableHeader()
 type NodeTasksWidget struct {
 	swarmClient          docker.SwarmAPI
 	node                 *swarm.Node
+	nodeName             string
 	tasks                []*TaskRow
 	header               *termui.TableHeader
 	selectedIndex        int
@@ -28,39 +30,47 @@ type NodeTasksWidget struct {
 }
 
 //NewNodeTasksWidget creates a TasksWidget
-func NewNodeTasksWidget(swarmClient docker.SwarmAPI, nodeID string, y int) *NodeTasksWidget {
-	if node, err := swarmClient.Node(nodeID); err == nil {
+func NewNodeTasksWidget(swarmClient docker.SwarmAPI, y int) *NodeTasksWidget {
 
-		w := &NodeTasksWidget{
-			swarmClient:   swarmClient,
-			node:          node,
-			header:        defaultTasksTableHeader,
-			selectedIndex: 0,
-			offset:        0,
-			x:             0,
-			y:             y,
-			height:        appui.MainScreenAvailableHeight(),
-			width:         ui.ActiveScreen.Dimensions.Width}
+	w := NodeTasksWidget{
+		swarmClient:   swarmClient,
+		header:        defaultTasksTableHeader,
+		selectedIndex: 0,
+		offset:        0,
+		x:             0,
+		y:             y,
+		height:        appui.MainScreenAvailableHeight(),
+		width:         ui.ActiveScreen.Dimensions.Width}
 
-		if tasks, err := swarmClient.NodeTasks(node.ID); err == nil {
+	return &w
+
+}
+
+//PrepareToRender prepares this widget for rendering
+func (s *NodeTasksWidget) PrepareToRender(nodeID string) {
+	s.Lock()
+	defer s.Unlock()
+	if node, err := s.swarmClient.Node(nodeID); err == nil {
+		nodeName, _ := s.swarmClient.ResolveNode(node.ID)
+		s.node = node
+		s.nodeName = nodeName
+
+		if tasks, err := s.swarmClient.NodeTasks(node.ID); err == nil {
 			for _, task := range tasks {
-				w.tasks = append(w.tasks, NewTaskRow(swarmClient, task, w.header))
+				s.tasks = append(s.tasks, NewTaskRow(s.swarmClient, task, s.header))
 			}
 		}
-		w.align()
-		return w
+		s.align()
+
 	}
-	return nil
 }
 
 //Align aligns rows
 func (s *NodeTasksWidget) align() {
-	y := s.y
 	x := s.x
 	width := s.width
 
 	s.header.SetWidth(width)
-	s.header.SetY(y)
 	s.header.SetX(x)
 
 	for _, n := range s.tasks {
@@ -73,11 +83,16 @@ func (s *NodeTasksWidget) align() {
 func (s *NodeTasksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
+	y := s.y
 
 	buf := gizaktermui.NewBuffer()
-	buf.Merge(s.header.Buffer())
+	widgetHeader := appui.WidgetHeader(fmt.Sprintf("Node %s task count", s.nodeName), s.RowCount(), "")
+	widgetHeader.SetY(y)
+	y += widgetHeader.GetHeight()
+	buf.Merge(widgetHeader.Buffer())
 
-	y := s.y
+	s.header.SetY(y)
+	buf.Merge(s.header.Buffer())
 	y += s.header.GetHeight()
 
 	s.highlightSelectedRow()

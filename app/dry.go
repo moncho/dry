@@ -33,8 +33,6 @@ type state struct {
 	sortImagesMode       drydocker.SortImagesMode
 	sortNetworksMode     drydocker.SortNetworksMode
 	activeWidget         appui.Actionable
-	node                 string
-	service              string
 }
 
 //Dry represents the application.
@@ -499,16 +497,14 @@ func (d *Dry) ShowServices() {
 
 //ShowServiceTasks changes the state of dry to show the given service task list
 func (d *Dry) ShowServiceTasks(serviceID string) {
-	d.state.service = serviceID
+	d.widgetRegistry.ServiceTasks.PrepareToRender(serviceID)
 	d.changeViewMode(ServiceTasks)
-
 }
 
 //ShowTasks changes the state of dry to show the given node task list
 func (d *Dry) ShowTasks(nodeID string) {
-	d.state.node = nodeID
+	d.widgetRegistry.NodeTasks.PrepareToRender(nodeID)
 	d.changeViewMode(Tasks)
-
 }
 
 //Sort rotates to the next sort mode.

@@ -87,12 +87,10 @@ func (s *ServicesWidget) Unmount() error {
 
 //Align aligns rows
 func (s *ServicesWidget) align() {
-	y := s.y
 	x := s.x
 	width := s.width
 
 	s.header.SetWidth(width)
-	s.header.SetY(y)
 	s.header.SetX(x)
 
 	for _, service := range s.services {
@@ -106,11 +104,16 @@ func (s *ServicesWidget) align() {
 func (s *ServicesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-
-	buf := gizaktermui.NewBuffer()
-	buf.Merge(s.header.Buffer())
-
 	y := s.y
+	buf := gizaktermui.NewBuffer()
+
+	widgetHeader := appui.WidgetHeader("Service", s.RowCount(), "")
+	widgetHeader.Y = y
+	buf.Merge(widgetHeader.Buffer())
+	y += widgetHeader.GetHeight()
+
+	s.header.SetY(y)
+	buf.Merge(s.header.Buffer())
 	y += s.header.GetHeight()
 
 	s.highlightSelectedRow()

@@ -59,7 +59,7 @@ type NodesWidget struct {
 
 //NewNodesWidget creates a NodesWidget
 func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
-	w := &NodesWidget{
+	w := NodesWidget{
 		swarmClient:   swarmClient,
 		header:        defaultNodeTableHeader,
 		selectedIndex: 0,
@@ -83,24 +83,22 @@ func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
 
 		}
 	}
-	addSwarmSpecs(w)
+	addSwarmSpecs(&w)
 
 	w.align()
-	return w
+	return &w
 }
 
 //Align aligns rows
 func (s *NodesWidget) align() {
-	y := s.y
 	x := s.x
 	width := s.width
 
 	s.title.SetWidth(width)
-	s.title.SetY(y)
 	s.title.SetX(x)
 
 	s.header.SetWidth(width)
-	s.header.SetY(y + s.title.Height)
+
 	s.header.SetX(x)
 
 	for _, n := range s.nodes {
@@ -126,13 +124,13 @@ func (s *NodesWidget) Unmount() error {
 func (s *NodesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-
-	buf := gizaktermui.NewBuffer()
-	buf.Merge(s.title.Buffer())
-	buf.Merge(s.header.Buffer())
-
 	y := s.y
-	y += s.title.GetHeight()
+	buf := gizaktermui.NewBuffer()
+	s.title.Y = y
+	buf.Merge(s.title.Buffer())
+	y += s.title.GetHeight() + 1
+	s.header.SetY(y)
+	buf.Merge(s.header.Buffer())
 	y += s.header.GetHeight()
 
 	s.highlightSelectedRow()
@@ -229,6 +227,8 @@ func addSwarmSpecs(w *NodesWidget) {
 	par := termui.NewParFromMarkupText(appui.DryTheme,
 		strings.Join(
 			[]string{
+				ui.Blue("Node count:"),
+				ui.Yellow(strconv.Itoa(w.RowCount())),
 				ui.Blue("Total CPU:"),
 				ui.Yellow(strconv.Itoa(w.totalCPU)),
 				ui.Blue("Total Memory:"),

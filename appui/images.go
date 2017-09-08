@@ -74,12 +74,10 @@ func (s *DockerImagesWidget) PrepareToRender(data *DockerImageRenderData) {
 
 //Align aligns rows
 func (s *DockerImagesWidget) align() {
-	y := s.y
 	x := s.x
 	width := s.width
 
 	s.header.SetWidth(width)
-	s.header.SetY(y)
 	s.header.SetX(x)
 
 	for _, image := range s.images {
@@ -93,13 +91,18 @@ func (s *DockerImagesWidget) align() {
 func (s *DockerImagesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
+	y := s.y
 
 	buf := gizaktermui.NewBuffer()
-	s.updateHeader()
+	widgetHeader := WidgetHeader("Images", s.RowCount(), "")
+	widgetHeader.Y = s.y
+	buf.Merge(widgetHeader.Buffer())
+	y += widgetHeader.GetHeight()
 
+	s.header.SetY(y)
+	s.updateHeader()
 	buf.Merge(s.header.Buffer())
 
-	y := s.y
 	y += s.header.GetHeight()
 
 	s.highlightSelectedRow()

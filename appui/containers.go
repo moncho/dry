@@ -1,6 +1,7 @@
 package appui
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 
@@ -75,12 +76,10 @@ func (s *ContainersWidget) Unmount() error {
 
 //Align aligns rows
 func (s *ContainersWidget) align() {
-	y := s.y
 	x := s.x
 	width := s.width
 
 	s.header.SetWidth(width)
-	s.header.SetY(y)
 	s.header.SetX(x)
 
 	for _, container := range s.containers {
@@ -94,13 +93,24 @@ func (s *ContainersWidget) align() {
 func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-
+	y := s.y
 	buf := gizaktermui.NewBuffer()
-	s.updateHeader()
 
+	var filter string
+	if s.data.filterPattern != "" {
+		filter = fmt.Sprintf(
+			"<b><blue> | Container name filter: </><yellow>%s</></> ", s.data.filterPattern)
+	}
+
+	widgetHeader := WidgetHeader("Containers", s.RowCount(), filter)
+	widgetHeader.Y = y
+	buf.Merge(widgetHeader.Buffer())
+	y += widgetHeader.GetHeight()
+
+	s.header.SetY(y)
+	s.updateTableHeader()
 	buf.Merge(s.header.Buffer())
 
-	y := s.y
 	y += s.header.GetHeight()
 
 	s.highlightSelectedRow()
@@ -134,7 +144,7 @@ func (s *ContainersWidget) OnEvent(event EventCommand) error {
 	return event(s.containers[s.selectedIndex].container.ID)
 }
 
-func (s *ContainersWidget) updateHeader() {
+func (s *ContainersWidget) updateTableHeader() {
 	sortMode := s.data.sortMode
 
 	for _, c := range s.header.Columns {

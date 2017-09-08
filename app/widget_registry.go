@@ -14,11 +14,12 @@ import (
 //   this struct.
 // * a list of widgets to be rendered on the next rendering.
 type WidgetRegistry struct {
-	DockerInfo    *appui.DockerInfo
 	ContainerList *appui.ContainersWidget
-	ImageList     *appui.DockerImagesWidget
 	DiskUsage     *appui.DockerDiskUsageRenderer
+	DockerInfo    *appui.DockerInfo
+	ImageList     *appui.DockerImagesWidget
 	NodeTasks     *swarm.NodeTasksWidget
+	ServiceTasks  *swarm.ServiceTasksWidget
 	ServiceList   *swarm.ServicesWidget
 	activeWidgets map[string]termui.Widget
 }
@@ -31,10 +32,12 @@ func NewWidgetRegistry(daemon docker.ContainerDaemon) *WidgetRegistry {
 	di.SetWidth(ui.ActiveScreen.Dimensions.Width)
 	return &WidgetRegistry{
 		DockerInfo:    di,
-		ContainerList: appui.NewContainersWidget(viewStartingLine),
-		ImageList:     appui.NewDockerImagesWidget(viewStartingLine),
+		ContainerList: appui.NewContainersWidget(appui.MainScreenHeaderSize),
+		ImageList:     appui.NewDockerImagesWidget(appui.MainScreenHeaderSize),
 		DiskUsage:     appui.NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
-		ServiceList:   swarm.NewServicesWidget(daemon, viewStartingLine),
+		NodeTasks:     swarm.NewNodeTasksWidget(daemon, appui.MainScreenHeaderSize),
+		ServiceTasks:  swarm.NewServiceTasksWidget(daemon, appui.MainScreenHeaderSize),
+		ServiceList:   swarm.NewServicesWidget(daemon, appui.MainScreenHeaderSize),
 		activeWidgets: make(map[string]termui.Widget),
 	}
 }

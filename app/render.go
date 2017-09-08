@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	gizaktermui "github.com/gizak/termui"
@@ -12,19 +11,13 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
-const (
-	viewStartingLine = appui.MainScreenHeaderSize + 2
-)
-
 var cancelMonitorWidget context.CancelFunc
 
 //Render renders dry on the given screen
 func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	var bufferers []gizaktermui.Bufferer
 
-	var what string
 	var count int
-	var titleInfo string
 	var keymap string
 	var viewRenderer ui.Renderer
 	di := d.widgetRegistry.DockerInfo
@@ -39,27 +32,18 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	switch d.viewMode() {
 	case Main:
 		{
-			//after a refresh, sorting is needed
 			sortMode := d.state.sortMode
 			containers := d.containerList()
-
 			count = len(containers)
-			updateCursorPosition(screen.Cursor, count)
 			data := appui.NewDockerPsRenderData(
 				containers,
-				sortMode)
+				sortMode,
+				d.state.filterPattern)
 			containersWidget := d.widgetRegistry.ContainerList
 			containersWidget.PrepareToRender(data)
-
 			d.state.activeWidget = containersWidget
 			bufferers = append(bufferers, containersWidget)
-
 			keymap = keyMappings
-			if d.state.filterPattern != "" {
-				titleInfo = titleInfo + fmt.Sprintf(
-					"<b><blue> | Container name filter: </><yellow>%s</></> ", d.state.filterPattern)
-			}
-			what = "Containers"
 
 		}
 	case Images:
@@ -71,7 +55,6 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			images, err := d.dockerDaemon.Images()
 			if err == nil {
 				count = len(images)
-				updateCursorPosition(screen.Cursor, count)
 				data := appui.NewDockerImageRenderData(
 					images,
 					sortMode)
@@ -83,27 +66,22 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 				screen.Render(1, err.Error())
 			}
 
-			what = "Images"
 			keymap = imagesKeyMappings
 
 		}
 	case Networks:
 		{
 			viewRenderer = appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Cursor, d.state.sortNetworksMode)
-			what = "Networks"
 			count = d.dockerDaemon.NetworksCount()
-			updateCursorPosition(screen.Cursor, count)
 			keymap = networkKeyMappings
 
 		}
 	case Nodes:
 		{
-			nodes := swarm.NewNodesWidget(d.dockerDaemon, viewStartingLine)
+			nodes := swarm.NewNodesWidget(d.dockerDaemon, appui.MainScreenHeaderSize)
 			d.state.activeWidget = nodes
 			bufferers = append(bufferers, nodes)
-			what = "Nodes"
 			count = nodes.RowCount()
-			updateCursorPosition(screen.Cursor, count)
 			keymap = swarmMapping
 
 		}
@@ -113,31 +91,21 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			servicesWidget.Mount()
 			d.state.activeWidget = servicesWidget
 			bufferers = append(bufferers, servicesWidget)
-			what = "Services"
 			count = servicesWidget.RowCount()
-			updateCursorPosition(screen.Cursor, count)
 			keymap = serviceKeyMappings
 		}
 	case Tasks:
 		{
-			nodeID := d.state.node
-			tasks := swarm.NewNodeTasksWidget(d.dockerDaemon, nodeID, viewStartingLine)
+			tasks := d.widgetRegistry.NodeTasks
 			bufferers = append(bufferers, tasks)
-			whatNode := nodeID
-			if node, err := d.dockerDaemon.ResolveNode(nodeID); err == nil {
-				whatNode = node
-			}
-			what = fmt.Sprintf("Node %s tasks", whatNode)
 			count = tasks.RowCount()
-			updateCursorPosition(screen.Cursor, count)
 			keymap = swarmMapping
 		}
 	case ServiceTasks:
 		{
-			serviceID := d.state.service
-			tasks := swarm.NewServiceTasksWidget(d.dockerDaemon, serviceID, appui.MainScreenHeaderSize)
+			tasks := d.widgetRegistry.ServiceTasks
+			count = tasks.RowCount()
 			bufferers = append(bufferers, tasks)
-			updateCursorPosition(screen.Cursor, tasks.RowCount())
 			keymap = swarmMapping
 		}
 	case DiskUsage:
@@ -154,28 +122,23 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Monitor:
 		{
-			monitor := appui.NewMonitor(d.dockerDaemon, viewStartingLine)
+			monitor := appui.NewMonitor(d.dockerDaemon, appui.MainScreenHeaderSize)
 			ctx, cancel := context.WithCancel(context.Background())
 			monitor.RenderLoop(ctx)
 			keymap = monitorMapping
-			what = "Containers"
-			count = monitor.RowCount()
 			cancelMonitorWidget = cancel
-			updateCursorPosition(screen.Cursor, count)
+			count = monitor.RowCount()
 		}
 	}
 
-	if what != "" {
-		bufferers = append(bufferers, tableHeader(screen, what, count, titleInfo))
-	}
-
-	bufferers = append(bufferers, footer(screen, keymap))
+	updateCursorPosition(screen.Cursor, count)
+	bufferers = append(bufferers, footer(keymap))
 
 	statusBar.Render()
 	screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
 	screen.RenderBufferer(bufferers...)
 	if viewRenderer != nil {
-		screen.RenderRenderer(viewStartingLine, viewRenderer)
+		screen.RenderRenderer(appui.MainScreenHeaderSize, viewRenderer)
 	}
 
 	for _, widget := range d.widgetRegistry.activeWidgets {
@@ -211,22 +174,7 @@ func renderDry(d *Dry) ui.Renderer {
 	return output
 }
 
-func tableHeader(screen *ui.Screen, what string, howMany int, info string) *termui.MarkupPar {
-	par := termui.NewParFromMarkupText(appui.DryTheme,
-		fmt.Sprintf(
-			"<b><blue>%s: </><yellow>%d</></>", what, howMany)+" "+info)
-
-	par.SetX(0)
-	par.SetY(appui.MainScreenHeaderSize)
-	par.Border = false
-	par.Width = ui.ActiveScreen.Dimensions.Width
-	par.TextBgColor = gizaktermui.Attribute(appui.DryTheme.Bg)
-	par.Bg = gizaktermui.Attribute(appui.DryTheme.Bg)
-
-	return par
-}
-
-func footer(screen *ui.Screen, mapping string) *termui.MarkupPar {
+func footer(mapping string) *termui.MarkupPar {
 
 	par := termui.NewParFromMarkupText(appui.DryTheme, mapping)
 	par.SetX(0)

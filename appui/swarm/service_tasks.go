@@ -29,7 +29,7 @@ type ServiceTasksWidget struct {
 }
 
 //NewServiceTasksWidget creates a TasksWidget
-func NewServiceTasksWidget(swarmClient docker.SwarmAPI, serviceID string, y int) *ServiceTasksWidget {
+func NewServiceTasksWidget(swarmClient docker.SwarmAPI, y int) *ServiceTasksWidget {
 	w := &ServiceTasksWidget{
 		swarmClient:   swarmClient,
 		header:        defaultTasksTableHeader,
@@ -38,21 +38,28 @@ func NewServiceTasksWidget(swarmClient docker.SwarmAPI, serviceID string, y int)
 		x:             0,
 		y:             y,
 		width:         ui.ActiveScreen.Dimensions.Width}
-	if service, err := swarmClient.Service(serviceID); err == nil {
-		serviceInfo := NewServiceInfoWidget(swarmClient, service, y)
-		w.height = appui.MainScreenAvailableHeight() - serviceInfo.GetHeight()
-		w.service = service
-		w.info = serviceInfo
+	return w
+}
 
-		if tasks, err := swarmClient.ServiceTasks(serviceID); err == nil {
-			w.tableTitle = createTableTitle(serviceInfo.serviceName, len(tasks))
+//PrepareToRender prepares this widget for rendering
+func (s *ServiceTasksWidget) PrepareToRender(serviceID string) {
+	s.Lock()
+	defer s.Unlock()
+	if service, err := s.swarmClient.Service(serviceID); err == nil {
+		serviceInfo := NewServiceInfoWidget(s.swarmClient, service, s.y)
+		s.height = appui.MainScreenAvailableHeight() - serviceInfo.GetHeight()
+		s.service = service
+		s.info = serviceInfo
+
+		if tasks, err := s.swarmClient.ServiceTasks(serviceID); err == nil {
+			s.tableTitle = createTableTitle(serviceInfo.serviceName, len(tasks))
 			for _, task := range tasks {
-				w.tasks = append(w.tasks, NewTaskRow(swarmClient, task, w.header))
+				s.tasks = append(s.tasks, NewTaskRow(s.swarmClient, task, s.header))
 			}
 		}
-		w.align()
+		s.align()
 	}
-	return w
+
 }
 
 //Align aligns rows
