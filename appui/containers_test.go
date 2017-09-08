@@ -25,7 +25,7 @@ func TestContainerListVisibleRows(t *testing.T) {
 
 	w := NewContainersWidget(0)
 
-	w.PrepareToRender(&DockerPsRenderData{containers, docker.SortByContainerID})
+	w.PrepareToRender(&DockerPsRenderData{containers, docker.SortByContainerID, ""})
 
 	rows := w.visibleRows()
 	if len(rows) != w.height {
