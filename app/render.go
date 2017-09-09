@@ -173,11 +173,11 @@ func renderDry(d *Dry) ui.Renderer {
 	case ImageHistoryMode:
 		output = appui.NewDockerImageHistoryRenderer(d.imageHistory)
 	case InspectMode:
-		output = appui.NewDockerInspectRenderer(d.inspectedContainer)
+		output = appui.NewJSONRenderer(d.inspectedContainer)
 	case InspectImageMode:
-		output = appui.NewDockerInspectImageRenderer(d.inspectedImage)
+		output = appui.NewJSONRenderer(d.inspectedImage)
 	case InspectNetworkMode:
-		output = appui.NewDockerInspectNetworkRenderer(d.inspectedNetwork)
+		output = appui.NewJSONRenderer(d.inspectedNetwork)
 	case HelpMode:
 		output = ui.StringRenderer(help)
 	case InfoMode:
