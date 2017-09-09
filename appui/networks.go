@@ -197,10 +197,10 @@ type networkHeaderColumn struct {
 func networkTableHeader() *termui.TableHeader {
 	header := termui.NewHeader(DryTheme)
 	header.ColumnSpacing = DefaultColumnSpacing
-	header.AddColumn(imageTableHeaders[0].title)
-	header.AddColumn(imageTableHeaders[1].title)
-	header.AddFixedWidthColumn(imageTableHeaders[2].title, 12)
-	header.AddFixedWidthColumn(imageTableHeaders[3].title, 12)
-	header.AddColumn(imageTableHeaders[4].title)
+	header.AddColumn(networkTableHeaders[0].title)
+	header.AddColumn(networkTableHeaders[1].title)
+	header.AddFixedWidthColumn(networkTableHeaders[2].title, 12)
+	header.AddFixedWidthColumn(networkTableHeaders[3].title, 12)
+	header.AddColumn(networkTableHeaders[4].title)
 	return header
 }
