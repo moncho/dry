@@ -17,8 +17,6 @@ const (
 	MainScreenHeaderSize = 5
 	//MainScreenFooterSize is the number of lines the footer of the main screen uses
 	MainScreenFooterSize = 1
-
-	networkTableStartPos = MainScreenHeaderSize + 5
 	//DefaultColumnSpacing defines the minimun space between columns in pixels
 	DefaultColumnSpacing = 1
 	//IDColumnWidth defines a fixed width for ID columns

@@ -61,14 +61,17 @@ func (s *ContainersWidget) PrepareToRender(data *DockerPsRenderData) {
 	s.align()
 }
 
+//Mount tells this widget to be ready for rendering
 func (s *ContainersWidget) Mount() error {
 	return nil
 }
 
+//Name returns this widget name
 func (s *ContainersWidget) Name() string {
-	return ""
+	return "ContainersWidget"
 }
 
+//Unmount tells this widget that it will not be rendering anymore
 func (s *ContainersWidget) Unmount() error {
 	return nil
 

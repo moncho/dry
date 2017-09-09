@@ -79,8 +79,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 			}
 
 			scaleService := func(serviceID string) error {
-				var err error
-				err = dry.dockerDaemon.ServiceScale(serviceID, uint64(scaleTo))
+				err := dry.dockerDaemon.ServiceScale(serviceID, uint64(scaleTo))
 
 				if err == nil {
 					dry.appmessage(fmt.Sprintf("Service %s scaled to %d replicas", serviceID, scaleTo))
