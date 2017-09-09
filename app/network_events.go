@@ -10,6 +10,10 @@ type networksScreenEventHandler struct {
 	baseEventHandler
 }
 
+func (h *networksScreenEventHandler) widget() appui.EventableWidget {
+	return h.dry.widgetRegistry.Networks
+}
+
 func (h *networksScreenEventHandler) handle(event termbox.Event) {
 	focus := true
 	dry := h.dry

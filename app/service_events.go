@@ -14,6 +14,10 @@ type servicesScreenEventHandler struct {
 	passingEvents bool
 }
 
+func (h *servicesScreenEventHandler) widget() appui.EventableWidget {
+	return h.dry.widgetRegistry.ServiceList
+}
+
 func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 	if h.passingEvents {
 		h.eventChan <- event
@@ -49,7 +53,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 				refreshScreen()
 				return err
 			}
-			h.dry.state.activeWidget.OnEvent(removeService)
+			h.widget().OnEvent(removeService)
 		}()
 
 	case termbox.KeyCtrlS:
@@ -88,7 +92,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 				refreshScreen()
 				return err
 			}
-			h.dry.state.activeWidget.OnEvent(scaleService)
+			h.widget().OnEvent(scaleService)
 		}()
 
 	case termbox.KeyEnter:
@@ -96,7 +100,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 			h.dry.ShowServiceTasks(serviceID)
 			return refreshScreen()
 		}
-		h.dry.state.activeWidget.OnEvent(showServices)
+		h.widget().OnEvent(showServices)
 		handled = true
 	}
 	switch event.Ch {
@@ -113,7 +117,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 			}
 			return err
 		}
-		if err := h.dry.widgetRegistry.ServiceList.OnEvent(inspectService); err == nil {
+		if err := h.widget().OnEvent(inspectService); err == nil {
 			focus = false
 		}
 
@@ -129,11 +133,10 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 			return err
 		}
 		//TODO show error on screen
-		if h.dry.state.activeWidget != nil {
-			if err := h.dry.state.activeWidget.OnEvent(showServiceLogs); err == nil {
-				focus = false
-			}
+		if err := h.widget().OnEvent(showServiceLogs); err == nil {
+			focus = false
 		}
+
 	}
 	if !handled {
 		h.baseEventHandler.handle(event)

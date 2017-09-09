@@ -14,6 +14,10 @@ type nodesScreenEventHandler struct {
 	passingEvents bool
 }
 
+func (h *nodesScreenEventHandler) widget() appui.EventableWidget {
+	return h.dry.state.activeWidget
+}
+
 func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 	if h.passingEvents {
 		h.eventChan <- event
@@ -61,7 +65,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 				}
 				return refreshScreen()
 			}
-			h.dry.state.activeWidget.OnEvent(changeNode)
+			h.widget().OnEvent(changeNode)
 		}()
 
 	case termbox.KeyEnter:
@@ -69,7 +73,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 			h.dry.ShowTasks(nodeID)
 			return refreshScreen()
 		}
-		h.dry.state.activeWidget.OnEvent(showServices)
+		h.widget().OnEvent(showServices)
 		handled = true
 
 	}

@@ -48,50 +48,6 @@ func NewContainersWidget(y int) *ContainersWidget {
 
 }
 
-//PrepareToRender prepares this widget for rendering
-func (s *ContainersWidget) PrepareToRender(data *DockerPsRenderData) {
-	s.Lock()
-	defer s.Unlock()
-	s.data = data
-	var containers []*ContainerRow
-	for _, container := range data.containers {
-		containers = append(containers, NewContainerRow(container, s.header))
-	}
-	s.containers = containers
-	s.align()
-}
-
-//Mount tells this widget to be ready for rendering
-func (s *ContainersWidget) Mount() error {
-	return nil
-}
-
-//Name returns this widget name
-func (s *ContainersWidget) Name() string {
-	return "ContainersWidget"
-}
-
-//Unmount tells this widget that it will not be rendering anymore
-func (s *ContainersWidget) Unmount() error {
-	return nil
-
-}
-
-//Align aligns rows
-func (s *ContainersWidget) align() {
-	x := s.x
-	width := s.width
-
-	s.header.SetWidth(width)
-	s.header.SetX(x)
-
-	for _, container := range s.containers {
-		container.SetX(x)
-		container.SetWidth(width)
-	}
-
-}
-
 //Buffer returns the content of this widget as a termui.Buffer
 func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
@@ -126,10 +82,59 @@ func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
+//Mount tells this widget to be ready for rendering
+func (s *ContainersWidget) Mount() error {
+	return nil
+}
+
+//Name returns this widget name
+func (s *ContainersWidget) Name() string {
+	return "ContainersWidget"
+}
+
+//OnEvent runs the given command
+func (s *ContainersWidget) OnEvent(event EventCommand) error {
+	return event(s.containers[s.selectedIndex].container.ID)
+}
+
+//PrepareToRender prepares this widget for rendering
+func (s *ContainersWidget) PrepareToRender(data *DockerPsRenderData) {
+	s.Lock()
+	defer s.Unlock()
+	s.data = data
+	var containers []*ContainerRow
+	for _, container := range data.containers {
+		containers = append(containers, NewContainerRow(container, s.header))
+	}
+	s.containers = containers
+	s.align()
+}
+
 //RowCount returns the number of rows of this widget.
 func (s *ContainersWidget) RowCount() int {
 	return len(s.containers)
 }
+
+//Unmount tells this widget that it will not be rendering anymore
+func (s *ContainersWidget) Unmount() error {
+	return nil
+}
+
+//Align aligns rows
+func (s *ContainersWidget) align() {
+	x := s.x
+	width := s.width
+
+	s.header.SetWidth(width)
+	s.header.SetX(x)
+
+	for _, container := range s.containers {
+		container.SetX(x)
+		container.SetWidth(width)
+	}
+
+}
+
 func (s *ContainersWidget) highlightSelectedRow() {
 	if s.RowCount() == 0 {
 		return
@@ -140,11 +145,6 @@ func (s *ContainersWidget) highlightSelectedRow() {
 	}
 	s.selectedIndex = index
 	s.containers[s.selectedIndex].Highlighted()
-}
-
-//OnEvent runs the given command
-func (s *ContainersWidget) OnEvent(event EventCommand) error {
-	return event(s.containers[s.selectedIndex].container.ID)
 }
 
 func (s *ContainersWidget) updateTableHeader() {

@@ -1,9 +1,16 @@
 package app
 
-import "github.com/nsf/termbox-go"
+import (
+	"github.com/moncho/dry/appui"
+	"github.com/nsf/termbox-go"
+)
 
 type monitorScreenEventHandler struct {
 	baseEventHandler
+}
+
+func (h *monitorScreenEventHandler) widget() appui.EventableWidget {
+	return h.dry.state.activeWidget
 }
 
 func (h *monitorScreenEventHandler) handle(event termbox.Event) {

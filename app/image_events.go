@@ -12,6 +12,10 @@ type imagesScreenEventHandler struct {
 	passingEvents bool
 }
 
+func (h *imagesScreenEventHandler) widget() appui.EventableWidget {
+	return h.dry.widgetRegistry.ImageList
+}
+
 func (h *imagesScreenEventHandler) handle(event termbox.Event) {
 	if h.passingEvents {
 		h.eventChan <- event

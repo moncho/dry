@@ -13,6 +13,10 @@ type diskUsageScreenEventHandler struct {
 	baseEventHandler
 }
 
+func (h *diskUsageScreenEventHandler) widget() appui.EventableWidget {
+	return nil
+}
+
 func (h *diskUsageScreenEventHandler) handle(event termbox.Event) {
 	handled := false
 	ignored := false

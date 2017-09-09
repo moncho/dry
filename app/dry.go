@@ -33,7 +33,7 @@ type state struct {
 	sortMode             drydocker.SortMode
 	sortImagesMode       drydocker.SortImagesMode
 	sortNetworksMode     drydocker.SortNetworksMode
-	activeWidget         appui.Actionable
+	activeWidget         appui.EventableWidget
 }
 
 //Dry represents the application.

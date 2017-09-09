@@ -59,34 +59,6 @@ func NewDockerNetworksWidget(y int) *DockerNetworksWidget {
 	return w
 }
 
-//PrepareToRender prepare this widget for rendering using the given data
-func (s *DockerNetworksWidget) PrepareToRender(data *DockerNetworkRenderData) {
-	s.Lock()
-	defer s.Unlock()
-	s.data = data
-	var networks []*NetworkRow
-	for _, network := range data.networks {
-		networks = append(networks, NewNetworkRow(network, s.header))
-	}
-	s.networks = networks
-	s.align()
-}
-
-//Align aligns rows
-func (s *DockerNetworksWidget) align() {
-	x := s.x
-	width := s.width
-
-	s.header.SetWidth(width)
-	s.header.SetX(x)
-
-	for _, network := range s.networks {
-		network.SetX(x)
-		network.SetWidth(width)
-	}
-
-}
-
 //Buffer returns the content of this widget as a termui.Buffer
 func (s *DockerNetworksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
@@ -115,6 +87,59 @@ func (s *DockerNetworksWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
+//Mount tells this widget to be ready for rendering
+func (s *DockerNetworksWidget) Mount() error {
+	return nil
+}
+
+//Name returns this widget name
+func (s *DockerNetworksWidget) Name() string {
+	return "DockerNetworksWidget"
+}
+
+//PrepareToRender prepare this widget for rendering using the given data
+func (s *DockerNetworksWidget) PrepareToRender(data *DockerNetworkRenderData) {
+	s.Lock()
+	defer s.Unlock()
+	s.data = data
+	var networks []*NetworkRow
+	for _, network := range data.networks {
+		networks = append(networks, NewNetworkRow(network, s.header))
+	}
+	s.networks = networks
+	s.align()
+}
+
+//OnEvent runs the given command
+func (s *DockerNetworksWidget) OnEvent(event EventCommand) error {
+	return event(s.networks[s.selectedIndex].network.ID)
+}
+
+//RowCount returns the number of rows of this widget.
+func (s *DockerNetworksWidget) RowCount() int {
+	return len(s.networks)
+}
+
+//Unmount tells this widget that it will not be rendering anymore
+func (s *DockerNetworksWidget) Unmount() error {
+	return nil
+}
+
+//Align aligns rows
+func (s *DockerNetworksWidget) align() {
+	x := s.x
+	width := s.width
+
+	s.header.SetWidth(width)
+	s.header.SetX(x)
+
+	for _, network := range s.networks {
+		network.SetX(x)
+		network.SetWidth(width)
+	}
+
+}
+
 func (s *DockerNetworksWidget) updateHeader() {
 	sortMode := s.data.sortMode
 
@@ -140,10 +165,6 @@ func (s *DockerNetworksWidget) updateHeader() {
 
 }
 
-//RowCount returns the number of rows of this widget.
-func (s *DockerNetworksWidget) RowCount() int {
-	return len(s.networks)
-}
 func (s *DockerNetworksWidget) highlightSelectedRow() {
 	if s.RowCount() == 0 {
 		return

@@ -32,6 +32,8 @@ type eventHandler interface {
 		screen *ui.Screen,
 		keyboardQueueForView chan termbox.Event,
 		viewClosedChan chan struct{})
+
+	widget() appui.EventableWidget
 }
 
 type baseEventHandler struct {
@@ -41,6 +43,10 @@ type baseEventHandler struct {
 	closeViewChan chan struct{}
 	focus         bool
 	sync.RWMutex
+}
+
+func (h *baseEventHandler) widget() appui.EventableWidget {
+	return nil
 }
 
 func (b *baseEventHandler) initialize(dry *Dry,

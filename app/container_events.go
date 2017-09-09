@@ -17,6 +17,10 @@ type containersScreenEventHandler struct {
 	baseEventHandler
 }
 
+func (h *containersScreenEventHandler) widget() appui.EventableWidget {
+	return h.dry.widgetRegistry.ContainerList
+}
+
 func (h *containersScreenEventHandler) handle(event termbox.Event) {
 	focus, handled := handleKey(h, event.Key)
 	if !handled {

@@ -59,34 +59,6 @@ func NewDockerImagesWidget(y int) *DockerImagesWidget {
 	return w
 }
 
-//PrepareToRender prepare this widget for rendering using the given data
-func (s *DockerImagesWidget) PrepareToRender(data *DockerImageRenderData) {
-	s.Lock()
-	defer s.Unlock()
-	s.data = data
-	var images []*ImageRow
-	for _, image := range data.images {
-		images = append(images, NewImageRow(image, s.header))
-	}
-	s.images = images
-	s.align()
-}
-
-//Align aligns rows
-func (s *DockerImagesWidget) align() {
-	x := s.x
-	width := s.width
-
-	s.header.SetWidth(width)
-	s.header.SetX(x)
-
-	for _, image := range s.images {
-		image.SetX(x)
-		image.SetWidth(width)
-	}
-
-}
-
 //Buffer returns the content of this widget as a termui.Buffer
 func (s *DockerImagesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
@@ -115,6 +87,59 @@ func (s *DockerImagesWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
+//Mount tells this widget to be ready for rendering
+func (s *DockerImagesWidget) Mount() error {
+	return nil
+}
+
+//Name returns this widget name
+func (s *DockerImagesWidget) Name() string {
+	return "DockerImagesWidget"
+}
+
+//OnEvent runs the given command
+func (s *DockerImagesWidget) OnEvent(event EventCommand) error {
+	return event(s.images[s.selectedIndex].image.ID)
+}
+
+//PrepareToRender prepare this widget for rendering using the given data
+func (s *DockerImagesWidget) PrepareToRender(data *DockerImageRenderData) {
+	s.Lock()
+	defer s.Unlock()
+	s.data = data
+	var images []*ImageRow
+	for _, image := range data.images {
+		images = append(images, NewImageRow(image, s.header))
+	}
+	s.images = images
+	s.align()
+}
+
+//RowCount returns the number of rows of this widget.
+func (s *DockerImagesWidget) RowCount() int {
+	return len(s.images)
+}
+
+//Unmount tells this widget that it will not be rendering anymore
+func (s *DockerImagesWidget) Unmount() error {
+	return nil
+}
+
+//Align aligns rows
+func (s *DockerImagesWidget) align() {
+	x := s.x
+	width := s.width
+
+	s.header.SetWidth(width)
+	s.header.SetX(x)
+
+	for _, image := range s.images {
+		image.SetX(x)
+		image.SetWidth(width)
+	}
+
+}
+
 func (s *DockerImagesWidget) updateHeader() {
 	sortMode := s.data.sortMode
 
@@ -140,10 +165,6 @@ func (s *DockerImagesWidget) updateHeader() {
 
 }
 
-//RowCount returns the number of rows of this widget.
-func (s *DockerImagesWidget) RowCount() int {
-	return len(s.images)
-}
 func (s *DockerImagesWidget) highlightSelectedRow() {
 	if s.RowCount() == 0 {
 		return
