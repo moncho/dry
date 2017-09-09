@@ -1,158 +1,206 @@
 package appui
 
 import (
-	"bytes"
-	"fmt"
 	"strings"
-	"text/tabwriter"
-	"text/template"
+	"sync"
 
 	"github.com/docker/docker/api/types"
+	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/docker/formatter"
 	"github.com/moncho/dry/ui"
+	"github.com/moncho/dry/ui/termui"
 )
 
-type networksColumn struct {
+var defaultNetworkTableHeader = networkTableHeader()
+
+var networkTableHeaders = []networkHeaderColumn{
+	{`NETWORK ID`, docker.SortNetworksByID},
+	{`NAME`, docker.SortNetworksByName},
+	{`DRIVER`, docker.SortNetworksByDriver},
+	{`CONTAINERS`, docker.NoSortNetworks},
+	{`SCOPE`, docker.NoSortNetworks},
+}
+
+//DockerNetworkRenderData holds information that might be
+//used during image list rendering
+type DockerNetworkRenderData struct {
+	networks []types.NetworkResource
+	sortMode docker.SortNetworksMode
+}
+
+//NewDockerNetworkRenderData creates render data structs
+func NewDockerNetworkRenderData(networks []types.NetworkResource, sortMode docker.SortNetworksMode) *DockerNetworkRenderData {
+	return &DockerNetworkRenderData{
+		networks: networks,
+		sortMode: sortMode,
+	}
+}
+
+//DockerNetworksWidget knows how render a container list
+type DockerNetworksWidget struct {
+	networks             []*NetworkRow // List of columns.
+	data                 *DockerNetworkRenderData
+	header               *termui.TableHeader
+	selectedIndex        int
+	x, y                 int
+	height, width        int
+	startIndex, endIndex int
+	sync.RWMutex
+}
+
+//NewDockerNetworksWidget creates a renderer for a network list
+func NewDockerNetworksWidget(y int) *DockerNetworksWidget {
+	w := &DockerNetworksWidget{
+		y:      y,
+		header: defaultNetworkTableHeader,
+		height: MainScreenAvailableHeight(),
+		width:  ui.ActiveScreen.Dimensions.Width}
+
+	return w
+}
+
+//PrepareToRender prepare this widget for rendering using the given data
+func (s *DockerNetworksWidget) PrepareToRender(data *DockerNetworkRenderData) {
+	s.Lock()
+	defer s.Unlock()
+	s.data = data
+	var networks []*NetworkRow
+	for _, network := range data.networks {
+		networks = append(networks, NewNetworkRow(network, s.header))
+	}
+	s.networks = networks
+	s.align()
+}
+
+//Align aligns rows
+func (s *DockerNetworksWidget) align() {
+	x := s.x
+	width := s.width
+
+	s.header.SetWidth(width)
+	s.header.SetX(x)
+
+	for _, network := range s.networks {
+		network.SetX(x)
+		network.SetWidth(width)
+	}
+
+}
+
+//Buffer returns the content of this widget as a termui.Buffer
+func (s *DockerNetworksWidget) Buffer() gizaktermui.Buffer {
+	s.Lock()
+	defer s.Unlock()
+	y := s.y
+
+	buf := gizaktermui.NewBuffer()
+	widgetHeader := WidgetHeader("Networks", s.RowCount(), "")
+	widgetHeader.Y = s.y
+	buf.Merge(widgetHeader.Buffer())
+	y += widgetHeader.GetHeight()
+
+	s.header.SetY(y)
+	s.updateHeader()
+	buf.Merge(s.header.Buffer())
+
+	y += s.header.GetHeight()
+
+	s.highlightSelectedRow()
+	for _, containerRow := range s.visibleRows() {
+		containerRow.SetY(y)
+		y += containerRow.GetHeight()
+		buf.Merge(containerRow.Buffer())
+	}
+
+	return buf
+}
+
+func (s *DockerNetworksWidget) updateHeader() {
+	sortMode := s.data.sortMode
+
+	for _, c := range s.header.Columns {
+		colTitle := c.Text
+		var header networkHeaderColumn
+		if strings.Contains(colTitle, DownArrow) {
+			colTitle = colTitle[DownArrowLength:]
+		}
+		for _, h := range networkTableHeaders {
+			if colTitle == h.title {
+				header = h
+				break
+			}
+		}
+		if header.mode == sortMode {
+			c.Text = DownArrow + colTitle
+		} else {
+			c.Text = colTitle
+		}
+
+	}
+
+}
+
+//RowCount returns the number of rows of this widget.
+func (s *DockerNetworksWidget) RowCount() int {
+	return len(s.networks)
+}
+func (s *DockerNetworksWidget) highlightSelectedRow() {
+	if s.RowCount() == 0 {
+		return
+	}
+	index := ui.ActiveScreen.Cursor.Position()
+	if index > s.RowCount() {
+		index = s.RowCount() - 1
+	}
+	s.selectedIndex = index
+	s.networks[s.selectedIndex].Highlighted()
+}
+
+func (s *DockerNetworksWidget) visibleRows() []*NetworkRow {
+
+	//no screen
+	if s.height < 0 {
+		return nil
+	}
+	rows := s.networks
+	count := len(rows)
+	selected := ui.ActiveScreen.Cursor.Position()
+	//everything fits
+	if count <= s.height {
+		return rows
+	}
+	//at the the start
+	if selected == 0 {
+		s.startIndex = 0
+		s.endIndex = s.height
+	} else if selected >= count-1 { //at the end
+		s.startIndex = count - s.height
+		s.endIndex = count
+	} else if selected == s.endIndex { //scroll down by one
+		s.startIndex++
+		s.endIndex++
+	} else if selected <= s.startIndex { //scroll up by one
+		s.startIndex--
+		s.endIndex--
+	} else if selected > s.endIndex { // scroll
+		s.startIndex = selected - s.height
+		s.endIndex = selected
+	}
+	return rows[s.startIndex:s.endIndex]
+}
+
+type networkHeaderColumn struct {
 	title string // Title to display in the tableHeader.
 	mode  docker.SortNetworksMode
 }
 
-//DockerNetworksRenderer knows how render a container list
-type DockerNetworksRenderer struct {
-	columns          []networksColumn // List of columns.
-	networksTemplate *template.Template
-	cursor           *ui.Cursor
-	daemon           docker.ContainerDaemon
-	sortMode         docker.SortNetworksMode
-	renderableRows   int
-	startIndex       int
-	endIndex         int
-}
-
-//NewDockerNetworksRenderer creates a renderer for a network list
-func NewDockerNetworksRenderer(daemon docker.ContainerDaemon, cursor *ui.Cursor, sortMode docker.SortNetworksMode) *DockerNetworksRenderer {
-	r := &DockerNetworksRenderer{}
-
-	r.columns = []networksColumn{
-		{`NETWORK ID`, docker.SortNetworksByID},
-		{`NAME`, docker.SortNetworksByName},
-		{`DRIVER`, docker.SortNetworksByDriver},
-		{`CONTAINERS`, docker.NoSortNetworks},
-		{`SCOPE`, docker.NoSortNetworks},
-	}
-
-	r.networksTemplate = buildNetworksTemplate()
-	r.cursor = cursor
-	r.daemon = daemon
-	r.sortMode = sortMode
-	r.renderableRows = ui.ActiveScreen.Dimensions.Height - networkTableStartPos - 1
-	return r
-}
-
-//SortMode sets the sort mode to use when rendering the container list
-func (r *DockerNetworksRenderer) SortMode(sortMode docker.SortNetworksMode) {
-	r.sortMode = sortMode
-}
-
-//Render docker ps
-func (r *DockerNetworksRenderer) Render() string {
-	if ok, err := r.daemon.Ok(); !ok { // If there was an error connecting to the Docker host...
-		return err.Error() // then simply return the error string.
-	}
-	return r.networksTable()
-}
-func (r *DockerNetworksRenderer) networksTable() string {
-	buffer := new(bytes.Buffer)
-	t := tabwriter.NewWriter(buffer, 22, 0, 1, ' ', 0)
-	replacer := strings.NewReplacer(`\t`, "\t", `\n`, "\n")
-	fmt.Fprintln(t, replacer.Replace(r.tableHeader()))
-	fmt.Fprint(t, replacer.Replace(r.networkInformation()))
-	t.Flush()
-	return buffer.String()
-}
-func (r *DockerNetworksRenderer) tableHeader() string {
-	columns := make([]string, len(r.columns))
-	for i, col := range r.columns {
-		if r.sortMode != col.mode {
-			columns[i] = col.title
-		} else {
-			columns[i] = DownArrow + col.title
-		}
-	}
-	return "<green>" + strings.Join(columns, "\t") + "</>"
-}
-
-func (r *DockerNetworksRenderer) networkInformation() string {
-	buf := bytes.NewBufferString("")
-	networks, selected := r.networksToShow()
-
-	context := formatter.FormattingContext{
-		Output:   buf,
-		Template: r.networksTemplate,
-		Trunc:    true,
-		Selected: selected,
-	}
-	formatter.FormatNetworks(
-		context,
-		networks)
-
-	return buf.String()
-}
-
-func (r *DockerNetworksRenderer) networksToShow() ([]types.NetworkResource, int) {
-
-	//no screen
-	if r.renderableRows < 0 {
-		return nil, 0
-	}
-	networks, _ := r.daemon.Networks()
-	count := len(networks)
-	cursor := ui.ActiveScreen.Cursor
-	selected := cursor.Position()
-	//everything fits
-	if count <= r.renderableRows {
-		return networks, selected
-	}
-	//at the the start
-	if selected == 0 {
-		//internal state is reset
-		r.startIndex = 0
-		r.endIndex = r.renderableRows
-		return networks[r.startIndex : r.endIndex+1], selected
-	}
-
-	if selected >= r.endIndex {
-		if selected-r.renderableRows >= 0 {
-			r.startIndex = selected - r.renderableRows
-		}
-		r.endIndex = selected
-	}
-	if selected <= r.startIndex {
-		r.startIndex = r.startIndex - 1
-		if selected+r.renderableRows < count {
-			r.endIndex = r.startIndex + r.renderableRows
-		}
-	}
-	start := r.startIndex
-	end := r.endIndex + 1
-	visibleNetworks := networks[start:end]
-	selected = findNetworkIndex(visibleNetworks, networks[selected])
-
-	return visibleNetworks, selected
-}
-
-func buildNetworksTemplate() *template.Template {
-
-	return template.Must(template.New(`network`).Parse(formatter.DefaultNetworkTableFormat))
-}
-
-//find gets the index of the given network in the given slice
-func findNetworkIndex(networks []types.NetworkResource, n types.NetworkResource) int {
-	for i, network := range networks {
-		if n.ID == network.ID {
-			return i
-		}
-	}
-	return -1
+func networkTableHeader() *termui.TableHeader {
+	header := termui.NewHeader(DryTheme)
+	header.ColumnSpacing = DefaultColumnSpacing
+	header.AddColumn(imageTableHeaders[0].title)
+	header.AddColumn(imageTableHeaders[1].title)
+	header.AddFixedWidthColumn(imageTableHeaders[2].title, 12)
+	header.AddFixedWidthColumn(imageTableHeaders[3].title, 12)
+	header.AddColumn(imageTableHeaders[4].title)
+	return header
 }

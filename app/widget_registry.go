@@ -18,6 +18,7 @@ type WidgetRegistry struct {
 	DiskUsage     *appui.DockerDiskUsageRenderer
 	DockerInfo    *appui.DockerInfo
 	ImageList     *appui.DockerImagesWidget
+	Networks      *appui.DockerNetworksWidget
 	NodeTasks     *swarm.NodeTasksWidget
 	ServiceTasks  *swarm.ServiceTasksWidget
 	ServiceList   *swarm.ServicesWidget
@@ -35,6 +36,7 @@ func NewWidgetRegistry(daemon docker.ContainerDaemon) *WidgetRegistry {
 		ContainerList: appui.NewContainersWidget(appui.MainScreenHeaderSize),
 		ImageList:     appui.NewDockerImagesWidget(appui.MainScreenHeaderSize),
 		DiskUsage:     appui.NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
+		Networks:      appui.NewDockerNetworksWidget(appui.MainScreenHeaderSize),
 		NodeTasks:     swarm.NewNodeTasksWidget(daemon, appui.MainScreenHeaderSize),
 		ServiceTasks:  swarm.NewServiceTasksWidget(daemon, appui.MainScreenHeaderSize),
 		ServiceList:   swarm.NewServicesWidget(daemon, appui.MainScreenHeaderSize),

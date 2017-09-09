@@ -71,8 +71,24 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Networks:
 		{
-			viewRenderer = appui.NewDockerNetworksRenderer(d.dockerDaemon, screen.Cursor, d.state.sortNetworksMode)
-			count = d.dockerDaemon.NetworksCount()
+			//after a refresh, sorting is needed
+			sortMode := d.state.sortNetworksMode
+			widget := d.widgetRegistry.Networks
+
+			networks, err := d.dockerDaemon.Networks()
+			if err == nil {
+				count = len(networks)
+				data := appui.NewDockerNetworkRenderData(
+					networks,
+					sortMode)
+
+				widget.PrepareToRender(data)
+				bufferers = append(bufferers, widget)
+
+			} else {
+				screen.Render(1, err.Error())
+			}
+
 			keymap = networkKeyMappings
 
 		}

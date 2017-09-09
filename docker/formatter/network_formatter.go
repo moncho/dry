@@ -23,6 +23,11 @@ type NetworkFormatter struct {
 	network types.NetworkResource
 }
 
+//NewNetworkFormatter creates an network formatter
+func NewNetworkFormatter(network types.NetworkResource, trunc bool) *NetworkFormatter {
+	return &NetworkFormatter{trunc: trunc, network: network}
+}
+
 func (formatter *NetworkFormatter) addHeader(header string) {
 	if formatter.header == nil {
 		formatter.header = []string{}
