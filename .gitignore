@@ -42,6 +42,10 @@ Icon
 .Spotlight-V100
 .Trashes
 
+# Profiling files
+.pprof
+
+
 binaries
 cross
 dry
