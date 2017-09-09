@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/moncho/dry/appui"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -23,9 +24,9 @@ const (
 
 // state tracks dry state
 type state struct {
-	filter        drydocker.ContainerFilter
-	filterPattern string
 	sync.RWMutex
+	filter               drydocker.ContainerFilter
+	filterPattern        string
 	previousViewMode     viewMode
 	showingAllContainers bool
 	viewMode             viewMode
@@ -409,6 +410,11 @@ func (d *Dry) SetContainerFilter(filter string) {
 	} else {
 		d.state.filter = nil
 	}
+}
+
+//ServiceInspect returns information about the service with the given ID
+func (d *Dry) ServiceInspect(id string) (*swarm.Service, error) {
+	return d.dockerDaemon.Service(id)
 }
 
 //ServiceLogs retrieves the log of the service with the given id

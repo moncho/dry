@@ -22,6 +22,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 	handled := false
 	focus := true
 	dry := h.dry
+
 	switch event.Key {
 	case termbox.KeyCtrlR:
 
@@ -99,7 +100,26 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		handled = true
 	}
 	switch event.Ch {
+	case 'i' | 'I':
+		handled = true
+
+		inspectService := func(serviceID string) error {
+			service, err := h.dry.ServiceInspect(serviceID)
+			if err == nil {
+				go appui.Less(
+					appui.NewJSONRenderer(service),
+					h.screen, h.eventChan, h.closeViewChan)
+				return nil
+			}
+			return err
+		}
+		if err := h.dry.widgetRegistry.ServiceList.OnEvent(inspectService); err == nil {
+			focus = false
+		}
+
 	case 'l':
+		handled = true
+
 		showServiceLogs := func(serviceID string) error {
 			logs, err := h.dry.ServiceLogs(serviceID)
 			if err == nil {
@@ -111,7 +131,6 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		//TODO show error on screen
 		if h.dry.state.activeWidget != nil {
 			if err := h.dry.state.activeWidget.OnEvent(showServiceLogs); err == nil {
-				handled = true
 				focus = false
 			}
 		}
