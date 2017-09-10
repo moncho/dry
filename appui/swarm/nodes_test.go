@@ -7,7 +7,7 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
-func TestNodesWidget(t *testing.T) {
+func TestNodesWidgetCreation(t *testing.T) {
 	ui.ActiveScreen = &ui.Screen{
 		Dimensions: &ui.Dimensions{Height: 14, Width: 100},
 		Cursor:     ui.NewCursor()}
@@ -15,15 +15,30 @@ func TestNodesWidget(t *testing.T) {
 	if w == nil {
 		t.Error("Swarm widget is nil")
 	}
-	if len(w.nodes) != 1 {
-		t.Errorf("Swarm widget is not showing the expected number of nodes. Got: %d", len(w.nodes))
-	}
 	if w.swarmClient == nil {
 		t.Error("Swarm widget does not have a reference to the swarmclient")
 	}
 
 	if w.header.ColumnCount() != len(nodeTableFields) {
 		t.Error("Swarm widget does not have a the expected number of columns")
+	}
+
+}
+
+func TestNodesWidgetMount(t *testing.T) {
+	ui.ActiveScreen = &ui.Screen{
+		Dimensions: &ui.Dimensions{Height: 14, Width: 100},
+		Cursor:     ui.NewCursor()}
+	w := NewNodesWidget(&mocks.SwarmDockerDaemon{}, 1)
+
+	if len(w.nodes) != 0 {
+		t.Errorf("Swarm widget is not showing the expected number of nodes. Got: %d", len(w.nodes))
+	}
+
+	w.Mount()
+
+	if len(w.nodes) != 1 {
+		t.Errorf("Swarm widget is not showing the expected number of nodes. Got: %d", len(w.nodes))
 	}
 
 }
