@@ -1,7 +1,6 @@
 package swarm
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -71,8 +70,9 @@ func (s *ServicesWidget) Mount() error {
 	return nil
 }
 
+//Name returns this widget name
 func (s *ServicesWidget) Name() string {
-	return ""
+	return "ServicesWidget"
 }
 
 //Unmount marks this widget as unmounted
@@ -149,7 +149,7 @@ func (s *ServicesWidget) OnEvent(event appui.EventCommand) error {
 	if s.RowCount() > 0 {
 		return event(s.services[s.selectedIndex].service.ID)
 	}
-	return errors.New("the service list is empty")
+	return nil
 }
 
 func (s *ServicesWidget) visibleRows() []*ServiceRow {
