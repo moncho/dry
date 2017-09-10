@@ -15,7 +15,7 @@ type nodesScreenEventHandler struct {
 }
 
 func (h *nodesScreenEventHandler) widget() appui.EventableWidget {
-	return h.dry.state.activeWidget
+	return h.dry.widgetRegistry.Nodes
 }
 
 func (h *nodesScreenEventHandler) handle(event termbox.Event) {
