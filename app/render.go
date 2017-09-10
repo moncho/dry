@@ -6,7 +6,6 @@ import (
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
-	"github.com/moncho/dry/appui/swarm"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
 )
@@ -27,7 +26,6 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	if cancelMonitorWidget != nil {
 		cancelMonitorWidget()
 	}
-	d.state.activeWidget = nil
 
 	switch d.viewMode() {
 	case Main:
@@ -41,7 +39,6 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 				d.state.filterPattern)
 			containersWidget := d.widgetRegistry.ContainerList
 			containersWidget.PrepareToRender(data)
-			d.state.activeWidget = containersWidget
 			bufferers = append(bufferers, containersWidget)
 			keymap = keyMappings
 
@@ -94,18 +91,16 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Nodes:
 		{
-			nodes := swarm.NewNodesWidget(d.dockerDaemon, appui.MainScreenHeaderSize)
-			d.state.activeWidget = nodes
+			nodes := d.widgetRegistry.Nodes
+			nodes.Mount()
 			bufferers = append(bufferers, nodes)
 			count = nodes.RowCount()
 			keymap = swarmMapping
-
 		}
 	case Services:
 		{
 			servicesWidget := d.widgetRegistry.ServiceList
 			servicesWidget.Mount()
-			d.state.activeWidget = servicesWidget
 			bufferers = append(bufferers, servicesWidget)
 			count = servicesWidget.RowCount()
 			keymap = serviceKeyMappings
@@ -138,7 +133,8 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Monitor:
 		{
-			monitor := appui.NewMonitor(d.dockerDaemon, appui.MainScreenHeaderSize)
+			monitor := d.widgetRegistry.Monitor
+			monitor.Mount()
 			ctx, cancel := context.WithCancel(context.Background())
 			monitor.RenderLoop(ctx)
 			keymap = monitorMapping

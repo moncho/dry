@@ -11,7 +11,6 @@ import (
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/moncho/dry/appui"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	cache "github.com/patrickmn/go-cache"
@@ -33,7 +32,6 @@ type state struct {
 	sortMode             drydocker.SortMode
 	sortImagesMode       drydocker.SortImagesMode
 	sortNetworksMode     drydocker.SortNetworksMode
-	activeWidget         appui.EventableWidget
 }
 
 //Dry represents the application.
