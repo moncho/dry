@@ -51,6 +51,7 @@ type NodesWidget struct {
 	offset               int
 	x, y                 int
 	height, width        int
+	mounted              bool
 	startIndex, endIndex int
 	totalMemory          int64
 	totalCPU             int
@@ -69,23 +70,6 @@ func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
 		height:        appui.MainScreenAvailableHeight(),
 		width:         ui.ActiveScreen.Dimensions.Width}
 
-	if nodes, err := swarmClient.Nodes(); err == nil {
-		sort.Slice(nodes, func(i, j int) bool {
-			return nodes[i].Description.Hostname < nodes[j].Description.Hostname
-		})
-		for _, node := range nodes {
-			row := NewNodeRow(node, w.header)
-			w.nodes = append(w.nodes, row)
-			if cpu, err := strconv.Atoi(row.CPU.Text); err == nil {
-				w.totalCPU += cpu
-			}
-			w.totalMemory += node.Description.Resources.MemoryBytes
-
-		}
-	}
-	addSwarmSpecs(&w)
-
-	w.align()
 	return &w
 }
 
@@ -107,15 +91,39 @@ func (s *NodesWidget) align() {
 	}
 }
 
+//Mount prepares this widget for rendering
 func (s *NodesWidget) Mount() error {
+	if !s.mounted {
+		swarmClient := s.swarmClient
+		if nodes, err := swarmClient.Nodes(); err == nil {
+			sort.Slice(nodes, func(i, j int) bool {
+				return nodes[i].Description.Hostname < nodes[j].Description.Hostname
+			})
+			for _, node := range nodes {
+				row := NewNodeRow(node, s.header)
+				s.nodes = append(s.nodes, row)
+				if cpu, err := strconv.Atoi(row.CPU.Text); err == nil {
+					s.totalCPU += cpu
+				}
+				s.totalMemory += node.Description.Resources.MemoryBytes
+
+			}
+		}
+		addSwarmSpecs(s)
+		s.align()
+		s.mounted = true
+	}
 	return nil
 }
 
+//Name returns this widget name
 func (s *NodesWidget) Name() string {
-	return ""
+	return "NodesWidget"
 }
 
+//Unmount tells this widge that in will not be rendered anymore
 func (s *NodesWidget) Unmount() error {
+	s.mounted = false
 	return nil
 
 }
@@ -124,21 +132,24 @@ func (s *NodesWidget) Unmount() error {
 func (s *NodesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-	y := s.y
 	buf := gizaktermui.NewBuffer()
-	s.title.Y = y
-	buf.Merge(s.title.Buffer())
-	y += s.title.GetHeight() + 1
-	s.header.SetY(y)
-	buf.Merge(s.header.Buffer())
-	y += s.header.GetHeight()
+	y := s.y
 
-	s.highlightSelectedRow()
-	for _, node := range s.visibleRows() {
-		node.SetY(y)
-		node.Height = 1
-		y += node.GetHeight()
-		buf.Merge(node.Buffer())
+	if s.mounted {
+		s.title.Y = y
+		buf.Merge(s.title.Buffer())
+		y += s.title.GetHeight() + 1
+		s.header.SetY(y)
+		buf.Merge(s.header.Buffer())
+		y += s.header.GetHeight()
+
+		s.highlightSelectedRow()
+		for _, node := range s.visibleRows() {
+			node.SetY(y)
+			node.Height = 1
+			y += node.GetHeight()
+			buf.Merge(node.Buffer())
+		}
 	}
 
 	return buf
