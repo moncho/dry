@@ -14,6 +14,7 @@ import (
 //containers.
 type Monitor struct {
 	header               *MonitorTableHeader
+	daemon               docker.ContainerDaemon
 	rows                 []*ContainerStatsRow
 	openChannels         []*docker.StatsChannel
 	selectedIndex        int
@@ -28,58 +29,34 @@ type Monitor struct {
 //at the given position and with the given width.
 func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
 	height := MainScreenAvailableHeight()
-	containers := daemon.Containers(docker.ContainerFilters.Running(), docker.SortByName)
-	var rows []*ContainerStatsRow
-	var channels []*docker.StatsChannel
-	for _, c := range containers {
-		statsChan := daemon.OpenChannel(c)
-		rows = append(rows, NewSelfUpdatedContainerStatsRow(statsChan, defaultMonitorTableHeader))
-		channels = append(channels, statsChan)
-	}
-	m := &Monitor{
+	m := Monitor{
 		header:        defaultMonitorTableHeader,
-		rows:          rows,
-		openChannels:  channels,
+		daemon:        daemon,
 		selectedIndex: 0,
 		offset:        0,
 		x:             0,
 		y:             y,
 		height:        height,
 		width:         ui.ActiveScreen.Dimensions.Width}
-	m.align()
-	return m
-}
-
-//RowCount returns the number of rows of this Monitor.
-func (m *Monitor) RowCount() int {
-	return len(m.rows)
-}
-
-//Align aligns rows
-func (m *Monitor) align() {
-	y := m.y
-	x := m.x
-	width := m.width
-
-	m.header.SetWidth(width)
-	m.header.SetY(y)
-	m.header.SetX(x)
-
-	for _, r := range m.rows {
-		r.SetX(x)
-		r.SetWidth(width)
-	}
+	return &m
 }
 
 //Buffer returns the content of this monitor as a termui.Buffer
 func (m *Monitor) Buffer() gizaktermui.Buffer {
 	m.Lock()
 	defer m.Unlock()
-
-	buf := gizaktermui.NewBuffer()
-	buf.Merge(defaultMonitorTableHeader.Buffer())
 	y := m.y
-	y += m.header.GetHeight()
+	buf := gizaktermui.NewBuffer()
+
+	widgetHeader := WidgetHeader("Containers", m.RowCount(), "")
+	widgetHeader.Y = y
+	buf.Merge(widgetHeader.Buffer())
+	y += widgetHeader.Height
+
+	m.header.SetY(y)
+	buf.Merge(m.header.Buffer())
+
+	y += m.header.Height
 
 	m.highlightSelectedRow()
 	for _, r := range m.visibleRows() {
@@ -89,6 +66,36 @@ func (m *Monitor) Buffer() gizaktermui.Buffer {
 	}
 
 	return buf
+}
+
+//Mount prepares this widget for rendering
+func (m *Monitor) Mount() error {
+	daemon := m.daemon
+	containers := daemon.Containers(docker.ContainerFilters.Running(), docker.SortByName)
+	var rows []*ContainerStatsRow
+	var channels []*docker.StatsChannel
+	for _, c := range containers {
+		statsChan := daemon.OpenChannel(c)
+		rows = append(rows, NewSelfUpdatedContainerStatsRow(statsChan, defaultMonitorTableHeader))
+		channels = append(channels, statsChan)
+	}
+
+	m.rows = rows
+	m.openChannels = channels
+
+	m.align()
+	return nil
+}
+
+//Name returns the name of this widget
+func (m *Monitor) Name() string {
+	return "Monitor"
+}
+
+//OnEvent refreshes the monitor widget. The command is ignored for now.
+func (m *Monitor) OnEvent(event EventCommand) error {
+	m.refresh()
+	return nil
 }
 
 //RenderLoop makes this monitor to render itself until stopped.
@@ -107,14 +114,37 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case <-refreshTimer.C:
-
-				ui.ActiveScreen.RenderBufferer(m)
-				ui.ActiveScreen.Flush()
+				m.refresh()
 			}
 		}
 	}()
 
 }
+
+//RowCount returns the number of rows of this Monitor.
+func (m *Monitor) RowCount() int {
+	return len(m.rows)
+}
+
+//Unmount tells this widget that it will not be rendering anymore
+func (m *Monitor) Unmount() error {
+	return nil
+}
+
+//Align aligns rows
+func (m *Monitor) align() {
+	x := m.x
+	width := m.width
+
+	m.header.SetWidth(width)
+	m.header.SetX(x)
+
+	for _, r := range m.rows {
+		r.SetX(x)
+		r.SetWidth(width)
+	}
+}
+
 func (m *Monitor) highlightSelectedRow() {
 	if m.RowCount() == 0 {
 		return
@@ -165,4 +195,8 @@ func (m *Monitor) visibleRows() []*ContainerStatsRow {
 	start := m.startIndex
 	end := m.endIndex + 1
 	return rows[start:end]
+}
+func (m *Monitor) refresh() {
+	ui.ActiveScreen.RenderBufferer(m)
+	ui.ActiveScreen.Flush()
 }
