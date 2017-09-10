@@ -43,7 +43,7 @@ Icon
 .Trashes
 
 # Profiling files
-.pprof
+*.pprof
 
 
 binaries
