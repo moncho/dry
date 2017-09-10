@@ -10,7 +10,7 @@ type monitorScreenEventHandler struct {
 }
 
 func (h *monitorScreenEventHandler) widget() appui.EventableWidget {
-	return h.dry.state.activeWidget
+	return h.dry.widgetRegistry.Monitor
 }
 
 func (h *monitorScreenEventHandler) handle(event termbox.Event) {
@@ -18,20 +18,26 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event) {
 	cursor := h.screen.Cursor
 	switch event.Key {
 	case termbox.KeyArrowUp: //cursor up
+		handled = true
 		cursor.ScrollCursorUp()
-		handled = true
+		h.widget().OnEvent(nil)
 	case termbox.KeyArrowDown: // cursor down
-		cursor.ScrollCursorDown()
 		handled = true
+		cursor.ScrollCursorDown()
+		h.widget().OnEvent(nil)
 	}
 	if !handled {
 		switch event.Ch {
 		case 'g': //Cursor to the top
+			handled = true
 			cursor.Reset()
-			handled = true
+			h.widget().OnEvent(nil)
+
 		case 'G': //Cursor to the bottom
-			cursor.Bottom()
 			handled = true
+			cursor.Bottom()
+			h.widget().OnEvent(nil)
+
 		case 'H', 'h', 'q', '1', '2', '3', '4', '5':
 			handled = false
 			cancelMonitorWidget()
