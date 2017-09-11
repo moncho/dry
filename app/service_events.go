@@ -115,7 +115,10 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 					defer func() {
 						h.closeViewChan <- struct{}{}
 					}()
-					v, err := json.NewJSONViewer(h.screen, service)
+					v, err := json.NewJSONViewer(
+						h.screen,
+						appui.DryTheme,
+						service)
 					if err != nil {
 						dry.appmessage(
 							fmt.Sprintf("Error inspecting service: %s", err.Error()))

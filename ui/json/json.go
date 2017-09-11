@@ -17,7 +17,7 @@ var (
 	colorMap = map[jsonfmt.TokenType]termbox.Attribute{
 		jsonfmt.DelimiterType: termbox.ColorDefault,
 		jsonfmt.BoolType:      termbox.ColorRed,
-		jsonfmt.StringType:    termbox.ColorGreen,
+		jsonfmt.StringType:    termbox.ColorWhite,
 		jsonfmt.NumberType:    termbox.ColorYellow,
 		jsonfmt.NullType:      termbox.ColorMagenta,
 		jsonfmt.KeyType:       termbox.ColorBlue,
@@ -27,14 +27,16 @@ var (
 //JSONViewer is a JSON viewer
 type JSONViewer struct {
 	screen *ui.Screen
+	theme  *ui.ColorTheme
 	term   *terminal.Terminal
 	tree   *jsontree.JsonTree
 }
 
 //NewJSONViewer creates a new JSONViewer with the given content
-func NewJSONViewer(screen *ui.Screen, content interface{}) (*JSONViewer, error) {
+func NewJSONViewer(screen *ui.Screen, theme *ui.ColorTheme, content interface{}) (*JSONViewer, error) {
 	jv := JSONViewer{
 		screen: screen,
+		theme:  theme,
 	}
 	err := jv.Content(content)
 	return &jv, err
@@ -69,7 +71,9 @@ func (jv *JSONViewer) Content(content interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Error converting %v to json: %s", content, err.Error())
 	}
-	writer := colorwriter.New(colorMap, termbox.ColorDefault)
+	writer := colorwriter.New(
+		colorMap,
+		termbox.Attribute(jv.theme.Bg))
 	formatter := jsonfmt.New(json, writer)
 	if err := formatter.Format(); err != nil {
 		return err
