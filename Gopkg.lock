@@ -171,6 +171,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/maxzender/jv"
+  packages = [".","colorwriter","jsonfmt","jsontree","terminal"]
+  revision = "48fc80518f434576492c9388a892bd76fc5cba83"
+
+[[projects]]
+  branch = "master"
   name = "github.com/miekg/pkcs11"
   packages = ["."]
   revision = "7283ca79f35edb89bc1b4ecae7f86a3680ce737f"
@@ -296,6 +302,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "41330f33aa368e0219609deac420945aa4f8603e45bbcd5361053a29de2c36f3"
+  inputs-digest = "6aff9e0a0b1d54d875f70a0dbc23499f3e8b8713fd9abd60c875b07bd628d48c"
   solver-name = "gps-cdcl"
   solver-version = 1

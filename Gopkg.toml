@@ -97,3 +97,7 @@
 [[override]]
   name = "github.com/docker/notary"
   version = "v0.4.2"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/maxzender/jv"

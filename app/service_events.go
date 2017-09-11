@@ -6,6 +6,7 @@ import (
 
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
+	"github.com/moncho/dry/ui/json"
 	termbox "github.com/nsf/termbox-go"
 )
 
@@ -110,9 +111,18 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		inspectService := func(serviceID string) error {
 			service, err := h.dry.ServiceInspect(serviceID)
 			if err == nil {
-				go appui.Less(
-					appui.NewJSONRenderer(service),
-					h.screen, h.eventChan, h.closeViewChan)
+				go func() {
+					defer func() {
+						h.closeViewChan <- struct{}{}
+					}()
+					v, err := json.NewJSONViewer(h.screen, service)
+					if err != nil {
+						dry.appmessage(
+							fmt.Sprintf("Error inspecting service: %s", err.Error()))
+						return
+					}
+					v.Focus(h.eventChan)
+				}()
 				return nil
 			}
 			return err
