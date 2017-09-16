@@ -66,6 +66,11 @@ func notifyCallbacks(r *registry) EventCallback {
 	return func(ctx context.Context, message events.Message) error {
 		actor := SourceType(message.Type)
 		for _, callback := range r.actions[actor] {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
 			go callback(ctx, message)
 		}
 		return nil
