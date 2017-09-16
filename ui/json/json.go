@@ -24,17 +24,17 @@ var (
 	}
 )
 
-//JSONViewer is a JSON viewer
-type JSONViewer struct {
+//Viewer is a JSON viewer
+type Viewer struct {
 	screen *ui.Screen
 	theme  *ui.ColorTheme
 	term   *terminal.Terminal
 	tree   *jsontree.JsonTree
 }
 
-//NewJSONViewer creates a new JSONViewer with the given content
-func NewJSONViewer(screen *ui.Screen, theme *ui.ColorTheme, content interface{}) (*JSONViewer, error) {
-	jv := JSONViewer{
+//NewViewer creates a new Viewer with the given content
+func NewViewer(screen *ui.Screen, theme *ui.ColorTheme, content interface{}) (*Viewer, error) {
+	jv := Viewer{
 		screen: screen,
 		theme:  theme,
 	}
@@ -43,10 +43,10 @@ func NewJSONViewer(screen *ui.Screen, theme *ui.ColorTheme, content interface{})
 }
 
 //Focus is a blocking call that starts handling terminal events
-func (jv *JSONViewer) Focus(events <-chan termbox.Event) error {
+func (jv *Viewer) Focus(events <-chan termbox.Event) error {
 	jv.term = &terminal.Terminal{
 		Width:  jv.screen.Dimensions.Width,
-		Height: jv.screen.Dimensions.Height,
+		Height: jv.screen.Dimensions.Height - 1,
 		Tree:   jv.tree}
 	jv.term.Render()
 
@@ -65,7 +65,7 @@ func (jv *JSONViewer) Focus(events <-chan termbox.Event) error {
 }
 
 //Content sets the content of this viewer
-func (jv *JSONViewer) Content(content interface{}) error {
+func (jv *Viewer) Content(content interface{}) error {
 
 	json, err := toJSON(content)
 	if err != nil {
@@ -81,10 +81,13 @@ func (jv *JSONViewer) Content(content interface{}) error {
 	formattedJSON := writer.Lines
 
 	jv.tree = jsontree.New(formattedJSON)
+	for index := 0; index < len(formattedJSON); index++ {
+		jv.tree.ToggleLine(index)
+	}
 	return nil
 }
 
-func (jv *JSONViewer) handleKeypress(e termbox.Event) {
+func (jv *Viewer) handleKeypress(e termbox.Event) {
 	t := jv.term
 	j := jv.tree
 	if e.Ch == 0 {

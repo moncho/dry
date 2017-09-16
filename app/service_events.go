@@ -115,7 +115,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 					defer func() {
 						h.closeViewChan <- struct{}{}
 					}()
-					v, err := json.NewJSONViewer(
+					v, err := json.NewViewer(
 						h.screen,
 						appui.DryTheme,
 						service)
