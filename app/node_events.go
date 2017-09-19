@@ -27,6 +27,9 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 	focus := true
 
 	switch event.Key {
+	case termbox.KeyF5: // refresh
+		h.widget().Unmount()
+		handled = true
 	case termbox.KeyCtrlA:
 		dry := h.dry
 		rw := appui.NewAskForConfirmation("Changing node availability, please type one of ('active'|'pause'|'drain')")

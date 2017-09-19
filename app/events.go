@@ -81,8 +81,6 @@ func (b *baseEventHandler) handle(event termbox.Event) {
 		cursor.ScrollCursorUp()
 	case termbox.KeyArrowDown: // cursor down
 		cursor.ScrollCursorDown()
-	case termbox.KeyF5: // refresh
-		dry.Refresh()
 	case termbox.KeyF8: // docker events
 		dry.ShowDiskUsage()
 	case termbox.KeyF9: // docker events

@@ -50,6 +50,8 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key) (bool, bool) 
 	switch key {
 	case termbox.KeyF1: //sort
 		dry.SortImages()
+	case termbox.KeyF5: // refresh
+		h.widget().Unmount()
 	case termbox.KeyCtrlD: //remove dangling images
 		dry.RemoveDanglingImages()
 	case termbox.KeyCtrlE: //remove image

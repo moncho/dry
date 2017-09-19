@@ -29,6 +29,9 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 	dry := h.dry
 
 	switch event.Key {
+	case termbox.KeyF5: // refresh
+		h.widget().Unmount()
+		handled = true
 	case termbox.KeyCtrlR:
 
 		rw := appui.NewAskForConfirmation("About to remove the selected service. Do you want to proceed? y/N")

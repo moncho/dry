@@ -25,6 +25,9 @@ func (h *networksScreenEventHandler) handle(event termbox.Event) {
 	case termbox.KeyF1: //sort
 		handled = true
 		dry.SortNetworks()
+	case termbox.KeyF5: // refresh
+		handled = true
+		h.widget().Unmount()
 	case termbox.KeyEnter: //inspect
 		handled = true
 		dry.InspectNetworkAt(cursorPos)
