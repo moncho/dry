@@ -14,17 +14,18 @@ import (
 //   this struct.
 // * a list of widgets to be rendered on the next rendering.
 type WidgetRegistry struct {
-	ContainerList *appui.ContainersWidget
-	DiskUsage     *appui.DockerDiskUsageRenderer
-	DockerInfo    *appui.DockerInfo
-	ImageList     *appui.DockerImagesWidget
-	Monitor       *appui.Monitor
-	Networks      *appui.DockerNetworksWidget
-	Nodes         *swarm.NodesWidget
-	NodeTasks     *swarm.NodeTasksWidget
-	ServiceTasks  *swarm.ServiceTasksWidget
-	ServiceList   *swarm.ServicesWidget
-	activeWidgets map[string]termui.Widget
+	ContainerList    *appui.ContainersWidget
+	DiskUsage        *appui.DockerDiskUsageRenderer
+	DockerInfo       *appui.DockerInfo
+	ImageList        *appui.DockerImagesWidget
+	Monitor          *appui.Monitor
+	Networks         *appui.DockerNetworksWidget
+	Nodes            *swarm.NodesWidget
+	NodeTasks        *swarm.NodeTasksWidget
+	ServiceTasks     *swarm.ServiceTasksWidget
+	ServiceList      *swarm.ServicesWidget
+	activeWidgets    map[string]termui.Widget
+	widgetForViewMap map[viewMode]termui.Widget
 }
 
 //NewWidgetRegistry creates the WidgetCatalog
@@ -33,7 +34,7 @@ func NewWidgetRegistry(daemon docker.ContainerDaemon) *WidgetRegistry {
 	di.SetX(0)
 	di.SetY(1)
 	di.SetWidth(ui.ActiveScreen.Dimensions.Width)
-	return &WidgetRegistry{
+	w := WidgetRegistry{
 		DockerInfo:    di,
 		ContainerList: appui.NewContainersWidget(daemon, appui.MainScreenHeaderSize),
 		ImageList:     appui.NewDockerImagesWidget(appui.MainScreenHeaderSize),
@@ -46,6 +47,14 @@ func NewWidgetRegistry(daemon docker.ContainerDaemon) *WidgetRegistry {
 		ServiceList:   swarm.NewServicesWidget(daemon, appui.MainScreenHeaderSize),
 		activeWidgets: make(map[string]termui.Widget),
 	}
+
+	initWidgetForViewMap(&w)
+
+	return &w
+}
+
+func (wr *WidgetRegistry) widgetForView(v viewMode) termui.Widget {
+	return wr.widgetForViewMap[v]
 }
 
 func (wr *WidgetRegistry) add(w termui.Widget) {
@@ -58,4 +67,18 @@ func (wr *WidgetRegistry) remove(w termui.Widget) {
 	if err := w.Unmount(); err == nil {
 		delete(wr.activeWidgets, w.Name())
 	}
+}
+
+func initWidgetForViewMap(wr *WidgetRegistry) {
+	viewMap := make(map[viewMode]termui.Widget)
+	viewMap[Main] = wr.ContainerList
+	viewMap[Networks] = wr.Networks
+	viewMap[Images] = wr.ImageList
+	viewMap[Monitor] = wr.Monitor
+	viewMap[Nodes] = wr.Nodes
+	viewMap[Services] = wr.ServiceList
+	//viewMap[ServiceTasks] = wr.ServiceTasks
+	//viewMap[Tasks] = wr.NodeTasks
+	wr.widgetForViewMap = viewMap
+
 }
