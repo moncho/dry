@@ -30,15 +30,11 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	switch d.viewMode() {
 	case Main:
 		{
-			sortMode := d.state.sortMode
-			containers := d.containerList()
-			count = len(containers)
-			data := appui.NewDockerPsRenderData(
-				containers,
-				sortMode,
-				d.state.filterPattern)
 			containersWidget := d.widgetRegistry.ContainerList
-			containersWidget.PrepareToRender(data)
+			if err := containersWidget.Mount(); err != nil {
+				screen.Render(1, err.Error())
+			}
+			count = containersWidget.RowCount()
 			bufferers = append(bufferers, containersWidget)
 			keymap = keyMappings
 
@@ -168,8 +164,6 @@ func renderDry(d *Dry) ui.Renderer {
 		output = appui.NewDockerEventsRenderer(d.dockerDaemon.EventLog().Events())
 	case ImageHistoryMode:
 		output = appui.NewDockerImageHistoryRenderer(d.imageHistory)
-	case InspectMode:
-		output = appui.NewJSONRenderer(d.inspectedContainer)
 	case InspectImageMode:
 		output = appui.NewJSONRenderer(d.inspectedImage)
 	case InspectNetworkMode:
