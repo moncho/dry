@@ -45,8 +45,13 @@ type CallbackRegistry interface {
 //GlobalRegistry is a globally available CallbackRegistry
 var GlobalRegistry CallbackRegistry
 
+//callbackNotifier should be registered to receive events from Docker
+var callbackNotifier EventCallback
+
 func init() {
-	GlobalRegistry = &registry{actions: make(map[SourceType][]EventCallback)}
+	r := &registry{actions: make(map[SourceType][]EventCallback)}
+	GlobalRegistry = r
+	callbackNotifier = notifyCallbacks(r)
 }
 
 type registry struct {

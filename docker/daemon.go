@@ -59,10 +59,10 @@ func init() {
 }
 
 //Containers returns the containers known by the daemon
-func (daemon *DockerDaemon) Containers(filter ContainerFilter, mode SortMode) []*Container {
+func (daemon *DockerDaemon) Containers(filters []ContainerFilter, mode SortMode) []*Container {
 	c := daemon.store().List()
-	if filter != nil {
-		c = Filter(c, filter)
+	for _, filter := range filters {
+		c = filter.Apply(c)
 	}
 	SortContainers(c, mode)
 	return c
@@ -120,7 +120,8 @@ func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct
 						ctx,
 						event,
 						streamEvents(eventC),
-						logEvents(daemon.eventLog)); err != nil {
+						logEvents(daemon.eventLog),
+						callbackNotifier); err != nil {
 						return
 					}
 				}
@@ -340,7 +341,7 @@ func (daemon *DockerDaemon) RefreshNetworks() error {
 
 //RemoveAllStoppedContainers removes all stopped containers
 func (daemon *DockerDaemon) RemoveAllStoppedContainers() (int, error) {
-	containers := daemon.Containers(ContainerFilters.NotRunning(), NoSort)
+	containers := daemon.Containers([]ContainerFilter{ContainerFilters.NotRunning()}, NoSort)
 	var count uint32
 	errs := make(chan error, 1)
 	defer close(errs)

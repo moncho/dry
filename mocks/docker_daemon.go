@@ -3,6 +3,7 @@ package mocks
 import (
 	"encoding/json"
 	"io"
+	"strconv"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -22,8 +23,25 @@ func (_m *DockerDaemonMock) ContainerByID(id string) *drydocker.Container {
 }
 
 //Containers mock
-func (_m *DockerDaemonMock) Containers(filter drydocker.ContainerFilter, mode drydocker.SortMode) []*drydocker.Container {
-	return nil
+func (_m *DockerDaemonMock) Containers(filters []drydocker.ContainerFilter, mode drydocker.SortMode) []*drydocker.Container {
+
+	var containers []*drydocker.Container
+	for index := 0; index < 10; index++ {
+		containers = append(containers, &drydocker.Container{
+			Container: types.Container{ID: strconv.Itoa(index), Names: []string{"Name"},
+				Status: "Up and running"},
+		})
+	}
+	for index := 0; index < 10; index++ {
+		containers = append(containers, &drydocker.Container{
+			Container: types.Container{ID: strconv.Itoa(index), Names: []string{"Name"},
+				Status: "Never worked"},
+		})
+	}
+	for _, filter := range filters {
+		containers = filter.Apply(containers)
+	}
+	return containers
 }
 
 //DiskUsage mock

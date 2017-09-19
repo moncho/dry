@@ -49,7 +49,7 @@ type ContainerDaemon interface {
 //ContainerAPI defines the API for containers
 type ContainerAPI interface {
 	ContainerByID(id string) *Container
-	Containers(filter ContainerFilter, mode SortMode) []*Container
+	Containers(filter []ContainerFilter, mode SortMode) []*Container
 	Inspect(id string) (types.ContainerJSON, error)
 	IsContainerRunning(id string) bool
 	Kill(id string) error
