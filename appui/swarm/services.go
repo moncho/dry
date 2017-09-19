@@ -134,14 +134,17 @@ func (s *ServicesWidget) RowCount() int {
 	return len(s.services)
 }
 func (s *ServicesWidget) highlightSelectedRow() {
-	if s.RowCount() == 0 {
+	count := s.RowCount()
+	if count == 0 {
 		return
 	}
 	index := ui.ActiveScreen.Cursor.Position()
-	if index > s.RowCount() {
-		index = s.RowCount() - 1
+	if index > count {
+		index = count - 1
 	}
-	s.services[s.selectedIndex].NotHighlighted()
+	if s.selectedIndex < count && s.services[s.selectedIndex] != nil {
+		s.services[s.selectedIndex].NotHighlighted()
+	}
 	s.selectedIndex = index
 	s.services[s.selectedIndex].Highlighted()
 }
