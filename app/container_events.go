@@ -202,7 +202,12 @@ func handleKey(h *containersScreenEventHandler, key termbox.Key) (bool, bool) {
 		}
 		h.screen.ClearAndFlush()
 	case termbox.KeyF5: // refresh
-		h.widget().Unmount()
+		h.dry.appmessage("Refreshing")
+		h.dry.dockerDaemon.Refresh(func(e error) {
+			if e != nil {
+				h.widget().Unmount()
+			}
+		})
 	case termbox.KeyCtrlE: //remove all stopped
 		if confirmation, err := appui.ReadLine("All stopped containers will be removed. Do you want to continue? (y/N) "); err == nil {
 			h.screen.ClearAndFlush()
