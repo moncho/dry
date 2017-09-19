@@ -71,7 +71,8 @@ func (m *Monitor) Buffer() gizaktermui.Buffer {
 //Mount prepares this widget for rendering
 func (m *Monitor) Mount() error {
 	daemon := m.daemon
-	containers := daemon.Containers(docker.ContainerFilters.Running(), docker.SortByName)
+	containers := daemon.Containers(
+		[]docker.ContainerFilter{docker.ContainerFilters.Running()}, docker.SortByName)
 	var rows []*ContainerStatsRow
 	var channels []*docker.StatsChannel
 	for _, c := range containers {
