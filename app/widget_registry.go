@@ -35,7 +35,7 @@ func NewWidgetRegistry(daemon docker.ContainerDaemon) *WidgetRegistry {
 	di.SetWidth(ui.ActiveScreen.Dimensions.Width)
 	return &WidgetRegistry{
 		DockerInfo:    di,
-		ContainerList: appui.NewContainersWidget(appui.MainScreenHeaderSize),
+		ContainerList: appui.NewContainersWidget(daemon, appui.MainScreenHeaderSize),
 		ImageList:     appui.NewDockerImagesWidget(appui.MainScreenHeaderSize),
 		DiskUsage:     appui.NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
 		Monitor:       appui.NewMonitor(daemon, appui.MainScreenHeaderSize),

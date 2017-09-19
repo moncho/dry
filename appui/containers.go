@@ -1,10 +1,13 @@
 package appui
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
 
+	"github.com/docker/docker/api/types/events"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
@@ -26,9 +29,14 @@ var containerTableHeaders = []headerColumn{
 
 //ContainersWidget shows information containers
 type ContainersWidget struct {
-	data                 *DockerPsRenderData
+	dockerDaemon         docker.ContainerAPI
 	containers           []*ContainerRow
+	showAllContainers    bool
+	filters              []docker.ContainerFilter
 	header               *termui.TableHeader
+	sortMode             docker.SortMode
+	filterPattern        string
+	mounted              bool
 	selectedIndex        int
 	x, y                 int
 	height, width        int
@@ -37,13 +45,16 @@ type ContainersWidget struct {
 }
 
 //NewContainersWidget creates a ContainersWidget
-func NewContainersWidget(y int) *ContainersWidget {
+func NewContainersWidget(dockerDaemon docker.ContainerAPI, y int) *ContainersWidget {
 	w := &ContainersWidget{
-		y:      y,
-		header: defaultContainerTableHeader,
-		height: MainScreenAvailableHeight(),
-		width:  ui.ActiveScreen.Dimensions.Width}
-
+		dockerDaemon:      dockerDaemon,
+		y:                 y,
+		header:            defaultContainerTableHeader,
+		height:            MainScreenAvailableHeight(),
+		showAllContainers: false,
+		sortMode:          docker.SortByContainerID,
+		width:             ui.ActiveScreen.Dimensions.Width}
+	registerForDockerEvents(w)
 	return w
 
 }
@@ -56,9 +67,9 @@ func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 	buf := gizaktermui.NewBuffer()
 
 	var filter string
-	if s.data.filterPattern != "" {
+	if s.filterPattern != "" {
 		filter = fmt.Sprintf(
-			"<b><blue> | Container name filter: </><yellow>%s</></> ", s.data.filterPattern)
+			"<b><blue> | Container name filter: </><yellow>%s</></> ", s.filterPattern)
 	}
 
 	widgetHeader := WidgetHeader("Containers", s.RowCount(), filter)
@@ -84,6 +95,26 @@ func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 
 //Mount tells this widget to be ready for rendering
 func (s *ContainersWidget) Mount() error {
+	s.Lock()
+	defer s.Unlock()
+	if !s.mounted {
+
+		var filters []docker.ContainerFilter
+		if s.showAllContainers {
+			filters = append(filters, docker.ContainerFilters.Unfiltered())
+		} else {
+			filters = append(filters, docker.ContainerFilters.Running())
+		}
+		dockerContainers := s.dockerDaemon.Containers(filters, s.sortMode)
+
+		var rows []*ContainerRow
+		for _, container := range dockerContainers {
+			rows = append(rows, NewContainerRow(container, s.header))
+		}
+		s.containers = rows
+		s.mounted = true
+		s.align()
+	}
 	return nil
 }
 
@@ -94,20 +125,10 @@ func (s *ContainersWidget) Name() string {
 
 //OnEvent runs the given command
 func (s *ContainersWidget) OnEvent(event EventCommand) error {
-	return event(s.containers[s.selectedIndex].container.ID)
-}
-
-//PrepareToRender prepares this widget for rendering
-func (s *ContainersWidget) PrepareToRender(data *DockerPsRenderData) {
-	s.Lock()
-	defer s.Unlock()
-	s.data = data
-	var containers []*ContainerRow
-	for _, container := range data.containers {
-		containers = append(containers, NewContainerRow(container, s.header))
+	if len(s.containers) > 0 {
+		return event(s.containers[s.selectedIndex].container.ID)
 	}
-	s.containers = containers
-	s.align()
+	return errors.New("The container list is empty")
 }
 
 //RowCount returns the number of rows of this widget.
@@ -115,8 +136,39 @@ func (s *ContainersWidget) RowCount() int {
 	return len(s.containers)
 }
 
-//Unmount tells this widget that it will not be rendering anymore
+//Sort rotates to the next sort mode.
+//SortByContainerID -> SortByImage -> SortByStatus -> SortByName -> SortByContainerID
+func (s *ContainersWidget) Sort() {
+	s.Lock()
+	defer s.Unlock()
+	switch s.sortMode {
+	case docker.SortByContainerID:
+		s.sortMode = docker.SortByImage
+	case docker.SortByImage:
+		s.sortMode = docker.SortByStatus
+	case docker.SortByStatus:
+		s.sortMode = docker.SortByName
+	case docker.SortByName:
+		s.sortMode = docker.SortByContainerID
+	default:
+	}
+	s.mounted = false
+}
+
+//ToggleShowAllContainers toggles the show-all-containers state
+func (s *ContainersWidget) ToggleShowAllContainers() {
+	s.Lock()
+	defer s.Unlock()
+
+	s.showAllContainers = !s.showAllContainers
+	s.mounted = false
+}
+
+//Unmount this widget
 func (s *ContainersWidget) Unmount() error {
+	s.Lock()
+	defer s.Unlock()
+	s.mounted = false
 	return nil
 }
 
@@ -143,12 +195,15 @@ func (s *ContainersWidget) highlightSelectedRow() {
 	if index > s.RowCount() {
 		index = s.RowCount() - 1
 	}
+	if s.selectedIndex < s.RowCount() {
+		s.containers[s.selectedIndex].NotHighlighted()
+	}
 	s.selectedIndex = index
 	s.containers[s.selectedIndex].Highlighted()
 }
 
 func (s *ContainersWidget) updateTableHeader() {
-	sortMode := s.data.sortMode
+	sortMode := s.sortMode
 
 	for _, c := range s.header.Columns {
 		colTitle := c.Text
@@ -223,4 +278,15 @@ func containerTableHeader() *termui.TableHeader {
 	header.AddColumn(containerTableHeaders[6].title)
 
 	return header
+}
+
+func registerForDockerEvents(c *ContainersWidget) {
+	docker.GlobalRegistry.Register(docker.ContainerSource,
+		func(ctx context.Context, event events.Message) error {
+			if event.Action == "start" || event.Action == "stop" {
+				return c.Unmount()
+			}
+			return nil
+		})
+
 }

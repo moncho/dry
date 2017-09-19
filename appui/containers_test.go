@@ -1,31 +1,28 @@
 package appui
 
 import (
-	"strconv"
 	"testing"
 
-	"github.com/docker/docker/api/types"
-	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/mocks"
 	"github.com/moncho/dry/ui"
 )
 
 func TestContainerListVisibleRows(t *testing.T) {
-	var containers []*docker.Container
-	for index := 0; index < 10; index++ {
-		containers = append(containers, &docker.Container{
-			Container: types.Container{ID: strconv.Itoa(index), Names: []string{"Name"}, Status: "Never worked"},
-		})
-	}
+
+	daemon := &mocks.DockerDaemonMock{}
 	screen := &ui.Screen{
 		Cursor:     &ui.Cursor{},
 		Dimensions: &ui.Dimensions{Height: 16, Width: 40},
 	}
-	screen.Cursor.Max(len(containers) - 1)
+	//DockerDaemonMock returns 10 running 1containers
+	screen.Cursor.Max(10 - 1)
 	ui.ActiveScreen = screen
 
-	w := NewContainersWidget(0)
+	w := NewContainersWidget(daemon, 0)
 
-	w.PrepareToRender(&DockerPsRenderData{containers, docker.SortByContainerID, ""})
+	if err := w.Mount(); err != nil {
+		t.Errorf("There was an error mounting the widget %v", err)
+	}
 
 	rows := w.visibleRows()
 	if len(rows) != w.height {
@@ -85,4 +82,45 @@ func TestContainerListVisibleRows(t *testing.T) {
 		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
 	}
 
+}
+
+func TestContainersWidget_ToggleShowAllContainers(t *testing.T) {
+	type fields struct {
+		showAllContainers bool
+		mounted           bool
+	}
+	tests := []struct {
+		name   string
+		fields fields
+	}{
+		{
+			"ToggleShowAllContainers",
+			fields{
+				true,
+				true,
+			},
+		},
+		{
+			"ToggleShowAllContainers always changes the widget state to unmounted",
+			fields{
+				false,
+				true,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &ContainersWidget{
+				showAllContainers: tt.fields.showAllContainers,
+				mounted:           tt.fields.mounted,
+			}
+			s.ToggleShowAllContainers()
+			if s.showAllContainers == tt.fields.showAllContainers {
+				t.Error("Show all containers state did not change after toggle")
+			}
+			if s.mounted != false {
+				t.Errorf("Widget is still mounted")
+			}
+		})
+	}
 }
