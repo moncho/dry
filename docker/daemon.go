@@ -132,7 +132,12 @@ func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct
 	}()
 
 	if daemon.swarmMode {
+		args := filters.NewArgs()
 		args.Add("scope", "swarm")
+		options := dockerTypes.EventsOptions{
+			Filters: args,
+		}
+
 		swarmEvents, err := daemon.client.Events(ctx, options)
 
 		go func() {
