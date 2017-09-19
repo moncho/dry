@@ -1,11 +1,13 @@
 package app
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
+	"github.com/moncho/dry/ui/json"
 	"github.com/nsf/termbox-go"
 )
 
@@ -47,23 +49,52 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 	case docker.KILL:
 		dry.Kill(id)
 	case docker.RESTART:
-		dry.RestartContainer(id)
-	case docker.STOP:
-		dry.StopContainer(id)
-	case docker.LOGS:
-		if logs, err := dry.Logs(id); err == nil {
-			focus = false
-			go appui.Stream(screen, logs, h.eventChan, h.closeViewChan)
+		if err := dry.dockerDaemon.RestartContainer(id); err != nil {
+			dry.appmessage(
+				fmt.Sprintf("Error restarting container %s, err: %s", id, err.Error()))
 		}
+	case docker.STOP:
+		if err := dry.dockerDaemon.StopContainer(id); err != nil {
+			dry.appmessage(
+				fmt.Sprintf("Error stopping container %s, err: %s", id, err.Error()))
+		}
+	case docker.LOGS:
+		logs := h.dry.dockerDaemon.Logs(id)
+		focus = false
+		go appui.Stream(h.screen, logs, h.eventChan, h.closeViewChan)
 	case docker.RM:
-		dry.Rm(id)
+		dry.dockerDaemon.Rm(id)
 	case docker.STATS:
-		focus = false
-		go statsScreen(command.container, screen, dry, h.eventChan, h.closeViewChan)
+		c := dry.dockerDaemon.ContainerByID(id)
+		if c == nil || !docker.IsContainerRunning(c) {
+			dry.appmessage(
+				fmt.Sprintf("Container with id %s not found or is not running", id))
+		} else {
+			statsChan := dry.dockerDaemon.OpenChannel(c)
+			focus = false
+			go statsScreen(command.container, statsChan, screen, h.eventChan, h.closeViewChan)
+		}
+
 	case docker.INSPECT:
-		dry.Inspect(id)
-		focus = false
-		go appui.Less(renderDry(dry), screen, h.eventChan, h.closeViewChan)
+		container, err := h.dry.dockerDaemon.Inspect(id)
+		if err == nil {
+			go func() {
+				defer func() {
+					h.closeViewChan <- struct{}{}
+				}()
+				v, err := json.NewViewer(
+					h.screen,
+					appui.DryTheme,
+					container)
+				if err != nil {
+					dry.appmessage(
+						fmt.Sprintf("Error inspecting container: %s", err.Error()))
+					return
+				}
+				v.Focus(h.eventChan)
+			}()
+			focus = false
+		}
 	case docker.HISTORY:
 		dry.History(command.container.ImageID)
 		focus = false
@@ -77,82 +108,101 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled bool) {
 	focus = true
 	handled = false
-	cursor := h.screen.Cursor
-	cursorPos := cursor.Position()
 	dry := h.dry
 	switch key {
 	case 'e', 'E': //remove
 		handled = true
-		container := dry.ContainerAt(cursorPos)
-		if container != nil {
-			//Since a command is created the focus is handled by handleCommand
-			//Fixes #24
-			focus = false
-			h.handleCommand(commandToExecute{
-				docker.RM,
-				container,
+		h.widget().OnEvent(
+			func(id string) error {
+				container := dry.dockerDaemon.ContainerByID(id)
+				if container == nil {
+					return fmt.Errorf("Container with id %s not found", id)
+				}
+				//Since a command is created the focus is handled by handleCommand
+				//Fixes #24
+				focus = false
+				h.handleCommand(commandToExecute{
+					docker.RM,
+					container,
+				})
+				return nil
 			})
-		}
+
 	case 'i', 'I': //inspect
 		handled = true
-
-		if cursorPos >= 0 {
-			container := dry.ContainerAt(cursorPos)
-			if container != nil {
+		h.widget().OnEvent(
+			func(id string) error {
+				container := dry.dockerDaemon.ContainerByID(id)
+				if container == nil {
+					return fmt.Errorf("Container with id %s not found", id)
+				}
+				//Since a command is created the focus is handled by handleCommand
+				//Fixes #24
 				focus = false
-
 				h.handleCommand(commandToExecute{
 					docker.INSPECT,
 					container,
 				})
-			}
-		}
+				return nil
+			})
+
 	case 'l', 'L': //logs
 		handled = true
-
-		if cursorPos >= 0 {
-			container := dry.ContainerAt(cursorPos)
-			if container != nil {
+		h.widget().OnEvent(
+			func(id string) error {
+				container := dry.dockerDaemon.ContainerByID(id)
+				if container == nil {
+					return fmt.Errorf("Container with id %s not found", id)
+				}
+				//Since a command is created the focus is handled by handleCommand
+				//Fixes #24
 				focus = false
-
 				h.handleCommand(commandToExecute{
 					docker.LOGS,
 					container,
 				})
-			}
-		}
+				return nil
+			})
 	case 's', 'S': //stats
 		handled = true
-		if cursorPos >= 0 {
-			container := dry.ContainerAt(cursorPos)
-			if container != nil {
+		h.widget().OnEvent(
+			func(id string) error {
+				container := dry.dockerDaemon.ContainerByID(id)
+				if container == nil {
+					return fmt.Errorf("Container with id %s not found", id)
+				}
+				//Since a command is created the focus is handled by handleCommand
+				//Fixes #24
 				focus = false
 				h.handleCommand(commandToExecute{
 					docker.STATS,
 					container,
 				})
-			}
-		}
+				return nil
+			})
 	}
 	return focus, handled
 }
 
-func handleKey(h *containersScreenEventHandler, key termbox.Key) (focus, handled bool) {
-	focus = true
-	handled = true
+func handleKey(h *containersScreenEventHandler, key termbox.Key) (bool, bool) {
+	focus := true
+	handled := true
 	cursor := h.screen.Cursor
-	cursorPos := cursor.Position()
 	switch key {
 	case termbox.KeyF1: //sort
-		h.dry.Sort()
+		h.dry.widgetRegistry.ContainerList.Sort()
 	case termbox.KeyF2: //show all containers
 		cursor.Reset()
-		h.dry.ToggleShowAllContainers()
+		h.dry.widgetRegistry.ContainerList.ToggleShowAllContainers()
+
 	case termbox.KeyF3: //filter containers
-		if filter, err := appui.ReadLine("Show containers named (leave empty to remove the filter) >>> "); err == nil {
-			h.dry.SetContainerFilter(filter)
+		if _, err := appui.ReadLine("Show containers named (leave empty to remove the filter) >>> "); err == nil {
+			//TODO filter
+			//h.dry.SetContainerFilter(filter)
 		}
 		h.screen.ClearAndFlush()
+	case termbox.KeyF5: // refresh
+		h.widget().Unmount()
 	case termbox.KeyCtrlE: //remove all stopped
 		if confirmation, err := appui.ReadLine("All stopped containers will be removed. Do you want to continue? (y/N) "); err == nil {
 			h.screen.ClearAndFlush()
@@ -161,14 +211,30 @@ func handleKey(h *containersScreenEventHandler, key termbox.Key) (focus, handled
 			}
 		}
 	case termbox.KeyCtrlK: //kill
-		h.dry.KillAt(cursorPos)
+		h.widget().OnEvent(
+			func(id string) error {
+				return h.dry.dockerDaemon.Kill(id)
+			})
 	case termbox.KeyCtrlR: //start
-		h.dry.RestartContainerAt(cursorPos)
+		h.widget().OnEvent(
+			func(id string) error {
+				return h.dry.dockerDaemon.RestartContainer(id)
+			})
 	case termbox.KeyCtrlT: //stop
-		h.dry.StopContainerAt(cursorPos)
-	case termbox.KeyEnter: //inspect
-		focus = false
-		go showContainerOptions(h)
+		h.widget().OnEvent(
+			func(id string) error {
+				return h.dry.dockerDaemon.StopContainer(id)
+			})
+	case termbox.KeyEnter: //Container menu
+		showMenu := func(id string) error {
+			container := h.dry.dockerDaemon.ContainerByID(id)
+			go showContainerOptions(container, h)
+			return nil
+		}
+		if err := h.widget().OnEvent(showMenu); err == nil {
+			focus = false
+		}
+
 	default: //Not handled
 		handled = false
 	}
@@ -177,7 +243,7 @@ func handleKey(h *containersScreenEventHandler, key termbox.Key) (focus, handled
 
 //statsScreen shows container stats on the screen
 //TODO move to appui
-func statsScreen(container *docker.Container, screen *ui.Screen, dry *Dry, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
+func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
 	closeViewOnExit := true
 	screen.Clear()
 
@@ -191,12 +257,6 @@ func statsScreen(container *docker.Container, screen *ui.Screen, dry *Dry, keybo
 		return
 	}
 
-	stats, err := dry.Stats(container.ID)
-	if err != nil {
-		closeViewOnExit = false
-		ui.ShowErrorMessage(screen, keyboardQueue, closeView, err)
-		return
-	}
 	info, infoLines := appui.NewContainerInfo(container)
 	screen.Render(1, info)
 
@@ -256,14 +316,12 @@ loop:
 }
 
 //statsScreen shows container stats on the screen
-func showContainerOptions(h *containersScreenEventHandler) {
+func showContainerOptions(container *docker.Container, h *containersScreenEventHandler) {
 	screen := h.screen
-	dry := h.dry
 	selectedContainer := screen.Cursor.Position()
 	keyboardQueue := h.eventChan
 	closeView := h.closeViewChan
 	//TODO handle error
-	container := dry.ContainerAt(selectedContainer)
 	if container != nil {
 		screen.Clear()
 		screen.Sync()

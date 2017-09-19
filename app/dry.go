@@ -1,7 +1,6 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -16,41 +15,29 @@ import (
 	cache "github.com/patrickmn/go-cache"
 )
 
-const (
-	//TimeBetweenRefresh defines the time that has to pass between dry refreshes
-	TimeBetweenRefresh = 30 * time.Second
-)
-
 // state tracks dry state
 type state struct {
 	sync.RWMutex
-	filter               drydocker.ContainerFilter
-	filterPattern        string
-	previousViewMode     viewMode
-	showingAllContainers bool
-	viewMode             viewMode
-	sortMode             drydocker.SortMode
-	sortImagesMode       drydocker.SortImagesMode
-	sortNetworksMode     drydocker.SortNetworksMode
+	previousViewMode viewMode
+	viewMode         viewMode
+	sortImagesMode   drydocker.SortImagesMode
+	sortNetworksMode drydocker.SortNetworksMode
 }
 
 //Dry represents the application.
 type Dry struct {
-	widgetRegistry     *WidgetRegistry
-	dockerDaemon       drydocker.ContainerDaemon
-	dockerEvents       <-chan events.Message
-	dockerEventsDone   chan<- struct{}
-	imageHistory       []image.HistoryResponseItem
-	images             []types.ImageSummary
-	info               types.Info
-	inspectedContainer types.ContainerJSON
-	inspectedImage     types.ImageInspect
-	inspectedNetwork   types.NetworkResource
-	lastRefresh        time.Time
-	networks           []types.NetworkResource
-	output             chan string
-	refreshTimerMutex  sync.Locker
-	state              *state
+	widgetRegistry   *WidgetRegistry
+	dockerDaemon     drydocker.ContainerDaemon
+	dockerEvents     <-chan events.Message
+	dockerEventsDone chan<- struct{}
+	imageHistory     []image.HistoryResponseItem
+	images           []types.ImageSummary
+	info             types.Info
+	inspectedImage   types.ImageInspect
+	inspectedNetwork types.NetworkResource
+	networks         []types.NetworkResource
+	output           chan string
+	state            *state
 	//cache is a potential replacement for state
 	cache *cache.Cache
 }
@@ -74,38 +61,6 @@ func (d *Dry) Close() {
 	close(d.output)
 }
 
-//ContainerAt returns the container at the given position
-func (d *Dry) ContainerAt(position int) *drydocker.Container {
-
-	if position >= 0 {
-		containers := d.containerList()
-		if len(containers) > position {
-			return containers[position]
-		}
-		return nil
-	}
-	return nil
-}
-
-//ContainerIDAt returns the id of the container at the given position
-func (d *Dry) ContainerIDAt(position int) (string, string) {
-	c := d.ContainerAt(position)
-	if c != nil {
-		return c.ID, drydocker.TruncateID(c.ID)
-	}
-	return "", ""
-}
-func (d *Dry) containerList() []*drydocker.Container {
-	var filter drydocker.ContainerFilter
-	if d.state.showingAllContainers {
-		filter = drydocker.ContainerFilters.Unfiltered()
-	} else {
-		filter = drydocker.ContainerFilters.Running()
-	}
-	containers := d.dockerDaemon.Containers(filter, d.state.sortMode)
-	return drydocker.Filter(containers, d.state.filter)
-}
-
 //HistoryAt prepares dry to show image history of image at the given positions
 func (d *Dry) HistoryAt(position int) {
 	if apiImage, err := d.dockerDaemon.ImageAt(position); err == nil {
@@ -123,25 +78,6 @@ func (d *Dry) History(id string) {
 		d.imageHistory = history
 	} else {
 		d.appmessage(fmt.Sprintf("<red>Error getting history of image </><white>%s: %s</>", id, err.Error()))
-	}
-}
-
-//InspectAt prepares dry to inspect container at the given position
-func (d *Dry) InspectAt(position int) {
-	id, _ := d.ContainerIDAt(position)
-	if id != "" {
-		d.Inspect(id)
-	}
-}
-
-//Inspect prepares dry to inspect container with the given id
-func (d *Dry) Inspect(id string) {
-	c, err := d.dockerDaemon.Inspect(id)
-	if err == nil {
-		d.changeViewMode(InspectMode)
-		d.inspectedContainer = c
-	} else {
-		d.errorMessage(id, "inspecting", err)
 	}
 }
 
@@ -185,14 +121,6 @@ func (d *Dry) InspectNetwork(id string) {
 	}
 }
 
-//KillAt the docker container at the given position
-func (d *Dry) KillAt(position int) {
-	id, _ := d.ContainerIDAt(position)
-	if id != "" {
-		d.Kill(id)
-	}
-}
-
 //Kill the docker container with the given id
 func (d *Dry) Kill(id string) {
 
@@ -204,15 +132,6 @@ func (d *Dry) Kill(id string) {
 		d.errorMessage(id, "killing", err)
 	}
 
-}
-
-//LogsAt retrieves the log of the docker container at the given position
-func (d *Dry) LogsAt(position int) (io.ReadCloser, error) {
-	id, _ := d.ContainerIDAt(position)
-	if id != "" {
-		return d.Logs(id)
-	}
-	return nil, fmt.Errorf("No container found at position %d", position)
 }
 
 //Logs retrieves the log of the docker container with the given id
@@ -255,44 +174,6 @@ func (d *Dry) PruneReport() *drydocker.PruneReport {
 	return nil
 }
 
-//Refresh forces a dry refresh
-func (d *Dry) Refresh() {
-	d.refreshTimerMutex.Lock()
-	defer d.refreshTimerMutex.Unlock()
-	d.doRefresh()
-	d.resetTimer()
-}
-
-func (d *Dry) doRefresh() {
-	d.state.Lock()
-	defer d.state.Unlock()
-	var err error
-	switch d.state.viewMode {
-	case Main:
-		f := func(err error) {
-			if err == nil {
-				refreshScreen()
-			} else {
-				d.appmessage("There was an error refreshing: " + err.Error())
-			}
-		}
-		d.dockerDaemon.Refresh(f)
-	case Images:
-		err = d.dockerDaemon.RefreshImages()
-		d.dockerDaemon.SortImages(d.state.sortImagesMode)
-		refreshScreen()
-
-	case Networks:
-		err = d.dockerDaemon.RefreshNetworks()
-		d.dockerDaemon.SortNetworks(d.state.sortNetworksMode)
-		refreshScreen()
-
-	}
-	if err != nil {
-		d.appmessage("There was an error refreshing: " + err.Error())
-	}
-}
-
 //RemoveAllStoppedContainers removes all stopped containers
 func (d *Dry) RemoveAllStoppedContainers() {
 	d.appmessage(fmt.Sprintf("<red>Removing all stopped containers</>"))
@@ -332,7 +213,6 @@ func (d *Dry) RemoveImage(id string, force bool) {
 	shortID := drydocker.TruncateID(id)
 	d.appmessage(fmt.Sprintf("<red>Removing image:</> <white>%s</>", shortID))
 	if _, err := d.dockerDaemon.Rmi(id, force); err == nil {
-		d.doRefresh()
 		d.appmessage(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
 	} else {
 		d.appmessage(fmt.Sprintf("<red>Error removing image </><white>%s: %s</>", shortID, err.Error()))
@@ -344,44 +224,9 @@ func (d *Dry) RemoveNetwork(id string) {
 	shortID := drydocker.TruncateID(id)
 	d.appmessage(fmt.Sprintf("<red>Removing network:</> <white>%s</>", shortID))
 	if err := d.dockerDaemon.RemoveNetwork(id); err == nil {
-		d.doRefresh()
 		d.appmessage(fmt.Sprintf("<red>Removed network:</> <white>%s</>", shortID))
 	} else {
 		d.appmessage(fmt.Sprintf("<red>Error network image </><white>%s: %s</>", shortID, err.Error()))
-	}
-}
-
-func (d *Dry) resetTimer() {
-	d.lastRefresh = time.Now()
-}
-
-//RestartContainerAt (re)starts the container at the given position
-func (d *Dry) RestartContainerAt(position int) {
-	id, _ := d.ContainerIDAt(position)
-	if id != "" {
-		d.RestartContainer(id)
-	}
-}
-
-//RestartContainer (re)starts the container with the given id
-func (d *Dry) RestartContainer(id string) {
-	shortID := drydocker.TruncateID(id)
-	d.actionMessage(shortID, "Restarting")
-	go func() {
-		err := d.dockerDaemon.RestartContainer(id)
-		if err == nil {
-			d.actionMessage(shortID, "Restarted")
-		} else {
-			d.errorMessage(shortID, "restarting", err)
-		}
-	}()
-}
-
-//RmAt removes the container at the given position
-func (d *Dry) RmAt(position int) {
-	id, _ := d.ContainerIDAt(position)
-	if id != "" {
-		d.Rm(id)
 	}
 }
 
@@ -393,20 +238,6 @@ func (d *Dry) Rm(id string) {
 		d.actionMessage(shortID, "Removed")
 	} else {
 		d.errorMessage(shortID, "removing", err)
-	}
-}
-
-//SetContainerFilter sets a filter for the container list
-func (d *Dry) SetContainerFilter(filter string) {
-	d.state.Lock()
-	defer d.state.Unlock()
-	d.state.filterPattern = filter
-	//If the given filter pattern is empty the filter is set to null
-	//so ContainerIDAt can take the easiest code path.
-	if filter != "" {
-		d.state.filter = drydocker.ContainerFilters.ByName(filter)
-	} else {
-		d.state.filter = nil
 	}
 }
 
@@ -511,25 +342,6 @@ func (d *Dry) ShowTasks(nodeID string) {
 	d.changeViewMode(Tasks)
 }
 
-//Sort rotates to the next sort mode.
-//SortByContainerID -> SortByImage -> SortByStatus -> SortByName -> SortByContainerID
-func (d *Dry) Sort() {
-	d.state.RLock()
-	defer d.state.RUnlock()
-	switch d.state.sortMode {
-	case drydocker.SortByContainerID:
-		d.state.sortMode = drydocker.SortByImage
-	case drydocker.SortByImage:
-		d.state.sortMode = drydocker.SortByStatus
-	case drydocker.SortByStatus:
-		d.state.sortMode = drydocker.SortByName
-	case drydocker.SortByName:
-		d.state.sortMode = drydocker.SortByContainerID
-	default:
-	}
-	refreshScreen()
-}
-
 //SortImages rotates to the next sort mode.
 //SortImagesByRepo -> SortImagesByID -> SortImagesByCreationDate -> SortImagesBySize -> SortImagesByRepo
 func (d *Dry) SortImages() {
@@ -573,80 +385,6 @@ func (d *Dry) SortNetworks() {
 func (d *Dry) startDry() {
 	de := dockerEventsListener{d}
 	de.init()
-
-	go func() {
-		for range time.Tick(TimeBetweenRefresh) {
-			d.tryRefresh()
-		}
-	}()
-}
-
-//StatsAt get stats of container in the given position until a
-//message is sent to the done channel
-func (d *Dry) StatsAt(position int) (*drydocker.StatsChannel, error) {
-	id, _ := d.ContainerIDAt(position)
-	if id != "" {
-		return d.Stats(id)
-	}
-	return nil, fmt.Errorf("Container not found at position %d", position)
-}
-
-//Stats get stats of container with the given id until a
-//message is sent to the done channel
-func (d *Dry) Stats(id string) (*drydocker.StatsChannel, error) {
-
-	c := d.dockerDaemon.ContainerByID(id)
-
-	if c != nil && drydocker.IsContainerRunning(c) {
-		return d.dockerDaemon.OpenChannel(c), nil
-	}
-	d.appmessage(
-		fmt.Sprintf("<red>Cannot run stats on stopped container. Id: </><white>%s</>", id))
-
-	return nil, errors.New("cannot run stats on stopped container")
-}
-
-//StopContainerAt stops the container at the given position
-func (d *Dry) StopContainerAt(position int) {
-	id, _ := d.ContainerIDAt(position)
-	if id != "" {
-		d.StopContainer(id)
-	}
-}
-
-//StopContainer stops the container with the given id
-func (d *Dry) StopContainer(id string) {
-	shortID := drydocker.TruncateID(id)
-	d.actionMessage(shortID, "Stopping")
-	go func() {
-		if err := d.dockerDaemon.StopContainer(id); err == nil {
-			d.actionMessage(shortID, "Stopped")
-		} else {
-			d.errorMessage(shortID, "stopping", err)
-		}
-	}()
-}
-
-//ToggleShowAllContainers changes between showing running containers and
-//showing running and stopped containers.
-func (d *Dry) ToggleShowAllContainers() {
-	d.state.showingAllContainers = !d.state.showingAllContainers
-	if d.state.showingAllContainers {
-		d.appmessage("<white>Showing all containers</>")
-	} else {
-		d.appmessage("<white>Showing running containers</>")
-	}
-}
-
-//tryRefresh refreshes dry if dry has not been refreshed in the last
-//TimeBetweenRefresho
-func (d *Dry) tryRefresh() {
-	d.refreshTimerMutex.Lock()
-	defer d.refreshTimerMutex.Unlock()
-	if time.Since(d.lastRefresh) > TimeBetweenRefresh {
-		d.resetTimer()
-		d.doRefresh()
-	}
 }
 
 func (d *Dry) appmessage(message string) {
@@ -682,12 +420,10 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 	if err == nil {
 
 		state := &state{
-			showingAllContainers: false,
-			sortMode:             drydocker.SortByContainerID,
-			sortImagesMode:       drydocker.SortImagesByRepo,
-			sortNetworksMode:     drydocker.SortNetworksByID,
-			viewMode:             Main,
-			previousViewMode:     Main,
+			sortImagesMode:   drydocker.SortImagesByRepo,
+			sortNetworksMode: drydocker.SortNetworksByID,
+			viewMode:         Main,
+			previousViewMode: Main,
 		}
 		d.SortImages(state.sortImagesMode)
 		d.SortNetworks(state.sortNetworksMode)
@@ -698,9 +434,6 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 		app.output = make(chan string)
 		app.dockerEvents = dockerEvents
 		app.dockerEventsDone = dockerEventsDone
-		app.refreshTimerMutex = &sync.Mutex{}
-		//first refresh should happen TimeBetweenRefresh seconds after dry creation
-		app.lastRefresh = time.Now().Add(TimeBetweenRefresh)
 		app.cache = c
 		app.startDry()
 		return app, nil
