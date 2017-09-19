@@ -204,8 +204,11 @@ func handleKey(h *containersScreenEventHandler, key termbox.Key) (bool, bool) {
 	case termbox.KeyF5: // refresh
 		h.dry.appmessage("Refreshing container list")
 		h.dry.dockerDaemon.Refresh(func(e error) {
-			if e != nil {
+			if e == nil {
 				h.widget().Unmount()
+				refreshScreen()
+			} else {
+				h.dry.appmessage("There was an error refreshing: " + e.Error())
 			}
 		})
 	case termbox.KeyCtrlE: //remove all stopped
