@@ -45,7 +45,7 @@ type baseEventHandler struct {
 	sync.RWMutex
 }
 
-func (h *baseEventHandler) widget() appui.EventableWidget {
+func (b *baseEventHandler) widget() appui.EventableWidget {
 	return nil
 }
 
