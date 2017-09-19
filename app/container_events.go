@@ -202,7 +202,7 @@ func handleKey(h *containersScreenEventHandler, key termbox.Key) (bool, bool) {
 		}
 		h.screen.ClearAndFlush()
 	case termbox.KeyF5: // refresh
-		h.dry.appmessage("Refreshing")
+		h.dry.appmessage("Refreshing container list")
 		h.dry.dockerDaemon.Refresh(func(e error) {
 			if e != nil {
 				h.widget().Unmount()
