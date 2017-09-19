@@ -75,8 +75,8 @@ func notifyCallbacks(r *registry) EventCallback {
 			case <-ctx.Done():
 				return ctx.Err()
 			default:
+				go callback(ctx, message)
 			}
-			go callback(ctx, message)
 		}
 		return nil
 	}

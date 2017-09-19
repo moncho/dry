@@ -95,11 +95,8 @@ func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct
 
 	args := filters.NewArgs()
 
-	if daemon.swarmMode {
-		args.Add("scope", "swarm")
-	} else {
-		args.Add("scope", "local")
-	}
+	args.Add("scope", "local")
+
 	options := dockerTypes.EventsOptions{
 		Filters: args,
 	}
@@ -133,6 +130,33 @@ func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct
 		}
 
 	}()
+
+	if daemon.swarmMode {
+		args.Add("scope", "swarm")
+		swarmEvents, err := daemon.client.Events(ctx, options)
+
+		go func() {
+
+			for {
+				select {
+				case event := <-swarmEvents:
+					if err := handleEvent(
+						ctx,
+						event,
+						streamEvents(eventC),
+						logEvents(daemon.eventLog),
+						callbackNotifier); err != nil {
+						return
+					}
+				case <-err:
+					return
+				case <-done:
+					return
+				}
+			}
+
+		}()
+	}
 
 	return eventC, done, nil
 }

@@ -38,9 +38,7 @@ func handleEvent(
 	processors ...EventCallback) error {
 
 	for _, ep := range processors {
-		if procErr := ep(ctx, event); procErr != nil {
-			return procErr
-		}
+		go ep(ctx, event)
 	}
 
 	return nil
