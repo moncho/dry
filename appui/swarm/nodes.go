@@ -69,7 +69,7 @@ func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
 		y:             y,
 		height:        appui.MainScreenAvailableHeight(),
 		width:         ui.ActiveScreen.Dimensions.Width}
-
+	appui.RegisterWidget(docker.NodeSource, &w)
 	return &w
 }
 
@@ -99,15 +99,19 @@ func (s *NodesWidget) Mount() error {
 			sort.Slice(nodes, func(i, j int) bool {
 				return nodes[i].Description.Hostname < nodes[j].Description.Hostname
 			})
+			var rows []*NodeRow
+			s.totalCPU = 0
+			s.totalMemory = 0
 			for _, node := range nodes {
 				row := NewNodeRow(node, s.header)
-				s.nodes = append(s.nodes, row)
+				rows = append(rows, row)
 				if cpu, err := strconv.Atoi(row.CPU.Text); err == nil {
 					s.totalCPU += cpu
 				}
 				s.totalMemory += node.Description.Resources.MemoryBytes
 
 			}
+			s.nodes = rows
 		}
 		addSwarmSpecs(s)
 		s.align()

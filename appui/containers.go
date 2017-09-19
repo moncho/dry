@@ -1,13 +1,11 @@
 package appui
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
 	"sync"
 
-	"github.com/docker/docker/api/types/events"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
@@ -46,7 +44,7 @@ type ContainersWidget struct {
 
 //NewContainersWidget creates a ContainersWidget
 func NewContainersWidget(dockerDaemon docker.ContainerAPI, y int) *ContainersWidget {
-	w := &ContainersWidget{
+	w := ContainersWidget{
 		dockerDaemon:      dockerDaemon,
 		y:                 y,
 		header:            defaultContainerTableHeader,
@@ -54,8 +52,10 @@ func NewContainersWidget(dockerDaemon docker.ContainerAPI, y int) *ContainersWid
 		showAllContainers: false,
 		sortMode:          docker.SortByContainerID,
 		width:             ui.ActiveScreen.Dimensions.Width}
-	registerForDockerEvents(w)
-	return w
+
+	RegisterWidget(docker.ContainerSource, &w)
+
+	return &w
 
 }
 
@@ -280,7 +280,7 @@ func containerTableHeader() *termui.TableHeader {
 	return header
 }
 
-func registerForDockerEvents(c *ContainersWidget) {
+/*func registerForDockerEvents(c *ContainersWidget) {
 	docker.GlobalRegistry.Register(docker.ContainerSource,
 		func(ctx context.Context, event events.Message) error {
 			if event.Action == "start" || event.Action == "stop" {
@@ -289,4 +289,4 @@ func registerForDockerEvents(c *ContainersWidget) {
 			return nil
 		})
 
-}
+}*/

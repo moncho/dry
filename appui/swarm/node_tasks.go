@@ -56,9 +56,12 @@ func (s *NodeTasksWidget) PrepareToRender(nodeID string) {
 		s.nodeName = nodeName
 
 		if tasks, err := s.swarmClient.NodeTasks(node.ID); err == nil {
+
+			var tasksRows []*TaskRow
 			for _, task := range tasks {
-				s.tasks = append(s.tasks, NewTaskRow(s.swarmClient, task, s.header))
+				tasksRows = append(tasksRows, NewTaskRow(s.swarmClient, task, s.header))
 			}
+			s.tasks = tasksRows
 		}
 		s.align()
 
