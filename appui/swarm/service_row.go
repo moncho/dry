@@ -93,10 +93,3 @@ func (row *ServiceRow) changeTextColor(fg, bg termui.Attribute) {
 	row.Image.TextFgColor = fg
 	row.Image.TextBgColor = bg
 }
-
-func serviceMode(service swarm.Service) string {
-	if service.Spec.Mode.Global != nil {
-		return "global"
-	}
-	return "replicated"
-}

@@ -1,12 +1,14 @@
 package swarm
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"sync"
 
 	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/cli/cli/command/service"
+	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/moncho/dry/appui"
@@ -45,6 +47,7 @@ func NewServicesWidget(swarmClient docker.SwarmAPI, y int) *ServicesWidget {
 		height:        appui.MainScreenAvailableHeight(),
 		width:         ui.ActiveScreen.Dimensions.Width}
 
+	listenToDockerEvents(w)
 	return w
 
 }
@@ -282,4 +285,12 @@ func getServicesStatus(services []swarm.Service, nodes []swarm.Node, tasks []swa
 		}
 	}
 	return info
+}
+
+func listenToDockerEvents(w *ServicesWidget) {
+	docker.GlobalRegistry.Register(
+		docker.ServiceSource,
+		func(ctx context.Context, message events.Message) error {
+			return w.Unmount()
+		})
 }
