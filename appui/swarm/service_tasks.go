@@ -53,9 +53,11 @@ func (s *ServiceTasksWidget) PrepareToRender(serviceID string) {
 
 		if tasks, err := s.swarmClient.ServiceTasks(serviceID); err == nil {
 			s.tableTitle = createTableTitle(serviceInfo.serviceName, len(tasks))
+			var rows []*TaskRow
 			for _, task := range tasks {
-				s.tasks = append(s.tasks, NewTaskRow(s.swarmClient, task, s.header))
+				rows = append(rows, NewTaskRow(s.swarmClient, task, s.header))
 			}
+			s.tasks = rows
 		}
 		s.align()
 	}
@@ -114,14 +116,17 @@ func (s *ServiceTasksWidget) RowCount() int {
 	return len(s.tasks)
 }
 func (s *ServiceTasksWidget) highlightSelectedRow() {
-	if s.RowCount() == 0 {
+	count := s.RowCount()
+	if count == 0 {
 		return
 	}
 	index := ui.ActiveScreen.Cursor.Position()
-	if index > s.RowCount() {
-		index = s.RowCount() - 1
+	if index > count {
+		index = count - 1
 	}
-	s.tasks[s.selectedIndex].NotHighlighted()
+	if s.selectedIndex < count && s.tasks[s.selectedIndex] != nil {
+		s.tasks[s.selectedIndex].NotHighlighted()
+	}
 	s.selectedIndex = index
 	s.tasks[s.selectedIndex].Highlighted()
 }
