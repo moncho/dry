@@ -19,6 +19,8 @@ var networkTableHeaders = []networkHeaderColumn{
 	{`DRIVER`, docker.SortNetworksByDriver},
 	{`CONTAINERS`, docker.NoSortNetworks},
 	{`SCOPE`, docker.NoSortNetworks},
+	{`SUBNET`, docker.NoSortNetworks},
+	{`GATEWAY`, docker.NoSortNetworks},
 }
 
 //DockerNetworkRenderData holds information that might be
@@ -223,5 +225,8 @@ func networkTableHeader() *termui.TableHeader {
 	header.AddFixedWidthColumn(networkTableHeaders[2].title, 12)
 	header.AddFixedWidthColumn(networkTableHeaders[3].title, 12)
 	header.AddColumn(networkTableHeaders[4].title)
+	header.AddColumn(networkTableHeaders[5].title)
+	header.AddColumn(networkTableHeaders[6].title)
+
 	return header
 }

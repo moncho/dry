@@ -14,6 +14,8 @@ const (
 	driver             = "DRIVER"
 	numberOfContainers = "NUMBER OF CONTAINERS"
 	scope              = "SCOPE"
+	subnet             = "SUBNET"
+	gateway            = "GATEWAY"
 )
 
 //NetworkFormatter knows how to pretty-print the information of an network
@@ -69,4 +71,22 @@ func (formatter *NetworkFormatter) Containers() string {
 func (formatter *NetworkFormatter) Scope() string {
 	formatter.addHeader(scope)
 	return formatter.network.Scope
+}
+
+//Subnet prettifies the network subnet
+func (formatter *NetworkFormatter) Subnet() string {
+	formatter.addHeader(subnet)
+	if len(formatter.network.IPAM.Config) > 0 {
+		return formatter.network.IPAM.Config[0].Subnet
+	}
+	return ""
+}
+
+//Gateway prettifies the network gateway
+func (formatter *NetworkFormatter) Gateway() string {
+	formatter.addHeader(gateway)
+	if len(formatter.network.IPAM.Config) > 0 {
+		return formatter.network.IPAM.Config[0].Gateway
+	}
+	return ""
 }

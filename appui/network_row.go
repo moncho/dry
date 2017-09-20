@@ -17,7 +17,8 @@ type NetworkRow struct {
 	Driver     *drytermui.ParColumn
 	Containers *drytermui.ParColumn
 	Scope      *drytermui.ParColumn
-
+	Subnet     *drytermui.ParColumn
+	Gateway    *drytermui.ParColumn
 	drytermui.Row
 }
 
@@ -32,6 +33,8 @@ func NewNetworkRow(network types.NetworkResource, table drytermui.Table) *Networ
 		Driver:     drytermui.NewThemedParColumn(DryTheme, networkFormatter.Driver()),
 		Containers: drytermui.NewThemedParColumn(DryTheme, networkFormatter.Containers()),
 		Scope:      drytermui.NewThemedParColumn(DryTheme, networkFormatter.Scope()),
+		Subnet:     drytermui.NewThemedParColumn(DryTheme, networkFormatter.Subnet()),
+		Gateway:    drytermui.NewThemedParColumn(DryTheme, networkFormatter.Gateway()),
 	}
 	row.Height = 1
 	row.Table = table
@@ -42,6 +45,8 @@ func NewNetworkRow(network types.NetworkResource, table drytermui.Table) *Networ
 		row.Driver,
 		row.Containers,
 		row.Scope,
+		row.Subnet,
+		row.Gateway,
 	}
 
 	return row
@@ -89,4 +94,8 @@ func (row *NetworkRow) changeTextColor(fg, bg termui.Attribute) {
 	row.Containers.TextBgColor = bg
 	row.Scope.TextFgColor = fg
 	row.Scope.TextBgColor = bg
+	row.Subnet.TextFgColor = fg
+	row.Subnet.TextBgColor = bg
+	row.Gateway.TextFgColor = fg
+	row.Gateway.TextBgColor = bg
 }
