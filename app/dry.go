@@ -42,8 +42,14 @@ type Dry struct {
 	cache *cache.Cache
 }
 
-//changeViewMode changes the view mode of dry
+//changeViewMode changes the view mode of dry and refreshes the screen
 func (d *Dry) changeViewMode(newViewMode viewMode) {
+	d.SetViewMode(newViewMode)
+	refreshScreen()
+}
+
+//SetViewMode changes the view mode of dry
+func (d *Dry) SetViewMode(newViewMode viewMode) {
 	d.state.Lock()
 	defer d.state.Unlock()
 	//If the new view is one of the main screens, it must be
@@ -52,7 +58,6 @@ func (d *Dry) changeViewMode(newViewMode viewMode) {
 		d.state.previousViewMode = newViewMode
 	}
 	d.state.viewMode = newViewMode
-	refreshScreen()
 }
 
 //Close closes dry, releasing any resources held by it

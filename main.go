@@ -197,12 +197,12 @@ func main() {
 	stopLoadScreen := make(chan struct{}, 1)
 	showLoadingScreen(screen, dockerEnv, stopLoadScreen)
 
-	//newApp will load dry and try to establish the connection with the docker daemon
+	//newApp will load dry and try to establish a connection with the docker daemon
 	dry, err := newApp(screen, dockerEnv)
-	//dry has loaded, loading screen should not be shown
+	//dry has loaded, stop showing the loading screen
 	close(stopLoadScreen)
 	if opts.MonitorMode {
-		dry.ShowMonitor()
+		dry.SetViewMode(app.Monitor)
 	}
 	if err == nil {
 		app.RenderLoop(dry, screen)
