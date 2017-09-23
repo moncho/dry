@@ -8,14 +8,11 @@ import (
 
 //Allowed sort methods
 const (
-	NoSortNetworks SortNetworksMode = iota
+	NoSortNetworks SortMode = iota
 	SortNetworksByID
 	SortNetworksByName
 	SortNetworksByDriver
 )
-
-//SortNetworksMode represents allowed modes to sort Docker images
-type SortNetworksMode uint16
 
 type dockerNetworks []types.NetworkResource
 
@@ -45,7 +42,7 @@ func (s networksByDriver) Less(i, j int) bool {
 }
 
 //SortNetworks sorts the given network slice using the given mode
-func SortNetworks(images []types.NetworkResource, mode SortNetworksMode) {
+func SortNetworks(images []types.NetworkResource, mode SortMode) {
 	switch mode {
 	case SortNetworksByID:
 		sort.Sort(networksByID{images})

@@ -81,7 +81,7 @@ func (_m *DockerDaemonMock) Images() ([]types.ImageSummary, error) {
 	imagesJSON := `[
 		 {
 						 "ID": "8dfafdbc3a40",
-						  "RepoTags":["dry/dry:latest"],
+						  "RepoTags":["dry/dry:1"],
 							"Created": 1367854155,
 							"Size": 100,
 							"VirtualSize": 1000,
@@ -90,7 +90,7 @@ func (_m *DockerDaemonMock) Images() ([]types.ImageSummary, error) {
 		 },
 		 {
 						 "ID": "541a0f4efc6f",
-						  "RepoTags":["dry/dry2:latest"],
+						  "RepoTags":["dry/dry:2"],
 							"Created": 1367854155,
 							"Size": 100,
 							"VirtualSize": 1000,
@@ -99,7 +99,7 @@ func (_m *DockerDaemonMock) Images() ([]types.ImageSummary, error) {
 		 },
 		 {
 						 "ID": "26380e1ca356",
-						  "RepoTags":["dry/dry3:latest"],
+						  "RepoTags":["dry/dry:3"],
 							"Created": 1367854155,
 							"Size": 100,
 							"VirtualSize": 1000,
@@ -117,7 +117,7 @@ func (_m *DockerDaemonMock) Images() ([]types.ImageSummary, error) {
 		 },
 		 {
 						 "ID": "03b4557ad7b9",
-						  "RepoTags":["dry/dry5:latest"],
+						  "RepoTags":["dry/dry:4"],
 							"Created": 136123255,
 							"Size": 43985,
 							"VirtualSize": 1343400,
@@ -330,11 +330,11 @@ func (_m *DockerDaemonMock) Sort(sortMode drydocker.SortMode) {
 }
 
 //SortImages mock
-func (_m *DockerDaemonMock) SortImages(sortMode drydocker.SortImagesMode) {
+func (_m *DockerDaemonMock) SortImages(sortMode drydocker.SortMode) {
 }
 
 //SortNetworks mock
-func (_m *DockerDaemonMock) SortNetworks(sortMode drydocker.SortNetworksMode) {
+func (_m *DockerDaemonMock) SortNetworks(sortMode drydocker.SortMode) {
 }
 
 //Top function mock

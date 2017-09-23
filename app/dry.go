@@ -20,8 +20,7 @@ type state struct {
 	sync.RWMutex
 	previousViewMode viewMode
 	viewMode         viewMode
-	sortImagesMode   drydocker.SortImagesMode
-	sortNetworksMode drydocker.SortNetworksMode
+	sortNetworksMode drydocker.SortMode
 }
 
 //Dry represents the application.
@@ -31,7 +30,6 @@ type Dry struct {
 	dockerEvents     <-chan events.Message
 	dockerEventsDone chan<- struct{}
 	imageHistory     []image.HistoryResponseItem
-	images           []types.ImageSummary
 	info             types.Info
 	inspectedImage   types.ImageInspect
 	inspectedNetwork types.NetworkResource
@@ -285,14 +283,7 @@ func (d *Dry) ShowHelp() {
 //ShowImages changes the state of dry to show the list of Docker images reported
 //by the daemon
 func (d *Dry) ShowImages() {
-	if images, err := d.dockerDaemon.Images(); err == nil {
-		d.changeViewMode(Images)
-		d.images = images
-	} else {
-		d.appmessage(
-			fmt.Sprintf(
-				"Could not retrieve image list: %s ", err.Error()))
-	}
+	d.changeViewMode(Images)
 }
 
 //ShowInfo retrieves Docker Host info.
@@ -345,28 +336,6 @@ func (d *Dry) ShowServiceTasks(serviceID string) {
 func (d *Dry) ShowTasks(nodeID string) {
 	d.widgetRegistry.NodeTasks.PrepareToRender(nodeID)
 	d.changeViewMode(Tasks)
-}
-
-//SortImages rotates to the next sort mode.
-//SortImagesByRepo -> SortImagesByID -> SortImagesByCreationDate -> SortImagesBySize -> SortImagesByRepo
-func (d *Dry) SortImages() {
-	d.state.RLock()
-	defer d.state.RUnlock()
-	switch d.state.sortImagesMode {
-	case drydocker.SortImagesByRepo:
-		d.state.sortImagesMode = drydocker.SortImagesByID
-	case drydocker.SortImagesByID:
-		d.state.sortImagesMode = drydocker.SortImagesByCreationDate
-	case drydocker.SortImagesByCreationDate:
-		d.state.sortImagesMode = drydocker.SortImagesBySize
-	case drydocker.SortImagesBySize:
-		d.state.sortImagesMode = drydocker.SortImagesByRepo
-
-	default:
-	}
-	d.dockerDaemon.SortImages(d.state.sortImagesMode)
-	refreshScreen()
-
 }
 
 //SortNetworks rotates to the next sort mode.
@@ -425,12 +394,10 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 	if err == nil {
 
 		state := &state{
-			sortImagesMode:   drydocker.SortImagesByRepo,
 			sortNetworksMode: drydocker.SortNetworksByID,
 			viewMode:         Main,
 			previousViewMode: Main,
 		}
-		d.SortImages(state.sortImagesMode)
 		d.SortNetworks(state.sortNetworksMode)
 		app := &Dry{}
 		app.widgetRegistry = NewWidgetRegistry(d)

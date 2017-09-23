@@ -509,14 +509,14 @@ func (daemon *DockerDaemon) StopContainer(id string) error {
 }
 
 //SortImages sorts the list of images by the given mode
-func (daemon *DockerDaemon) SortImages(sortMode SortImagesMode) {
+func (daemon *DockerDaemon) SortImages(sortMode SortMode) {
 	daemon.imagesLock.Lock()
 	defer daemon.imagesLock.Unlock()
 	SortImages(daemon.images, sortMode)
 }
 
 //SortNetworks sortes the list of networks by the given mode
-func (daemon *DockerDaemon) SortNetworks(sortMode SortNetworksMode) {
+func (daemon *DockerDaemon) SortNetworks(sortMode SortMode) {
 	daemon.networksLock.Lock()
 	defer daemon.networksLock.Unlock()
 	SortNetworks(daemon.networks, sortMode)

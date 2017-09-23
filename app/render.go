@@ -41,23 +41,13 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Images:
 		{
-			//after a refresh, sorting is needed
-			sortMode := d.state.sortImagesMode
+
 			widget := d.widgetRegistry.ImageList
-
-			images, err := d.dockerDaemon.Images()
-			if err == nil {
-				count = len(images)
-				data := appui.NewDockerImageRenderData(
-					images,
-					sortMode)
-
-				widget.PrepareToRender(data)
-				bufferers = append(bufferers, widget)
-
-			} else {
+			if err := widget.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
+			count = widget.RowCount()
+			bufferers = append(bufferers, widget)
 
 			keymap = imagesKeyMappings
 

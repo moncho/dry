@@ -8,15 +8,12 @@ import (
 
 //Allowed sort methods
 const (
-	NoSortImages SortImagesMode = iota
+	NoSortImages SortMode = iota
 	SortImagesByID
 	SortImagesByRepo
 	SortImagesBySize
 	SortImagesByCreationDate
 )
-
-//SortImagesMode represents allowed modes to sort Docker images
-type SortImagesMode uint16
 
 type apiImages []types.ImageSummary
 
@@ -48,11 +45,12 @@ func (s bySize) Less(i, j int) bool {
 type byCreationDate struct{ apiImages }
 
 func (s byCreationDate) Less(i, j int) bool {
-	return s.apiImages[i].Created < s.apiImages[j].Created
+	//More recent first
+	return s.apiImages[i].Created > s.apiImages[j].Created
 }
 
 //SortImages sorts the given image slice using the given mode
-func SortImages(images []types.ImageSummary, mode SortImagesMode) {
+func SortImages(images []types.ImageSummary, mode SortMode) {
 	switch mode {
 	case SortImagesByID:
 		sort.Sort(byID{images})

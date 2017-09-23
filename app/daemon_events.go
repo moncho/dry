@@ -18,23 +18,14 @@ func (el *dockerEventsListener) init() {
 			if strings.Contains(event.Action, "exec_") {
 				continue
 			}
+			//top messages are sent continuously on monitor mode
+			if strings.Contains(event.Action, "top") {
+				continue
+			}
 			dry.appmessage(fmt.Sprintf("Docker daemon: %s %s", event.Action, event.ID))
 
 			var err error
 			switch event.Type {
-			case "container":
-				f := func(err error) {
-					if err == nil {
-						refreshScreen()
-					} else {
-						dry.appmessage("There was an error refreshing: " + err.Error())
-					}
-				}
-				dry.dockerDaemon.Refresh(f)
-			case "volume":
-				err = dry.dockerDaemon.RefreshImages()
-				dry.dockerDaemon.SortImages(dry.state.sortImagesMode)
-				refreshScreen()
 			case "network":
 				err = dry.dockerDaemon.RefreshNetworks()
 				dry.dockerDaemon.SortNetworks(dry.state.sortNetworksMode)

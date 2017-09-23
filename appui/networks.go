@@ -27,11 +27,11 @@ var networkTableHeaders = []networkHeaderColumn{
 //used during image list rendering
 type DockerNetworkRenderData struct {
 	networks []types.NetworkResource
-	sortMode docker.SortNetworksMode
+	sortMode docker.SortMode
 }
 
 //NewDockerNetworkRenderData creates render data structs
-func NewDockerNetworkRenderData(networks []types.NetworkResource, sortMode docker.SortNetworksMode) *DockerNetworkRenderData {
+func NewDockerNetworkRenderData(networks []types.NetworkResource, sortMode docker.SortMode) *DockerNetworkRenderData {
 	return &DockerNetworkRenderData{
 		networks: networks,
 		sortMode: sortMode,
@@ -214,7 +214,7 @@ func (s *DockerNetworksWidget) visibleRows() []*NetworkRow {
 
 type networkHeaderColumn struct {
 	title string // Title to display in the tableHeader.
-	mode  docker.SortNetworksMode
+	mode  docker.SortMode
 }
 
 func networkTableHeader() *termui.TableHeader {

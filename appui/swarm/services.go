@@ -30,6 +30,7 @@ type ServicesWidget struct {
 	height, width        int
 	startIndex, endIndex int
 	mounted              bool
+	sortMode             docker.SortMode
 	sync.RWMutex
 }
 
@@ -75,6 +76,25 @@ func (s *ServicesWidget) Mount() error {
 //Name returns this widget name
 func (s *ServicesWidget) Name() string {
 	return "ServicesWidget"
+}
+
+//Sort rotates to the next sort mode.
+//SortByContainerID -> SortByImage -> SortByStatus -> SortByName -> SortByContainerID
+func (s *ServicesWidget) Sort() {
+	s.Lock()
+	defer s.Unlock()
+	switch s.sortMode {
+	case docker.SortByContainerID:
+		s.sortMode = docker.SortByImage
+	case docker.SortByImage:
+		s.sortMode = docker.SortByStatus
+	case docker.SortByStatus:
+		s.sortMode = docker.SortByName
+	case docker.SortByName:
+		s.sortMode = docker.SortByContainerID
+	default:
+	}
+	s.mounted = false
 }
 
 //Unmount marks this widget as unmounted

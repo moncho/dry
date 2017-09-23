@@ -41,8 +41,8 @@ type ContainerDaemon interface {
 	RefreshNetworks() error
 	RemoveDanglingImages() (int, error)
 	RemoveNetwork(id string) error
-	SortImages(sortMode SortImagesMode)
-	SortNetworks(sortMode SortNetworksMode)
+	SortImages(sortMode SortMode)
+	SortNetworks(sortMode SortMode)
 	Version() (*types.Version, error)
 }
 

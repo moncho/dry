@@ -4,7 +4,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/docker/api/types"
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -21,42 +20,33 @@ var imageTableHeaders = []imageHeaderColumn{
 	{`Size`, docker.SortImagesBySize},
 }
 
-//DockerImageRenderData holds information that might be
-//used during image list rendering
-type DockerImageRenderData struct {
-	images   []types.ImageSummary
-	sortMode docker.SortImagesMode
-}
-
-//NewDockerImageRenderData creates render data structs
-func NewDockerImageRenderData(images []types.ImageSummary, sortMode docker.SortImagesMode) *DockerImageRenderData {
-	return &DockerImageRenderData{
-		images:   images,
-		sortMode: sortMode,
-	}
-}
-
 //DockerImagesWidget knows how render a container list
 type DockerImagesWidget struct {
 	images               []*ImageRow // List of columns.
-	data                 *DockerImageRenderData
+	dockerDaemon         docker.ImageAPI
+	mounted              bool
 	header               *termui.TableHeader
 	selectedIndex        int
 	x, y                 int
 	height, width        int
 	startIndex, endIndex int
+	sortMode             docker.SortMode
 	sync.RWMutex
 }
 
 //NewDockerImagesWidget creates a renderer for a container list
-func NewDockerImagesWidget(y int) *DockerImagesWidget {
-	w := &DockerImagesWidget{
-		y:      y,
-		header: defaultImageTableHeader,
-		height: MainScreenAvailableHeight(),
-		width:  ui.ActiveScreen.Dimensions.Width}
+func NewDockerImagesWidget(dockerDaemon docker.ImageAPI, y int) *DockerImagesWidget {
+	w := DockerImagesWidget{
+		y:            y,
+		dockerDaemon: dockerDaemon,
+		header:       defaultImageTableHeader,
+		height:       MainScreenAvailableHeight(),
+		sortMode:     docker.SortImagesByRepo,
+		width:        ui.ActiveScreen.Dimensions.Width}
 
-	return w
+	RegisterWidget(docker.ImageSource, &w)
+
+	return &w
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
@@ -89,6 +79,23 @@ func (s *DockerImagesWidget) Buffer() gizaktermui.Buffer {
 
 //Mount tells this widget to be ready for rendering
 func (s *DockerImagesWidget) Mount() error {
+	s.Lock()
+	defer s.Unlock()
+	if !s.mounted {
+		images, err := s.dockerDaemon.Images()
+		if err != nil {
+			return err
+		}
+
+		docker.SortImages(images, s.sortMode)
+		var imageRows []*ImageRow
+		for _, image := range images {
+			imageRows = append(imageRows, NewImageRow(image, s.header))
+		}
+		s.images = imageRows
+		s.mounted = true
+		s.align()
+	}
 	return nil
 }
 
@@ -102,22 +109,27 @@ func (s *DockerImagesWidget) OnEvent(event EventCommand) error {
 	return event(s.images[s.selectedIndex].image.ID)
 }
 
-//PrepareToRender prepare this widget for rendering using the given data
-func (s *DockerImagesWidget) PrepareToRender(data *DockerImageRenderData) {
-	s.Lock()
-	defer s.Unlock()
-	s.data = data
-	var images []*ImageRow
-	for _, image := range data.images {
-		images = append(images, NewImageRow(image, s.header))
-	}
-	s.images = images
-	s.align()
-}
-
 //RowCount returns the number of rows of this widget.
 func (s *DockerImagesWidget) RowCount() int {
 	return len(s.images)
+}
+
+//SortImages rotates to the next sort mode.
+//SortImagesByRepo -> SortImagesByID -> SortImagesByCreationDate -> SortImagesBySize -> SortImagesByRepo
+func (s *DockerImagesWidget) Sort() {
+	s.RLock()
+	defer s.RUnlock()
+	switch s.sortMode {
+	case docker.SortImagesByRepo:
+		s.sortMode = docker.SortImagesByID
+	case docker.SortImagesByID:
+		s.sortMode = docker.SortImagesByCreationDate
+	case docker.SortImagesByCreationDate:
+		s.sortMode = docker.SortImagesBySize
+	case docker.SortImagesBySize:
+		s.sortMode = docker.SortImagesByRepo
+	}
+	s.mounted = false
 }
 
 //Unmount tells this widget that it will not be rendering anymore
@@ -141,7 +153,7 @@ func (s *DockerImagesWidget) align() {
 }
 
 func (s *DockerImagesWidget) updateHeader() {
-	sortMode := s.data.sortMode
+	sortMode := s.sortMode
 
 	for _, c := range s.header.Columns {
 		colTitle := c.Text
@@ -172,6 +184,9 @@ func (s *DockerImagesWidget) highlightSelectedRow() {
 	index := ui.ActiveScreen.Cursor.Position()
 	if index > s.RowCount() {
 		index = s.RowCount() - 1
+	}
+	if s.selectedIndex < s.RowCount() {
+		s.images[s.selectedIndex].NotHighlighted()
 	}
 	s.selectedIndex = index
 	s.images[s.selectedIndex].Highlighted()
@@ -212,7 +227,7 @@ func (s *DockerImagesWidget) visibleRows() []*ImageRow {
 
 type imageHeaderColumn struct {
 	title string // Title to display in the tableHeader.
-	mode  docker.SortImagesMode
+	mode  docker.SortMode
 }
 
 func imageTableHeader() *termui.TableHeader {
