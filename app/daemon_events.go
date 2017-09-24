@@ -23,17 +23,6 @@ func (el *dockerEventsListener) init() {
 				continue
 			}
 			dry.appmessage(fmt.Sprintf("Docker daemon: %s %s", event.Action, event.ID))
-
-			var err error
-			switch event.Type {
-			case "network":
-				err = dry.dockerDaemon.RefreshNetworks()
-				dry.dockerDaemon.SortNetworks(dry.state.sortNetworksMode)
-				refreshScreen()
-			}
-			if err != nil {
-				dry.appmessage("There was an error refreshing: " + err.Error())
-			}
 		}
 	}()
 }

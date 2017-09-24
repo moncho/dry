@@ -9,12 +9,12 @@ import (
 
 //ImageRunWidget is an input widget to run images
 type ImageRunWidget struct {
-	image *types.ImageSummary
+	image types.ImageSummary
 	termui.TextInput
 }
 
 //NewImageRunWidget creates a new ImageRunWidget for the given image
-func NewImageRunWidget(image *types.ImageSummary) *ImageRunWidget {
+func NewImageRunWidget(image types.ImageSummary) *ImageRunWidget {
 	w := &ImageRunWidget{
 		image:     image,
 		TextInput: *termui.NewTextInput(""),
@@ -26,7 +26,7 @@ func NewImageRunWidget(image *types.ImageSummary) *ImageRunWidget {
 	w.Bg = gtermui.Attribute(DryTheme.Bg)
 	w.TextBgColor = gtermui.Attribute(DryTheme.Bg)
 	w.TextFgColor = gtermui.ColorWhite
-	w.BorderLabel = widgetTitle(image)
+	w.BorderLabel = widgetTitle(&image)
 	w.BorderLabelFg = gtermui.ColorWhite
 
 	return w

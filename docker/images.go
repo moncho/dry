@@ -1,7 +1,6 @@
 package docker
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -23,34 +22,33 @@ func (daemon *DockerDaemon) History(id string) ([]image.HistoryResponseItem, err
 		ctx, id)
 }
 
-//ImageAt returns the Image found at the given
-//position.
-func (daemon *DockerDaemon) ImageAt(pos int) (*dockerTypes.ImageSummary, error) {
-	daemon.imagesLock.Lock()
-	defer daemon.imagesLock.Unlock()
-	if pos >= len(daemon.images) {
-		return nil, errors.New("Position is higher than number of images")
+//ImageByID returns the image with the given ID
+func (daemon *DockerDaemon) ImageByID(id string) (dockerTypes.ImageSummary, error) {
+	var result dockerTypes.ImageSummary
+	images, err := daemon.Images()
+	if err != nil {
+		return result, err
 	}
-	return &daemon.images[pos], nil
+	for _, image := range images {
+		if image.ID == id {
+			return image, nil
+		}
+	}
+
+	return result, fmt.Errorf("Image %s not found", id)
+
 }
 
 //Images returns the list of Docker images
 func (daemon *DockerDaemon) Images() ([]dockerTypes.ImageSummary, error) {
-	daemon.imagesLock.Lock()
-	defer daemon.imagesLock.Unlock()
-	return daemon.images, nil
-}
 
-//ImagesCount returns the number of images
-func (daemon *DockerDaemon) ImagesCount() int {
-	daemon.imagesLock.Lock()
-	defer daemon.imagesLock.Unlock()
-	return len(daemon.images)
+	return images(daemon.client, defaultImageListOptions)
+
 }
 
 //RunImage creates a container based on the given image and runs the given command
 //Kind of like running "docker run $image $command" from the command line.
-func (daemon *DockerDaemon) RunImage(image *dockerTypes.ImageSummary, command string) error {
+func (daemon *DockerDaemon) RunImage(image dockerTypes.ImageSummary, command string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 

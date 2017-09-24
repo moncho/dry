@@ -42,13 +42,13 @@ func (s networksByDriver) Less(i, j int) bool {
 }
 
 //SortNetworks sorts the given network slice using the given mode
-func SortNetworks(images []types.NetworkResource, mode SortMode) {
+func SortNetworks(networks []types.NetworkResource, mode SortMode) {
 	switch mode {
 	case SortNetworksByID:
-		sort.Sort(networksByID{images})
+		sort.Sort(networksByID{networks})
 	case SortNetworksByName:
-		sort.Sort(networksByName{images})
+		sort.Sort(networksByName{networks})
 	case SortNetworksByDriver:
-		sort.Sort(networksByDriver{images})
+		sort.Sort(networksByDriver{networks})
 	}
 }

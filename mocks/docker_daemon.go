@@ -71,8 +71,8 @@ func (_m *DockerDaemonMock) History(id string) ([]image.HistoryResponseItem, err
 }
 
 //ImageAt mock
-func (_m *DockerDaemonMock) ImageAt(pos int) (*types.ImageSummary, error) {
-	return nil, nil
+func (_m *DockerDaemonMock) ImageByID(id string) (types.ImageSummary, error) {
+	return types.ImageSummary{}, nil
 }
 
 //Images mock
@@ -285,7 +285,7 @@ func (_m *DockerDaemonMock) ResolveService(id string) (string, error) {
 }
 
 //RunImage mock
-func (_m *DockerDaemonMock) RunImage(image *types.ImageSummary, command string) error {
+func (_m *DockerDaemonMock) RunImage(image types.ImageSummary, command string) error {
 	return nil
 }
 

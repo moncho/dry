@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+
 	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
@@ -43,8 +45,6 @@ func (h *imagesScreenEventHandler) handle(event termbox.Event) {
 func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key) (bool, bool) {
 	dry := h.dry
 	screen := h.screen
-	cursor := screen.Cursor
-	cursorPos := cursor.Position()
 	keepFocus := true
 	handled := true
 	switch key {
@@ -55,13 +55,40 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key) (bool, bool) 
 	case termbox.KeyCtrlD: //remove dangling images
 		dry.RemoveDanglingImages()
 	case termbox.KeyCtrlE: //remove image
-		dry.RemoveImageAt(cursorPos, false)
+		rmImage := func(id string) error {
+			dry.RemoveImage(id, false)
+			return nil
+		}
+		if err := h.widget().OnEvent(rmImage); err != nil {
+			dry.appmessage(
+				fmt.Sprintf("Error removing image: %s", err.Error()))
+		}
+
 	case termbox.KeyCtrlF: //force remove image
-		dry.RemoveImageAt(cursorPos, true)
+		rmImage := func(id string) error {
+			dry.RemoveImage(id, true)
+			return nil
+		}
+		if err := h.widget().OnEvent(rmImage); err != nil {
+			dry.appmessage(
+				fmt.Sprintf("Error forcing image removal: %s", err.Error()))
+		}
 	case termbox.KeyEnter: //inspect image
-		dry.InspectImageAt(cursorPos)
-		keepFocus = false
-		go appui.Less(renderDry(dry), screen, h.eventChan, h.closeViewChan)
+		inspectImage := func(id string) error {
+			network, err := h.dry.dockerDaemon.InspectImage(id)
+			if err != nil {
+				return err
+			}
+			keepFocus = false
+			renderer := appui.NewJSONRenderer(network)
+			go appui.Less(renderer, screen, h.eventChan, h.closeViewChan)
+			return nil
+		}
+		if err := h.widget().OnEvent(inspectImage); err != nil {
+			dry.appmessage(
+				fmt.Sprintf("Error inspecting image: %s", err.Error()))
+		}
+
 	default:
 		handled = false
 	}
@@ -71,24 +98,36 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key) (bool, bool) 
 func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
 	dry := h.dry
 	screen := h.screen
-	cursor := screen.Cursor
-	cursorPos := cursor.Position()
 	keepFocus := true
 	handled := true
 	switch ch {
 	case '2': //Ignore since dry is already on the images screen
 
 	case 'i', 'I': //image history
-		dry.HistoryAt(cursorPos)
-		keepFocus = false
-		go appui.Less(renderDry(dry), screen, h.eventChan, h.closeViewChan)
 
+		history := func(id string) error {
+			history, err := h.dry.dockerDaemon.History(id)
+			if err != nil {
+				return err
+			}
+			keepFocus = false
+			renderer := appui.NewDockerImageHistoryRenderer(history)
+			go appui.Less(renderer, screen, h.eventChan, h.closeViewChan)
+			return nil
+		}
+		if err := h.widget().OnEvent(history); err != nil {
+
+		}
 	case 'r', 'R': //Run container
-		if image, err := dry.dockerDaemon.ImageAt(cursorPos); err == nil {
+		runImage := func(id string) error {
+			image, err := h.dry.dockerDaemon.ImageByID(id)
+			if err != nil {
+				return err
+			}
 			rw := appui.NewImageRunWidget(image)
 			h.passingEvents = true
 			dry.widgetRegistry.add(rw)
-			go func(image *types.ImageSummary) {
+			go func(image types.ImageSummary) {
 				events := ui.EventSource{
 					Events: h.eventChan,
 					EventHandledCallback: func(e termbox.Event) error {
@@ -106,6 +145,11 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
 					dry.appmessage(err.Error())
 				}
 			}(image)
+			return nil
+		}
+		if err := h.widget().OnEvent(runImage); err != nil {
+			dry.appmessage(
+				fmt.Sprintf("Error running image: %s", err.Error()))
 		}
 	default:
 		handled = false

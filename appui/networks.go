@@ -4,7 +4,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/docker/api/types"
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -23,42 +22,32 @@ var networkTableHeaders = []networkHeaderColumn{
 	{`GATEWAY`, docker.NoSortNetworks},
 }
 
-//DockerNetworkRenderData holds information that might be
-//used during image list rendering
-type DockerNetworkRenderData struct {
-	networks []types.NetworkResource
-	sortMode docker.SortMode
-}
-
-//NewDockerNetworkRenderData creates render data structs
-func NewDockerNetworkRenderData(networks []types.NetworkResource, sortMode docker.SortMode) *DockerNetworkRenderData {
-	return &DockerNetworkRenderData{
-		networks: networks,
-		sortMode: sortMode,
-	}
-}
-
 //DockerNetworksWidget knows how render a container list
 type DockerNetworksWidget struct {
-	networks             []*NetworkRow // List of columns.
-	data                 *DockerNetworkRenderData
+	dockerDaemon         docker.NetworkAPI
 	header               *termui.TableHeader
-	selectedIndex        int
-	x, y                 int
 	height, width        int
+	mounted              bool
+	networks             []*NetworkRow // List of columns.
+	selectedIndex        int
+	sortMode             docker.SortMode
 	startIndex, endIndex int
+	x, y                 int
 	sync.RWMutex
 }
 
 //NewDockerNetworksWidget creates a renderer for a network list
-func NewDockerNetworksWidget(y int) *DockerNetworksWidget {
-	w := &DockerNetworksWidget{
-		y:      y,
-		header: defaultNetworkTableHeader,
-		height: MainScreenAvailableHeight(),
-		width:  ui.ActiveScreen.Dimensions.Width}
+func NewDockerNetworksWidget(dockerDaemon docker.NetworkAPI, y int) *DockerNetworksWidget {
+	w := DockerNetworksWidget{
+		dockerDaemon: dockerDaemon,
+		y:            y,
+		header:       defaultNetworkTableHeader,
+		height:       MainScreenAvailableHeight(),
+		sortMode:     docker.SortNetworksByID,
+		width:        ui.ActiveScreen.Dimensions.Width}
 
-	return w
+	RegisterWidget(docker.NetworkSource, &w)
+	return &w
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
@@ -91,25 +80,29 @@ func (s *DockerNetworksWidget) Buffer() gizaktermui.Buffer {
 
 //Mount tells this widget to be ready for rendering
 func (s *DockerNetworksWidget) Mount() error {
+	s.Lock()
+	defer s.Unlock()
+	if !s.mounted {
+		networks, err := s.dockerDaemon.Networks()
+		if err != nil {
+			return err
+		}
+
+		docker.SortNetworks(networks, s.sortMode)
+
+		var networkRows []*NetworkRow
+		for _, network := range networks {
+			networkRows = append(networkRows, NewNetworkRow(network, s.header))
+		}
+		s.networks = networkRows
+		s.align()
+	}
 	return nil
 }
 
 //Name returns this widget name
 func (s *DockerNetworksWidget) Name() string {
 	return "DockerNetworksWidget"
-}
-
-//PrepareToRender prepare this widget for rendering using the given data
-func (s *DockerNetworksWidget) PrepareToRender(data *DockerNetworkRenderData) {
-	s.Lock()
-	defer s.Unlock()
-	s.data = data
-	var networks []*NetworkRow
-	for _, network := range data.networks {
-		networks = append(networks, NewNetworkRow(network, s.header))
-	}
-	s.networks = networks
-	s.align()
 }
 
 //OnEvent runs the given command
@@ -122,8 +115,27 @@ func (s *DockerNetworksWidget) RowCount() int {
 	return len(s.networks)
 }
 
+//Sort rotates to the next sort mode.
+//SortNetworksByID -> SortNetworksByName -> SortNetworksByDriver
+func (s *DockerNetworksWidget) Sort() {
+	s.RLock()
+	defer s.RUnlock()
+	switch s.sortMode {
+	case docker.SortNetworksByID:
+		s.sortMode = docker.SortNetworksByName
+	case docker.SortNetworksByName:
+		s.sortMode = docker.SortNetworksByDriver
+	case docker.SortNetworksByDriver:
+		s.sortMode = docker.SortNetworksByID
+	default:
+	}
+}
+
 //Unmount tells this widget that it will not be rendering anymore
 func (s *DockerNetworksWidget) Unmount() error {
+	s.RLock()
+	defer s.RUnlock()
+	s.mounted = false
 	return nil
 }
 
@@ -143,7 +155,7 @@ func (s *DockerNetworksWidget) align() {
 }
 
 func (s *DockerNetworksWidget) updateHeader() {
-	sortMode := s.data.sortMode
+	sortMode := s.sortMode
 
 	for _, c := range s.header.Columns {
 		colTitle := c.Text

@@ -40,7 +40,7 @@ func NewWidgetRegistry(daemon docker.ContainerDaemon) *WidgetRegistry {
 		ImageList:     appui.NewDockerImagesWidget(daemon, appui.MainScreenHeaderSize),
 		DiskUsage:     appui.NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
 		Monitor:       appui.NewMonitor(daemon, appui.MainScreenHeaderSize),
-		Networks:      appui.NewDockerNetworksWidget(appui.MainScreenHeaderSize),
+		Networks:      appui.NewDockerNetworksWidget(daemon, appui.MainScreenHeaderSize),
 		Nodes:         swarm.NewNodesWidget(daemon, appui.MainScreenHeaderSize),
 		NodeTasks:     swarm.NewNodeTasksWidget(daemon, appui.MainScreenHeaderSize),
 		ServiceTasks:  swarm.NewServiceTasksWidget(daemon, appui.MainScreenHeaderSize),

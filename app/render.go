@@ -54,26 +54,13 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 		}
 	case Networks:
 		{
-			//after a refresh, sorting is needed
-			sortMode := d.state.sortNetworksMode
 			widget := d.widgetRegistry.Networks
-
-			networks, err := d.dockerDaemon.Networks()
-			if err == nil {
-				count = len(networks)
-				data := appui.NewDockerNetworkRenderData(
-					networks,
-					sortMode)
-
-				widget.PrepareToRender(data)
-				bufferers = append(bufferers, widget)
-
-			} else {
+			if err := widget.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
-
+			count = widget.RowCount()
+			bufferers = append(bufferers, widget)
 			keymap = networkKeyMappings
-
 		}
 	case Nodes:
 		{
@@ -152,12 +139,6 @@ func renderDry(d *Dry) ui.Renderer {
 	switch d.viewMode() {
 	case EventsMode:
 		output = appui.NewDockerEventsRenderer(d.dockerDaemon.EventLog().Events())
-	case ImageHistoryMode:
-		output = appui.NewDockerImageHistoryRenderer(d.imageHistory)
-	case InspectImageMode:
-		output = appui.NewJSONRenderer(d.inspectedImage)
-	case InspectNetworkMode:
-		output = appui.NewJSONRenderer(d.inspectedNetwork)
 	case HelpMode:
 		output = ui.StringRenderer(help)
 	case InfoMode:

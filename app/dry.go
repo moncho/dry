@@ -8,7 +8,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/swarm"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -20,7 +19,6 @@ type state struct {
 	sync.RWMutex
 	previousViewMode viewMode
 	viewMode         viewMode
-	sortNetworksMode drydocker.SortMode
 }
 
 //Dry represents the application.
@@ -29,11 +27,8 @@ type Dry struct {
 	dockerDaemon     drydocker.ContainerDaemon
 	dockerEvents     <-chan events.Message
 	dockerEventsDone chan<- struct{}
-	imageHistory     []image.HistoryResponseItem
 	info             types.Info
 	inspectedImage   types.ImageInspect
-	inspectedNetwork types.NetworkResource
-	networks         []types.NetworkResource
 	output           chan string
 	state            *state
 	//cache is a potential replacement for state
@@ -64,66 +59,6 @@ func (d *Dry) Close() {
 	close(d.output)
 }
 
-//HistoryAt prepares dry to show image history of image at the given positions
-func (d *Dry) HistoryAt(position int) {
-	if apiImage, err := d.dockerDaemon.ImageAt(position); err == nil {
-		d.History(apiImage.ID)
-	} else {
-		d.appmessage(fmt.Sprintf("<red>Error getting history of image </><white>: %s</>", err.Error()))
-	}
-}
-
-//History  prepares dry to show image history
-func (d *Dry) History(id string) {
-	history, err := d.dockerDaemon.History(id)
-	if err == nil {
-		d.changeViewMode(ImageHistoryMode)
-		d.imageHistory = history
-	} else {
-		d.appmessage(fmt.Sprintf("<red>Error getting history of image </><white>%s: %s</>", id, err.Error()))
-	}
-}
-
-//InspectImageAt prepares dry to show image information for the image at the given position
-func (d *Dry) InspectImageAt(position int) {
-	if apiImage, err := d.dockerDaemon.ImageAt(position); err == nil {
-		d.InspectImage(apiImage.ID)
-	} else {
-		d.errorMessage(apiImage.ID, "inspecting image", err)
-	}
-}
-
-//InspectImage prepares dry to show image information for the image with the given id
-func (d *Dry) InspectImage(id string) {
-	image, err := d.dockerDaemon.InspectImage(id)
-	if err == nil {
-		d.changeViewMode(InspectImageMode)
-		d.inspectedImage = image
-	} else {
-		d.errorMessage(id, "inspecting image", err)
-	}
-}
-
-//InspectNetworkAt prepares dry to show network information for the network at the given position
-func (d *Dry) InspectNetworkAt(position int) {
-	if network, err := d.dockerDaemon.NetworkAt(position); err == nil {
-		d.InspectNetwork(network.ID)
-	} else {
-		d.errorMessage(network.ID, "inspecting network", err)
-	}
-}
-
-//InspectNetwork prepares dry to show network information for the network with the given id
-func (d *Dry) InspectNetwork(id string) {
-	network, err := d.dockerDaemon.NetworkInspect(id)
-	if err == nil {
-		d.changeViewMode(InspectNetworkMode)
-		d.inspectedNetwork = network
-	} else {
-		d.errorMessage(network.ID, "inspecting network", err)
-	}
-}
-
 //Kill the docker container with the given id
 func (d *Dry) Kill(id string) {
 
@@ -140,11 +75,6 @@ func (d *Dry) Kill(id string) {
 //Logs retrieves the log of the docker container with the given id
 func (d *Dry) Logs(id string) (io.ReadCloser, error) {
 	return d.dockerDaemon.Logs(id), nil
-}
-
-//NetworkAt returns the network found at the given position.
-func (d *Dry) NetworkAt(pos int) (*types.NetworkResource, error) {
-	return d.dockerDaemon.NetworkAt(pos)
 }
 
 //OuputChannel returns the channel where dry messages are written
@@ -199,15 +129,6 @@ func (d *Dry) RemoveDanglingImages() {
 		d.appmessage(
 			fmt.Sprintf(
 				"<red>Error removing dangling images. %s</>", err))
-	}
-}
-
-//RemoveImageAt removes the Docker image at the given position
-func (d *Dry) RemoveImageAt(position int, force bool) {
-	if image, err := d.dockerDaemon.ImageAt(position); err == nil {
-		d.RemoveImage(drydocker.ImageID(image.ID), force)
-	} else {
-		d.appmessage(fmt.Sprintf("<red>Error removing image</>: %s", err.Error()))
 	}
 }
 
@@ -306,14 +227,7 @@ func (d *Dry) ShowMonitor() {
 //ShowNetworks changes the state of dry to show the list of Docker networks reported
 //by the daemon
 func (d *Dry) ShowNetworks() {
-	if networks, err := d.dockerDaemon.Networks(); err == nil {
-		d.changeViewMode(Networks)
-		d.networks = networks
-	} else {
-		d.appmessage(
-			fmt.Sprintf(
-				"Could not retrieve network list: %s ", err.Error()))
-	}
+	d.changeViewMode(Networks)
 }
 
 //ShowNodes changes the state of dry to show the node list
@@ -336,24 +250,6 @@ func (d *Dry) ShowServiceTasks(serviceID string) {
 func (d *Dry) ShowTasks(nodeID string) {
 	d.widgetRegistry.NodeTasks.PrepareToRender(nodeID)
 	d.changeViewMode(Tasks)
-}
-
-//SortNetworks rotates to the next sort mode.
-//SortNetworksByID -> SortNetworksByName -> SortNetworksByDriver
-func (d *Dry) SortNetworks() {
-	d.state.RLock()
-	defer d.state.RUnlock()
-	switch d.state.sortNetworksMode {
-	case drydocker.SortNetworksByID:
-		d.state.sortNetworksMode = drydocker.SortNetworksByName
-	case drydocker.SortNetworksByName:
-		d.state.sortNetworksMode = drydocker.SortNetworksByDriver
-	case drydocker.SortNetworksByDriver:
-		d.state.sortNetworksMode = drydocker.SortNetworksByID
-	default:
-	}
-	d.dockerDaemon.SortNetworks(d.state.sortNetworksMode)
-	refreshScreen()
 }
 
 func (d *Dry) startDry() {
@@ -394,11 +290,9 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 	if err == nil {
 
 		state := &state{
-			sortNetworksMode: drydocker.SortNetworksByID,
 			viewMode:         Main,
 			previousViewMode: Main,
 		}
-		d.SortNetworks(state.sortNetworksMode)
 		app := &Dry{}
 		app.widgetRegistry = NewWidgetRegistry(d)
 		app.state = state

@@ -1,7 +1,6 @@
 package docker
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -39,19 +38,15 @@ var defaultImageListOptions = dockerTypes.ImageListOptions{
 
 //DockerDaemon knows how to talk to the Docker daemon
 type DockerDaemon struct {
-	client       dockerAPI.APIClient //client used to to connect to the Docker daemon
-	s            ContainerStore
-	images       []dockerTypes.ImageSummary
-	networks     []dockerTypes.NetworkResource
-	err          error // Errors, if any.
-	dockerEnv    *Env
-	version      *dockerTypes.Version
-	swarmMode    bool
-	storeLock    sync.RWMutex
-	imagesLock   sync.RWMutex
-	networksLock sync.RWMutex
-	resolver     Resolver
-	eventLog     *EventLog
+	client    dockerAPI.APIClient //client used to to connect to the Docker daemon
+	s         ContainerStore
+	err       error // Errors, if any.
+	dockerEnv *Env
+	version   *dockerTypes.Version
+	swarmMode bool
+	storeLock sync.RWMutex
+	resolver  Resolver
+	eventLog  *EventLog
 }
 
 func init() {
@@ -228,26 +223,7 @@ func (daemon *DockerDaemon) Logs(id string) io.ReadCloser {
 
 //Networks returns the list of Docker networks
 func (daemon *DockerDaemon) Networks() ([]dockerTypes.NetworkResource, error) {
-	daemon.networksLock.RLock()
-	defer daemon.networksLock.RUnlock()
-	return daemon.networks, nil
-}
-
-//NetworkAt returns the network found at the given position.
-func (daemon *DockerDaemon) NetworkAt(pos int) (*dockerTypes.NetworkResource, error) {
-	daemon.networksLock.RLock()
-	defer daemon.networksLock.RUnlock()
-	if pos >= len(daemon.networks) {
-		return nil, errors.New("Position is higher than number of networks")
-	}
-	return &daemon.networks[pos], nil
-}
-
-//NetworksCount returns the number of networks reported by Docker
-func (daemon *DockerDaemon) NetworksCount() int {
-	daemon.networksLock.RLock()
-	defer daemon.networksLock.RUnlock()
-	return len(daemon.networks)
+	return networks(daemon.client)
 }
 
 //NetworkInspect returns network detailed information
@@ -340,32 +316,6 @@ func (daemon *DockerDaemon) refreshAndWait() error {
 	})
 	wg.Wait()
 	return refreshError
-}
-
-//RefreshImages refreshes the image list
-func (daemon *DockerDaemon) RefreshImages() error {
-	daemon.imagesLock.Lock()
-	defer daemon.imagesLock.Unlock()
-
-	images, err := images(daemon.client, defaultImageListOptions)
-
-	if err == nil {
-		daemon.images = images
-	}
-	return err
-}
-
-//RefreshNetworks refreshes the network list
-func (daemon *DockerDaemon) RefreshNetworks() error {
-	daemon.networksLock.Lock()
-	defer daemon.networksLock.Unlock()
-
-	networks, err := networks(daemon.client)
-
-	if err == nil {
-		daemon.networks = networks
-	}
-	return err
 }
 
 //RemoveAllStoppedContainers removes all stopped containers
@@ -506,20 +456,6 @@ func (daemon *DockerDaemon) StopContainer(id string) error {
 	}
 
 	return daemon.refreshAndWait()
-}
-
-//SortImages sorts the list of images by the given mode
-func (daemon *DockerDaemon) SortImages(sortMode SortMode) {
-	daemon.imagesLock.Lock()
-	defer daemon.imagesLock.Unlock()
-	SortImages(daemon.images, sortMode)
-}
-
-//SortNetworks sortes the list of networks by the given mode
-func (daemon *DockerDaemon) SortNetworks(sortMode SortMode) {
-	daemon.networksLock.Lock()
-	defer daemon.networksLock.Unlock()
-	SortNetworks(daemon.networks, sortMode)
 }
 
 //Top returns Top information for the given container

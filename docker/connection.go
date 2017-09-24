@@ -35,20 +35,10 @@ func connect(client client.APIClient, env *Env) (*DockerDaemon, error) {
 	if err != nil {
 		return nil, err
 	}
-	images, err := images(client, defaultImageListOptions)
-	if err != nil {
-		return nil, err
-	}
-	networks, err := networks(client)
-	if err != nil {
-		return nil, err
-	}
 	d := &DockerDaemon{
 		client:    client,
 		err:       err,
 		s:         store,
-		images:    images,
-		networks:  networks,
 		dockerEnv: env,
 		resolver:  newResolver(client, false),
 	}

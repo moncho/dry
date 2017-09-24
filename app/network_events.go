@@ -1,8 +1,9 @@
 package app
 
 import (
+	"fmt"
+
 	"github.com/moncho/dry/appui"
-	"github.com/moncho/dry/ui"
 	"github.com/nsf/termbox-go"
 )
 
@@ -18,31 +19,44 @@ func (h *networksScreenEventHandler) handle(event termbox.Event) {
 	focus := true
 	dry := h.dry
 	screen := h.screen
-	cursor := screen.Cursor
-	cursorPos := cursor.Position()
 	handled := false
 	switch event.Key {
 	case termbox.KeyF1: //sort
 		handled = true
-		dry.SortNetworks()
+		h.dry.widgetRegistry.Networks.Sort()
 	case termbox.KeyF5: // refresh
 		handled = true
+		h.dry.appmessage("Refreshing network list")
 		h.widget().Unmount()
+
 	case termbox.KeyEnter: //inspect
 		handled = true
-		dry.InspectNetworkAt(cursorPos)
-		focus = false
-		go appui.Less(renderDry(dry), screen, h.eventChan, h.closeViewChan)
+		inspectNetwork := func(id string) error {
+			network, err := h.dry.dockerDaemon.NetworkInspect(id)
+			if err != nil {
+				return err
+			}
+			focus = false
+			renderer := appui.NewJSONRenderer(network)
+			go appui.Less(renderer, screen, h.eventChan, h.closeViewChan)
+			return nil
+		}
+		if err := h.widget().OnEvent(inspectNetwork); err != nil {
+			dry.appmessage(
+				fmt.Sprintf("Error inspecting image: %s", err.Error()))
+		}
+
 	case termbox.KeyCtrlE: //remove network
 		handled = true
-		if cursorPos >= 0 {
-			network, err := dry.NetworkAt(cursorPos)
-			if err == nil {
-				dry.RemoveNetwork(network.ID)
-			} else {
-				ui.ShowErrorMessage(screen, h.eventChan, h.closeViewChan, err)
-			}
+		rmNetwork := func(id string) error {
+			dry.RemoveNetwork(id)
+			return nil
 		}
+		if err := h.widget().OnEvent(rmNetwork); err != nil {
+			dry.appmessage(
+				fmt.Sprintf("Error removing network: %s", err.Error()))
+		}
+
 	}
 	if !handled {
 		switch event.Ch {

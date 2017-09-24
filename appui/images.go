@@ -114,7 +114,7 @@ func (s *DockerImagesWidget) RowCount() int {
 	return len(s.images)
 }
 
-//SortImages rotates to the next sort mode.
+//Sort rotates to the next sort mode.
 //SortImagesByRepo -> SortImagesByID -> SortImagesByCreationDate -> SortImagesBySize -> SortImagesByRepo
 func (s *DockerImagesWidget) Sort() {
 	s.RLock()
@@ -134,6 +134,9 @@ func (s *DockerImagesWidget) Sort() {
 
 //Unmount tells this widget that it will not be rendering anymore
 func (s *DockerImagesWidget) Unmount() error {
+	s.RLock()
+	defer s.RUnlock()
+	s.mounted = false
 	return nil
 }
 

@@ -15,7 +15,7 @@ func Test_viewMode_isMainScreen(t *testing.T) {
 		},
 		{
 			"non main screen",
-			InspectNetworkMode,
+			HelpMode,
 			false,
 		},
 	}

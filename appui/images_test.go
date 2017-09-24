@@ -107,8 +107,8 @@ func (i noopImageAPI) History(id string) ([]image.HistoryResponseItem, error) {
 	return []image.HistoryResponseItem{}, nil
 }
 
-func (i noopImageAPI) ImageAt(pos int) (*types.ImageSummary, error) {
-	return &types.ImageSummary{}, nil
+func (i noopImageAPI) ImageByID(id string) (types.ImageSummary, error) {
+	return types.ImageSummary{}, nil
 
 }
 func (i noopImageAPI) Images() ([]types.ImageSummary, error) {
@@ -117,6 +117,6 @@ func (i noopImageAPI) Images() ([]types.ImageSummary, error) {
 func (i noopImageAPI) ImagesCount() int {
 	return 0
 }
-func (i noopImageAPI) RunImage(image *types.ImageSummary, command string) error {
+func (i noopImageAPI) RunImage(image types.ImageSummary, command string) error {
 	return nil
 }

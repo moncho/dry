@@ -96,9 +96,17 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 			focus = false
 		}
 	case docker.HISTORY:
-		dry.History(command.container.ImageID)
-		focus = false
-		go appui.Less(renderDry(dry), screen, h.eventChan, h.closeViewChan)
+		history, err := dry.dockerDaemon.History(command.container.ImageID)
+
+		if err == nil {
+			focus = false
+			renderer := appui.NewDockerImageHistoryRenderer(history)
+
+			go appui.Less(renderer, screen, h.eventChan, h.closeViewChan)
+		} else {
+			dry.appmessage(
+				fmt.Sprintf("Error showing image history: %s", err.Error()))
+		}
 	}
 	if focus {
 		h.closeViewChan <- struct{}{}

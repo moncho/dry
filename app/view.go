@@ -12,11 +12,7 @@ const (
 	Networks
 	EventsMode
 	HelpMode
-	ImageHistoryMode
 	InfoMode
-	InspectImageMode
-	InspectNetworkMode
-	InspectMode
 	Nodes
 	Services
 	ServiceTasks

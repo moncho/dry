@@ -21,6 +21,7 @@ type Container struct {
 type ContainerDaemon interface {
 	ContainerAPI
 	ImageAPI
+	NetworkAPI
 	SwarmAPI
 	DiskUsage() (types.DiskUsage, error)
 	DockerEnv() *Env
@@ -28,21 +29,13 @@ type ContainerDaemon interface {
 	EventLog() *EventLog
 	Info() (types.Info, error)
 	InspectImage(id string) (types.ImageInspect, error)
-	Networks() ([]types.NetworkResource, error)
-	NetworkAt(pos int) (*types.NetworkResource, error)
-	NetworksCount() int
-	NetworkInspect(id string) (types.NetworkResource, error)
 	Ok() (bool, error)
 	Prune() (*PruneReport, error)
 	Rm(id string) error
 	Rmi(id string, force bool) ([]types.ImageDeleteResponseItem, error)
 	Refresh(notify func(error))
-	RefreshImages() error
-	RefreshNetworks() error
 	RemoveDanglingImages() (int, error)
 	RemoveNetwork(id string) error
-	SortImages(sortMode SortMode)
-	SortNetworks(sortMode SortMode)
 	Version() (*types.Version, error)
 }
 
@@ -64,10 +57,15 @@ type ContainerAPI interface {
 //ImageAPI defines the API for Docker images
 type ImageAPI interface {
 	History(id string) ([]image.HistoryResponseItem, error)
-	ImageAt(pos int) (*types.ImageSummary, error)
+	ImageByID(id string) (types.ImageSummary, error)
 	Images() ([]types.ImageSummary, error)
-	ImagesCount() int
-	RunImage(image *types.ImageSummary, command string) error
+	RunImage(image types.ImageSummary, command string) error
+}
+
+//NetworkAPI defines the API for Docker networks
+type NetworkAPI interface {
+	Networks() ([]types.NetworkResource, error)
+	NetworkInspect(id string) (types.NetworkResource, error)
 }
 
 //SwarmAPI defines the API for Docker Swarm
