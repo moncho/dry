@@ -112,15 +112,22 @@ func eq(a, b map[SourceType][]EventCallback) bool {
 	return true
 }
 
+type invocations struct {
+	m map[SourceType]int
+	sync.Mutex
+}
+
 func Test_notifyCallbacks(t *testing.T) {
 
 	var callback = func(
 		wg *sync.WaitGroup,
-		invocations map[SourceType]int) EventCallback {
+		i invocations) EventCallback {
 		return func(ctx context.Context, event events.Message) error {
 			defer wg.Done()
+			i.Lock()
+			defer i.Unlock()
 			t := SourceType(event.Type)
-			invocations[t] = invocations[t] + 1
+			i.m[t] = i.m[t] + 1
 			return nil
 		}
 	}
@@ -171,18 +178,21 @@ func Test_notifyCallbacks(t *testing.T) {
 			},
 		},
 		{
-			"Two messages of one type, one message of another type, three callbacks called",
+			"5 messages of one type, one message of another type, three callbacks called",
 			args{
 				r:       &registry{actions: make(map[SourceType][]EventCallback)},
 				sources: []SourceType{ContainerSource, ImageSource},
 				messages: []events.Message{
 					events.Message{Type: "container"},
 					events.Message{Type: "container"},
+					events.Message{Type: "container"},
+					events.Message{Type: "container"},
+					events.Message{Type: "container"},
 					events.Message{Type: "image"},
 				},
 			},
 			map[SourceType]int{
-				ContainerSource: 2,
+				ContainerSource: 5,
 				ImageSource:     1,
 			},
 		},
@@ -190,7 +200,8 @@ func Test_notifyCallbacks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			notify := notifyCallbacks(tt.args.r)
-			invocations := make(map[SourceType]int)
+			invocations := invocations{m: make(map[SourceType]int)}
+
 			var wg sync.WaitGroup
 
 			for _, s := range tt.args.sources {
@@ -201,7 +212,7 @@ func Test_notifyCallbacks(t *testing.T) {
 				notify(context.Background(), m)
 			}
 			wg.Wait()
-			if !reflect.DeepEqual(invocations, tt.want) {
+			if !reflect.DeepEqual(invocations.m, tt.want) {
 				t.Errorf("notifyCallbacks() = %v, want %v", invocations, tt.want)
 			}
 		})
