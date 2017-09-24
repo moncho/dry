@@ -61,11 +61,18 @@ func (daemon *DockerDaemon) RunImage(image dockerTypes.ImageSummary, command str
 	} else {
 		return pkgError.New("Cannot run image, image has no tag or digest")
 	}
-	runCommand := strings.Split(command, " ")
+
+	var runCommand strslice.StrSlice
+
+	splittedCommand := strings.Split(command, " ")
+	if len(splittedCommand) > 0 {
+		runCommand = strslice.StrSlice(splittedCommand)
+	}
 
 	cc := &container.Config{
 		Image: imageName,
-		Cmd:   strslice.StrSlice(runCommand)}
+		Cmd:   runCommand,
+	}
 	cCreated, err := daemon.client.ContainerCreate(ctx, cc, nil, nil, "")
 
 	if err != nil {
