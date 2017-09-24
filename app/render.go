@@ -65,15 +65,19 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	case Nodes:
 		{
 			nodes := d.widgetRegistry.Nodes
-			nodes.Mount()
+			if err := nodes.Mount(); err != nil {
+				screen.Render(1, err.Error())
+			}
 			bufferers = append(bufferers, nodes)
 			count = nodes.RowCount()
-			keymap = swarmMapping
+			keymap = nodeKeyMappings
 		}
 	case Services:
 		{
 			servicesWidget := d.widgetRegistry.ServiceList
-			servicesWidget.Mount()
+			if err := servicesWidget.Mount(); err != nil {
+				screen.Render(1, err.Error())
+			}
 			bufferers = append(bufferers, servicesWidget)
 			count = servicesWidget.RowCount()
 			keymap = serviceKeyMappings

@@ -15,7 +15,7 @@ import (
 
 var defaultContainerTableHeader = containerTableHeader()
 
-var containerTableHeaders = []headerColumn{
+var containerTableHeaders = []SortableColumnHeader{
 	{``, docker.NoSort},
 	{`CONTAINER`, docker.SortByContainerID},
 	{`IMAGE`, docker.SortByImage},
@@ -207,17 +207,17 @@ func (s *ContainersWidget) updateTableHeader() {
 
 	for _, c := range s.header.Columns {
 		colTitle := c.Text
-		var header headerColumn
+		var header SortableColumnHeader
 		if strings.Contains(colTitle, DownArrow) {
 			colTitle = colTitle[DownArrowLength:]
 		}
 		for _, h := range containerTableHeaders {
-			if colTitle == h.title {
+			if colTitle == h.Title {
 				header = h
 				break
 			}
 		}
-		if header.mode == sortMode {
+		if header.Mode == sortMode {
 			c.Text = DownArrow + colTitle
 		} else {
 			c.Text = colTitle
@@ -260,22 +260,17 @@ func (s *ContainersWidget) visibleRows() []*ContainerRow {
 	return rows[s.startIndex:s.endIndex]
 }
 
-type headerColumn struct {
-	title string // Title to display in the tableHeader.
-	mode  docker.SortMode
-}
-
 func containerTableHeader() *termui.TableHeader {
 
 	header := termui.NewHeader(DryTheme)
 	header.ColumnSpacing = DefaultColumnSpacing
-	header.AddFixedWidthColumn(containerTableHeaders[0].title, 2)
-	header.AddFixedWidthColumn(containerTableHeaders[1].title, 12)
-	header.AddColumn(containerTableHeaders[2].title)
-	header.AddColumn(containerTableHeaders[3].title)
-	header.AddFixedWidthColumn(containerTableHeaders[4].title, 18)
-	header.AddColumn(containerTableHeaders[5].title)
-	header.AddColumn(containerTableHeaders[6].title)
+	header.AddFixedWidthColumn(containerTableHeaders[0].Title, 2)
+	header.AddFixedWidthColumn(containerTableHeaders[1].Title, 12)
+	header.AddColumn(containerTableHeaders[2].Title)
+	header.AddColumn(containerTableHeaders[3].Title)
+	header.AddFixedWidthColumn(containerTableHeaders[4].Title, 18)
+	header.AddColumn(containerTableHeaders[5].Title)
+	header.AddColumn(containerTableHeaders[6].Title)
 
 	return header
 }

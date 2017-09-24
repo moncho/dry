@@ -12,7 +12,7 @@ import (
 
 var defaultNetworkTableHeader = networkTableHeader()
 
-var networkTableHeaders = []networkHeaderColumn{
+var networkTableHeaders = []SortableColumnHeader{
 	{`NETWORK ID`, docker.SortNetworksByID},
 	{`NAME`, docker.SortNetworksByName},
 	{`DRIVER`, docker.SortNetworksByDriver},
@@ -159,17 +159,17 @@ func (s *DockerNetworksWidget) updateHeader() {
 
 	for _, c := range s.header.Columns {
 		colTitle := c.Text
-		var header networkHeaderColumn
+		var header SortableColumnHeader
 		if strings.Contains(colTitle, DownArrow) {
 			colTitle = colTitle[DownArrowLength:]
 		}
 		for _, h := range networkTableHeaders {
-			if colTitle == h.title {
+			if colTitle == h.Title {
 				header = h
 				break
 			}
 		}
-		if header.mode == sortMode {
+		if header.Mode == sortMode {
 			c.Text = DownArrow + colTitle
 		} else {
 			c.Text = colTitle
@@ -224,21 +224,16 @@ func (s *DockerNetworksWidget) visibleRows() []*NetworkRow {
 	return rows[s.startIndex:s.endIndex]
 }
 
-type networkHeaderColumn struct {
-	title string // Title to display in the tableHeader.
-	mode  docker.SortMode
-}
-
 func networkTableHeader() *termui.TableHeader {
 	header := termui.NewHeader(DryTheme)
 	header.ColumnSpacing = DefaultColumnSpacing
-	header.AddColumn(networkTableHeaders[0].title)
-	header.AddColumn(networkTableHeaders[1].title)
-	header.AddFixedWidthColumn(networkTableHeaders[2].title, 12)
-	header.AddFixedWidthColumn(networkTableHeaders[3].title, 12)
-	header.AddColumn(networkTableHeaders[4].title)
-	header.AddColumn(networkTableHeaders[5].title)
-	header.AddColumn(networkTableHeaders[6].title)
+	header.AddColumn(networkTableHeaders[0].Title)
+	header.AddColumn(networkTableHeaders[1].Title)
+	header.AddFixedWidthColumn(networkTableHeaders[2].Title, 12)
+	header.AddFixedWidthColumn(networkTableHeaders[3].Title, 12)
+	header.AddColumn(networkTableHeaders[4].Title)
+	header.AddColumn(networkTableHeaders[5].Title)
+	header.AddColumn(networkTableHeaders[6].Title)
 
 	return header
 }

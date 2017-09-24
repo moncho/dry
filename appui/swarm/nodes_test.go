@@ -19,7 +19,7 @@ func TestNodesWidgetCreation(t *testing.T) {
 		t.Error("Swarm widget does not have a reference to the swarmclient")
 	}
 
-	if w.header.ColumnCount() != len(nodeTableFields) {
+	if w.header.ColumnCount() != len(nodeTableHeaders) {
 		t.Error("Swarm widget does not have a the expected number of columns")
 	}
 

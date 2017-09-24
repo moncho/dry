@@ -27,6 +27,9 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 	focus := true
 
 	switch event.Key {
+	case termbox.KeyF1: //sort
+		handled = true
+		h.dry.widgetRegistry.Nodes.Sort()
 	case termbox.KeyF5: // refresh
 		h.widget().Unmount()
 		handled = true

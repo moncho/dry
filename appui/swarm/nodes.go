@@ -2,7 +2,6 @@ package swarm
 
 import (
 	"errors"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -30,16 +29,18 @@ var nodeTableFieldWidths = map[string]int{
 	"MANAGER STATUS": 0,
 }
 
-var nodeTableFields = []string{"NAME",
-	"ROLE",
-	"LABELS",
-	"CPU",
-	"MEMORY",
-	"DOCKER ENGINE",
-	"IP ADDRESS",
-	"STATUS",
-	"AVAILABILITY",
-	"MANAGER STATUS"}
+var nodeTableHeaders = []appui.SortableColumnHeader{
+	{Title: "NAME", Mode: docker.SortByNodeName},
+	{Title: "ROLE", Mode: docker.SortByNodeRole},
+	{Title: "LABELS", Mode: docker.NoSortNode},
+	{Title: "CPU", Mode: docker.SortByNodeCPU},
+	{Title: "MEMORY", Mode: docker.SortByNodeMem},
+	{Title: "DOCKER ENGINE", Mode: docker.NoSortNode},
+	{Title: "IP ADDRESS", Mode: docker.NoSortNode},
+	{Title: "STATUS", Mode: docker.SortByNodeStatus},
+	{Title: "AVAILABILITY", Mode: docker.NoSortNode},
+	{Title: "MANAGER STATUS", Mode: docker.NoSortNode},
+}
 
 //NodesWidget presents Docker swarm information
 type NodesWidget struct {
@@ -52,6 +53,7 @@ type NodesWidget struct {
 	x, y                 int
 	height, width        int
 	mounted              bool
+	sortMode             docker.SortMode
 	startIndex, endIndex int
 	totalMemory          int64
 	totalCPU             int
@@ -68,9 +70,113 @@ func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
 		x:             0,
 		y:             y,
 		height:        appui.MainScreenAvailableHeight(),
-		width:         ui.ActiveScreen.Dimensions.Width}
+		width:         ui.ActiveScreen.Dimensions.Width,
+		sortMode:      docker.SortByNodeName}
 	appui.RegisterWidget(docker.NodeSource, &w)
 	return &w
+}
+
+//Buffer returns the content of this widget as a termui.Buffer
+func (s *NodesWidget) Buffer() gizaktermui.Buffer {
+	s.Lock()
+	defer s.Unlock()
+	buf := gizaktermui.NewBuffer()
+	y := s.y
+
+	if s.mounted {
+		s.updateHeader()
+		s.title.Y = y
+		buf.Merge(s.title.Buffer())
+		y += s.title.GetHeight() + 1
+		s.header.SetY(y)
+		buf.Merge(s.header.Buffer())
+		y += s.header.GetHeight()
+
+		s.highlightSelectedRow()
+		for _, node := range s.visibleRows() {
+			node.SetY(y)
+			node.Height = 1
+			y += node.GetHeight()
+			buf.Merge(node.Buffer())
+		}
+	}
+
+	return buf
+}
+
+//Mount prepares this widget for rendering
+func (s *NodesWidget) Mount() error {
+	s.Lock()
+	defer s.Unlock()
+	if !s.mounted {
+		swarmClient := s.swarmClient
+		if nodes, err := swarmClient.Nodes(); err == nil {
+			docker.SortNodes(nodes, s.sortMode)
+			var rows []*NodeRow
+			s.totalCPU = 0
+			s.totalMemory = 0
+			for _, node := range nodes {
+				row := NewNodeRow(node, s.header)
+				rows = append(rows, row)
+				if cpu, err := strconv.Atoi(row.CPU.Text); err == nil {
+					s.totalCPU += cpu
+				}
+				s.totalMemory += node.Description.Resources.MemoryBytes
+			}
+			s.nodes = rows
+		}
+		addSwarmSpecs(s)
+		s.align()
+		s.mounted = true
+	}
+	return nil
+}
+
+//Name returns this widget name
+func (s *NodesWidget) Name() string {
+	return "NodesWidget"
+}
+
+//OnEvent runs the given command
+func (s *NodesWidget) OnEvent(event appui.EventCommand) error {
+	if s.RowCount() > 0 {
+		return event(s.nodes[s.selectedIndex].node.ID)
+	}
+	return errors.New("the node list is empty")
+}
+
+//Unmount tells this widge that in will not be rendered anymore
+func (s *NodesWidget) Unmount() error {
+
+	s.Lock()
+	defer s.Unlock()
+	s.mounted = false
+	return nil
+
+}
+
+//RowCount returns the number of rows of this widget.
+func (s *NodesWidget) RowCount() int {
+	return len(s.nodes)
+}
+
+//Sort rotates to the next sort mode.
+func (s *NodesWidget) Sort() {
+	s.RLock()
+	defer s.RUnlock()
+	switch s.sortMode {
+	case docker.SortByNodeName:
+		s.sortMode = docker.SortByNodeRole
+	case docker.SortByNodeRole:
+		s.sortMode = docker.SortByNodeCPU
+	case docker.SortByNodeCPU:
+		s.sortMode = docker.SortByNodeMem
+	case docker.SortByNodeMem:
+		s.sortMode = docker.SortByNodeStatus
+	case docker.SortByNodeStatus:
+		s.sortMode = docker.SortByNodeName
+	}
+	s.mounted = false
 }
 
 //Align aligns rows
@@ -91,78 +197,6 @@ func (s *NodesWidget) align() {
 	}
 }
 
-//Mount prepares this widget for rendering
-func (s *NodesWidget) Mount() error {
-	if !s.mounted {
-		swarmClient := s.swarmClient
-		if nodes, err := swarmClient.Nodes(); err == nil {
-			sort.Slice(nodes, func(i, j int) bool {
-				return nodes[i].Description.Hostname < nodes[j].Description.Hostname
-			})
-			var rows []*NodeRow
-			s.totalCPU = 0
-			s.totalMemory = 0
-			for _, node := range nodes {
-				row := NewNodeRow(node, s.header)
-				rows = append(rows, row)
-				if cpu, err := strconv.Atoi(row.CPU.Text); err == nil {
-					s.totalCPU += cpu
-				}
-				s.totalMemory += node.Description.Resources.MemoryBytes
-
-			}
-			s.nodes = rows
-		}
-		addSwarmSpecs(s)
-		s.align()
-		s.mounted = true
-	}
-	return nil
-}
-
-//Name returns this widget name
-func (s *NodesWidget) Name() string {
-	return "NodesWidget"
-}
-
-//Unmount tells this widge that in will not be rendered anymore
-func (s *NodesWidget) Unmount() error {
-	s.mounted = false
-	return nil
-
-}
-
-//Buffer returns the content of this widget as a termui.Buffer
-func (s *NodesWidget) Buffer() gizaktermui.Buffer {
-	s.Lock()
-	defer s.Unlock()
-	buf := gizaktermui.NewBuffer()
-	y := s.y
-
-	if s.mounted {
-		s.title.Y = y
-		buf.Merge(s.title.Buffer())
-		y += s.title.GetHeight() + 1
-		s.header.SetY(y)
-		buf.Merge(s.header.Buffer())
-		y += s.header.GetHeight()
-
-		s.highlightSelectedRow()
-		for _, node := range s.visibleRows() {
-			node.SetY(y)
-			node.Height = 1
-			y += node.GetHeight()
-			buf.Merge(node.Buffer())
-		}
-	}
-
-	return buf
-}
-
-//RowCount returns the number of rows of this widget.
-func (s *NodesWidget) RowCount() int {
-	return len(s.nodes)
-}
 func (s *NodesWidget) highlightSelectedRow() {
 	if s.RowCount() == 0 {
 		return
@@ -174,14 +208,6 @@ func (s *NodesWidget) highlightSelectedRow() {
 	s.nodes[s.selectedIndex].NotHighlighted()
 	s.selectedIndex = index
 	s.nodes[s.selectedIndex].Highlighted()
-}
-
-//OnEvent runs the given command
-func (s *NodesWidget) OnEvent(event appui.EventCommand) error {
-	if s.RowCount() > 0 {
-		return event(s.nodes[s.selectedIndex].node.ID)
-	}
-	return errors.New("the node list is empty")
 }
 
 func (s *NodesWidget) visibleRows() []*NodeRow {
@@ -223,16 +249,41 @@ func (s *NodesWidget) visibleRows() []*NodeRow {
 	return rows[start:end]
 }
 
+func (s *NodesWidget) updateHeader() {
+	sortMode := s.sortMode
+
+	for _, c := range s.header.Columns {
+		colTitle := c.Text
+		var header appui.SortableColumnHeader
+		if strings.Contains(colTitle, appui.DownArrow) {
+			colTitle = colTitle[appui.DownArrowLength:]
+		}
+		for _, h := range nodeTableHeaders {
+			if colTitle == h.Title {
+				header = h
+				break
+			}
+		}
+		if header.Mode == sortMode {
+			c.Text = appui.DownArrow + colTitle
+		} else {
+			c.Text = colTitle
+		}
+
+	}
+
+}
+
 func nodeTableHeader() *termui.TableHeader {
 
 	header := termui.NewHeader(appui.DryTheme)
 	header.ColumnSpacing = appui.DefaultColumnSpacing
-	for _, f := range nodeTableFields {
-		width := nodeTableFieldWidths[f]
+	for _, f := range nodeTableHeaders {
+		width := nodeTableFieldWidths[f.Title]
 		if width == 0 {
-			header.AddColumn(f)
+			header.AddColumn(f.Title)
 		} else {
-			header.AddFixedWidthColumn(f, width)
+			header.AddFixedWidthColumn(f.Title, width)
 		}
 	}
 	return header
