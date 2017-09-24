@@ -38,6 +38,7 @@ func (f *focusTracker) flip() {
 }
 
 //RenderLoop renders dry until it quits
+// nolint: gocyclo
 func RenderLoop(dry *Dry, screen *ui.Screen) {
 	if ok, _ := dry.Ok(); !ok {
 		return
