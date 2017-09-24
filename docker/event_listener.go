@@ -56,7 +56,7 @@ func init() {
 
 type registry struct {
 	actions map[SourceType][]EventCallback
-	sync.Mutex
+	sync.RWMutex
 }
 
 //Register registers the interest of the given callback on messages from the given source
@@ -69,6 +69,8 @@ func (r *registry) Register(source SourceType, callback EventCallback) {
 
 func notifyCallbacks(r *registry) EventCallback {
 	return func(ctx context.Context, message events.Message) error {
+		r.RLock()
+		defer r.RUnlock()
 		actor := SourceType(message.Type)
 		for _, callback := range r.actions[actor] {
 			select {
