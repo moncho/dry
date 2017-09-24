@@ -489,6 +489,11 @@ func (daemon *DockerDaemon) init() {
 	if info, err := daemon.Info(); err == nil {
 		daemon.swarmMode = info.Swarm.LocalNodeState == swarm.LocalNodeStateActive
 	}
+	GlobalRegistry.Register(
+		ContainerSource,
+		func(ctx context.Context, message dockerEvents.Message) error {
+			return daemon.refreshAndWait()
+		})
 }
 
 func containers(client dockerAPI.ContainerAPIClient) ([]*Container, error) {
