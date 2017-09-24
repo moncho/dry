@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -17,7 +18,6 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	dockerAPI "github.com/docker/docker/client"
 	pkgError "github.com/pkg/errors"
-	"golang.org/x/net/context"
 )
 
 const (
