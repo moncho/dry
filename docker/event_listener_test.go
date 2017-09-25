@@ -121,7 +121,7 @@ func Test_notifyCallbacks(t *testing.T) {
 
 	var callback = func(
 		wg *sync.WaitGroup,
-		i invocations) EventCallback {
+		i *invocations) EventCallback {
 		return func(ctx context.Context, event events.Message) error {
 			defer wg.Done()
 			i.Lock()
@@ -205,7 +205,7 @@ func Test_notifyCallbacks(t *testing.T) {
 			var wg sync.WaitGroup
 
 			for _, s := range tt.args.sources {
-				tt.args.r.Register(s, callback(&wg, invocations))
+				tt.args.r.Register(s, callback(&wg, &invocations))
 			}
 			for _, m := range tt.args.messages {
 				wg.Add(1)
