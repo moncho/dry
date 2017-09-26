@@ -51,17 +51,15 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 
 	viewClosed := make(chan struct{})
 	//On receive dry is rendered
-	renderChan := make(chan struct{}, 1)
-	refreshing := false
+	renderChan := make(chan struct{})
+
 	//tracks if the main loop has the focus (and responds to events),
 	//or if events have to be delegated.
 	focus := &focusTracker{focus: true}
 
 	refreshScreen = func() error {
-		if focus.hasFocus() && !refreshing {
-			refreshing = true
+		if focus.hasFocus() {
 			renderChan <- struct{}{}
-			refreshing = false
 		}
 		return nil
 	}
