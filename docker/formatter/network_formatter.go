@@ -13,6 +13,7 @@ const (
 	name               = "NAME"
 	driver             = "DRIVER"
 	numberOfContainers = "NUMBER OF CONTAINERS"
+	numberOfServices   = "NUMBER OF SERVICES"
 	scope              = "SCOPE"
 	subnet             = "SUBNET"
 	gateway            = "GATEWAY"
@@ -63,6 +64,15 @@ func (formatter *NetworkFormatter) Containers() string {
 	formatter.addHeader(numberOfContainers)
 	if formatter.network.Containers != nil {
 		return strconv.Itoa(len(formatter.network.Containers))
+	}
+	return "0"
+}
+
+//Services prettifies the number of containers using the network
+func (formatter *NetworkFormatter) Services() string {
+	formatter.addHeader(numberOfContainers)
+	if formatter.network.Services != nil {
+		return strconv.Itoa(len(formatter.network.Services))
 	}
 	return "0"
 }

@@ -16,9 +16,10 @@ var networkTableHeaders = []SortableColumnHeader{
 	{`NETWORK ID`, docker.SortNetworksByID},
 	{`NAME`, docker.SortNetworksByName},
 	{`DRIVER`, docker.SortNetworksByDriver},
-	{`CONTAINERS`, docker.NoSortNetworks},
+	{`CONTAINERS`, docker.SortNetworksByContainerCount},
+	{`SERVICES`, docker.SortNetworksByServiceCount},
 	{`SCOPE`, docker.NoSortNetworks},
-	{`SUBNET`, docker.NoSortNetworks},
+	{`SUBNET`, docker.SortNetworksBySubnet},
 	{`GATEWAY`, docker.NoSortNetworks},
 }
 
@@ -90,11 +91,12 @@ func (s *DockerNetworksWidget) Mount() error {
 
 		docker.SortNetworks(networks, s.sortMode)
 
-		var networkRows []*NetworkRow
-		for _, network := range networks {
-			networkRows = append(networkRows, NewNetworkRow(network, s.header))
+		networkRows := make([]*NetworkRow, len(networks))
+		for i, network := range networks {
+			networkRows[i] = NewNetworkRow(network, s.header)
 		}
 		s.networks = networkRows
+		s.mounted = true
 		s.align()
 	}
 	return nil
@@ -126,9 +128,15 @@ func (s *DockerNetworksWidget) Sort() {
 	case docker.SortNetworksByName:
 		s.sortMode = docker.SortNetworksByDriver
 	case docker.SortNetworksByDriver:
+		s.sortMode = docker.SortNetworksByContainerCount
+	case docker.SortNetworksByContainerCount:
+		s.sortMode = docker.SortNetworksByServiceCount
+	case docker.SortNetworksByServiceCount:
+		s.sortMode = docker.SortNetworksBySubnet
+	case docker.SortNetworksBySubnet:
 		s.sortMode = docker.SortNetworksByID
-	default:
 	}
+	s.mounted = false
 }
 
 //Unmount tells this widget that it will not be rendering anymore
@@ -187,6 +195,9 @@ func (s *DockerNetworksWidget) highlightSelectedRow() {
 	if index > s.RowCount() {
 		index = s.RowCount() - 1
 	}
+	if s.selectedIndex < s.RowCount() {
+		s.networks[s.selectedIndex].NotHighlighted()
+	}
 	s.selectedIndex = index
 	s.networks[s.selectedIndex].Highlighted()
 }
@@ -231,9 +242,10 @@ func networkTableHeader() *termui.TableHeader {
 	header.AddColumn(networkTableHeaders[1].Title)
 	header.AddFixedWidthColumn(networkTableHeaders[2].Title, 12)
 	header.AddFixedWidthColumn(networkTableHeaders[3].Title, 12)
-	header.AddColumn(networkTableHeaders[4].Title)
+	header.AddFixedWidthColumn(networkTableHeaders[4].Title, 12)
 	header.AddColumn(networkTableHeaders[5].Title)
 	header.AddColumn(networkTableHeaders[6].Title)
+	header.AddColumn(networkTableHeaders[7].Title)
 
 	return header
 }

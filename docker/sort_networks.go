@@ -12,6 +12,9 @@ const (
 	SortNetworksByID
 	SortNetworksByName
 	SortNetworksByDriver
+	SortNetworksByContainerCount
+	SortNetworksByServiceCount
+	SortNetworksBySubnet
 )
 
 type dockerNetworks []types.NetworkResource
@@ -41,6 +44,30 @@ func (s networksByDriver) Less(i, j int) bool {
 	return s.dockerNetworks[i].Driver < s.dockerNetworks[j].Driver
 }
 
+type networksByContainerCount struct{ dockerNetworks }
+
+func (s networksByContainerCount) Less(i, j int) bool {
+	return len(s.dockerNetworks[i].Containers) < len(s.dockerNetworks[j].Containers)
+}
+
+type networksByServiceCount struct{ dockerNetworks }
+
+func (s networksByServiceCount) Less(i, j int) bool {
+	return len(s.dockerNetworks[i].Services) < len(s.dockerNetworks[j].Services)
+}
+
+type networksBySubnet struct{ dockerNetworks }
+
+func (s networksBySubnet) Less(i, j int) bool {
+	if len(s.dockerNetworks[i].IPAM.Config) > 0 {
+		if len(s.dockerNetworks[j].IPAM.Config) > 0 {
+			return s.dockerNetworks[i].IPAM.Config[0].Subnet < s.dockerNetworks[j].IPAM.Config[0].Subnet
+		}
+		return true
+	}
+	return false
+}
+
 //SortNetworks sorts the given network slice using the given mode
 func SortNetworks(networks []types.NetworkResource, mode SortMode) {
 	switch mode {
@@ -50,5 +77,11 @@ func SortNetworks(networks []types.NetworkResource, mode SortMode) {
 		sort.Sort(networksByName{networks})
 	case SortNetworksByDriver:
 		sort.Sort(networksByDriver{networks})
+	case SortNetworksByContainerCount:
+		sort.Sort(networksByContainerCount{networks})
+	case SortNetworksByServiceCount:
+		sort.Sort(networksByServiceCount{networks})
+	case SortNetworksBySubnet:
+		sort.Sort(networksBySubnet{networks})
 	}
 }

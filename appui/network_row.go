@@ -16,6 +16,7 @@ type NetworkRow struct {
 	Name       *drytermui.ParColumn
 	Driver     *drytermui.ParColumn
 	Containers *drytermui.ParColumn
+	Services   *drytermui.ParColumn
 	Scope      *drytermui.ParColumn
 	Subnet     *drytermui.ParColumn
 	Gateway    *drytermui.ParColumn
@@ -32,6 +33,7 @@ func NewNetworkRow(network types.NetworkResource, table drytermui.Table) *Networ
 		Name:       drytermui.NewThemedParColumn(DryTheme, networkFormatter.Name()),
 		Driver:     drytermui.NewThemedParColumn(DryTheme, networkFormatter.Driver()),
 		Containers: drytermui.NewThemedParColumn(DryTheme, networkFormatter.Containers()),
+		Services:   drytermui.NewThemedParColumn(DryTheme, networkFormatter.Services()),
 		Scope:      drytermui.NewThemedParColumn(DryTheme, networkFormatter.Scope()),
 		Subnet:     drytermui.NewThemedParColumn(DryTheme, networkFormatter.Subnet()),
 		Gateway:    drytermui.NewThemedParColumn(DryTheme, networkFormatter.Gateway()),
@@ -44,6 +46,7 @@ func NewNetworkRow(network types.NetworkResource, table drytermui.Table) *Networ
 		row.Name,
 		row.Driver,
 		row.Containers,
+		row.Services,
 		row.Scope,
 		row.Subnet,
 		row.Gateway,
@@ -92,6 +95,8 @@ func (row *NetworkRow) changeTextColor(fg, bg termui.Attribute) {
 	row.Driver.TextBgColor = bg
 	row.Containers.TextFgColor = fg
 	row.Containers.TextBgColor = bg
+	row.Services.TextFgColor = fg
+	row.Services.TextBgColor = bg
 	row.Scope.TextFgColor = fg
 	row.Scope.TextBgColor = bg
 	row.Subnet.TextFgColor = fg

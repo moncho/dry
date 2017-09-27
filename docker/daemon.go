@@ -523,9 +523,28 @@ func images(client dockerAPI.ImageAPIClient, opts dockerTypes.ImageListOptions) 
 
 func networks(client dockerAPI.NetworkAPIClient) ([]dockerTypes.NetworkResource, error) {
 	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	networks, err := client.NetworkList(ctx, dockerTypes.NetworkListOptions{})
+	if err != nil {
+		return nil, err
+	}
 
-	return client.NetworkList(ctx, dockerTypes.NetworkListOptions{})
+	detailedNetworks := make([]dockerTypes.NetworkResource, len(networks))
+	options := dockerTypes.NetworkInspectOptions{
+		Verbose: true,
+	}
+	for i, n := range networks {
+		detailedNetwork, err := client.NetworkInspect(ctx, n.ID, options)
+		if err != nil {
+			return nil, err
+		}
+
+		detailedNetworks[i] = detailedNetwork
+
+	}
+
+	return detailedNetworks, nil
 }
 
 //GetBool returns false if the given string looks like you mean
