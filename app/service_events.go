@@ -29,6 +29,9 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 	dry := h.dry
 
 	switch event.Key {
+	case termbox.KeyF1: // refresh
+		h.dry.widgetRegistry.ServiceList.Sort()
+		handled = true
 	case termbox.KeyF5: // refresh
 		h.widget().Unmount()
 		handled = true

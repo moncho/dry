@@ -2,6 +2,7 @@ package swarm
 
 import (
 	"image"
+	"strings"
 
 	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/docker/api/types/swarm"
@@ -27,20 +28,19 @@ type ServiceRow struct {
 //NewServiceRow creats a new ServiceRow widget
 func NewServiceRow(service swarm.Service, serviceInfo formatter.ServiceListInfo, table drytermui.Table) *ServiceRow {
 	row := &ServiceRow{
-		service:      service,
-		ID:           drytermui.NewThemedParColumn(appui.DryTheme, service.ID),
-		Name:         drytermui.NewThemedParColumn(appui.DryTheme, service.Spec.Name),
-		Mode:         drytermui.NewThemedParColumn(appui.DryTheme, serviceInfo.Mode),
-		Replicas:     drytermui.NewThemedParColumn(appui.DryTheme, serviceInfo.Replicas),
-		Image:        drytermui.NewThemedParColumn(appui.DryTheme, service.Spec.TaskTemplate.ContainerSpec.Image),
+		service:  service,
+		ID:       drytermui.NewThemedParColumn(appui.DryTheme, service.ID),
+		Name:     drytermui.NewThemedParColumn(appui.DryTheme, service.Spec.Name),
+		Mode:     drytermui.NewThemedParColumn(appui.DryTheme, serviceInfo.Mode),
+		Replicas: drytermui.NewThemedParColumn(appui.DryTheme, serviceInfo.Replicas),
+		Image: drytermui.NewThemedParColumn(
+			appui.DryTheme, serviceImage(service)),
 		ServicePorts: drytermui.NewThemedParColumn(appui.DryTheme, dryformatter.FormatPorts(service.Spec.EndpointSpec.Ports)),
 	}
-
 	row.Height = 1
 	row.Table = table
 	//Columns are rendered following the slice order
 	row.Columns = []termui.GridBufferer{
-		row.ID,
 		row.Name,
 		row.Mode,
 		row.Replicas,
@@ -92,4 +92,13 @@ func (row *ServiceRow) changeTextColor(fg, bg termui.Attribute) {
 	row.ServicePorts.TextBgColor = bg
 	row.Image.TextFgColor = fg
 	row.Image.TextBgColor = bg
+}
+
+func serviceImage(service swarm.Service) string {
+	image := service.Spec.TaskTemplate.ContainerSpec.Image
+	digestMark := strings.LastIndex(image, "@")
+	if digestMark > 0 {
+		return image[:digestMark]
+	}
+	return image
 }

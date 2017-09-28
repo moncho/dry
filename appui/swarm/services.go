@@ -2,7 +2,7 @@ package swarm
 
 import (
 	"fmt"
-	"sort"
+	"strings"
 	"sync"
 
 	"github.com/docker/cli/cli/command/formatter"
@@ -18,6 +18,14 @@ import (
 )
 
 var defaultServiceTableHeader = serviceTableHeader()
+
+var serviceTableHeaders = []appui.SortableColumnHeader{
+	{Title: "NAME", Mode: docker.SortByServiceName},
+	{Title: "MODE", Mode: docker.NoSortService},
+	{Title: "REPLICAS", Mode: docker.NoSortService},
+	{Title: "SERVICE PORT(S)", Mode: docker.NoSortService},
+	{Title: "IMAGE", Mode: docker.SortByServiceImage},
+}
 
 //ServicesWidget shows information about services running on the Swarm
 type ServicesWidget struct {
@@ -44,12 +52,42 @@ func NewServicesWidget(swarmClient docker.SwarmAPI, y int) *ServicesWidget {
 		x:             0,
 		y:             y,
 		height:        appui.MainScreenAvailableHeight(),
+		sortMode:      docker.SortByServiceName,
 		width:         ui.ActiveScreen.Dimensions.Width}
 
 	appui.RegisterWidget(docker.ServiceSource, &w)
 
 	return &w
 
+}
+
+//Buffer returns the content of this widget as a termui.Buffer
+func (s *ServicesWidget) Buffer() gizaktermui.Buffer {
+	s.Lock()
+	defer s.Unlock()
+	y := s.y
+	buf := gizaktermui.NewBuffer()
+	if s.mounted {
+
+		s.updateHeader()
+		widgetHeader := appui.WidgetHeader("Service", s.RowCount(), "")
+		widgetHeader.Y = y
+		buf.Merge(widgetHeader.Buffer())
+		y += widgetHeader.GetHeight()
+
+		s.header.SetY(y)
+		buf.Merge(s.header.Buffer())
+		y += s.header.GetHeight()
+
+		s.highlightSelectedRow()
+		for _, service := range s.visibleRows() {
+			service.SetY(y)
+			service.Height = 1
+			y += service.GetHeight()
+			buf.Merge(service.Buffer())
+		}
+	}
+	return buf
 }
 
 //Mount prepares this widget for rendering
@@ -60,9 +98,8 @@ func (s *ServicesWidget) Mount() error {
 		s.mounted = true
 		var rows []*ServiceRow
 		if services, servicesInfo, err := getServiceInfo(s.swarmClient); err == nil {
-			sort.SliceStable(services, func(i, j int) bool {
-				return services[i].Spec.Name < services[j].Spec.Name
-			})
+
+			docker.SortServices(services, s.sortMode)
 			for _, service := range services {
 				rows = append(rows, NewServiceRow(service, servicesInfo[service.ID], s.header))
 			}
@@ -78,21 +115,29 @@ func (s *ServicesWidget) Name() string {
 	return "ServicesWidget"
 }
 
+//RowCount returns the number of rowns of this widget.
+func (s *ServicesWidget) RowCount() int {
+	return len(s.services)
+}
+
+//OnEvent runs the given command
+func (s *ServicesWidget) OnEvent(event appui.EventCommand) error {
+	if s.RowCount() > 0 {
+		return event(s.services[s.selectedIndex].service.ID)
+	}
+	return nil
+}
+
 //Sort rotates to the next sort mode.
-//SortByContainerID -> SortByImage -> SortByStatus -> SortByName -> SortByContainerID
+//SortByServiceName -> SortByServiceImage -> SortByServiceName
 func (s *ServicesWidget) Sort() {
 	s.Lock()
 	defer s.Unlock()
 	switch s.sortMode {
-	case docker.SortByContainerID:
-		s.sortMode = docker.SortByImage
-	case docker.SortByImage:
-		s.sortMode = docker.SortByStatus
-	case docker.SortByStatus:
-		s.sortMode = docker.SortByName
-	case docker.SortByName:
-		s.sortMode = docker.SortByContainerID
-	default:
+	case docker.SortByServiceName:
+		s.sortMode = docker.SortByServiceImage
+	case docker.SortByServiceImage:
+		s.sortMode = docker.SortByServiceName
 	}
 	s.mounted = false
 }
@@ -122,37 +167,6 @@ func (s *ServicesWidget) align() {
 
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
-func (s *ServicesWidget) Buffer() gizaktermui.Buffer {
-	s.Lock()
-	defer s.Unlock()
-	y := s.y
-	buf := gizaktermui.NewBuffer()
-
-	widgetHeader := appui.WidgetHeader("Service", s.RowCount(), "")
-	widgetHeader.Y = y
-	buf.Merge(widgetHeader.Buffer())
-	y += widgetHeader.GetHeight()
-
-	s.header.SetY(y)
-	buf.Merge(s.header.Buffer())
-	y += s.header.GetHeight()
-
-	s.highlightSelectedRow()
-	for _, service := range s.visibleRows() {
-		service.SetY(y)
-		service.Height = 1
-		y += service.GetHeight()
-		buf.Merge(service.Buffer())
-	}
-
-	return buf
-}
-
-//RowCount returns the number of rowns of this widget.
-func (s *ServicesWidget) RowCount() int {
-	return len(s.services)
-}
 func (s *ServicesWidget) highlightSelectedRow() {
 	count := s.RowCount()
 	if count == 0 {
@@ -169,12 +183,29 @@ func (s *ServicesWidget) highlightSelectedRow() {
 	s.services[s.selectedIndex].Highlighted()
 }
 
-//OnEvent runs the given command
-func (s *ServicesWidget) OnEvent(event appui.EventCommand) error {
-	if s.RowCount() > 0 {
-		return event(s.services[s.selectedIndex].service.ID)
+func (s *ServicesWidget) updateHeader() {
+	sortMode := s.sortMode
+
+	for _, c := range s.header.Columns {
+		colTitle := c.Text
+		var header appui.SortableColumnHeader
+		if strings.Contains(colTitle, appui.DownArrow) {
+			colTitle = colTitle[appui.DownArrowLength:]
+		}
+		for _, h := range serviceTableHeaders {
+			if colTitle == h.Title {
+				header = h
+				break
+			}
+		}
+		if header.Mode == sortMode {
+			c.Text = appui.DownArrow + colTitle
+		} else {
+			c.Text = colTitle
+		}
+
 	}
-	return nil
+
 }
 
 func (s *ServicesWidget) visibleRows() []*ServiceRow {
@@ -217,17 +248,14 @@ func (s *ServicesWidget) visibleRows() []*ServiceRow {
 }
 
 func serviceTableHeader() *termui.TableHeader {
-	fields := []string{
-		"ID", "NAME", "MODE", "REPLICAS", "SERVICE PORT(S)", "IMAGE"}
 
 	header := termui.NewHeader(appui.DryTheme)
 	header.ColumnSpacing = appui.DefaultColumnSpacing
-	header.AddColumn(fields[0])
-	header.AddColumn(fields[1])
-	header.AddFixedWidthColumn(fields[2], 12)
-	header.AddFixedWidthColumn(fields[3], 10)
-	header.AddColumn(fields[4])
-	header.AddColumn(fields[5])
+	header.AddFixedWidthColumn(serviceTableHeaders[0].Title, 30)
+	header.AddFixedWidthColumn(serviceTableHeaders[1].Title, 12)
+	header.AddFixedWidthColumn(serviceTableHeaders[2].Title, 10)
+	header.AddColumn(serviceTableHeaders[3].Title)
+	header.AddColumn(serviceTableHeaders[4].Title)
 
 	return header
 }
