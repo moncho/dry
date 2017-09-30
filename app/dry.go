@@ -242,13 +242,13 @@ func (d *Dry) ShowServices() {
 
 //ShowServiceTasks changes the state of dry to show the given service task list
 func (d *Dry) ShowServiceTasks(serviceID string) {
-	d.widgetRegistry.ServiceTasks.PrepareToRender(serviceID)
+	d.widgetRegistry.ServiceTasks.ForService(serviceID)
 	d.changeViewMode(ServiceTasks)
 }
 
 //ShowTasks changes the state of dry to show the given node task list
 func (d *Dry) ShowTasks(nodeID string) {
-	d.widgetRegistry.NodeTasks.PrepareToRender(nodeID)
+	d.widgetRegistry.NodeTasks.ForNode(nodeID)
 	d.changeViewMode(Tasks)
 }
 

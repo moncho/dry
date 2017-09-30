@@ -85,6 +85,9 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	case Tasks:
 		{
 			tasks := d.widgetRegistry.NodeTasks
+			if err := tasks.Mount(); err != nil {
+				screen.Render(1, err.Error())
+			}
 			bufferers = append(bufferers, tasks)
 			count = tasks.RowCount()
 			keymap = swarmMapping
@@ -92,8 +95,11 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	case ServiceTasks:
 		{
 			tasks := d.widgetRegistry.ServiceTasks
-			count = tasks.RowCount()
+			if err := tasks.Mount(); err != nil {
+				screen.Render(1, err.Error())
+			}
 			bufferers = append(bufferers, tasks)
+			count = tasks.RowCount()
 			keymap = swarmMapping
 		}
 	case DiskUsage:

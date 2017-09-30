@@ -2,9 +2,10 @@ package swarm
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 	"sync"
 
-	"github.com/docker/docker/api/types/swarm"
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
@@ -14,17 +15,19 @@ import (
 
 //ServiceTasksWidget shows a service's task information
 type ServiceTasksWidget struct {
-	swarmClient          docker.SwarmAPI
-	service              *swarm.Service
-	tasks                []*TaskRow
 	header               *termui.TableHeader
-	info                 *ServiceInfoWidget
-	tableTitle           termui.SizableBufferer
-	selectedIndex        int
-	offset               int
-	x, y                 int
 	height, width        int
+	info                 *ServiceInfoWidget
+	mounted              bool
+	offset               int
+	serviceID            string
+	selectedIndex        int
+	sortMode             docker.SortMode
 	startIndex, endIndex int
+	swarmClient          docker.SwarmAPI
+	tableTitle           termui.SizableBufferer
+	tasks                []*TaskRow
+	x, y                 int
 	sync.RWMutex
 }
 
@@ -33,34 +36,116 @@ func NewServiceTasksWidget(swarmClient docker.SwarmAPI, y int) *ServiceTasksWidg
 	w := &ServiceTasksWidget{
 		swarmClient:   swarmClient,
 		header:        defaultTasksTableHeader,
-		selectedIndex: 0,
+		mounted:       false,
 		offset:        0,
+		selectedIndex: 0,
 		x:             0,
 		y:             y,
+		sortMode:      docker.SortByTaskService,
 		width:         ui.ActiveScreen.Dimensions.Width}
 	return w
 }
 
-//PrepareToRender prepares this widget for rendering
-func (s *ServiceTasksWidget) PrepareToRender(serviceID string) {
+//Buffer returns the content of this widget as a termui.Buffer
+func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-	if service, err := s.swarmClient.Service(serviceID); err == nil {
+	y := s.y
+	buf := gizaktermui.NewBuffer()
+	if s.mounted {
+		s.sortRows()
+
+		s.updateHeader()
+		if s.info != nil {
+			buf.Merge(s.info.Buffer())
+			y += s.info.GetHeight()
+		}
+		s.tableTitle.SetY(y)
+		buf.Merge(s.tableTitle.Buffer())
+		y += s.tableTitle.GetHeight()
+		s.header.SetY(y)
+		buf.Merge(s.header.Buffer())
+		y += s.header.GetHeight()
+
+		s.highlightSelectedRow()
+		for _, node := range s.visibleRows() {
+			node.SetY(y)
+			node.Height = 1
+			y += node.GetHeight()
+			buf.Merge(node.Buffer())
+		}
+	}
+	return buf
+}
+
+//ForService sets the service for which this widget is showing tasks
+func (s *ServiceTasksWidget) ForService(serviceID string) {
+	s.Lock()
+	defer s.Unlock()
+
+	s.serviceID = serviceID
+}
+
+//Mount prepares this widget for rendering
+func (s *ServiceTasksWidget) Mount() error {
+	s.Lock()
+	defer s.Unlock()
+	if !s.mounted {
+		service, err := s.swarmClient.Service(s.serviceID)
+		if err != nil {
+			return err
+		}
 		serviceInfo := NewServiceInfoWidget(s.swarmClient, service, s.y)
 		s.height = appui.MainScreenAvailableHeight() - serviceInfo.GetHeight()
-		s.service = service
 		s.info = serviceInfo
 
-		if tasks, err := s.swarmClient.ServiceTasks(serviceID); err == nil {
-			s.tableTitle = createTableTitle(serviceInfo.serviceName, len(tasks))
-			var rows []*TaskRow
-			for _, task := range tasks {
-				rows = append(rows, NewTaskRow(s.swarmClient, task, s.header))
-			}
-			s.tasks = rows
+		tasks, err := s.swarmClient.ServiceTasks(s.serviceID)
+		if err != nil {
+			return err
 		}
+		s.tableTitle = createTableTitle(serviceInfo.serviceName, len(tasks))
+
+		rows := make([]*TaskRow, len(tasks))
+		for i, task := range tasks {
+			rows[i] = NewTaskRow(s.swarmClient, task, s.header)
+		}
+		s.tasks = rows
 		s.align()
+		s.mounted = true
 	}
+	return nil
+}
+
+//OnEvent runs the given command
+func (s *ServiceTasksWidget) OnEvent(event appui.EventCommand) error {
+	return nil
+}
+
+//RowCount returns the number of rowns of this widget.
+func (s *ServiceTasksWidget) RowCount() int {
+	return len(s.tasks)
+}
+
+//Sort rotates to the next sort mode.
+//SortByTaskImage -> SortByTaskService -> SortByTaskImage
+func (s *ServiceTasksWidget) Sort() {
+	s.Lock()
+	defer s.Unlock()
+	switch s.sortMode {
+	case docker.SortByTaskImage:
+		s.sortMode = docker.SortByTaskService
+	case docker.SortByTaskService:
+		s.sortMode = docker.SortByTaskImage
+	}
+}
+
+//Unmount marks this widget as unmounted
+func (s *ServiceTasksWidget) Unmount() error {
+	s.Lock()
+	defer s.Unlock()
+
+	s.mounted = false
+	return nil
 
 }
 
@@ -82,39 +167,6 @@ func (s *ServiceTasksWidget) align() {
 	}
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
-func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
-	s.Lock()
-	defer s.Unlock()
-	y := s.y
-
-	buf := gizaktermui.NewBuffer()
-	if s.info != nil {
-		buf.Merge(s.info.Buffer())
-		y += s.info.GetHeight()
-	}
-	s.tableTitle.SetY(y)
-	buf.Merge(s.tableTitle.Buffer())
-	y += s.tableTitle.GetHeight()
-	s.header.SetY(y)
-	buf.Merge(s.header.Buffer())
-	y += s.header.GetHeight()
-
-	s.highlightSelectedRow()
-	for _, node := range s.visibleRows() {
-		node.SetY(y)
-		node.Height = 1
-		y += node.GetHeight()
-		buf.Merge(node.Buffer())
-	}
-
-	return buf
-}
-
-//RowCount returns the number of rowns of this widget.
-func (s *ServiceTasksWidget) RowCount() int {
-	return len(s.tasks)
-}
 func (s *ServiceTasksWidget) highlightSelectedRow() {
 	count := s.RowCount()
 	if count == 0 {
@@ -131,9 +183,29 @@ func (s *ServiceTasksWidget) highlightSelectedRow() {
 	s.tasks[s.selectedIndex].Highlighted()
 }
 
-//OnEvent runs the given command
-func (s *ServiceTasksWidget) OnEvent(event appui.EventCommand) error {
-	return nil
+func (s *ServiceTasksWidget) updateHeader() {
+	sortMode := s.sortMode
+
+	for _, c := range s.header.Columns {
+		colTitle := c.Text
+		var header appui.SortableColumnHeader
+		if strings.Contains(colTitle, appui.DownArrow) {
+			colTitle = colTitle[appui.DownArrowLength:]
+		}
+		for _, h := range taskTableHeaders {
+			if colTitle == h.Title {
+				header = h
+				break
+			}
+		}
+		if header.Mode == sortMode {
+			c.Text = appui.DownArrow + colTitle
+		} else {
+			c.Text = colTitle
+		}
+
+	}
+
 }
 
 func (s *ServiceTasksWidget) visibleRows() []*TaskRow {
@@ -181,4 +253,25 @@ func createTableTitle(serviceName string, count int) termui.SizableBufferer {
 		fmt.Sprintf("%d", count),
 		appui.DryTheme)
 	return p
+}
+
+func (s *ServiceTasksWidget) sortRows() {
+	rows := s.tasks
+	mode := s.sortMode
+	if s.sortMode == docker.NoSortTask {
+		return
+	}
+	var sortAlg func(i, j int) bool
+	switch mode {
+	case docker.SortByTaskImage:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Image.Text < rows[j].Image.Text
+		}
+	case docker.SortByTaskService:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Name.Text < rows[j].Name.Text
+		}
+
+	}
+	sort.SliceStable(rows, sortAlg)
 }

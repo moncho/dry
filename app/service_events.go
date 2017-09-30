@@ -103,11 +103,11 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		}()
 
 	case termbox.KeyEnter:
-		showServices := func(serviceID string) error {
+		showTasks := func(serviceID string) error {
 			h.dry.ShowServiceTasks(serviceID)
 			return refreshScreen()
 		}
-		h.widget().OnEvent(showServices)
+		h.widget().OnEvent(showTasks)
 		handled = true
 	}
 	switch event.Ch {
