@@ -85,6 +85,7 @@ func (s *NodeTasksWidget) ForNode(nodeID string) {
 	s.Lock()
 	defer s.Unlock()
 	s.nodeID = nodeID
+	s.mounted = false
 }
 
 //Mount prepares this widget for rendering

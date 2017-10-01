@@ -84,6 +84,8 @@ func (s *ServiceTasksWidget) ForService(serviceID string) {
 	defer s.Unlock()
 
 	s.serviceID = serviceID
+	s.mounted = false
+
 }
 
 //Mount prepares this widget for rendering
