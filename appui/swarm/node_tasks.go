@@ -118,6 +118,12 @@ func (s *NodeTasksWidget) Mount() error {
 	return nil
 }
 
+//Name returns this widget name
+func (s *NodeTasksWidget) Name() string {
+	return "NodeTasksWidget"
+
+}
+
 //OnEvent runs the given command
 func (s *NodeTasksWidget) OnEvent(event appui.EventCommand) error {
 	return nil
@@ -139,6 +145,14 @@ func (s *NodeTasksWidget) Sort() {
 	case docker.SortByTaskService:
 		s.sortMode = docker.SortByTaskImage
 	}
+}
+
+//Unmount marks this widget as unmounted
+func (s *NodeTasksWidget) Unmount() error {
+	s.Lock()
+	defer s.Unlock()
+	s.mounted = false
+	return nil
 }
 
 //Align aligns rows

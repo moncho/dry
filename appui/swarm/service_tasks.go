@@ -116,6 +116,11 @@ func (s *ServiceTasksWidget) Mount() error {
 	return nil
 }
 
+//Name returns this widget name
+func (s *ServiceTasksWidget) Name() string {
+	return "ServiceTasksWidget"
+}
+
 //OnEvent runs the given command
 func (s *ServiceTasksWidget) OnEvent(event appui.EventCommand) error {
 	return nil

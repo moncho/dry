@@ -17,7 +17,7 @@ var viewsToHandlers = map[viewMode]eventHandler{
 	Nodes:        &nodesScreenEventHandler{},
 	Tasks:        &taskScreenEventHandler{},
 	Services:     &servicesScreenEventHandler{},
-	ServiceTasks: &serviceTaskScreenEventHandler{},
+	ServiceTasks: &serviceTasksScreenEventHandler{},
 }
 
 var defaultHandler eventHandler

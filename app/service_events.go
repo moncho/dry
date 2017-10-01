@@ -166,18 +166,3 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		}
 	}
 }
-
-type serviceTaskScreenEventHandler struct {
-	baseEventHandler
-}
-
-func (h *serviceTaskScreenEventHandler) handle(event termbox.Event) {
-
-	switch event.Key {
-	case termbox.KeyEsc:
-		h.dry.ShowServices()
-	}
-
-	h.baseEventHandler.handle(event)
-
-}
