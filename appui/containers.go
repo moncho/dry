@@ -110,9 +110,9 @@ func (s *ContainersWidget) Mount() error {
 		}
 		dockerContainers := s.dockerDaemon.Containers(filters, s.sortMode)
 
-		var rows []*ContainerRow
-		for _, container := range dockerContainers {
-			rows = append(rows, NewContainerRow(container, s.header))
+		rows := make([]*ContainerRow, len(dockerContainers))
+		for i, container := range dockerContainers {
+			rows[i] = NewContainerRow(container, s.header)
 		}
 		s.containers = rows
 		s.mounted = true
@@ -197,11 +197,14 @@ func (s *ContainersWidget) highlightSelectedRow() {
 	if index > s.RowCount() {
 		index = s.RowCount() - 1
 	}
-	if s.selectedIndex < s.RowCount() {
-		s.containers[s.selectedIndex].NotHighlighted()
-	}
 	s.selectedIndex = index
-	s.containers[s.selectedIndex].Highlighted()
+	for i, c := range s.containers {
+		if i != index {
+			c.NotHighlighted()
+		} else {
+			c.Highlighted()
+		}
+	}
 }
 
 func (s *ContainersWidget) updateTableHeader() {

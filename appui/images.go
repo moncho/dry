@@ -164,11 +164,14 @@ func (s *DockerImagesWidget) highlightSelectedRow() {
 	if index > s.RowCount() {
 		index = s.RowCount() - 1
 	}
-	if s.selectedIndex < s.RowCount() {
-		s.images[s.selectedIndex].NotHighlighted()
-	}
 	s.selectedIndex = index
-	s.images[s.selectedIndex].Highlighted()
+	for i, im := range s.images {
+		if i != index {
+			im.NotHighlighted()
+		} else {
+			im.Highlighted()
+		}
+	}
 }
 
 func (s *DockerImagesWidget) updateHeader() {

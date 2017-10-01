@@ -154,9 +154,15 @@ func (m *Monitor) highlightSelectedRow() {
 	if index > m.RowCount() {
 		index = m.RowCount() - 1
 	}
-	m.rows[m.selectedIndex].NotHighlighted()
+
 	m.selectedIndex = index
-	m.rows[m.selectedIndex].Highlighted()
+	for i, im := range m.rows {
+		if i != index {
+			im.NotHighlighted()
+		} else {
+			im.Highlighted()
+		}
+	}
 }
 
 func (m *Monitor) visibleRows() []*ContainerStatsRow {

@@ -205,9 +205,14 @@ func (s *NodesWidget) highlightSelectedRow() {
 	if index > s.RowCount() {
 		index = s.RowCount() - 1
 	}
-	s.nodes[s.selectedIndex].NotHighlighted()
 	s.selectedIndex = index
-	s.nodes[s.selectedIndex].Highlighted()
+	for i, row := range s.nodes {
+		if i != index {
+			row.NotHighlighted()
+		} else {
+			row.Highlighted()
+		}
+	}
 }
 
 func (s *NodesWidget) visibleRows() []*NodeRow {

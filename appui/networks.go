@@ -197,11 +197,14 @@ func (s *DockerNetworksWidget) highlightSelectedRow() {
 	if index > s.RowCount() {
 		index = s.RowCount() - 1
 	}
-	if s.selectedIndex < s.RowCount() {
-		s.networks[s.selectedIndex].NotHighlighted()
-	}
 	s.selectedIndex = index
-	s.networks[s.selectedIndex].Highlighted()
+	for i, n := range s.networks {
+		if i != index {
+			n.NotHighlighted()
+		} else {
+			n.Highlighted()
+		}
+	}
 }
 
 func (s *DockerNetworksWidget) sortRows() {

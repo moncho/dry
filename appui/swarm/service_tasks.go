@@ -181,11 +181,14 @@ func (s *ServiceTasksWidget) highlightSelectedRow() {
 	if index > count {
 		index = count - 1
 	}
-	if s.selectedIndex < count && s.tasks[s.selectedIndex] != nil {
-		s.tasks[s.selectedIndex].NotHighlighted()
-	}
 	s.selectedIndex = index
-	s.tasks[s.selectedIndex].Highlighted()
+	for i, row := range s.tasks {
+		if i != index {
+			row.NotHighlighted()
+		} else {
+			row.Highlighted()
+		}
+	}
 }
 
 func (s *ServiceTasksWidget) updateHeader() {

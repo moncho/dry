@@ -174,11 +174,14 @@ func (s *ServicesWidget) highlightSelectedRow() {
 	if index > count {
 		index = count - 1
 	}
-	if s.selectedIndex < count && s.services[s.selectedIndex] != nil {
-		s.services[s.selectedIndex].NotHighlighted()
-	}
 	s.selectedIndex = index
-	s.services[s.selectedIndex].Highlighted()
+	for i, row := range s.services {
+		if i != index {
+			row.NotHighlighted()
+		} else {
+			row.Highlighted()
+		}
+	}
 }
 
 func (s *ServicesWidget) updateHeader() {

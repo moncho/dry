@@ -177,9 +177,14 @@ func (s *NodeTasksWidget) highlightSelectedRow() {
 	if index > s.RowCount() {
 		index = s.RowCount() - 1
 	}
-	s.tasks[s.selectedIndex].NotHighlighted()
 	s.selectedIndex = index
-	s.tasks[s.selectedIndex].Highlighted()
+	for i, row := range s.tasks {
+		if i != index {
+			row.NotHighlighted()
+		} else {
+			row.Highlighted()
+		}
+	}
 }
 
 func (s *NodeTasksWidget) sortRows() {
