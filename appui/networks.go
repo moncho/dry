@@ -1,6 +1,7 @@
 package appui
 
 import (
+	"sort"
 	"strings"
 	"sync"
 
@@ -55,25 +56,29 @@ func NewDockerNetworksWidget(dockerDaemon docker.NetworkAPI, y int) *DockerNetwo
 func (s *DockerNetworksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-	y := s.y
 
 	buf := gizaktermui.NewBuffer()
-	widgetHeader := WidgetHeader("Networks", s.RowCount(), "")
-	widgetHeader.Y = s.y
-	buf.Merge(widgetHeader.Buffer())
-	y += widgetHeader.GetHeight()
+	if s.mounted {
+		y := s.y
+		s.sortRows()
+		s.updateHeader()
 
-	s.header.SetY(y)
-	s.updateHeader()
-	buf.Merge(s.header.Buffer())
+		widgetHeader := WidgetHeader("Networks", s.RowCount(), "")
+		widgetHeader.Y = s.y
+		buf.Merge(widgetHeader.Buffer())
+		y += widgetHeader.GetHeight()
 
-	y += s.header.GetHeight()
+		s.header.SetY(y)
+		buf.Merge(s.header.Buffer())
 
-	s.highlightSelectedRow()
-	for _, containerRow := range s.visibleRows() {
-		containerRow.SetY(y)
-		y += containerRow.GetHeight()
-		buf.Merge(containerRow.Buffer())
+		y += s.header.GetHeight()
+
+		s.highlightSelectedRow()
+		for _, containerRow := range s.visibleRows() {
+			containerRow.SetY(y)
+			y += containerRow.GetHeight()
+			buf.Merge(containerRow.Buffer())
+		}
 	}
 
 	return buf
@@ -88,8 +93,6 @@ func (s *DockerNetworksWidget) Mount() error {
 		if err != nil {
 			return err
 		}
-
-		docker.SortNetworks(networks, s.sortMode)
 
 		networkRows := make([]*NetworkRow, len(networks))
 		for i, network := range networks {
@@ -136,7 +139,6 @@ func (s *DockerNetworksWidget) Sort() {
 	case docker.SortNetworksBySubnet:
 		s.sortMode = docker.SortNetworksByID
 	}
-	s.mounted = false
 }
 
 //Unmount tells this widget that it will not be rendering anymore
@@ -200,6 +202,44 @@ func (s *DockerNetworksWidget) highlightSelectedRow() {
 	}
 	s.selectedIndex = index
 	s.networks[s.selectedIndex].Highlighted()
+}
+
+func (s *DockerNetworksWidget) sortRows() {
+	rows := s.networks
+	mode := s.sortMode
+	if s.sortMode == docker.NoSortNetworks {
+		return
+	}
+	var sortAlg func(i, j int) bool
+
+	switch mode {
+	case docker.SortNetworksByID:
+		sortAlg = func(i, j int) bool {
+			return rows[i].ID.Text < rows[j].ID.Text
+		}
+	case docker.SortNetworksByName:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Name.Text < rows[j].Name.Text
+		}
+	case docker.SortNetworksByDriver:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Driver.Text < rows[j].Driver.Text
+		}
+	case docker.SortNetworksByContainerCount:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Containers.Text < rows[j].Containers.Text
+		}
+	case docker.SortNetworksByServiceCount:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Services.Text < rows[j].Services.Text
+		}
+	case docker.SortNetworksBySubnet:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Subnet.Text < rows[j].Subnet.Text
+		}
+
+	}
+	sort.SliceStable(rows, sortAlg)
 }
 
 func (s *DockerNetworksWidget) visibleRows() []*NetworkRow {

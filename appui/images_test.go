@@ -25,6 +25,7 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 
 	renderer := NewDockerImagesWidget(daemon, 0)
 	renderer.Mount()
+	renderer.sortRows()
 
 	images := renderer.visibleRows()
 	if len(images) != 4 {
@@ -66,6 +67,7 @@ func TestImagesToShow(t *testing.T) {
 	renderer := NewDockerImagesWidget(daemon, 0)
 
 	renderer.Mount()
+	renderer.sortRows()
 
 	images := renderer.visibleRows()
 	if len(images) != 5 {

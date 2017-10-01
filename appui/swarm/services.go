@@ -209,7 +209,7 @@ func (s *ServicesWidget) updateHeader() {
 func (s *ServicesWidget) sortRows() {
 	rows := s.services
 	mode := s.sortMode
-	if s.sortMode == docker.NoSortTask {
+	if s.sortMode == docker.NoSortService {
 		return
 	}
 	var sortAlg func(i, j int) bool

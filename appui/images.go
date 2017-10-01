@@ -1,6 +1,7 @@
 package appui
 
 import (
+	"sort"
 	"strings"
 	"sync"
 
@@ -53,27 +54,28 @@ func NewDockerImagesWidget(dockerDaemon docker.ImageAPI, y int) *DockerImagesWid
 func (s *DockerImagesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-	y := s.y
-
 	buf := gizaktermui.NewBuffer()
-	widgetHeader := WidgetHeader("Images", s.RowCount(), "")
-	widgetHeader.Y = s.y
-	buf.Merge(widgetHeader.Buffer())
-	y += widgetHeader.GetHeight()
+	if s.mounted {
+		y := s.y
+		s.sortRows()
+		widgetHeader := WidgetHeader("Images", s.RowCount(), "")
+		widgetHeader.Y = s.y
+		buf.Merge(widgetHeader.Buffer())
+		y += widgetHeader.GetHeight()
 
-	s.header.SetY(y)
-	s.updateHeader()
-	buf.Merge(s.header.Buffer())
+		s.header.SetY(y)
+		s.updateHeader()
+		buf.Merge(s.header.Buffer())
 
-	y += s.header.GetHeight()
+		y += s.header.GetHeight()
 
-	s.highlightSelectedRow()
-	for _, containerRow := range s.visibleRows() {
-		containerRow.SetY(y)
-		y += containerRow.GetHeight()
-		buf.Merge(containerRow.Buffer())
+		s.highlightSelectedRow()
+		for _, containerRow := range s.visibleRows() {
+			containerRow.SetY(y)
+			y += containerRow.GetHeight()
+			buf.Merge(containerRow.Buffer())
+		}
 	}
-
 	return buf
 }
 
@@ -87,7 +89,6 @@ func (s *DockerImagesWidget) Mount() error {
 			return err
 		}
 
-		docker.SortImages(images, s.sortMode)
 		var imageRows []*ImageRow
 		for _, image := range images {
 			imageRows = append(imageRows, NewImageRow(image, s.header))
@@ -155,6 +156,21 @@ func (s *DockerImagesWidget) align() {
 
 }
 
+func (s *DockerImagesWidget) highlightSelectedRow() {
+	if s.RowCount() == 0 {
+		return
+	}
+	index := ui.ActiveScreen.Cursor.Position()
+	if index > s.RowCount() {
+		index = s.RowCount() - 1
+	}
+	if s.selectedIndex < s.RowCount() {
+		s.images[s.selectedIndex].NotHighlighted()
+	}
+	s.selectedIndex = index
+	s.images[s.selectedIndex].Highlighted()
+}
+
 func (s *DockerImagesWidget) updateHeader() {
 	sortMode := s.sortMode
 
@@ -180,19 +196,34 @@ func (s *DockerImagesWidget) updateHeader() {
 
 }
 
-func (s *DockerImagesWidget) highlightSelectedRow() {
-	if s.RowCount() == 0 {
+func (s *DockerImagesWidget) sortRows() {
+	rows := s.images
+	mode := s.sortMode
+	if s.sortMode == docker.NoSortImages {
 		return
 	}
-	index := ui.ActiveScreen.Cursor.Position()
-	if index > s.RowCount() {
-		index = s.RowCount() - 1
+	var sortAlg func(i, j int) bool
+
+	switch mode {
+	case docker.SortImagesByRepo:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Repository.Text < rows[j].Repository.Text
+		}
+	case docker.SortImagesByID:
+		sortAlg = func(i, j int) bool {
+			return rows[i].ID.Text < rows[j].ID.Text
+		}
+	case docker.SortImagesByCreationDate:
+		sortAlg = func(i, j int) bool {
+			return rows[i].CreatedSinceValue > rows[j].CreatedSinceValue
+		}
+	case docker.SortImagesBySize:
+		sortAlg = func(i, j int) bool {
+			return rows[i].SizeValue < rows[j].SizeValue
+		}
+
 	}
-	if s.selectedIndex < s.RowCount() {
-		s.images[s.selectedIndex].NotHighlighted()
-	}
-	s.selectedIndex = index
-	s.images[s.selectedIndex].Highlighted()
+	sort.SliceStable(rows, sortAlg)
 }
 
 func (s *DockerImagesWidget) visibleRows() []*ImageRow {

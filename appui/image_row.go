@@ -11,12 +11,14 @@ import (
 
 //ImageRow is a Grid row showing information about a Docker image
 type ImageRow struct {
-	image        types.ImageSummary
-	Repository   *drytermui.ParColumn
-	Tag          *drytermui.ParColumn
-	ID           *drytermui.ParColumn
-	CreatedSince *drytermui.ParColumn
-	Size         *drytermui.ParColumn
+	image             types.ImageSummary
+	Repository        *drytermui.ParColumn
+	Tag               *drytermui.ParColumn
+	ID                *drytermui.ParColumn
+	CreatedSinceValue int64
+	CreatedSince      *drytermui.ParColumn
+	SizeValue         int64
+	Size              *drytermui.ParColumn
 
 	drytermui.Row
 }
@@ -26,12 +28,14 @@ func NewImageRow(image types.ImageSummary, table drytermui.Table) *ImageRow {
 	iformatter := formatter.NewImageFormatter(image, true)
 
 	row := &ImageRow{
-		image:        image,
-		Repository:   drytermui.NewThemedParColumn(DryTheme, iformatter.Repository()),
-		Tag:          drytermui.NewThemedParColumn(DryTheme, iformatter.Tag()),
-		ID:           drytermui.NewThemedParColumn(DryTheme, iformatter.ID()),
-		CreatedSince: drytermui.NewThemedParColumn(DryTheme, iformatter.CreatedSince()),
-		Size:         drytermui.NewThemedParColumn(DryTheme, iformatter.Size()),
+		image:             image,
+		Repository:        drytermui.NewThemedParColumn(DryTheme, iformatter.Repository()),
+		Tag:               drytermui.NewThemedParColumn(DryTheme, iformatter.Tag()),
+		ID:                drytermui.NewThemedParColumn(DryTheme, iformatter.ID()),
+		CreatedSince:      drytermui.NewThemedParColumn(DryTheme, iformatter.CreatedSince()),
+		CreatedSinceValue: image.Created,
+		Size:              drytermui.NewThemedParColumn(DryTheme, iformatter.Size()),
+		SizeValue:         image.VirtualSize,
 	}
 	row.Height = 1
 	row.Table = table

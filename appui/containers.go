@@ -3,6 +3,7 @@ package appui
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 
@@ -63,33 +64,35 @@ func NewContainersWidget(dockerDaemon docker.ContainerAPI, y int) *ContainersWid
 func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-	y := s.y
 	buf := gizaktermui.NewBuffer()
 
-	var filter string
-	if s.filterPattern != "" {
-		filter = fmt.Sprintf(
-			"<b><blue> | Container name filter: </><yellow>%s</></> ", s.filterPattern)
+	if s.mounted {
+		y := s.y
+		s.sortRows()
+		var filter string
+		if s.filterPattern != "" {
+			filter = fmt.Sprintf(
+				"<b><blue> | Container name filter: </><yellow>%s</></> ", s.filterPattern)
+		}
+
+		widgetHeader := WidgetHeader("Containers", s.RowCount(), filter)
+		widgetHeader.Y = y
+		buf.Merge(widgetHeader.Buffer())
+		y += widgetHeader.GetHeight()
+
+		s.header.SetY(y)
+		s.updateTableHeader()
+		buf.Merge(s.header.Buffer())
+
+		y += s.header.GetHeight()
+
+		s.highlightSelectedRow()
+		for _, containerRow := range s.visibleRows() {
+			containerRow.SetY(y)
+			y += containerRow.GetHeight()
+			buf.Merge(containerRow.Buffer())
+		}
 	}
-
-	widgetHeader := WidgetHeader("Containers", s.RowCount(), filter)
-	widgetHeader.Y = y
-	buf.Merge(widgetHeader.Buffer())
-	y += widgetHeader.GetHeight()
-
-	s.header.SetY(y)
-	s.updateTableHeader()
-	buf.Merge(s.header.Buffer())
-
-	y += s.header.GetHeight()
-
-	s.highlightSelectedRow()
-	for _, containerRow := range s.visibleRows() {
-		containerRow.SetY(y)
-		y += containerRow.GetHeight()
-		buf.Merge(containerRow.Buffer())
-	}
-
 	return buf
 }
 
@@ -152,7 +155,6 @@ func (s *ContainersWidget) Sort() {
 		s.sortMode = docker.SortByContainerID
 	default:
 	}
-	s.mounted = false
 }
 
 //ToggleShowAllContainers toggles the show-all-containers state
@@ -225,6 +227,36 @@ func (s *ContainersWidget) updateTableHeader() {
 
 	}
 
+}
+
+func (s *ContainersWidget) sortRows() {
+	rows := s.containers
+	mode := s.sortMode
+	if s.sortMode == docker.NoSort {
+		return
+	}
+	var sortAlg func(i, j int) bool
+
+	switch mode {
+	case docker.SortByContainerID:
+		sortAlg = func(i, j int) bool {
+			return rows[i].ID.Text < rows[j].ID.Text
+		}
+	case docker.SortByImage:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Image.Text < rows[j].Image.Text
+		}
+	case docker.SortByStatus:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Status.Text < rows[j].Status.Text
+		}
+	case docker.SortByName:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Names.Text < rows[j].Names.Text
+		}
+
+	}
+	sort.SliceStable(rows, sortAlg)
 }
 
 func (s *ContainersWidget) visibleRows() []*ContainerRow {
