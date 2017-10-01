@@ -31,7 +31,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>5</>         To service list (in Swarm mode)
 	<white>m</>         Show container monitor mode
 	<white>h</>         Shows this help screen
-	<white>Ctrl+c</>    Quits <white>dry</> inmediately
+	<white>Ctrl+c</>    Quits <white>dry</> immediately
 	<white>q</>         Quits <white>dry</>
 	<white>esc</>       Goes back to the main screen
 
