@@ -85,7 +85,6 @@ func (s *ServiceTasksWidget) ForService(serviceID string) {
 
 	s.serviceID = serviceID
 	s.mounted = false
-
 }
 
 //Mount prepares this widget for rendering
@@ -134,7 +133,7 @@ func (s *ServiceTasksWidget) RowCount() int {
 }
 
 //Sort rotates to the next sort mode.
-//SortByTaskImage -> SortByTaskService -> SortByTaskImage
+//SortByTaskImage -> SortByTaskService -> SortByTaskState -> SortByTaskImage
 func (s *ServiceTasksWidget) Sort() {
 	s.Lock()
 	defer s.Unlock()
@@ -142,6 +141,8 @@ func (s *ServiceTasksWidget) Sort() {
 	case docker.SortByTaskImage:
 		s.sortMode = docker.SortByTaskService
 	case docker.SortByTaskService:
+		s.sortMode = docker.SortByTaskState
+	case docker.SortByTaskState:
 		s.sortMode = docker.SortByTaskImage
 	}
 }
@@ -280,6 +281,10 @@ func (s *ServiceTasksWidget) sortRows() {
 	case docker.SortByTaskService:
 		sortAlg = func(i, j int) bool {
 			return rows[i].Name.Text < rows[j].Name.Text
+		}
+	case docker.SortByTaskState:
+		sortAlg = func(i, j int) bool {
+			return rows[i].CurrentState.Text < rows[j].CurrentState.Text
 		}
 
 	}

@@ -136,7 +136,7 @@ func (s *NodeTasksWidget) RowCount() int {
 }
 
 //Sort rotates to the next sort mode.
-//SortByTaskImage -> SortByTaskService -> SortByTaskImage
+//SortByTaskImage -> SortByTaskService -> SortByTaskState -> SortByTaskImage
 func (s *NodeTasksWidget) Sort() {
 	s.Lock()
 	defer s.Unlock()
@@ -144,6 +144,8 @@ func (s *NodeTasksWidget) Sort() {
 	case docker.SortByTaskImage:
 		s.sortMode = docker.SortByTaskService
 	case docker.SortByTaskService:
+		s.sortMode = docker.SortByTaskState
+	case docker.SortByTaskState:
 		s.sortMode = docker.SortByTaskImage
 	}
 }
@@ -204,7 +206,10 @@ func (s *NodeTasksWidget) sortRows() {
 		sortAlg = func(i, j int) bool {
 			return rows[i].Name.Text < rows[j].Name.Text
 		}
-
+	case docker.SortByTaskState:
+		sortAlg = func(i, j int) bool {
+			return rows[i].CurrentState.Text < rows[j].CurrentState.Text
+		}
 	}
 	sort.SliceStable(rows, sortAlg)
 }
@@ -278,7 +283,7 @@ var taskTableHeaders = []appui.SortableColumnHeader{
 	{Title: "IMAGE", Mode: docker.SortByTaskImage},
 	{Title: "NODE", Mode: docker.NoSortTask},
 	{Title: "DESIRED STATE", Mode: docker.NoSortTask},
-	{Title: "CURRENT STATE", Mode: docker.NoSortTask},
+	{Title: "CURRENT STATE", Mode: docker.SortByTaskState},
 	{Title: "ERROR", Mode: docker.NoSortTask},
 	{Title: "PORTS", Mode: docker.NoSortTask},
 }
