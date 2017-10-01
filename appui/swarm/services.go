@@ -2,6 +2,7 @@ package swarm
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 
@@ -68,7 +69,7 @@ func (s *ServicesWidget) Buffer() gizaktermui.Buffer {
 	y := s.y
 	buf := gizaktermui.NewBuffer()
 	if s.mounted {
-
+		s.sortRows()
 		s.updateHeader()
 		widgetHeader := appui.WidgetHeader("Service", s.RowCount(), "")
 		widgetHeader.Y = y
@@ -98,8 +99,6 @@ func (s *ServicesWidget) Mount() error {
 		s.mounted = true
 		var rows []*ServiceRow
 		if services, servicesInfo, err := getServiceInfo(s.swarmClient); err == nil {
-
-			docker.SortServices(services, s.sortMode)
 			for _, service := range services {
 				rows = append(rows, NewServiceRow(service, servicesInfo[service.ID], s.header))
 			}
@@ -139,7 +138,6 @@ func (s *ServicesWidget) Sort() {
 	case docker.SortByServiceImage:
 		s.sortMode = docker.SortByServiceName
 	}
-	s.mounted = false
 }
 
 //Unmount marks this widget as unmounted
@@ -206,6 +204,27 @@ func (s *ServicesWidget) updateHeader() {
 
 	}
 
+}
+
+func (s *ServicesWidget) sortRows() {
+	rows := s.services
+	mode := s.sortMode
+	if s.sortMode == docker.NoSortTask {
+		return
+	}
+	var sortAlg func(i, j int) bool
+	switch mode {
+	case docker.SortByServiceImage:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Image.Text < rows[j].Image.Text
+		}
+	case docker.SortByServiceName:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Name.Text < rows[j].Name.Text
+		}
+
+	}
+	sort.SliceStable(rows, sortAlg)
 }
 
 func (s *ServicesWidget) visibleRows() []*ServiceRow {
