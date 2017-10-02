@@ -16,6 +16,7 @@ func (h *serviceTasksScreenEventHandler) widget() appui.EventableWidget {
 func (h *serviceTasksScreenEventHandler) handle(event termbox.Event) {
 
 	handled := false
+
 	switch event.Key {
 	case termbox.KeyEsc:
 		handled = true
@@ -30,6 +31,7 @@ func (h *serviceTasksScreenEventHandler) handle(event termbox.Event) {
 	if !handled {
 		h.baseEventHandler.handle(event)
 	} else {
+		h.setFocus(true)
 		refreshScreen()
 	}
 

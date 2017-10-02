@@ -30,6 +30,7 @@ func (h *taskScreenEventHandler) handle(event termbox.Event) {
 	if !handled {
 		h.baseEventHandler.handle(event)
 	} else {
+		h.setFocus(true)
 		refreshScreen()
 	}
 
