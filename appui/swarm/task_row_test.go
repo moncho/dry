@@ -24,10 +24,6 @@ func TestTaskRow(t *testing.T) {
 		t.Error("TaskRow was not created")
 	}
 
-	if row.ID.Text != task.ID {
-		t.Errorf("TaskRow ID is not 'task1', got %s", row.ID.Text)
-	}
-
 	if row.Name.Text != "Service1.1" {
 		t.Errorf("TaskRow name is not %s, got %s", "Service1.1 ", row.Name.Text)
 	}

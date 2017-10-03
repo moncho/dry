@@ -137,7 +137,7 @@ func (s *NodeTasksWidget) RowCount() int {
 }
 
 //Sort rotates to the next sort mode.
-//SortByTaskService -> SortByTaskImage -> SortByTaskState -> SortByTaskService
+//SortByTaskService -> SortByTaskImage -> SortByTaskDesiredState -> SortByTaskState -> SortByTaskService
 func (s *NodeTasksWidget) Sort() {
 	s.Lock()
 	defer s.Unlock()
@@ -145,6 +145,8 @@ func (s *NodeTasksWidget) Sort() {
 	case docker.SortByTaskService:
 		s.sortMode = docker.SortByTaskImage
 	case docker.SortByTaskImage:
+		s.sortMode = docker.SortByTaskDesiredState
+	case docker.SortByTaskDesiredState:
 		s.sortMode = docker.SortByTaskState
 	case docker.SortByTaskState:
 		s.sortMode = docker.SortByTaskService
@@ -206,6 +208,10 @@ func (s *NodeTasksWidget) sortRows() {
 	case docker.SortByTaskService:
 		sortAlg = func(i, j int) bool {
 			return rows[i].Name.Text < rows[j].Name.Text
+		}
+	case docker.SortByTaskDesiredState:
+		sortAlg = func(i, j int) bool {
+			return rows[i].DesiredState.Text < rows[j].DesiredState.Text
 		}
 	case docker.SortByTaskState:
 		sortAlg = func(i, j int) bool {
@@ -279,11 +285,10 @@ func (s *NodeTasksWidget) visibleRows() []*TaskRow {
 }
 
 var taskTableHeaders = []appui.SortableColumnHeader{
-	{Title: "TASK ID", Mode: docker.NoSortTask},
 	{Title: "NAME", Mode: docker.SortByTaskService},
 	{Title: "IMAGE", Mode: docker.SortByTaskImage},
 	{Title: "NODE", Mode: docker.NoSortTask},
-	{Title: "DESIRED STATE", Mode: docker.NoSortTask},
+	{Title: "DESIRED STATE", Mode: docker.SortByTaskDesiredState},
 	{Title: "CURRENT STATE", Mode: docker.SortByTaskState},
 	{Title: "ERROR", Mode: docker.NoSortTask},
 	{Title: "PORTS", Mode: docker.NoSortTask},
@@ -293,14 +298,13 @@ func taskTableHeader() *termui.TableHeader {
 
 	header := termui.NewHeader(appui.DryTheme)
 	header.ColumnSpacing = appui.DefaultColumnSpacing
-	header.AddFixedWidthColumn(taskTableHeaders[0].Title, docker.ShortLen)
+	header.AddColumn(taskTableHeaders[0].Title)
 	header.AddColumn(taskTableHeaders[1].Title)
 	header.AddColumn(taskTableHeaders[2].Title)
-	header.AddColumn(taskTableHeaders[3].Title)
-	header.AddFixedWidthColumn(taskTableHeaders[4].Title, 13)
-	header.AddFixedWidthColumn(taskTableHeaders[5].Title, 22)
+	header.AddFixedWidthColumn(taskTableHeaders[3].Title, 13)
+	header.AddFixedWidthColumn(taskTableHeaders[4].Title, 22)
+	header.AddColumn(taskTableHeaders[5].Title)
 	header.AddColumn(taskTableHeaders[6].Title)
-	header.AddColumn(taskTableHeaders[7].Title)
 
 	return header
 }

@@ -32,7 +32,6 @@ func NewTaskRow(swarmClient docker.SwarmAPI, task swarm.Task, table drytermui.Ta
 
 	row := &TaskRow{
 		task:         task,
-		ID:           drytermui.NewThemedParColumn(appui.DryTheme, ts.ID()),
 		Name:         drytermui.NewThemedParColumn(appui.DryTheme, ts.Name()),
 		Image:        drytermui.NewThemedParColumn(appui.DryTheme, ts.Image()),
 		Node:         drytermui.NewThemedParColumn(appui.DryTheme, ts.NodeID()),
@@ -45,7 +44,6 @@ func NewTaskRow(swarmClient docker.SwarmAPI, task swarm.Task, table drytermui.Ta
 	row.Table = table
 	//Columns are rendered following the slice order
 	row.Columns = []termui.GridBufferer{
-		row.ID,
 		row.Name,
 		row.Image,
 		row.Node,
@@ -66,7 +64,7 @@ func (row *TaskRow) Buffer() termui.Buffer {
 	//This set the background of the whole row
 	buf.Area.Min = image.Point{row.X, row.Y}
 	buf.Area.Max = image.Point{row.X + row.Width, row.Y + row.Height}
-	buf.Fill(' ', row.ID.TextFgColor, row.ID.TextBgColor)
+	buf.Fill(' ', row.Name.TextFgColor, row.Name.TextBgColor)
 
 	for _, col := range row.Columns {
 		buf.Merge(col.Buffer())
@@ -89,8 +87,6 @@ func (row *TaskRow) NotHighlighted() {
 }
 
 func (row *TaskRow) changeTextColor(fg, bg termui.Attribute) {
-	row.ID.TextFgColor = fg
-	row.ID.TextBgColor = bg
 	row.Name.TextFgColor = fg
 	row.Name.TextBgColor = bg
 	row.Image.TextFgColor = fg
