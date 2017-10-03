@@ -12,6 +12,7 @@ const (
 	SortByTaskImage
 	SortByTaskService
 	SortByTaskState
+	SortByTaskDesiredState
 )
 
 type swarmTasks []swarm.Task
@@ -37,6 +38,12 @@ func (s tasksByState) Less(i, j int) bool {
 	return s.swarmTasks[i].Status.State < s.swarmTasks[j].Status.State
 }
 
+type tasksByDesiredState struct{ swarmTasks }
+
+func (s tasksByDesiredState) Less(i, j int) bool {
+	return s.swarmTasks[i].DesiredState < s.swarmTasks[j].DesiredState
+}
+
 //SortTasks sorts the given Task slice using the given mode
 func SortTasks(tasks []swarm.Task, mode SortMode) {
 
@@ -49,6 +56,9 @@ func SortTasks(tasks []swarm.Task, mode SortMode) {
 		sort.SliceStable(sortingAlg.swarmTasks, sortingAlg.Less)
 	case SortByTaskState:
 		sortingAlg := tasksByState{tasks}
+		sort.SliceStable(sortingAlg.swarmTasks, sortingAlg.Less)
+	case SortByTaskDesiredState:
+		sortingAlg := tasksByDesiredState{tasks}
 		sort.SliceStable(sortingAlg.swarmTasks, sortingAlg.Less)
 	}
 
