@@ -120,8 +120,10 @@ func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled 
 	switch key {
 	case 'e', 'E': //remove
 		handled = true
-		h.widget().OnEvent(
+		if err := h.widget().OnEvent(
 			func(id string) error {
+				h.dry.appmessage("Removing container " + id)
+
 				container := dry.dockerDaemon.ContainerByID(id)
 				if container == nil {
 					return fmt.Errorf("Container with id %s not found", id)
@@ -134,11 +136,13 @@ func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled 
 					container,
 				})
 				return nil
-			})
+			}); err != nil {
+			h.dry.appmessage("There was an error removing the container: " + err.Error())
+		}
 
 	case 'i', 'I': //inspect
 		handled = true
-		h.widget().OnEvent(
+		if err := h.widget().OnEvent(
 			func(id string) error {
 				container := dry.dockerDaemon.ContainerByID(id)
 				if container == nil {
@@ -152,11 +156,13 @@ func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled 
 					container,
 				})
 				return nil
-			})
+			}); err != nil {
+			h.dry.appmessage("There was an error inspecting the container: " + err.Error())
+		}
 
 	case 'l', 'L': //logs
 		handled = true
-		h.widget().OnEvent(
+		if err := h.widget().OnEvent(
 			func(id string) error {
 				container := dry.dockerDaemon.ContainerByID(id)
 				if container == nil {
@@ -170,10 +176,12 @@ func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled 
 					container,
 				})
 				return nil
-			})
+			}); err != nil {
+			h.dry.appmessage("There was an error showing logs: " + err.Error())
+		}
 	case 's', 'S': //stats
 		handled = true
-		h.widget().OnEvent(
+		if err := h.widget().OnEvent(
 			func(id string) error {
 				container := dry.dockerDaemon.ContainerByID(id)
 				if container == nil {
@@ -187,7 +195,9 @@ func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled 
 					container,
 				})
 				return nil
-			})
+			}); err != nil {
+			h.dry.appmessage("There was an error showing stats: " + err.Error())
+		}
 	}
 	return focus, handled
 }
@@ -227,20 +237,30 @@ func handleKey(h *containersScreenEventHandler, key termbox.Key) (bool, bool) {
 			}
 		}
 	case termbox.KeyCtrlK: //kill
-		h.widget().OnEvent(
+		if err := h.widget().OnEvent(
 			func(id string) error {
+				h.dry.appmessage("Killing container " + id)
 				return h.dry.dockerDaemon.Kill(id)
-			})
+			}); err != nil {
+			h.dry.appmessage("There was an error killing the container: " + err.Error())
+		}
 	case termbox.KeyCtrlR: //start
-		h.widget().OnEvent(
+		if err := h.widget().OnEvent(
 			func(id string) error {
+				h.dry.appmessage("Restarting container " + id)
+
 				return h.dry.dockerDaemon.RestartContainer(id)
-			})
+			}); err != nil {
+			h.dry.appmessage("There was an error refreshing: " + err.Error())
+		}
 	case termbox.KeyCtrlT: //stop
-		h.widget().OnEvent(
+		if err := h.widget().OnEvent(
 			func(id string) error {
+				h.dry.appmessage("Stopping container " + id)
 				return h.dry.dockerDaemon.StopContainer(id)
-			})
+			}); err != nil {
+			h.dry.appmessage("There was an error killing the container: " + err.Error())
+		}
 	case termbox.KeyEnter: //Container menu
 		showMenu := func(id string) error {
 			container := h.dry.dockerDaemon.ContainerByID(id)

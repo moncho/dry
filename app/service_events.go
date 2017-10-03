@@ -60,7 +60,9 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 				refreshScreen()
 				return err
 			}
-			h.widget().OnEvent(removeService)
+			if err := h.widget().OnEvent(removeService); err != nil {
+				h.dry.appmessage("There was an error removing the service: " + err.Error())
+			}
 		}()
 
 	case termbox.KeyCtrlS:
@@ -99,7 +101,9 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 				refreshScreen()
 				return err
 			}
-			h.widget().OnEvent(scaleService)
+			if err := h.widget().OnEvent(scaleService); err != nil {
+				h.dry.appmessage("There was an error scaling the service: " + err.Error())
+			}
 		}()
 
 	case termbox.KeyEnter:
@@ -138,6 +142,8 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		}
 		if err := h.widget().OnEvent(inspectService); err == nil {
 			focus = false
+		} else {
+			h.dry.appmessage("There was an error inspecting the service: " + err.Error())
 		}
 
 	case 'l':
@@ -151,9 +157,10 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 			}
 			return err
 		}
-		//TODO show error on screen
 		if err := h.widget().OnEvent(showServiceLogs); err == nil {
 			focus = false
+		} else {
+			h.dry.appmessage("There was an error showing service logs: " + err.Error())
 		}
 
 	}
