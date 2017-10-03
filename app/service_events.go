@@ -33,7 +33,10 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		h.dry.widgetRegistry.ServiceList.Sort()
 		handled = true
 	case termbox.KeyF5: // refresh
-		h.widget().Unmount()
+		h.dry.appmessage("Refreshing the service list")
+		if err := h.widget().Unmount(); err != nil {
+			h.dry.appmessage("There was an error refreshing the service list: " + err.Error())
+		}
 		handled = true
 	case termbox.KeyCtrlR:
 
