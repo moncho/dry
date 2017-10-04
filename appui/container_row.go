@@ -23,7 +23,7 @@ type ContainerRow struct {
 	Status    *drytermui.ParColumn
 	Ports     *drytermui.ParColumn
 	Names     *drytermui.ParColumn
-
+	running   bool
 	drytermui.Row
 }
 
@@ -123,10 +123,12 @@ func (row *ContainerRow) markAsNotRunning() {
 	row.Status.TextFgColor = inactiveRowColor
 	row.Ports.TextFgColor = inactiveRowColor
 	row.Names.TextFgColor = inactiveRowColor
+	row.running = false
 }
 
 //markAsRunning
 func (row *ContainerRow) markAsRunning() {
 	row.Indicator.TextFgColor = Running
+	row.running = true
 
 }

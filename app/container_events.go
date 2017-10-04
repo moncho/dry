@@ -214,9 +214,8 @@ func handleKey(h *containersScreenEventHandler, key termbox.Key) (bool, bool) {
 		h.dry.widgetRegistry.ContainerList.ToggleShowAllContainers()
 
 	case termbox.KeyF3: //filter containers
-		if _, err := appui.ReadLine("Show containers named (leave empty to remove the filter) >>> "); err == nil {
-			//TODO filter
-			//h.dry.SetContainerFilter(filter)
+		if filter, err := appui.ReadLine("Show containers named (leave empty to remove the filter) >>> "); err == nil {
+			h.dry.widgetRegistry.ContainerList.Filter(filter)
 		}
 		h.screen.ClearAndFlush()
 	case termbox.KeyF5: // refresh

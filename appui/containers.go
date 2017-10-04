@@ -31,7 +31,7 @@ type ContainersWidget struct {
 	dockerDaemon         docker.ContainerAPI
 	containers           []*ContainerRow
 	showAllContainers    bool
-	filters              []docker.ContainerFilter
+	filters              []containerRowFilter
 	header               *termui.TableHeader
 	sortMode             docker.SortMode
 	filterPattern        string
@@ -94,6 +94,14 @@ func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 		}
 	}
 	return buf
+}
+
+//Filter applies the given filter to the container list
+func (s *ContainersWidget) Filter(filter string) {
+	s.Lock()
+	defer s.Unlock()
+	s.filterPattern = filter
+
 }
 
 //Mount tells this widget to be ready for rendering
@@ -188,6 +196,13 @@ func (s *ContainersWidget) align() {
 	}
 
 }
+func (s *ContainersWidget) applyFilters() []*ContainerRow {
+	if s.filterPattern != "" {
+		return containerRowFilters.ByName(s.filterPattern).Apply(s.containers)
+	}
+
+	return s.containers
+}
 
 func (s *ContainersWidget) highlightSelectedRow() {
 	if s.RowCount() == 0 {
@@ -268,7 +283,7 @@ func (s *ContainersWidget) visibleRows() []*ContainerRow {
 	if s.height < 0 {
 		return nil
 	}
-	rows := s.containers
+	rows := s.applyFilters()
 	count := len(rows)
 	selected := ui.ActiveScreen.Cursor.Position()
 	//everything fits
@@ -309,14 +324,3 @@ func containerTableHeader() *termui.TableHeader {
 
 	return header
 }
-
-/*func registerForDockerEvents(c *ContainersWidget) {
-	docker.GlobalRegistry.Register(docker.ContainerSource,
-		func(ctx context.Context, event events.Message) error {
-			if event.Action == "start" || event.Action == "stop" {
-				return c.Unmount()
-			}
-			return nil
-		})
-
-}*/
