@@ -17,6 +17,7 @@ type commandToExecute struct {
 }
 type containersScreenEventHandler struct {
 	baseEventHandler
+	passingEvents bool
 }
 
 func (h *containersScreenEventHandler) widget() appui.EventableWidget {
@@ -24,6 +25,10 @@ func (h *containersScreenEventHandler) widget() appui.EventableWidget {
 }
 
 func (h *containersScreenEventHandler) handle(event termbox.Event) {
+	if h.passingEvents {
+		h.eventChan <- event
+		return
+	}
 	focus, handled := handleKey(h, event.Key)
 	if !handled {
 		focus, handled = handleCharacter(h, event.Ch)
@@ -39,6 +44,7 @@ func (h *containersScreenEventHandler) handle(event termbox.Event) {
 }
 
 func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
+
 	focus := true
 	dry := h.dry
 	screen := h.screen
@@ -118,6 +124,28 @@ func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled 
 	handled = false
 	dry := h.dry
 	switch key {
+
+	case '/': //filter containers
+		rw := appui.NewAskForConfirmation("Filter? (blank to remove current filter)")
+		h.passingEvents = true
+		handled = true
+		dry.widgetRegistry.add(rw)
+		go func() {
+			events := ui.EventSource{
+				Events: h.eventChan,
+				EventHandledCallback: func(e termbox.Event) error {
+					return refreshScreen()
+				},
+			}
+			rw.OnFocus(events)
+			dry.widgetRegistry.remove(rw)
+			filter, canceled := rw.Text()
+			h.passingEvents = false
+			if canceled {
+				return
+			}
+			h.dry.widgetRegistry.ContainerList.Filter(filter)
+		}()
 	case 'e', 'E': //remove
 		handled = true
 		if err := h.widget().OnEvent(
@@ -212,12 +240,6 @@ func handleKey(h *containersScreenEventHandler, key termbox.Key) (bool, bool) {
 	case termbox.KeyF2: //show all containers
 		cursor.Reset()
 		h.dry.widgetRegistry.ContainerList.ToggleShowAllContainers()
-
-	case termbox.KeyF3: //filter containers
-		if filter, err := appui.ReadLine("Show containers named (leave empty to remove the filter) >>> "); err == nil {
-			h.dry.widgetRegistry.ContainerList.Filter(filter)
-		}
-		h.screen.ClearAndFlush()
 	case termbox.KeyF5: // refresh
 		h.dry.appmessage("Refreshing container list")
 		h.dry.dockerDaemon.Refresh(func(e error) {

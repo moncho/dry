@@ -35,11 +35,13 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>q</>         Quits <white>dry</>
 	<white>esc</>       Goes back to the main screen
 
+<yellow>Global list keybinds</>	
+	<white>F1</>        Cycles through sort modes
+	<white>F5</>        Refreshes the list
+	<white>/</>         Defines Filter
+
 <yellow>Container list keybinds</>
-	<white>F1</>        Cycles through containers sort modes (by Id | by Image | by Status | by Name)
 	<white>F2</>        Toggles showing all containers (default shows just running)
-	<white>F3</>        Filters containers by its name	
-	<white>F5</>        Refreshes container list
 	<white>e</>         Removes the selected container
 	<white>Ctrl+e</>    Removes all stopped containers
 	<white>Ctrl+k</>    Kills the selected container
@@ -50,8 +52,6 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Enter</>     Returns low-level information of the selected container
 
 <yellow>Image list keybinds</>
-	<white>F1</>        Cycles through images sort modes (by Repo | by Id | by Creation date | by Size)
-	<white>F5</>        Refresh the image list
 	<white>Ctrl+e</>    Removes the selected image
 	<white>Ctrl+f</>    Forces removal of the selected image
 	<white>i</>         Shows image history
@@ -90,7 +90,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 const (
 	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "
 	keyMappings    = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F3]:<darkgrey>Filter(By Name)</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[/]:<darkgrey>Filter</> <blue>|</> " +
 		"<b>[m]:<darkgrey>Monitor mode</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
 
 	monitorMapping = commonMappings +
@@ -113,7 +113,7 @@ const (
 		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <blue>|</>" +
 		"<b>[p]:<darkgrey>Prune</>"
 
-	serviceKeyMappings = swarmMapping + " <blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> <b>[l]:<darkgrey>Service logs</> <b>[Ctrl+R]:<darkgrey>Remove Service</> <b>[Ctrl+S]:<darkgrey>Scale service</>"
+	serviceKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[/]:<darkgrey>Filter</> <blue>|</> <b>[l]:<darkgrey>Service logs</> <b>[Ctrl+R]:<darkgrey>Remove Service</> <b>[Ctrl+S]:<darkgrey>Scale service</>"
 
 	nodeKeyMappings = swarmMapping + " <blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</>  <b>[Enter]:<darkgrey>Show Node Tasks</> <b>[Ctrl+A]:<darkgrey>Set Availability</>"
 
