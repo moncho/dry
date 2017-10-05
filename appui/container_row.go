@@ -63,6 +63,25 @@ func NewContainerRow(container *docker.Container, table drytermui.Table) *Contai
 
 }
 
+//Buffer returns this Row data as a termui.Buffer
+func (row *ContainerRow) Buffer() termui.Buffer {
+	buf := termui.NewBuffer()
+	//This set the background of the whole row
+	buf.Area.Min = image.Point{row.X, row.Y}
+	buf.Area.Max = image.Point{row.X + row.Width, row.Y + row.Height}
+	buf.Fill(' ', row.ID.TextFgColor, row.ID.TextBgColor)
+
+	for _, col := range row.Columns {
+		buf.Merge(col.Buffer())
+	}
+	return buf
+}
+
+//ColumnsForFilter returns the columns that are used to filter
+func (row *ContainerRow) ColumnsForFilter() []*drytermui.ParColumn {
+	return []*drytermui.ParColumn{row.ID, row.Image, row.Names, row.Command}
+}
+
 //Highlighted marks this rows as being highlighted
 func (row *ContainerRow) Highlighted() {
 	row.changeTextColor(
@@ -82,20 +101,6 @@ func (row *ContainerRow) NotHighlighted() {
 	row.changeTextColor(
 		fg,
 		termui.Attribute(DryTheme.Bg))
-}
-
-//Buffer returns this Row data as a termui.Buffer
-func (row *ContainerRow) Buffer() termui.Buffer {
-	buf := termui.NewBuffer()
-	//This set the background of the whole row
-	buf.Area.Min = image.Point{row.X, row.Y}
-	buf.Area.Max = image.Point{row.X + row.Width, row.Y + row.Height}
-	buf.Fill(' ', row.ID.TextFgColor, row.ID.TextBgColor)
-
-	for _, col := range row.Columns {
-		buf.Merge(col.Buffer())
-	}
-	return buf
 }
 
 func (row *ContainerRow) changeTextColor(fg, bg termui.Attribute) {

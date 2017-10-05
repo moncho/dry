@@ -31,7 +31,6 @@ type ContainersWidget struct {
 	dockerDaemon         docker.ContainerAPI
 	containers           []*ContainerRow
 	showAllContainers    bool
-	filters              []containerRowFilter
 	header               *termui.TableHeader
 	sortMode             docker.SortMode
 	filterPattern        string
@@ -72,7 +71,7 @@ func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 		var filter string
 		if s.filterPattern != "" {
 			filter = fmt.Sprintf(
-				"<b><blue> | Container name filter: </><yellow>%s</></> ", s.filterPattern)
+				"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
 		}
 
 		widgetHeader := WidgetHeader("Containers", s.RowCount(), filter)
@@ -196,9 +195,16 @@ func (s *ContainersWidget) align() {
 	}
 
 }
+
 func (s *ContainersWidget) applyFilters() []*ContainerRow {
 	if s.filterPattern != "" {
-		return containerRowFilters.ByName(s.filterPattern).Apply(s.containers)
+		var rows []*ContainerRow
+		for _, row := range s.containers {
+			if RowFilters.ByPattern(s.filterPattern)(row) {
+				rows = append(rows, row)
+			}
+		}
+		return rows
 	}
 
 	return s.containers

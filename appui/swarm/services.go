@@ -32,6 +32,7 @@ var serviceTableHeaders = []appui.SortableColumnHeader{
 type ServicesWidget struct {
 	swarmClient          docker.SwarmAPI
 	services             []*ServiceRow
+	filterPattern        string
 	header               *termui.TableHeader
 	selectedIndex        int
 	offset               int
@@ -71,7 +72,13 @@ func (s *ServicesWidget) Buffer() gizaktermui.Buffer {
 	if s.mounted {
 		s.sortRows()
 		s.updateHeader()
-		widgetHeader := appui.WidgetHeader("Service", s.RowCount(), "")
+		var filter string
+		if s.filterPattern != "" {
+			filter = fmt.Sprintf(
+				"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
+		}
+
+		widgetHeader := appui.WidgetHeader("Services", s.RowCount(), filter)
 		widgetHeader.Y = y
 		buf.Merge(widgetHeader.Buffer())
 		y += widgetHeader.GetHeight()
@@ -89,6 +96,13 @@ func (s *ServicesWidget) Buffer() gizaktermui.Buffer {
 		}
 	}
 	return buf
+}
+
+//Filter applies the given filter to the container list
+func (s *ServicesWidget) Filter(filter string) {
+	s.Lock()
+	defer s.Unlock()
+	s.filterPattern = filter
 }
 
 //Mount prepares this widget for rendering
@@ -148,6 +162,20 @@ func (s *ServicesWidget) Unmount() error {
 	s.mounted = false
 	return nil
 
+}
+
+func (s *ServicesWidget) applyFilters() []*ServiceRow {
+	if s.filterPattern != "" {
+		var rows []*ServiceRow
+		for _, row := range s.services {
+			if appui.RowFilters.ByPattern(s.filterPattern)(row) {
+				rows = append(rows, row)
+			}
+		}
+		return rows
+	}
+
+	return s.services
 }
 
 //Align aligns rows
@@ -236,7 +264,7 @@ func (s *ServicesWidget) visibleRows() []*ServiceRow {
 	if s.height < 0 {
 		return nil
 	}
-	rows := s.services
+	rows := s.applyFilters()
 	count := len(rows)
 	cursor := ui.ActiveScreen.Cursor
 	selected := cursor.Position()
