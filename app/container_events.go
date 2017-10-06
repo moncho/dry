@@ -125,7 +125,7 @@ func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled 
 	dry := h.dry
 	switch key {
 
-	case '/': //filter containers
+	case '%': //filter containers
 		rw := appui.NewAskForConfirmation("Filter? (blank to remove current filter)")
 		h.passingEvents = true
 		handled = true

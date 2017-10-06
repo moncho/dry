@@ -118,7 +118,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		handled = true
 	}
 	switch event.Ch {
-	case '/':
+	case '%':
 		rw := appui.NewAskForConfirmation("Filter? (blank to remove current filter)")
 		h.passingEvents = true
 		handled = true
