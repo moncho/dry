@@ -38,7 +38,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 <yellow>Global list keybinds</>	
 	<white>F1</>        Cycles through sort modes
 	<white>F5</>        Refreshes the list
-	<white>/</>         Defines Filter
+	<white>%</>         Filter
 
 <yellow>Container list keybinds</>
 	<white>F2</>        Toggles showing all containers (default shows just running)
@@ -90,7 +90,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 const (
 	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "
 	keyMappings    = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[/]:<darkgrey>Filter</> <blue>|</> " +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> " +
 		"<b>[m]:<darkgrey>Monitor mode</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
 
 	monitorMapping = commonMappings +
@@ -113,7 +113,7 @@ const (
 		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <blue>|</>" +
 		"<b>[p]:<darkgrey>Prune</>"
 
-	serviceKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[/]:<darkgrey>Filter</> <blue>|</> <b>[l]:<darkgrey>Service logs</> <b>[Ctrl+R]:<darkgrey>Remove Service</> <b>[Ctrl+S]:<darkgrey>Scale service</>"
+	serviceKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> <b>[l]:<darkgrey>Service logs</> <b>[Ctrl+R]:<darkgrey>Remove Service</> <b>[Ctrl+S]:<darkgrey>Scale service</>"
 
 	nodeKeyMappings = swarmMapping + " <blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</>  <b>[Enter]:<darkgrey>Show Node Tasks</> <b>[Ctrl+A]:<darkgrey>Set Availability</>"
 
