@@ -31,7 +31,8 @@ var serviceTableHeaders = []appui.SortableColumnHeader{
 //ServicesWidget shows information about services running on the Swarm
 type ServicesWidget struct {
 	swarmClient          docker.SwarmAPI
-	services             []*ServiceRow
+	filteredRows         []*ServiceRow
+	totalRows            []*ServiceRow
 	filterPattern        string
 	header               *termui.TableHeader
 	selectedIndex        int
@@ -70,8 +71,7 @@ func (s *ServicesWidget) Buffer() gizaktermui.Buffer {
 	y := s.y
 	buf := gizaktermui.NewBuffer()
 	if s.mounted {
-		s.sortRows()
-		s.updateHeader()
+		s.prepareForRendering()
 		var filter string
 		if s.filterPattern != "" {
 			filter = fmt.Sprintf(
@@ -83,16 +83,22 @@ func (s *ServicesWidget) Buffer() gizaktermui.Buffer {
 		buf.Merge(widgetHeader.Buffer())
 		y += widgetHeader.GetHeight()
 
+		s.updateHeader()
 		s.header.SetY(y)
 		buf.Merge(s.header.Buffer())
 		y += s.header.GetHeight()
 
-		s.highlightSelectedRow()
-		for _, service := range s.visibleRows() {
-			service.SetY(y)
-			service.Height = 1
-			y += service.GetHeight()
-			buf.Merge(service.Buffer())
+		selected := s.selectedIndex - s.startIndex
+
+		for i, serviceRow := range s.visibleRows() {
+			serviceRow.SetY(y)
+			y += serviceRow.GetHeight()
+			if i != selected {
+				serviceRow.NotHighlighted()
+			} else {
+				serviceRow.Highlighted()
+			}
+			buf.Merge(serviceRow.Buffer())
 		}
 	}
 	return buf
@@ -117,7 +123,7 @@ func (s *ServicesWidget) Mount() error {
 				rows = append(rows, NewServiceRow(service, servicesInfo[service.ID], s.header))
 			}
 		}
-		s.services = rows
+		s.totalRows = rows
 	}
 	s.align()
 	return nil
@@ -130,13 +136,13 @@ func (s *ServicesWidget) Name() string {
 
 //RowCount returns the number of rowns of this widget.
 func (s *ServicesWidget) RowCount() int {
-	return len(s.services)
+	return len(s.filteredRows)
 }
 
 //OnEvent runs the given command
 func (s *ServicesWidget) OnEvent(event appui.EventCommand) error {
 	if s.RowCount() > 0 {
-		return event(s.services[s.selectedIndex].service.ID)
+		return event(s.filteredRows[s.selectedIndex].service.ID)
 	}
 	return nil
 }
@@ -164,20 +170,6 @@ func (s *ServicesWidget) Unmount() error {
 
 }
 
-func (s *ServicesWidget) applyFilters() []*ServiceRow {
-	if s.filterPattern != "" {
-		var rows []*ServiceRow
-		for _, row := range s.services {
-			if appui.RowFilters.ByPattern(s.filterPattern)(row) {
-				rows = append(rows, row)
-			}
-		}
-		return rows
-	}
-
-	return s.services
-}
-
 //Align aligns rows
 func (s *ServicesWidget) align() {
 	x := s.x
@@ -186,30 +178,78 @@ func (s *ServicesWidget) align() {
 	s.header.SetWidth(width)
 	s.header.SetX(x)
 
-	for _, service := range s.services {
+	for _, service := range s.totalRows {
 		service.SetX(x)
 		service.SetWidth(width)
 	}
 
 }
 
-func (s *ServicesWidget) highlightSelectedRow() {
+func (s *ServicesWidget) filterRows() {
+
+	if s.filterPattern != "" {
+		var rows []*ServiceRow
+
+		for _, row := range s.totalRows {
+			if appui.RowFilters.ByPattern(s.filterPattern)(row) {
+				rows = append(rows, row)
+			}
+		}
+		s.filteredRows = rows
+	} else {
+		s.filteredRows = s.totalRows
+	}
+}
+
+func (s *ServicesWidget) calculateVisibleRows() {
+
 	count := s.RowCount()
-	if count == 0 {
+
+	//no screen
+	if s.height < 0 || count == 0 {
+		s.startIndex = 0
+		s.endIndex = 0
 		return
 	}
+	selected := s.selectedIndex
+	//everything fits
+	if count <= s.height {
+		s.startIndex = 0
+		s.endIndex = count
+		return
+	}
+	//at the the start
+	if selected == 0 {
+		s.startIndex = 0
+		s.endIndex = s.height
+	} else if selected >= count-1 { //at the end
+		s.startIndex = count - s.height
+		s.endIndex = count
+	} else if selected == s.endIndex { //scroll down by one
+		s.startIndex++
+		s.endIndex++
+	} else if selected <= s.startIndex { //scroll up by one
+		s.startIndex--
+		s.endIndex--
+	} else if selected > s.endIndex { // scroll
+		s.startIndex = selected - s.height
+		s.endIndex = selected
+	}
+}
+
+//prepareForRendering sets the internal state of this widget so it is ready for
+//rendering (i.e. Buffer()).
+func (s *ServicesWidget) prepareForRendering() {
+	s.sortRows()
+	s.filterRows()
 	index := ui.ActiveScreen.Cursor.Position()
-	if index > count {
-		index = count - 1
+	if index < 0 {
+		index = 0
+	} else if index > s.RowCount() {
+		index = s.RowCount() - 1
 	}
 	s.selectedIndex = index
-	for i, row := range s.services {
-		if i != index {
-			row.NotHighlighted()
-		} else {
-			row.Highlighted()
-		}
-	}
+	s.calculateVisibleRows()
 }
 
 func (s *ServicesWidget) updateHeader() {
@@ -237,8 +277,12 @@ func (s *ServicesWidget) updateHeader() {
 
 }
 
+func (s *ServicesWidget) visibleRows() []*ServiceRow {
+	return s.filteredRows[s.startIndex:s.endIndex]
+}
+
 func (s *ServicesWidget) sortRows() {
-	rows := s.services
+	rows := s.totalRows
 	mode := s.sortMode
 	if s.sortMode == docker.NoSortService {
 		return
@@ -256,45 +300,6 @@ func (s *ServicesWidget) sortRows() {
 
 	}
 	sort.SliceStable(rows, sortAlg)
-}
-
-func (s *ServicesWidget) visibleRows() []*ServiceRow {
-
-	//no screen
-	if s.height < 0 {
-		return nil
-	}
-	rows := s.applyFilters()
-	count := len(rows)
-	cursor := ui.ActiveScreen.Cursor
-	selected := cursor.Position()
-	//everything fits
-	if count <= s.height {
-		return rows
-	}
-	//at the the start
-	if selected == 0 {
-		//internal state is reset
-		s.startIndex = 0
-		s.endIndex = s.height
-		return rows[s.startIndex : s.endIndex+1]
-	}
-
-	if selected >= s.endIndex {
-		if selected-s.height >= 0 {
-			s.startIndex = selected - s.height
-		}
-		s.endIndex = selected
-	}
-	if selected <= s.startIndex {
-		s.startIndex = s.startIndex - 1
-		if selected+s.height < count {
-			s.endIndex = s.startIndex + s.height
-		}
-	}
-	start := s.startIndex
-	end := s.endIndex + 1
-	return rows[start:end]
 }
 
 func serviceTableHeader() *termui.TableHeader {

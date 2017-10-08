@@ -1,10 +1,13 @@
 package appui
 
 import (
+	"sort"
 	"testing"
 
+	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/mocks"
 	"github.com/moncho/dry/ui"
+	drytermui "github.com/moncho/dry/ui/termui"
 )
 
 func TestContainerListVisibleRows(t *testing.T) {
@@ -23,7 +26,7 @@ func TestContainerListVisibleRows(t *testing.T) {
 	if err := w.Mount(); err != nil {
 		t.Errorf("There was an error mounting the widget %v", err)
 	}
-
+	w.prepareForRendering()
 	rows := w.visibleRows()
 	if len(rows) != w.height {
 		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
@@ -33,6 +36,7 @@ func TestContainerListVisibleRows(t *testing.T) {
 	}
 
 	ui.ActiveScreen.Cursor.ScrollCursorDown()
+	w.prepareForRendering()
 	rows = w.visibleRows()
 	if len(rows) != w.height {
 		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
@@ -42,6 +46,7 @@ func TestContainerListVisibleRows(t *testing.T) {
 	}
 
 	ui.ActiveScreen.Cursor.ScrollTo(10)
+	w.prepareForRendering()
 	rows = w.visibleRows()
 	if len(rows) != w.height {
 		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
@@ -51,6 +56,7 @@ func TestContainerListVisibleRows(t *testing.T) {
 	}
 
 	ui.ActiveScreen.Cursor.ScrollCursorUp()
+	w.prepareForRendering()
 	rows = w.visibleRows()
 	if len(rows) != w.height {
 		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
@@ -60,6 +66,7 @@ func TestContainerListVisibleRows(t *testing.T) {
 	}
 
 	ui.ActiveScreen.Cursor.ScrollTo(0)
+	w.prepareForRendering()
 	rows = w.visibleRows()
 	if len(rows) != w.height {
 		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
@@ -74,6 +81,7 @@ func TestContainerListVisibleRows(t *testing.T) {
 	ui.ActiveScreen.Cursor.ScrollCursorDown()
 	ui.ActiveScreen.Cursor.ScrollCursorDown()
 
+	w.prepareForRendering()
 	rows = w.visibleRows()
 	if len(rows) != w.height {
 		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
@@ -120,6 +128,120 @@ func TestContainersWidget_ToggleShowAllContainers(t *testing.T) {
 			}
 			if s.mounted != false {
 				t.Errorf("Widget is still mounted")
+			}
+		})
+	}
+}
+
+func TestContainersWidget_sortRows(t *testing.T) {
+	type fields struct {
+		totalRows []*ContainerRow
+		sortMode  docker.SortMode
+	}
+	tests := []struct {
+		name   string
+		fields fields
+	}{
+		{
+			"sort by container ID",
+			fields{
+				[]*ContainerRow{
+					&ContainerRow{
+						ID: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "2"),
+					},
+					&ContainerRow{
+						ID: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "1"),
+					},
+					&ContainerRow{
+						ID: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "3"),
+					},
+				},
+				docker.SortByContainerID,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &ContainersWidget{
+				totalRows: tt.fields.totalRows,
+				sortMode:  tt.fields.sortMode,
+			}
+			s.sortRows()
+
+			if !sort.SliceIsSorted(s.totalRows,
+				func(i, j int) bool {
+					return s.totalRows[i].ID.Text < s.totalRows[j].ID.Text
+				}) {
+				t.Error("rows are not sorted")
+			}
+		})
+	}
+}
+
+func TestContainersWidget_filterRows(t *testing.T) {
+	type fields struct {
+		totalRows     []*ContainerRow
+		filteredRows  []*ContainerRow
+		filterPattern string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+	}{
+		{
+			"filter test",
+			fields{
+				[]*ContainerRow{
+					&ContainerRow{
+						ID:      drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Image:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Names:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Command: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+					},
+					&ContainerRow{
+						ID:      drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Image:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Names:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Command: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+					},
+					&ContainerRow{
+						ID:      drytermui.NewThemedParColumn(&ui.ColorTheme{}, "yup"),
+						Image:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Names:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Command: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope")},
+					&ContainerRow{
+						ID:      drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Image:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Names:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Command: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "yup"),
+					},
+				},
+				[]*ContainerRow{
+					&ContainerRow{
+						ID:      drytermui.NewThemedParColumn(&ui.ColorTheme{}, "yup"),
+						Image:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Names:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Command: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope")},
+					&ContainerRow{
+						ID:      drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Image:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Names:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
+						Command: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "yup"),
+					},
+				},
+				"yup",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &ContainersWidget{
+				totalRows:     tt.fields.totalRows,
+				filterPattern: tt.fields.filterPattern,
+			}
+			s.filterRows()
+			if len(s.filteredRows) != len(tt.fields.filteredRows) {
+				t.Errorf("Filtering not working, expected: %v, got: %v", tt.fields.filteredRows, s.filteredRows)
 			}
 		})
 	}

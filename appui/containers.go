@@ -29,7 +29,8 @@ var containerTableHeaders = []SortableColumnHeader{
 //ContainersWidget shows information containers
 type ContainersWidget struct {
 	dockerDaemon         docker.ContainerAPI
-	containers           []*ContainerRow
+	totalRows            []*ContainerRow
+	filteredRows         []*ContainerRow
 	showAllContainers    bool
 	header               *termui.TableHeader
 	sortMode             docker.SortMode
@@ -66,8 +67,8 @@ func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 	buf := gizaktermui.NewBuffer()
 
 	if s.mounted {
+		s.prepareForRendering()
 		y := s.y
-		s.sortRows()
 		var filter string
 		if s.filterPattern != "" {
 			filter = fmt.Sprintf(
@@ -85,10 +86,16 @@ func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 
 		y += s.header.GetHeight()
 
-		s.highlightSelectedRow()
-		for _, containerRow := range s.visibleRows() {
+		selected := s.selectedIndex - s.startIndex
+
+		for i, containerRow := range s.visibleRows() {
 			containerRow.SetY(y)
 			y += containerRow.GetHeight()
+			if i != selected {
+				containerRow.NotHighlighted()
+			} else {
+				containerRow.Highlighted()
+			}
 			buf.Merge(containerRow.Buffer())
 		}
 	}
@@ -121,7 +128,7 @@ func (s *ContainersWidget) Mount() error {
 		for i, container := range dockerContainers {
 			rows[i] = NewContainerRow(container, s.header)
 		}
-		s.containers = rows
+		s.totalRows = rows
 		s.mounted = true
 		s.align()
 	}
@@ -135,15 +142,15 @@ func (s *ContainersWidget) Name() string {
 
 //OnEvent runs the given command
 func (s *ContainersWidget) OnEvent(event EventCommand) error {
-	if len(s.containers) > 0 {
-		return event(s.containers[s.selectedIndex].container.ID)
+	if s.RowCount() > 0 {
+		return event(s.filteredRows[s.selectedIndex].container.ID)
 	}
 	return errors.New("The container list is empty")
 }
 
 //RowCount returns the number of rows of this widget.
 func (s *ContainersWidget) RowCount() int {
-	return len(s.containers)
+	return len(s.filteredRows)
 }
 
 //Sort rotates to the next sort mode.
@@ -189,43 +196,42 @@ func (s *ContainersWidget) align() {
 	s.header.SetWidth(width)
 	s.header.SetX(x)
 
-	for _, container := range s.containers {
+	for _, container := range s.totalRows {
 		container.SetX(x)
 		container.SetWidth(width)
 	}
 
 }
 
-func (s *ContainersWidget) applyFilters() []*ContainerRow {
+func (s *ContainersWidget) filterRows() {
+
 	if s.filterPattern != "" {
 		var rows []*ContainerRow
-		for _, row := range s.containers {
+
+		for _, row := range s.totalRows {
 			if RowFilters.ByPattern(s.filterPattern)(row) {
 				rows = append(rows, row)
 			}
 		}
-		return rows
+		s.filteredRows = rows
+	} else {
+		s.filteredRows = s.totalRows
 	}
-
-	return s.containers
 }
 
-func (s *ContainersWidget) highlightSelectedRow() {
-	if s.RowCount() == 0 {
-		return
-	}
+//prepareForRendering sets the internal state of this widget so it is ready for
+//rendering(i.e. Buffer()).
+func (s *ContainersWidget) prepareForRendering() {
+	s.sortRows()
+	s.filterRows()
 	index := ui.ActiveScreen.Cursor.Position()
-	if index > s.RowCount() {
+	if index < 0 {
+		index = 0
+	} else if index > s.RowCount() {
 		index = s.RowCount() - 1
 	}
 	s.selectedIndex = index
-	for i, c := range s.containers {
-		if i != index {
-			c.NotHighlighted()
-		} else {
-			c.Highlighted()
-		}
-	}
+	s.calculateVisibleRows()
 }
 
 func (s *ContainersWidget) updateTableHeader() {
@@ -254,7 +260,7 @@ func (s *ContainersWidget) updateTableHeader() {
 }
 
 func (s *ContainersWidget) sortRows() {
-	rows := s.containers
+	rows := s.totalRows
 	mode := s.sortMode
 	if s.sortMode == docker.NoSort {
 		return
@@ -284,17 +290,25 @@ func (s *ContainersWidget) sortRows() {
 }
 
 func (s *ContainersWidget) visibleRows() []*ContainerRow {
+	return s.filteredRows[s.startIndex:s.endIndex]
+}
+
+func (s *ContainersWidget) calculateVisibleRows() {
+
+	count := s.RowCount()
 
 	//no screen
-	if s.height < 0 {
-		return nil
+	if s.height < 0 || count == 0 {
+		s.startIndex = 0
+		s.endIndex = 0
+		return
 	}
-	rows := s.applyFilters()
-	count := len(rows)
-	selected := ui.ActiveScreen.Cursor.Position()
+	selected := s.selectedIndex
 	//everything fits
 	if count <= s.height {
-		return rows
+		s.startIndex = 0
+		s.endIndex = count
+		return
 	}
 	//at the the start
 	if selected == 0 {
@@ -313,7 +327,6 @@ func (s *ContainersWidget) visibleRows() []*ContainerRow {
 		s.startIndex = selected - s.height
 		s.endIndex = selected
 	}
-	return rows[s.startIndex:s.endIndex]
 }
 
 func containerTableHeader() *termui.TableHeader {
