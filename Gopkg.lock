@@ -172,7 +172,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/maxzender/jv"
-  packages = [".","colorwriter","jsonfmt","jsontree","terminal"]
+  packages = ["colorwriter","jsonfmt","jsontree","terminal"]
   revision = "48fc80518f434576492c9388a892bd76fc5cba83"
 
 [[projects]]
@@ -302,6 +302,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6aff9e0a0b1d54d875f70a0dbc23499f3e8b8713fd9abd60c875b07bd628d48c"
+  inputs-digest = "298a3b0b238ad4f696430dec20540ec5f785e10f039b511b397db0d8d80cf50d"
   solver-name = "gps-cdcl"
   solver-version = 1
