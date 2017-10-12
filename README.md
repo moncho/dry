@@ -31,6 +31,7 @@ Besides this, it:
 
 Keybinding           | Description
 ---------------------|---------------------------------------
+<kbd>%</kbd>         | filter list
 <kbd>F1</kbd>        | sort list
 <kbd>F5</kbd>        | refresh list
 <kbd>F8</kbd>        | show docker disk usage
@@ -87,6 +88,7 @@ Keybinding           | Description
 
 Keybinding           | Description
 ---------------------|---------------------------------------
+<kbd>i</kbd>         | inspect service
 <kbd>l</kbd>         | service logs
 <kbd>Ctrl+r</kbd>    | remove service
 <kbd>Ctrl+s</kbd>    | scale service
@@ -118,10 +120,10 @@ The easiest way to install the latest binaries for Linux and Mac is to run this 
 
 If you dont like to **curl | sh**, binaries are provided.
 
-* **darwin** [386](https://github.com/moncho/dry/releases/download/v0.8-beta.4/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.8-beta.4/dry-darwin-amd64)
-* **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.8-beta.4/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.8-beta.4/dry-freebsd-amd64)
-* **linux** [386](https://github.com/moncho/dry/releases/download/v0.8-beta.4/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.8-beta.4/dry-linux-amd64)
-* **windows** [386](https://github.com/moncho/dry/releases/download/v0.8-beta.4/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.8-beta.4/dry-windows-amd64)
+* **darwin** [386](https://github.com/moncho/dry/releases/download/v0.9-beta.1/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.9-beta.1/dry-darwin-amd64)
+* **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.9-beta.1/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.9-beta.1/dry-freebsd-amd64)
+* **linux** [386](https://github.com/moncho/dry/releases/download/v0.9-beta.1/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.9-beta.1/dry-linux-amd64)
+* **windows** [386](https://github.com/moncho/dry/releases/download/v0.9-beta.1/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.9-beta.1/dry-windows-amd64)
 
 #### Mac OS X / Homebrew
 
