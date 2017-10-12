@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-LABEL VERSION 0.8-beta.5
+LABEL VERSION v0.9-beta.1
 
 RUN set -x && \
     apk update && \
