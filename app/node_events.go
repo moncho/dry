@@ -59,7 +59,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 			}
 
 			changeNode := func(nodeID string) error {
-				err := dry.dockerDaemon.NodeChangeAvailabiliy(
+				err := dry.dockerDaemon.NodeChangeAvailability(
 					nodeID,
 					docker.NewNodeAvailability(availability))
 

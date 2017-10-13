@@ -23,8 +23,8 @@ func (daemon *DockerDaemon) Node(id string) (*swarm.Node, error) {
 	return nil, pkgError.Wrapf(err, "Error retrieving node with id %s", id)
 }
 
-//NodeChangeAvailabiliy changes the availability of the given node
-func (daemon *DockerDaemon) NodeChangeAvailabiliy(nodeID string, availabilty swarm.NodeAvailability) error {
+//NodeChangeAvailability changes the availability of the given node
+func (daemon *DockerDaemon) NodeChangeAvailability(nodeID string, availabilty swarm.NodeAvailability) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 	node, _, err := daemon.client.NodeInspectWithRaw(ctx, nodeID)

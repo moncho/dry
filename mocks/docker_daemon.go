@@ -70,7 +70,7 @@ func (_m *DockerDaemonMock) History(id string) ([]image.HistoryResponseItem, err
 	return nil, nil
 }
 
-//ImageAt mock
+//ImageByID mock
 func (_m *DockerDaemonMock) ImageByID(id string) (types.ImageSummary, error) {
 	return types.ImageSummary{}, nil
 }
@@ -196,8 +196,8 @@ func (_m *DockerDaemonMock) Node(id string) (*swarm.Node, error) {
 	return nil, nil
 }
 
-//NodeChangeAvailabiliy mock
-func (_m *DockerDaemonMock) NodeChangeAvailabiliy(nodeID string, availabilty swarm.NodeAvailability) error {
+//NodeChangeAvailability mock
+func (_m *DockerDaemonMock) NodeChangeAvailability(nodeID string, availabilty swarm.NodeAvailability) error {
 	return nil
 }
 

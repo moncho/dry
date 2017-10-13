@@ -133,7 +133,7 @@ func (i *TextInput) backspace() {
 }
 
 func (i *TextInput) addRune(r rune) {
-	// cursor is not at the beggining or the end of the input
+	// cursor is not at the beginning or the end of the input
 	if i.cursorLinePos > 0 && i.cursorLinePos < len(i.input) {
 		before := i.input[:i.cursorLinePos]
 		after := i.input[i.cursorLinePos:]
