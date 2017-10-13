@@ -197,7 +197,7 @@ func (_m *DockerDaemonMock) Node(id string) (*swarm.Node, error) {
 }
 
 //NodeChangeAvailability mock
-func (_m *DockerDaemonMock) NodeChangeAvailability(nodeID string, availabilty swarm.NodeAvailability) error {
+func (_m *DockerDaemonMock) NodeChangeAvailability(nodeID string, availability swarm.NodeAvailability) error {
 	return nil
 }
 

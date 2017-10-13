@@ -71,7 +71,7 @@ type NetworkAPI interface {
 //SwarmAPI defines the API for Docker Swarm
 type SwarmAPI interface {
 	Node(id string) (*swarm.Node, error)
-	NodeChangeAvailability(nodeID string, availabilty swarm.NodeAvailability) error
+	NodeChangeAvailability(nodeID string, availability swarm.NodeAvailability) error
 	Nodes() ([]swarm.Node, error)
 	NodeTasks(nodeID string) ([]swarm.Task, error)
 	ResolveNode(id string) (string, error)

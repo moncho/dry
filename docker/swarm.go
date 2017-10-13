@@ -24,7 +24,7 @@ func (daemon *DockerDaemon) Node(id string) (*swarm.Node, error) {
 }
 
 //NodeChangeAvailability changes the availability of the given node
-func (daemon *DockerDaemon) NodeChangeAvailability(nodeID string, availabilty swarm.NodeAvailability) error {
+func (daemon *DockerDaemon) NodeChangeAvailability(nodeID string, availability swarm.NodeAvailability) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 	node, _, err := daemon.client.NodeInspectWithRaw(ctx, nodeID)
@@ -32,7 +32,7 @@ func (daemon *DockerDaemon) NodeChangeAvailability(nodeID string, availabilty sw
 		return err
 	}
 
-	node.Spec.Availability = availabilty
+	node.Spec.Availability = availability
 	err = daemon.client.NodeUpdate(ctx, nodeID, node.Version, node.Spec)
 	if err == nil {
 		return nil
