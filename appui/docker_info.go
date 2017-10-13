@@ -7,9 +7,9 @@ import (
 	termui "github.com/gizak/termui"
 	drytermui "github.com/moncho/dry/ui/termui"
 
-	"github.com/docker/go-units"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/go-units"
 
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"

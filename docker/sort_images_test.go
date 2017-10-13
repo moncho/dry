@@ -19,11 +19,11 @@ func TestSortImages(t *testing.T) {
 			"Sort by repo ",
 			args{
 				[]types.ImageSummary{
-					types.ImageSummary{
+					{
 						ID:       "1",
 						RepoTags: []string{"dry/dry:2"},
 					},
-					types.ImageSummary{
+					{
 						ID:       "0",
 						RepoTags: []string{"dry/dry:1"},
 					},
@@ -35,13 +35,13 @@ func TestSortImages(t *testing.T) {
 			"Sort by ID ",
 			args{
 				[]types.ImageSummary{
-					types.ImageSummary{
+					{
 						ID: "3",
 					},
-					types.ImageSummary{
+					{
 						ID: "1",
 					},
-					types.ImageSummary{
+					{
 						ID: "0",
 					},
 				},
@@ -52,15 +52,15 @@ func TestSortImages(t *testing.T) {
 			"Sort by Creation Date ",
 			args{
 				[]types.ImageSummary{
-					types.ImageSummary{
+					{
 						ID:      "1",
 						Created: 1,
 					},
-					types.ImageSummary{
+					{
 						ID:      "3",
 						Created: 2,
 					},
-					types.ImageSummary{
+					{
 						ID:      "0",
 						Created: 3,
 					},

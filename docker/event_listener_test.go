@@ -27,14 +27,14 @@ func TestEventListeners_RegisterCallbacks(t *testing.T) {
 		{
 			"Add one callback for a source type",
 			[]args{
-				args{
+				{
 					ContainerSource,
 					noop,
 				},
 			},
 			fields{
 				map[SourceType][]EventCallback{
-					ContainerSource: []EventCallback{noop},
+					ContainerSource: {noop},
 				},
 			},
 		},
@@ -42,18 +42,18 @@ func TestEventListeners_RegisterCallbacks(t *testing.T) {
 		{
 			"Add two callbacks for a source type",
 			[]args{
-				args{
+				{
 					ContainerSource,
 					noop,
 				},
-				args{
+				{
 					ContainerSource,
 					noop,
 				},
 			},
 			fields{
 				map[SourceType][]EventCallback{
-					ContainerSource: []EventCallback{
+					ContainerSource: {
 						noop, noop,
 					},
 				},
@@ -62,21 +62,21 @@ func TestEventListeners_RegisterCallbacks(t *testing.T) {
 		{
 			"Add one callback for two source types",
 			[]args{
-				args{
+				{
 					ContainerSource,
 					noop,
 				},
-				args{
+				{
 					ImageSource,
 					noop,
 				},
 			},
 			fields{
 				map[SourceType][]EventCallback{
-					ContainerSource: []EventCallback{
+					ContainerSource: {
 						noop,
 					},
-					ImageSource: []EventCallback{
+					ImageSource: {
 						noop,
 					},
 				},
@@ -156,7 +156,7 @@ func Test_notifyCallbacks(t *testing.T) {
 				r:       &registry{actions: make(map[SourceType][]EventCallback)},
 				sources: []SourceType{ContainerSource},
 				messages: []events.Message{
-					events.Message{Type: "container"},
+					{Type: "container"},
 				},
 			},
 			map[SourceType]int{
@@ -169,8 +169,8 @@ func Test_notifyCallbacks(t *testing.T) {
 				r:       &registry{actions: make(map[SourceType][]EventCallback)},
 				sources: []SourceType{ContainerSource},
 				messages: []events.Message{
-					events.Message{Type: "container"},
-					events.Message{Type: "container"},
+					{Type: "container"},
+					{Type: "container"},
 				},
 			},
 			map[SourceType]int{
@@ -183,12 +183,12 @@ func Test_notifyCallbacks(t *testing.T) {
 				r:       &registry{actions: make(map[SourceType][]EventCallback)},
 				sources: []SourceType{ContainerSource, ImageSource},
 				messages: []events.Message{
-					events.Message{Type: "container"},
-					events.Message{Type: "container"},
-					events.Message{Type: "container"},
-					events.Message{Type: "container"},
-					events.Message{Type: "container"},
-					events.Message{Type: "image"},
+					{Type: "container"},
+					{Type: "container"},
+					{Type: "container"},
+					{Type: "container"},
+					{Type: "container"},
+					{Type: "image"},
 				},
 			},
 			map[SourceType]int{

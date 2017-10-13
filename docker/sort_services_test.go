@@ -20,17 +20,17 @@ func TestSortServices(t *testing.T) {
 			"SortByServiceName",
 			args{
 				[]swarm.Service{
-					swarm.Service{
+					{
 						Spec: swarm.ServiceSpec{
 							Annotations: swarm.Annotations{Name: "a"},
 						},
 					},
-					swarm.Service{
+					{
 						Spec: swarm.ServiceSpec{
 							Annotations: swarm.Annotations{Name: "c"},
 						},
 					},
-					swarm.Service{
+					{
 						Spec: swarm.ServiceSpec{
 							Annotations: swarm.Annotations{Name: "b"},
 						},
@@ -43,7 +43,7 @@ func TestSortServices(t *testing.T) {
 			"SortByServiceImage",
 			args{
 				[]swarm.Service{
-					swarm.Service{
+					{
 						Spec: swarm.ServiceSpec{
 							Annotations: swarm.Annotations{Name: "b"},
 							TaskTemplate: swarm.TaskSpec{
@@ -53,7 +53,7 @@ func TestSortServices(t *testing.T) {
 							},
 						},
 					},
-					swarm.Service{
+					{
 						Spec: swarm.ServiceSpec{
 							Annotations: swarm.Annotations{Name: "c"},
 							TaskTemplate: swarm.TaskSpec{
@@ -63,7 +63,7 @@ func TestSortServices(t *testing.T) {
 							},
 						},
 					},
-					swarm.Service{
+					{
 						Spec: swarm.ServiceSpec{
 							Annotations: swarm.Annotations{Name: "a"},
 							TaskTemplate: swarm.TaskSpec{

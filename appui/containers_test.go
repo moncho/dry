@@ -146,13 +146,13 @@ func TestContainersWidget_sortRows(t *testing.T) {
 			"sort by container ID",
 			fields{
 				[]*ContainerRow{
-					&ContainerRow{
+					{
 						ID: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "2"),
 					},
-					&ContainerRow{
+					{
 						ID: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "1"),
 					},
-					&ContainerRow{
+					{
 						ID: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "3"),
 					},
 				},
@@ -192,24 +192,24 @@ func TestContainersWidget_filterRows(t *testing.T) {
 			"filter test",
 			fields{
 				[]*ContainerRow{
-					&ContainerRow{
+					{
 						ID:      drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Image:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Names:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Command: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 					},
-					&ContainerRow{
+					{
 						ID:      drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Image:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Names:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Command: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 					},
-					&ContainerRow{
+					{
 						ID:      drytermui.NewThemedParColumn(&ui.ColorTheme{}, "yup"),
 						Image:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Names:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Command: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope")},
-					&ContainerRow{
+					{
 						ID:      drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Image:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Names:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
@@ -217,12 +217,12 @@ func TestContainersWidget_filterRows(t *testing.T) {
 					},
 				},
 				[]*ContainerRow{
-					&ContainerRow{
+					{
 						ID:      drytermui.NewThemedParColumn(&ui.ColorTheme{}, "yup"),
 						Image:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Names:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Command: drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope")},
-					&ContainerRow{
+					{
 						ID:      drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Image:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),
 						Names:   drytermui.NewThemedParColumn(&ui.ColorTheme{}, "nope"),

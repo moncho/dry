@@ -19,12 +19,12 @@ func TestSortNodes(t *testing.T) {
 			"Sort by name ",
 			args{
 				[]swarm.Node{
-					swarm.Node{
+					{
 						Description: swarm.NodeDescription{
 							Hostname: "b",
 						},
 					},
-					swarm.Node{
+					{
 						Description: swarm.NodeDescription{
 							Hostname: "a",
 						},
@@ -37,7 +37,7 @@ func TestSortNodes(t *testing.T) {
 			"SortByNodeRole",
 			args{
 				[]swarm.Node{
-					swarm.Node{
+					{
 						Description: swarm.NodeDescription{
 							Hostname: "b",
 						},
@@ -45,7 +45,7 @@ func TestSortNodes(t *testing.T) {
 							Role: "b",
 						},
 					},
-					swarm.Node{
+					{
 						Description: swarm.NodeDescription{
 							Hostname: "a",
 						},
@@ -61,13 +61,13 @@ func TestSortNodes(t *testing.T) {
 			"SortByNodeCPU ",
 			args{
 				[]swarm.Node{
-					swarm.Node{
+					{
 						Description: swarm.NodeDescription{
 							Hostname:  "b",
 							Resources: swarm.Resources{NanoCPUs: 2},
 						},
 					},
-					swarm.Node{
+					{
 						Description: swarm.NodeDescription{
 							Hostname:  "a",
 							Resources: swarm.Resources{NanoCPUs: 1},
@@ -81,13 +81,13 @@ func TestSortNodes(t *testing.T) {
 			"SortByNodeMem ",
 			args{
 				[]swarm.Node{
-					swarm.Node{
+					{
 						Description: swarm.NodeDescription{
 							Hostname:  "b",
 							Resources: swarm.Resources{MemoryBytes: 2},
 						},
 					},
-					swarm.Node{
+					{
 						Description: swarm.NodeDescription{
 							Hostname:  "a",
 							Resources: swarm.Resources{MemoryBytes: 1},
@@ -101,7 +101,7 @@ func TestSortNodes(t *testing.T) {
 			"SortByNodeStatus ",
 			args{
 				[]swarm.Node{
-					swarm.Node{
+					{
 						Description: swarm.NodeDescription{
 							Hostname: "b",
 						},
@@ -109,7 +109,7 @@ func TestSortNodes(t *testing.T) {
 							State: "b",
 						},
 					},
-					swarm.Node{
+					{
 						Description: swarm.NodeDescription{
 							Hostname: "a",
 						},
