@@ -75,8 +75,8 @@ func (daemon *DockerDaemon) ContainerByID(cid string) *Container {
 
 //DiskUsage returns reported Docker disk usage
 func (daemon *DockerDaemon) DiskUsage() (dockerTypes.DiskUsage, error) {
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 	return daemon.client.DiskUsage(ctx)
 }
 
@@ -184,9 +184,8 @@ func (daemon *DockerDaemon) Inspect(id string) (dockerTypes.ContainerJSON, error
 
 //InspectImage the image with the name
 func (daemon *DockerDaemon) InspectImage(name string) (dockerTypes.ImageInspect, error) {
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
-
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 	inspect, _, err := daemon.client.ImageInspectWithRaw(ctx, name)
 	return inspect, err
 }
@@ -198,8 +197,8 @@ func (daemon *DockerDaemon) IsContainerRunning(id string) bool {
 
 //Kill the container with the given id
 func (daemon *DockerDaemon) Kill(id string) error {
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 	//TODO Send signal?
 	err := daemon.client.ContainerKill(ctx, id, "")
 	if err != nil {
@@ -281,8 +280,8 @@ func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
 
 //RestartContainer restarts the container with the given id
 func (daemon *DockerDaemon) RestartContainer(id string) error {
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 
 	//fixme: timeout to start a container
 	if err := daemon.client.ContainerRestart(ctx, id, &containerOpTimeout); err != nil {
@@ -393,9 +392,8 @@ func (daemon *DockerDaemon) RemoveDanglingImages() (int, error) {
 
 //RemoveNetwork removes the network with the given id
 func (daemon *DockerDaemon) RemoveNetwork(id string) error {
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
-
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 	return daemon.client.NetworkRemove(ctx, id)
 }
 
@@ -407,8 +405,8 @@ func (daemon *DockerDaemon) Rm(id string) error {
 		RemoveLinks:   false,
 		Force:         true,
 	}
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 	err := daemon.client.ContainerRemove(ctx, id, opts)
 	if err == nil {
 		daemon.store().Remove(id)
@@ -421,9 +419,8 @@ func (daemon *DockerDaemon) Rmi(name string, force bool) ([]dockerTypes.ImageDel
 	options := dockerTypes.ImageRemoveOptions{
 		Force: force,
 	}
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
-
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 	return daemon.client.ImageRemove(ctx, name, options)
 }
 
@@ -447,9 +444,8 @@ func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- struct{}) {
 
 //StopContainer stops the container with the given id
 func (daemon *DockerDaemon) StopContainer(id string) error {
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
-
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 	err := daemon.client.ContainerStop(ctx, id, &containerOpTimeout)
 	if err != nil {
 		return err
@@ -468,9 +464,8 @@ func (daemon *DockerDaemon) Top(id string) (container.ContainerTopOKBody, error)
 //Version returns version information about the Docker Engine
 func (daemon *DockerDaemon) Version() (*dockerTypes.Version, error) {
 	if daemon.version == nil {
-		//TODO use cancel function
-		ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
-
+		ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+		defer cancel()
 		v, err := daemon.client.ServerVersion(ctx)
 		if err == nil {
 			daemon.version = &v
@@ -497,11 +492,10 @@ func (daemon *DockerDaemon) init() {
 }
 
 func containers(client dockerAPI.ContainerAPIClient) ([]*Container, error) {
-	//TODO use cancel function
 	//Since this is how dry fist connects to the Docker daemon
 	//a different (longer) timeout is used.
-	ctx, _ := context.WithTimeout(context.Background(), DefaultConnectionTimeout)
-
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultConnectionTimeout)
+	defer cancel()
 	containers, err := client.ContainerList(ctx, dockerTypes.ContainerListOptions{All: true, Size: true})
 	if err == nil {
 		var cPointers []*Container
@@ -515,14 +509,12 @@ func containers(client dockerAPI.ContainerAPIClient) ([]*Container, error) {
 }
 
 func images(client dockerAPI.ImageAPIClient, opts dockerTypes.ImageListOptions) ([]dockerTypes.ImageSummary, error) {
-	//TODO use cancel function
-	ctx, _ := context.WithTimeout(context.Background(), defaultOperationTimeout)
-
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 	return client.ImageList(ctx, opts)
 }
 
 func networks(client dockerAPI.NetworkAPIClient) ([]dockerTypes.NetworkResource, error) {
-	//TODO use cancel function
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 	networks, err := client.NetworkList(ctx, dockerTypes.NetworkListOptions{})

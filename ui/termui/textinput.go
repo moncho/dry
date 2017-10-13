@@ -11,17 +11,15 @@ import (
 // TextInput is a widget for text input
 type TextInput struct {
 	termui.Block
-	TextFgColor termui.Attribute
-	TextBgColor termui.Attribute
-	TextBuilder termui.TextBuilder
-
-	cursorX int
-	cursorY int
-
+	input         []rune
+	cursorX       int
+	cursorY       int
 	cursorLinePos int
 	isCapturing   bool
-	input         []rune
 	escaped       bool //tracks if the input process was finished (i.e. user pressed Enter) or exited (i.e. user pressed Esc)
+	TextFgColor   termui.Attribute
+	TextBgColor   termui.Attribute
+	TextBuilder   termui.TextBuilder
 }
 
 //NewTextInput creates a new TextInput

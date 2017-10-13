@@ -28,7 +28,6 @@ type Dry struct {
 	dockerEvents     <-chan events.Message
 	dockerEventsDone chan<- struct{}
 	info             types.Info
-	inspectedImage   types.ImageInspect
 	output           chan string
 	state            *state
 	//cache is a potential replacement for state

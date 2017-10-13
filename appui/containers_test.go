@@ -126,7 +126,7 @@ func TestContainersWidget_ToggleShowAllContainers(t *testing.T) {
 			if s.showAllContainers == tt.fields.showAllContainers {
 				t.Error("Show all containers state did not change after toggle")
 			}
-			if s.mounted != false {
+			if s.mounted {
 				t.Errorf("Widget is still mounted")
 			}
 		})

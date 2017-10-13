@@ -28,13 +28,13 @@ var networkTableHeaders = []SortableColumnHeader{
 type DockerNetworksWidget struct {
 	dockerDaemon         docker.NetworkAPI
 	header               *termui.TableHeader
-	height, width        int
-	mounted              bool
 	networks             []*NetworkRow // List of columns.
+	height, width        int
 	selectedIndex        int
-	sortMode             docker.SortMode
 	startIndex, endIndex int
 	x, y                 int
+	sortMode             docker.SortMode
+	mounted              bool
 	sync.RWMutex
 }
 

@@ -25,13 +25,14 @@ var imageTableHeaders = []SortableColumnHeader{
 type DockerImagesWidget struct {
 	images               []*ImageRow // List of columns.
 	dockerDaemon         docker.ImageAPI
-	mounted              bool
 	header               *termui.TableHeader
 	selectedIndex        int
 	x, y                 int
 	height, width        int
 	startIndex, endIndex int
 	sortMode             docker.SortMode
+	mounted              bool
+
 	sync.RWMutex
 }
 

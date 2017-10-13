@@ -28,7 +28,7 @@ type byImage struct{ apiContainers }
 func (a byImage) Less(i, j int) bool {
 	//If the image is the same, sorting is done by name
 	if a.apiContainers[i].Image == a.apiContainers[j].Image {
-		return byName{a.apiContainers}.Less(i, j)
+		return byName(a).Less(i, j)
 	}
 	return a.apiContainers[i].Image < a.apiContainers[j].Image
 }
@@ -38,7 +38,7 @@ type byStatus struct{ apiContainers }
 func (a byStatus) Less(i, j int) bool {
 	//If the status is the same, sorting is done by name
 	if a.apiContainers[i].Status == a.apiContainers[j].Status {
-		return byName{a.apiContainers}.Less(i, j)
+		return byName(a).Less(i, j)
 	}
 	return a.apiContainers[i].Status < a.apiContainers[j].Status
 }

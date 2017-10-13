@@ -110,38 +110,6 @@ func (v *View) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-// Render renders the view buffer contents.
-func (v *View) render() {
-	_, maxY := v.ViewSize()
-	y := v.y0
-	for _, vline := range v.lines[v.bufferY:] {
-		if y > maxY {
-			break
-		}
-		v.renderLine(v.x0, y, string(vline))
-		y++
-	}
-	if v.showCursor {
-		v.drawCursor()
-	}
-}
-
-//calculateCursorPosition gives the cursor position
-//from the beginning of the view
-func (v *View) calculateCursorPosition() (int, int) {
-	return v.x0 + v.cursorX, v.y0 + v.cursorY
-}
-
-func (v *View) drawCursor() {
-	cursorX, cursorY := v.calculateCursorPosition()
-
-	_, ry, _ := v.realPosition(cursorX, cursorY)
-
-	if ry <= len(v.lines) {
-		termbox.SetCursor(cursorX, cursorY)
-	}
-}
-
 // realPosition returns the position in the internal buffer corresponding to the
 // point (x, y) of the view.
 func (v *View) realPosition(vx, vy int) (x, y int, err error) {

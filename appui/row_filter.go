@@ -14,7 +14,7 @@ type FilterableRow interface {
 //RowFilter function for filtering rows
 type RowFilter func(FilterableRow) bool
 
-//RowFilters
+//RowFilters holds the existing RowFilter
 var RowFilters RowFilter
 
 //ByPattern filters row by the given pattern

@@ -17,7 +17,7 @@ func RegisterWidget(source docker.SourceType, w termui.Widget) {
 	docker.GlobalRegistry.Register(
 		source,
 		func(ctx context.Context, message events.Message) error {
-			if time.Now().Sub(last) > timeBetweenRefresh {
+			if time.Since(last) > timeBetweenRefresh {
 				last = time.Now()
 
 				return w.Unmount()

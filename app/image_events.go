@@ -116,7 +116,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
 			return nil
 		}
 		if err := h.widget().OnEvent(history); err != nil {
-
+			dry.appmessage(err.Error())
 		}
 	case 'r', 'R': //Run container
 		runImage := func(id string) error {

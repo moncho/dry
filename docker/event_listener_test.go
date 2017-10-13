@@ -200,20 +200,20 @@ func Test_notifyCallbacks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			notify := notifyCallbacks(tt.args.r)
-			invocations := invocations{m: make(map[SourceType]int)}
+			invc := invocations{m: make(map[SourceType]int)}
 
 			var wg sync.WaitGroup
 
 			for _, s := range tt.args.sources {
-				tt.args.r.Register(s, callback(&wg, &invocations))
+				tt.args.r.Register(s, callback(&wg, &invc))
 			}
 			for _, m := range tt.args.messages {
 				wg.Add(1)
 				notify(context.Background(), m)
 			}
 			wg.Wait()
-			if !reflect.DeepEqual(invocations.m, tt.want) {
-				t.Errorf("notifyCallbacks() = %v, want %v", invocations, tt.want)
+			if !reflect.DeepEqual(invc.m, tt.want) {
+				t.Errorf("notifyCallbacks() = %v, want %v", invc.m, tt.want)
 			}
 		})
 	}

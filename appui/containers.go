@@ -31,15 +31,15 @@ type ContainersWidget struct {
 	dockerDaemon         docker.ContainerAPI
 	totalRows            []*ContainerRow
 	filteredRows         []*ContainerRow
-	showAllContainers    bool
 	header               *termui.TableHeader
-	sortMode             docker.SortMode
 	filterPattern        string
-	mounted              bool
 	selectedIndex        int
 	x, y                 int
 	height, width        int
 	startIndex, endIndex int
+	sortMode             docker.SortMode
+	mounted              bool
+	showAllContainers    bool
 	sync.RWMutex
 }
 
