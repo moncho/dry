@@ -72,6 +72,11 @@ func (row *TaskRow) Buffer() termui.Buffer {
 	return buf
 }
 
+//ColumnsForFilter returns the columns that are used to filter
+func (row *TaskRow) ColumnsForFilter() []*drytermui.ParColumn {
+	return []*drytermui.ParColumn{row.Name, row.Image, row.Node, row.CurrentState}
+}
+
 //Highlighted marks this rows as being highlighted
 func (row *TaskRow) Highlighted() {
 	row.changeTextColor(

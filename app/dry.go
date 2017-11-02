@@ -239,10 +239,21 @@ func (d *Dry) ShowServices() {
 	d.changeViewMode(Services)
 }
 
+//ShowTasks changes the state of dry to show the stack list
+func (d *Dry) ShowStacks() {
+	d.changeViewMode(Stacks)
+}
+
 //ShowServiceTasks changes the state of dry to show the given service task list
 func (d *Dry) ShowServiceTasks(serviceID string) {
 	d.widgetRegistry.ServiceTasks.ForService(serviceID)
 	d.changeViewMode(ServiceTasks)
+}
+
+//ShowStackTasks changes the state of dry to show the given stack task list
+func (d *Dry) ShowStackTasks(task string) {
+	d.widgetRegistry.StackTasks.ForStack(task)
+	d.changeViewMode(StackTasks)
 }
 
 //ShowTasks changes the state of dry to show the given node task list

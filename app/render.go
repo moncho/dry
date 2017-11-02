@@ -102,6 +102,26 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			count = tasks.RowCount()
 			keymap = swarmMapping
 		}
+	case Stacks:
+		{
+			stacks := d.widgetRegistry.Stacks
+			if err := stacks.Mount(); err != nil {
+				screen.Render(1, err.Error())
+			}
+			bufferers = append(bufferers, stacks)
+			count = stacks.RowCount()
+			keymap = swarmMapping
+		}
+	case StackTasks:
+		{
+			tasks := d.widgetRegistry.StackTasks
+			if err := tasks.Mount(); err != nil {
+				screen.Render(1, err.Error())
+			}
+			bufferers = append(bufferers, tasks)
+			count = tasks.RowCount()
+			keymap = swarmMapping
+		}
 	case DiskUsage:
 		{
 			if du, err := d.dockerDaemon.DiskUsage(); err == nil {

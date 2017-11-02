@@ -24,6 +24,8 @@ type WidgetRegistry struct {
 	NodeTasks        *swarm.NodeTasksWidget
 	ServiceTasks     *swarm.ServiceTasksWidget
 	ServiceList      *swarm.ServicesWidget
+	Stacks           *swarm.StacksWidget
+	StackTasks       *swarm.StacksTasksWidget
 	activeWidgets    map[string]termui.Widget
 	widgetForViewMap map[viewMode]termui.Widget
 }
@@ -45,6 +47,8 @@ func NewWidgetRegistry(daemon docker.ContainerDaemon) *WidgetRegistry {
 		NodeTasks:     swarm.NewNodeTasksWidget(daemon, appui.MainScreenHeaderSize),
 		ServiceTasks:  swarm.NewServiceTasksWidget(daemon, appui.MainScreenHeaderSize),
 		ServiceList:   swarm.NewServicesWidget(daemon, appui.MainScreenHeaderSize),
+		Stacks:        swarm.NewStacksWidget(daemon, appui.MainScreenHeaderSize),
+		StackTasks:    swarm.NewStacksTasksWidget(daemon, appui.MainScreenHeaderSize),
 		activeWidgets: make(map[string]termui.Widget),
 	}
 
@@ -77,6 +81,8 @@ func initWidgetForViewMap(wr *WidgetRegistry) {
 	viewMap[Monitor] = wr.Monitor
 	viewMap[Nodes] = wr.Nodes
 	viewMap[Services] = wr.ServiceList
+	viewMap[Stacks] = wr.Stacks
+
 	//viewMap[ServiceTasks] = wr.ServiceTasks
 	//viewMap[Tasks] = wr.NodeTasks
 	wr.widgetForViewMap = viewMap

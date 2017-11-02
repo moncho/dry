@@ -337,6 +337,16 @@ func (_m *DockerDaemonMock) SortImages(sortMode drydocker.SortMode) {
 func (_m *DockerDaemonMock) SortNetworks(sortMode drydocker.SortMode) {
 }
 
+//Stacks mock
+func (_m *DockerDaemonMock) Stacks() ([]drydocker.Stack, error) {
+	return nil, nil
+}
+
+//StackTasks empty mock
+func (_m *DockerDaemonMock) StackTasks(stack string) ([]swarm.Task, error) {
+	return nil, nil
+}
+
 //Top function mock
 func (_m *DockerDaemonMock) Top(id string) (container.ContainerTopOKBody, error) {
 

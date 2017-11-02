@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 
+	"github.com/docker/cli/cli/compose/convert"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
@@ -165,6 +166,64 @@ func (daemon *DockerDaemon) ServiceTasks(services ...string) ([]swarm.Task, erro
 		return nodeTasks, nil
 	}
 	return nil, pkgError.Wrap(err, "Error retrieving task list")
+}
+
+//Stacks returns the stack list
+func (daemon *DockerDaemon) Stacks() ([]Stack, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+
+	services, err := daemon.client.ServiceList(
+		ctx,
+		types.ServiceListOptions{Filters: getAllStacksFilter()})
+	if err != nil {
+		return nil, err
+	}
+
+	m := make(map[string]*Stack)
+	for _, service := range services {
+		labels := service.Spec.Labels
+		name, ok := labels[convert.LabelNamespace]
+		if !ok {
+			return nil, pkgError.Errorf("cannot get label %s for service %s",
+				convert.LabelNamespace, service.ID)
+		}
+		ztack, ok := m[name]
+		if !ok {
+			m[name] = &Stack{
+				Name:     name,
+				Services: 1,
+			}
+		} else {
+			ztack.Services++
+		}
+	}
+	var stacks []Stack
+	for _, stack := range m {
+		stacks = append(stacks, *stack)
+	}
+	return stacks, nil
+}
+
+//StackTasks returns the given stack task list
+func (daemon *DockerDaemon) StackTasks(stack string) ([]swarm.Task, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	filter := filters.NewArgs()
+	filter.Add("label", "com.docker.stack.namespace="+stack)
+
+	stackTasks, err := daemon.client.TaskList(ctx, types.TaskListOptions{Filters: filter})
+
+	if err == nil {
+		return stackTasks, nil
+	}
+	return nil, pkgError.Wrap(err, "Error retrieving task list")
+}
+
+func getAllStacksFilter() filters.Args {
+	filter := filters.NewArgs()
+	filter.Add("label", convert.LabelNamespace)
+	return filter
 }
 
 //NewNodeAvailability builds NodeAvailability from the given string

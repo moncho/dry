@@ -18,6 +18,8 @@ var viewsToHandlers = map[viewMode]eventHandler{
 	Tasks:        &taskScreenEventHandler{},
 	Services:     &servicesScreenEventHandler{},
 	ServiceTasks: &serviceTasksScreenEventHandler{},
+	Stacks:       &stacksScreenEventHandler{},
+	StackTasks:   &stackTasksScreenEventHandler{},
 }
 
 var defaultHandler eventHandler
@@ -112,6 +114,9 @@ func (b *baseEventHandler) handle(event termbox.Event) {
 	case '5':
 		cursor.Reset()
 		dry.ShowServices()
+	case '6':
+		cursor.Reset()
+		dry.ShowStacks()
 	case 'm', 'M': //monitor mode
 		cursor.Reset()
 		dry.ShowMonitor()

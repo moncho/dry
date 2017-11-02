@@ -273,7 +273,7 @@ func createTableTitle(serviceName string, count int) termui.SizableBufferer {
 func (s *ServiceTasksWidget) sortRows() {
 	rows := s.tasks
 	mode := s.sortMode
-	if s.sortMode == docker.NoSortTask {
+	if mode == docker.NoSortTask {
 		return
 	}
 	var sortAlg func(i, j int) bool
