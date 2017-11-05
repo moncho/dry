@@ -16,6 +16,10 @@ func (h *networksScreenEventHandler) widget() appui.AppWidget {
 }
 
 func (h *networksScreenEventHandler) handle(event termbox.Event) {
+	if h.passingEvents {
+		h.eventChan <- event
+		return
+	}
 	focus := true
 	dry := h.dry
 	screen := h.screen
@@ -63,7 +67,9 @@ func (h *networksScreenEventHandler) handle(event termbox.Event) {
 		case '3':
 			//already in network screen
 			handled = true
-
+		case '%':
+			handled = true
+			showFilterInput(h)
 		}
 	}
 	if handled {

@@ -11,7 +11,6 @@ import (
 
 type nodesScreenEventHandler struct {
 	baseEventHandler
-	passingEvents bool
 }
 
 func (h *nodesScreenEventHandler) widget() appui.AppWidget {
@@ -82,6 +81,13 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 		h.widget().OnEvent(showServices)
 		handled = true
 
+	}
+	if !handled {
+		switch event.Ch {
+		case '%':
+			handled = true
+			showFilterInput(h)
+		}
 	}
 	if !handled {
 		h.baseEventHandler.handle(event)

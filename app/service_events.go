@@ -12,7 +12,6 @@ import (
 
 type servicesScreenEventHandler struct {
 	baseEventHandler
-	passingEvents bool
 }
 
 func (h *servicesScreenEventHandler) widget() appui.AppWidget {
@@ -119,26 +118,8 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 	}
 	switch event.Ch {
 	case '%':
-		rw := appui.NewAskForConfirmation("Filter? (blank to remove current filter)")
-		h.passingEvents = true
 		handled = true
-		dry.widgetRegistry.add(rw)
-		go func() {
-			events := ui.EventSource{
-				Events: h.eventChan,
-				EventHandledCallback: func(e termbox.Event) error {
-					return refreshScreen()
-				},
-			}
-			rw.OnFocus(events)
-			dry.widgetRegistry.remove(rw)
-			filter, canceled := rw.Text()
-			h.passingEvents = false
-			if canceled {
-				return
-			}
-			h.widget().Filter(filter)
-		}()
+		showFilterInput(h)
 	case 'i' | 'I':
 		handled = true
 

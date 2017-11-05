@@ -14,7 +14,10 @@ func (h *taskScreenEventHandler) widget() appui.AppWidget {
 }
 
 func (h *taskScreenEventHandler) handle(event termbox.Event) {
-
+	if h.passingEvents {
+		h.eventChan <- event
+		return
+	}
 	handled := false
 	switch event.Key {
 	case termbox.KeyEsc:
@@ -26,6 +29,13 @@ func (h *taskScreenEventHandler) handle(event termbox.Event) {
 	case termbox.KeyF5: // refresh
 		h.widget().Unmount()
 		handled = true
+	}
+	if !handled {
+		switch event.Ch {
+		case '%':
+			handled = true
+			showFilterInput(h)
+		}
 	}
 	if !handled {
 		h.baseEventHandler.handle(event)

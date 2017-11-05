@@ -11,7 +11,6 @@ import (
 
 type imagesScreenEventHandler struct {
 	baseEventHandler
-	passingEvents bool
 }
 
 func (h *imagesScreenEventHandler) widget() appui.AppWidget {
@@ -23,11 +22,8 @@ func (h *imagesScreenEventHandler) handle(event termbox.Event) {
 		h.eventChan <- event
 		return
 	}
-	//Controls if the event has been handled by the first switch statement
-	var handled bool
-	var keepFocus bool
 
-	handled, keepFocus = h.handleKeyEvent(event.Key)
+	handled, keepFocus := h.handleKeyEvent(event.Key)
 
 	if !handled {
 		handled, keepFocus = h.handleChEvent(event.Ch)
@@ -151,6 +147,9 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
 			dry.appmessage(
 				fmt.Sprintf("Error running image: %s", err.Error()))
 		}
+	case '%':
+		handled = true
+		showFilterInput(h)
 	default:
 		handled = false
 

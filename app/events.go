@@ -26,6 +26,7 @@ var defaultHandler eventHandler
 
 //eventHandler interface to handle termbox events
 type eventHandler interface {
+	getEventChan() chan termbox.Event
 	//handle handles a termbox event
 	handle(event termbox.Event)
 	//hasFocus returns true while the handler is processing events
@@ -34,8 +35,9 @@ type eventHandler interface {
 		screen *ui.Screen,
 		keyboardQueueForView chan termbox.Event,
 		viewClosedChan chan struct{})
-
+	setForwardEvents(forwardEvents bool)
 	widget() appui.AppWidget
+	widgetRegistry() *WidgetRegistry
 }
 
 type baseEventHandler struct {
@@ -49,30 +51,8 @@ type baseEventHandler struct {
 	sync.RWMutex
 }
 
-func (b *baseEventHandler) widget() appui.AppWidget {
-	return nil
-}
-
-func (b *baseEventHandler) initialize(dry *Dry,
-	screen *ui.Screen,
-	keyboardQueueForView chan termbox.Event,
-	closeViewChan chan struct{}) {
-	b.dry = dry
-	b.screen = screen
-	b.eventChan = keyboardQueueForView
-	b.closeViewChan = closeViewChan
-}
-
-func (b *baseEventHandler) hasFocus() bool {
-	b.RLock()
-	defer b.RUnlock()
-	return b.focus
-}
-
-func (b *baseEventHandler) setFocus(focus bool) {
-	b.Lock()
-	defer b.Unlock()
-	b.focus = focus
+func (b *baseEventHandler) getEventChan() chan termbox.Event {
+	return b.eventChan
 }
 
 func (b *baseEventHandler) handle(event termbox.Event) {
@@ -132,6 +112,40 @@ func (b *baseEventHandler) handle(event termbox.Event) {
 	if b.hasFocus() {
 		refreshScreen()
 	}
+}
+
+func (b *baseEventHandler) hasFocus() bool {
+	b.RLock()
+	defer b.RUnlock()
+	return b.focus
+}
+
+func (b *baseEventHandler) initialize(dry *Dry,
+	screen *ui.Screen,
+	keyboardQueueForView chan termbox.Event,
+	closeViewChan chan struct{}) {
+	b.dry = dry
+	b.screen = screen
+	b.eventChan = keyboardQueueForView
+	b.closeViewChan = closeViewChan
+}
+
+func (b *baseEventHandler) setFocus(focus bool) {
+	b.Lock()
+	defer b.Unlock()
+	b.focus = focus
+}
+
+func (b *baseEventHandler) setForwardEvents(forward bool) {
+	b.passingEvents = forward
+}
+
+func (b *baseEventHandler) widget() appui.AppWidget {
+	return nil
+}
+
+func (b *baseEventHandler) widgetRegistry() *WidgetRegistry {
+	return b.dry.widgetRegistry
 }
 
 type eventHandlerFactory struct {

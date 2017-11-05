@@ -17,7 +17,6 @@ type commandToExecute struct {
 }
 type containersScreenEventHandler struct {
 	baseEventHandler
-	passingEvents bool
 }
 
 func (h *containersScreenEventHandler) widget() appui.AppWidget {
@@ -126,26 +125,8 @@ func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled 
 	switch key {
 
 	case '%': //filter containers
-		rw := appui.NewAskForConfirmation("Filter? (blank to remove current filter)")
-		h.passingEvents = true
 		handled = true
-		dry.widgetRegistry.add(rw)
-		go func() {
-			events := ui.EventSource{
-				Events: h.eventChan,
-				EventHandledCallback: func(e termbox.Event) error {
-					return refreshScreen()
-				},
-			}
-			rw.OnFocus(events)
-			dry.widgetRegistry.remove(rw)
-			filter, canceled := rw.Text()
-			h.passingEvents = false
-			if canceled {
-				return
-			}
-			h.widget().Filter(filter)
-		}()
+		showFilterInput(h)
 	case 'e', 'E': //remove
 		handled = true
 		if err := h.widget().OnEvent(

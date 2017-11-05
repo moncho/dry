@@ -2,13 +2,11 @@ package app
 
 import (
 	"github.com/moncho/dry/appui"
-	"github.com/moncho/dry/ui"
 	termbox "github.com/nsf/termbox-go"
 )
 
 type stacksScreenEventHandler struct {
 	baseEventHandler
-	passingEvents bool
 }
 
 func (h *stacksScreenEventHandler) widget() appui.AppWidget {
@@ -46,26 +44,8 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event) {
 			//already in stack screen
 			handled = true
 		case '%':
-			rw := appui.NewAskForConfirmation("Filter? (blank to remove current filter)")
-			h.passingEvents = true
 			handled = true
-			h.dry.widgetRegistry.add(rw)
-			go func() {
-				events := ui.EventSource{
-					Events: h.eventChan,
-					EventHandledCallback: func(e termbox.Event) error {
-						return refreshScreen()
-					},
-				}
-				rw.OnFocus(events)
-				h.dry.widgetRegistry.remove(rw)
-				filter, canceled := rw.Text()
-				h.passingEvents = false
-				if canceled {
-					return
-				}
-				h.widget().Filter(filter)
-			}()
+			showFilterInput(h)
 		}
 	}
 	if handled {
