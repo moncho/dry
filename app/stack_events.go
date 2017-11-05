@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
-	"github.com/nsf/termbox-go"
+	termbox "github.com/nsf/termbox-go"
 )
 
 type stacksScreenEventHandler struct {
@@ -11,7 +11,7 @@ type stacksScreenEventHandler struct {
 	passingEvents bool
 }
 
-func (h *stacksScreenEventHandler) widget() appui.EventableWidget {
+func (h *stacksScreenEventHandler) widget() appui.AppWidget {
 	return h.dry.widgetRegistry.Stacks
 }
 
@@ -64,7 +64,7 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event) {
 				if canceled {
 					return
 				}
-				h.dry.widgetRegistry.Stacks.Filter(filter)
+				h.widget().Filter(filter)
 			}()
 		}
 	}

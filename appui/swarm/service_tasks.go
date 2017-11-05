@@ -78,6 +78,11 @@ func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
+//Filter filters the task list by the given filter
+func (s *ServiceTasksWidget) Filter(filter string) {
+
+}
+
 //ForService sets the service for which this widget is showing tasks
 func (s *ServiceTasksWidget) ForService(serviceID string) {
 	s.Lock()

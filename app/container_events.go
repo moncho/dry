@@ -8,7 +8,7 @@ import (
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/json"
-	"github.com/nsf/termbox-go"
+	termbox "github.com/nsf/termbox-go"
 )
 
 type commandToExecute struct {
@@ -20,7 +20,7 @@ type containersScreenEventHandler struct {
 	passingEvents bool
 }
 
-func (h *containersScreenEventHandler) widget() appui.EventableWidget {
+func (h *containersScreenEventHandler) widget() appui.AppWidget {
 	return h.dry.widgetRegistry.ContainerList
 }
 
@@ -144,7 +144,7 @@ func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled 
 			if canceled {
 				return
 			}
-			h.dry.widgetRegistry.ContainerList.Filter(filter)
+			h.widget().Filter(filter)
 		}()
 	case 'e', 'E': //remove
 		handled = true
@@ -236,7 +236,7 @@ func handleKey(h *containersScreenEventHandler, key termbox.Key) (bool, bool) {
 	cursor := h.screen.Cursor
 	switch key {
 	case termbox.KeyF1: //sort
-		h.dry.widgetRegistry.ContainerList.Sort()
+		h.widget().Sort()
 	case termbox.KeyF2: //show all containers
 		cursor.Reset()
 		h.dry.widgetRegistry.ContainerList.ToggleShowAllContainers()

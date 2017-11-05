@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"github.com/moncho/dry/appui"
-	"github.com/nsf/termbox-go"
+	termbox "github.com/nsf/termbox-go"
 )
 
 type networksScreenEventHandler struct {
 	baseEventHandler
 }
 
-func (h *networksScreenEventHandler) widget() appui.EventableWidget {
+func (h *networksScreenEventHandler) widget() appui.AppWidget {
 	return h.dry.widgetRegistry.Networks
 }
 
@@ -23,7 +23,7 @@ func (h *networksScreenEventHandler) handle(event termbox.Event) {
 	switch event.Key {
 	case termbox.KeyF1: //sort
 		handled = true
-		h.dry.widgetRegistry.Networks.Sort()
+		h.widget().Sort()
 	case termbox.KeyF5: // refresh
 		handled = true
 		h.dry.appmessage("Refreshing network list")

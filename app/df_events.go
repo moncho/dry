@@ -13,7 +13,7 @@ type diskUsageScreenEventHandler struct {
 	baseEventHandler
 }
 
-func (h *diskUsageScreenEventHandler) widget() appui.EventableWidget {
+func (h *diskUsageScreenEventHandler) widget() appui.AppWidget {
 	return nil
 }
 

@@ -84,6 +84,11 @@ func (s *DockerNetworksWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
+//Filter filters the network list by the given filter
+func (s *DockerNetworksWidget) Filter(filter string) {
+
+}
+
 //Mount tells this widget to be ready for rendering
 func (s *DockerNetworksWidget) Mount() error {
 	s.Lock()

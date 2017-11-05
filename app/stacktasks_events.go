@@ -2,19 +2,23 @@ package app
 
 import (
 	"github.com/moncho/dry/appui"
-	"github.com/nsf/termbox-go"
+	"github.com/moncho/dry/ui"
+	termbox "github.com/nsf/termbox-go"
 )
 
 type stackTasksScreenEventHandler struct {
 	baseEventHandler
 }
 
-func (h *stackTasksScreenEventHandler) widget() appui.EventableWidget {
+func (h *stackTasksScreenEventHandler) widget() appui.AppWidget {
 	return h.dry.widgetRegistry.StackTasks
 }
 
 func (h *stackTasksScreenEventHandler) handle(event termbox.Event) {
-
+	if h.passingEvents {
+		h.eventChan <- event
+		return
+	}
 	handled := false
 
 	switch event.Key {
@@ -23,11 +27,37 @@ func (h *stackTasksScreenEventHandler) handle(event termbox.Event) {
 		h.dry.ShowStacks()
 	case termbox.KeyF1: //sort
 		handled = true
-		h.dry.widgetRegistry.StackTasks.Sort()
+		h.widget().Sort()
 	case termbox.KeyF5: // refresh
-		h.widget().Unmount()
 		handled = true
+		h.dry.appmessage("Refreshing stack tasks list")
+		h.widget().Unmount()
 	}
+	switch event.Ch {
+	case '%':
+		rw := appui.NewAskForConfirmation("Filter? (blank to remove current filter)")
+		h.passingEvents = true
+		handled = true
+
+		h.dry.widgetRegistry.add(rw)
+		go func() {
+			events := ui.EventSource{
+				Events: h.eventChan,
+				EventHandledCallback: func(e termbox.Event) error {
+					return refreshScreen()
+				},
+			}
+			rw.OnFocus(events)
+			h.dry.widgetRegistry.remove(rw)
+			filter, canceled := rw.Text()
+			h.passingEvents = false
+			if canceled {
+				return
+			}
+			h.widget().Filter(filter)
+		}()
+	}
+
 	if !handled {
 		h.baseEventHandler.handle(event)
 	} else {

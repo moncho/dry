@@ -6,7 +6,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
-	"github.com/nsf/termbox-go"
+	termbox "github.com/nsf/termbox-go"
 )
 
 type imagesScreenEventHandler struct {
@@ -14,7 +14,7 @@ type imagesScreenEventHandler struct {
 	passingEvents bool
 }
 
-func (h *imagesScreenEventHandler) widget() appui.EventableWidget {
+func (h *imagesScreenEventHandler) widget() appui.AppWidget {
 	return h.dry.widgetRegistry.ImageList
 }
 

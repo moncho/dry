@@ -104,6 +104,10 @@ func (s *NodesWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
+//Filter filters the node list by the given filter
+func (s *NodesWidget) Filter(filter string) {
+}
+
 //Mount prepares this widget for rendering
 func (s *NodesWidget) Mount() error {
 	s.Lock()

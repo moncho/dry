@@ -5,7 +5,7 @@ import (
 
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
-	"github.com/nsf/termbox-go"
+	termbox "github.com/nsf/termbox-go"
 )
 
 var viewsToHandlers = map[viewMode]eventHandler{
@@ -35,7 +35,7 @@ type eventHandler interface {
 		keyboardQueueForView chan termbox.Event,
 		viewClosedChan chan struct{})
 
-	widget() appui.EventableWidget
+	widget() appui.AppWidget
 }
 
 type baseEventHandler struct {
@@ -44,10 +44,12 @@ type baseEventHandler struct {
 	eventChan     chan termbox.Event
 	closeViewChan chan struct{}
 	focus         bool
+	passingEvents bool
+
 	sync.RWMutex
 }
 
-func (b *baseEventHandler) widget() appui.EventableWidget {
+func (b *baseEventHandler) widget() appui.AppWidget {
 	return nil
 }
 

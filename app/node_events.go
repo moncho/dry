@@ -6,7 +6,7 @@ import (
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
-	"github.com/nsf/termbox-go"
+	termbox "github.com/nsf/termbox-go"
 )
 
 type nodesScreenEventHandler struct {
@@ -14,7 +14,7 @@ type nodesScreenEventHandler struct {
 	passingEvents bool
 }
 
-func (h *nodesScreenEventHandler) widget() appui.EventableWidget {
+func (h *nodesScreenEventHandler) widget() appui.AppWidget {
 	return h.dry.widgetRegistry.Nodes
 }
 

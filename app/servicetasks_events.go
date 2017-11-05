@@ -2,14 +2,14 @@ package app
 
 import (
 	"github.com/moncho/dry/appui"
-	"github.com/nsf/termbox-go"
+	termbox "github.com/nsf/termbox-go"
 )
 
 type serviceTasksScreenEventHandler struct {
 	baseEventHandler
 }
 
-func (h *serviceTasksScreenEventHandler) widget() appui.EventableWidget {
+func (h *serviceTasksScreenEventHandler) widget() appui.AppWidget {
 	return h.dry.widgetRegistry.ServiceTasks
 }
 

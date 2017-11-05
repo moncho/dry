@@ -68,6 +68,11 @@ func (m *Monitor) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
+//Filter filters the container list by the given filter
+func (m *Monitor) Filter(filter string) {
+
+}
+
 //Mount prepares this widget for rendering
 func (m *Monitor) Mount() error {
 	daemon := m.daemon
@@ -125,6 +130,11 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 //RowCount returns the number of rows of this Monitor.
 func (m *Monitor) RowCount() int {
 	return len(m.rows)
+}
+
+//Sort sorts the container list
+func (m *Monitor) Sort() {
+
 }
 
 //Unmount tells this widget that it will not be rendering anymore

@@ -80,6 +80,11 @@ func (s *NodeTasksWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
+//Filter filters the tasks list by the given filter
+func (s *NodeTasksWidget) Filter(filter string) {
+
+}
+
 //ForNode sets the node for which this widget will render tasks
 func (s *NodeTasksWidget) ForNode(nodeID string) {
 	s.Lock()

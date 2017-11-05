@@ -15,7 +15,7 @@ type servicesScreenEventHandler struct {
 	passingEvents bool
 }
 
-func (h *servicesScreenEventHandler) widget() appui.EventableWidget {
+func (h *servicesScreenEventHandler) widget() appui.AppWidget {
 	return h.dry.widgetRegistry.ServiceList
 }
 
@@ -137,7 +137,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 			if canceled {
 				return
 			}
-			h.dry.widgetRegistry.ServiceList.Filter(filter)
+			h.widget().Filter(filter)
 		}()
 	case 'i' | 'I':
 		handled = true
