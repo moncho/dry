@@ -15,7 +15,7 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 	daemon := &mocks.DockerDaemonMock{}
 	imagesLen := daemon.ImagesCount()
 	if imagesLen != 5 {
-		t.Errorf("Daemon has %d images, expected %d", imagesLen, 3)
+		t.Errorf("Daemon has %d images, expected %d", imagesLen, 5)
 	}
 
 	cursor := ui.NewCursor()
@@ -24,13 +24,18 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 		Cursor:     cursor}
 
 	renderer := NewDockerImagesWidget(daemon, 0)
-	renderer.Mount()
-	renderer.sortRows()
+
+	if err := renderer.Mount(); err != nil {
+		t.Errorf("There was an error mounting the widget %v", err)
+	}
+	ui.ActiveScreen.Cursor.ScrollTo(0)
+	renderer.prepareForRendering()
 
 	images := renderer.visibleRows()
 	if len(images) != 4 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 4)
 	}
+
 	if images[0].ID.Text != "8dfafdbc3a40" {
 		t.Errorf("First image rendered is %s, expected %s. Cursor: %d", images[0].ID.Text, "8dfafdbc3a40", cursor.Position())
 	}
@@ -39,6 +44,7 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 		t.Errorf("Last image rendered is %s, expected %s. Cursor: %d", images[2].ID.Text, "26380e1ca356", cursor.Position())
 	}
 	cursor.ScrollTo(4)
+	renderer.prepareForRendering()
 	images = renderer.visibleRows()
 	if len(images) != 4 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 4)
@@ -65,10 +71,11 @@ func TestImagesToShow(t *testing.T) {
 	ui.ActiveScreen = &ui.Screen{Dimensions: &ui.Dimensions{Height: 20, Width: 100},
 		Cursor: cursor}
 	renderer := NewDockerImagesWidget(daemon, 0)
+	if err := renderer.Mount(); err != nil {
+		t.Errorf("There was an error mounting the widget %v", err)
+	}
 
-	renderer.Mount()
-	renderer.sortRows()
-
+	renderer.prepareForRendering()
 	images := renderer.visibleRows()
 	if len(images) != 5 {
 		t.Errorf("Images renderer is showing %d images, expected %d", len(images), 5)

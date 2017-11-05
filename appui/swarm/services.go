@@ -36,7 +36,6 @@ type ServicesWidget struct {
 	filterPattern        string
 	header               *termui.TableHeader
 	selectedIndex        int
-	offset               int
 	x, y                 int
 	height, width        int
 	startIndex, endIndex int
@@ -51,7 +50,6 @@ func NewServicesWidget(swarmClient docker.SwarmAPI, y int) *ServicesWidget {
 		swarmClient:   swarmClient,
 		header:        defaultServiceTableHeader,
 		selectedIndex: 0,
-		offset:        0,
 		x:             0,
 		y:             y,
 		height:        appui.MainScreenAvailableHeight(),
@@ -134,17 +132,17 @@ func (s *ServicesWidget) Name() string {
 	return "ServicesWidget"
 }
 
-//RowCount returns the number of rowns of this widget.
-func (s *ServicesWidget) RowCount() int {
-	return len(s.filteredRows)
-}
-
 //OnEvent runs the given command
 func (s *ServicesWidget) OnEvent(event appui.EventCommand) error {
 	if s.RowCount() > 0 {
 		return event(s.filteredRows[s.selectedIndex].service.ID)
 	}
 	return nil
+}
+
+//RowCount returns the number of rowns of this widget.
+func (s *ServicesWidget) RowCount() int {
+	return len(s.filteredRows)
 }
 
 //Sort rotates to the next sort mode.

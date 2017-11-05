@@ -1,6 +1,7 @@
 package appui
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -23,8 +24,10 @@ var imageTableHeaders = []SortableColumnHeader{
 
 //DockerImagesWidget knows how render a container list
 type DockerImagesWidget struct {
-	images               []*ImageRow // List of columns.
 	dockerDaemon         docker.ImageAPI
+	filteredRows         []*ImageRow
+	totalRows            []*ImageRow
+	filterPattern        string
 	header               *termui.TableHeader
 	selectedIndex        int
 	x, y                 int
@@ -55,26 +58,37 @@ func NewDockerImagesWidget(dockerDaemon docker.ImageAPI, y int) *DockerImagesWid
 func (s *DockerImagesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
+	y := s.y
 	buf := gizaktermui.NewBuffer()
 	if s.mounted {
-		y := s.y
-		s.sortRows()
-		widgetHeader := WidgetHeader("Images", s.RowCount(), "")
-		widgetHeader.Y = s.y
+		s.prepareForRendering()
+		var filter string
+		if s.filterPattern != "" {
+			filter = fmt.Sprintf(
+				"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
+		}
+
+		widgetHeader := WidgetHeader("Images", s.RowCount(), filter)
+		widgetHeader.Y = y
 		buf.Merge(widgetHeader.Buffer())
 		y += widgetHeader.GetHeight()
 
-		s.header.SetY(y)
 		s.updateHeader()
+		s.header.SetY(y)
 		buf.Merge(s.header.Buffer())
-
 		y += s.header.GetHeight()
 
-		s.highlightSelectedRow()
-		for _, containerRow := range s.visibleRows() {
-			containerRow.SetY(y)
-			y += containerRow.GetHeight()
-			buf.Merge(containerRow.Buffer())
+		selected := s.selectedIndex - s.startIndex
+
+		for i, imageRow := range s.visibleRows() {
+			imageRow.SetY(y)
+			y += imageRow.GetHeight()
+			if i != selected {
+				imageRow.NotHighlighted()
+			} else {
+				imageRow.Highlighted()
+			}
+			buf.Merge(imageRow.Buffer())
 		}
 	}
 	return buf
@@ -82,7 +96,9 @@ func (s *DockerImagesWidget) Buffer() gizaktermui.Buffer {
 
 //Filter filters the image list by the given filter
 func (s *DockerImagesWidget) Filter(filter string) {
-
+	s.Lock()
+	defer s.Unlock()
+	s.filterPattern = filter
 }
 
 //Mount tells this widget to be ready for rendering
@@ -95,11 +111,11 @@ func (s *DockerImagesWidget) Mount() error {
 			return err
 		}
 
-		var imageRows []*ImageRow
-		for _, image := range images {
-			imageRows = append(imageRows, NewImageRow(image, s.header))
+		imageRows := make([]*ImageRow, len(images))
+		for i, image := range images {
+			imageRows[i] = NewImageRow(image, s.header)
 		}
-		s.images = imageRows
+		s.totalRows = imageRows
 		s.mounted = true
 		s.align()
 	}
@@ -113,12 +129,15 @@ func (s *DockerImagesWidget) Name() string {
 
 //OnEvent runs the given command
 func (s *DockerImagesWidget) OnEvent(event EventCommand) error {
-	return event(s.images[s.selectedIndex].image.ID)
+	if s.RowCount() > 0 {
+		return event(s.filteredRows[s.selectedIndex].image.ID)
+	}
+	return nil
 }
 
 //RowCount returns the number of rows of this widget.
 func (s *DockerImagesWidget) RowCount() int {
-	return len(s.images)
+	return len(s.filteredRows)
 }
 
 //Sort rotates to the next sort mode.
@@ -155,29 +174,78 @@ func (s *DockerImagesWidget) align() {
 	s.header.SetWidth(width)
 	s.header.SetX(x)
 
-	for _, image := range s.images {
+	for _, image := range s.totalRows {
 		image.SetX(x)
 		image.SetWidth(width)
 	}
 
 }
 
-func (s *DockerImagesWidget) highlightSelectedRow() {
-	if s.RowCount() == 0 {
+func (s *DockerImagesWidget) filterRows() {
+
+	if s.filterPattern != "" {
+		var rows []*ImageRow
+
+		for _, row := range s.totalRows {
+			if RowFilters.ByPattern(s.filterPattern)(row) {
+				rows = append(rows, row)
+			}
+		}
+		s.filteredRows = rows
+	} else {
+		s.filteredRows = s.totalRows
+	}
+}
+
+func (s *DockerImagesWidget) calculateVisibleRows() {
+
+	count := s.RowCount()
+
+	//no screen
+	if s.height < 0 || count == 0 {
+		s.startIndex = 0
+		s.endIndex = 0
 		return
 	}
+	selected := s.selectedIndex
+	//everything fits
+	if count <= s.height {
+		s.startIndex = 0
+		s.endIndex = count
+		return
+	}
+	//at the the start
+	if selected == 0 {
+		s.startIndex = 0
+		s.endIndex = s.height
+	} else if selected >= count-1 { //at the end
+		s.startIndex = count - s.height
+		s.endIndex = count
+	} else if selected == s.endIndex { //scroll down by one
+		s.startIndex++
+		s.endIndex++
+	} else if selected <= s.startIndex { //scroll up by one
+		s.startIndex--
+		s.endIndex--
+	} else if selected > s.endIndex { // scroll
+		s.startIndex = selected - s.height
+		s.endIndex = selected
+	}
+}
+
+//prepareForRendering sets the internal state of this widget so it is ready for
+//rendering (i.e. Buffer()).
+func (s *DockerImagesWidget) prepareForRendering() {
+	s.sortRows()
+	s.filterRows()
 	index := ui.ActiveScreen.Cursor.Position()
-	if index > s.RowCount() {
+	if index < 0 {
+		index = 0
+	} else if index > s.RowCount() {
 		index = s.RowCount() - 1
 	}
 	s.selectedIndex = index
-	for i, im := range s.images {
-		if i != index {
-			im.NotHighlighted()
-		} else {
-			im.Highlighted()
-		}
-	}
+	s.calculateVisibleRows()
 }
 
 func (s *DockerImagesWidget) updateHeader() {
@@ -206,7 +274,7 @@ func (s *DockerImagesWidget) updateHeader() {
 }
 
 func (s *DockerImagesWidget) sortRows() {
-	rows := s.images
+	rows := s.totalRows
 	mode := s.sortMode
 	if s.sortMode == docker.NoSortImages {
 		return
@@ -216,7 +284,10 @@ func (s *DockerImagesWidget) sortRows() {
 	switch mode {
 	case docker.SortImagesByRepo:
 		sortAlg = func(i, j int) bool {
-			return rows[i].Repository.Text < rows[j].Repository.Text
+			if rows[i].Repository.Text != rows[j].Repository.Text {
+				return rows[i].Repository.Text < rows[j].Repository.Text
+			}
+			return rows[i].Tag.Text < rows[j].Tag.Text
 		}
 	case docker.SortImagesByID:
 		sortAlg = func(i, j int) bool {
@@ -236,36 +307,7 @@ func (s *DockerImagesWidget) sortRows() {
 }
 
 func (s *DockerImagesWidget) visibleRows() []*ImageRow {
-
-	//no screen
-	if s.height < 0 {
-		return nil
-	}
-	rows := s.images
-	count := len(rows)
-	selected := ui.ActiveScreen.Cursor.Position()
-	//everything fits
-	if count <= s.height {
-		return rows
-	}
-	//at the the start
-	if selected == 0 {
-		s.startIndex = 0
-		s.endIndex = s.height
-	} else if selected >= count-1 { //at the end
-		s.startIndex = count - s.height
-		s.endIndex = count
-	} else if selected == s.endIndex { //scroll down by one
-		s.startIndex++
-		s.endIndex++
-	} else if selected <= s.startIndex { //scroll up by one
-		s.startIndex--
-		s.endIndex--
-	} else if selected > s.endIndex { // scroll
-		s.startIndex = selected - s.height
-		s.endIndex = selected
-	}
-	return rows[s.startIndex:s.endIndex]
+	return s.filteredRows[s.startIndex:s.endIndex]
 }
 
 func imageTableHeader() *termui.TableHeader {

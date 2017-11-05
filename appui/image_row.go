@@ -52,6 +52,25 @@ func NewImageRow(image types.ImageSummary, table drytermui.Table) *ImageRow {
 
 }
 
+//Buffer returns this Row data as a termui.Buffer
+func (row *ImageRow) Buffer() termui.Buffer {
+	buf := termui.NewBuffer()
+	//This set the background of the whole row
+	buf.Area.Min = image.Point{row.X, row.Y}
+	buf.Area.Max = image.Point{row.X + row.Width, row.Y + row.Height}
+	buf.Fill(' ', row.ID.TextFgColor, row.ID.TextBgColor)
+
+	for _, col := range row.Columns {
+		buf.Merge(col.Buffer())
+	}
+	return buf
+}
+
+//ColumnsForFilter returns the columns that are used to filter
+func (row *ImageRow) ColumnsForFilter() []*drytermui.ParColumn {
+	return []*drytermui.ParColumn{row.Repository, row.Tag, row.ID}
+}
+
 //Highlighted marks this rows as being highlighted
 func (row *ImageRow) Highlighted() {
 	row.changeTextColor(
@@ -65,20 +84,6 @@ func (row *ImageRow) NotHighlighted() {
 	row.changeTextColor(
 		termui.Attribute(DryTheme.ListItem),
 		termui.Attribute(DryTheme.Bg))
-}
-
-//Buffer returns this Row data as a termui.Buffer
-func (row *ImageRow) Buffer() termui.Buffer {
-	buf := termui.NewBuffer()
-	//This set the background of the whole row
-	buf.Area.Min = image.Point{row.X, row.Y}
-	buf.Area.Max = image.Point{row.X + row.Width, row.Y + row.Height}
-	buf.Fill(' ', row.ID.TextFgColor, row.ID.TextBgColor)
-
-	for _, col := range row.Columns {
-		buf.Merge(col.Buffer())
-	}
-	return buf
 }
 
 func (row *ImageRow) changeTextColor(fg, bg termui.Attribute) {
