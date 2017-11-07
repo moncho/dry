@@ -253,7 +253,6 @@ func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
 	c := context.Background()
 
 	args := filters.NewArgs()
-	args.Add("force", "y")
 	cReport, err := daemon.client.ContainersPrune(c, args)
 	if err != nil {
 		return nil, err
