@@ -185,6 +185,7 @@ func main() {
 		}()
 	}
 	screen, err := ui.NewScreen(appui.DryTheme)
+	defer screen.Close()
 	if err != nil {
 		log.WithField("error", err).Error(
 			"There was an error launching dry")
@@ -194,25 +195,23 @@ func main() {
 	running = true
 
 	//Loading screen
-	stopLoadScreen := make(chan struct{}, 1)
+	stopLoadScreen := make(chan struct{})
 	showLoadingScreen(screen, dockerEnv, stopLoadScreen)
 
 	//newApp will load dry and try to establish a connection with the docker daemon
 	dry, err := newApp(screen, dockerEnv)
 	//dry has loaded, stop showing the loading screen
 	close(stopLoadScreen)
-	if opts.MonitorMode {
-		dry.SetViewMode(app.Monitor)
-	}
+
 	if err == nil {
+		if opts.MonitorMode {
+			dry.SetViewMode(app.Monitor)
+		}
 		app.RenderLoop(dry, screen)
 		dry.Close()
-		screen.Close()
 	} else {
 		//screen has to be closed before logging
-		screen.Close()
 		log.WithField("error", err).Error(
 			"There was an error launching dry")
-		return
 	}
 }
