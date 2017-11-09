@@ -1,6 +1,7 @@
 package appui
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -28,7 +29,9 @@ var networkTableHeaders = []SortableColumnHeader{
 type DockerNetworksWidget struct {
 	dockerDaemon         docker.NetworkAPI
 	header               *termui.TableHeader
-	networks             []*NetworkRow // List of columns.
+	filteredRows         []*NetworkRow
+	totalRows            []*NetworkRow
+	filterPattern        string
 	height, width        int
 	selectedIndex        int
 	startIndex, endIndex int
@@ -56,37 +59,47 @@ func NewDockerNetworksWidget(dockerDaemon docker.NetworkAPI, y int) *DockerNetwo
 func (s *DockerNetworksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-
+	y := s.y
 	buf := gizaktermui.NewBuffer()
 	if s.mounted {
-		y := s.y
-		s.sortRows()
-		s.updateHeader()
+		s.prepareForRendering()
+		var filter string
+		if s.filterPattern != "" {
+			filter = fmt.Sprintf(
+				"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
+		}
 
-		widgetHeader := WidgetHeader("Networks", s.RowCount(), "")
-		widgetHeader.Y = s.y
+		widgetHeader := WidgetHeader("Networks", s.RowCount(), filter)
+		widgetHeader.Y = y
 		buf.Merge(widgetHeader.Buffer())
 		y += widgetHeader.GetHeight()
 
+		s.updateHeader()
 		s.header.SetY(y)
 		buf.Merge(s.header.Buffer())
-
 		y += s.header.GetHeight()
 
-		s.highlightSelectedRow()
-		for _, containerRow := range s.visibleRows() {
-			containerRow.SetY(y)
-			y += containerRow.GetHeight()
-			buf.Merge(containerRow.Buffer())
+		selected := s.selectedIndex - s.startIndex
+
+		for i, imageRow := range s.visibleRows() {
+			imageRow.SetY(y)
+			y += imageRow.GetHeight()
+			if i != selected {
+				imageRow.NotHighlighted()
+			} else {
+				imageRow.Highlighted()
+			}
+			buf.Merge(imageRow.Buffer())
 		}
 	}
-
 	return buf
 }
 
 //Filter filters the network list by the given filter
 func (s *DockerNetworksWidget) Filter(filter string) {
-
+	s.Lock()
+	defer s.Unlock()
+	s.filterPattern = filter
 }
 
 //Mount tells this widget to be ready for rendering
@@ -103,7 +116,7 @@ func (s *DockerNetworksWidget) Mount() error {
 		for i, network := range networks {
 			networkRows[i] = NewNetworkRow(network, s.header)
 		}
-		s.networks = networkRows
+		s.totalRows = networkRows
 		s.mounted = true
 		s.align()
 	}
@@ -117,12 +130,16 @@ func (s *DockerNetworksWidget) Name() string {
 
 //OnEvent runs the given command
 func (s *DockerNetworksWidget) OnEvent(event EventCommand) error {
-	return event(s.networks[s.selectedIndex].network.ID)
+	if s.RowCount() > 0 {
+		return event(s.filteredRows[s.selectedIndex].network.ID)
+	}
+	return nil
 }
 
 //RowCount returns the number of rows of this widget.
 func (s *DockerNetworksWidget) RowCount() int {
-	return len(s.networks)
+	return len(s.filteredRows)
+
 }
 
 //Sort rotates to the next sort mode.
@@ -162,13 +179,79 @@ func (s *DockerNetworksWidget) align() {
 	s.header.SetWidth(width)
 	s.header.SetX(x)
 
-	for _, network := range s.networks {
+	for _, network := range s.totalRows {
 		network.SetX(x)
 		network.SetWidth(width)
 	}
 
 }
 
+func (s *DockerNetworksWidget) filterRows() {
+
+	if s.filterPattern != "" {
+		var rows []*NetworkRow
+
+		for _, row := range s.totalRows {
+			if RowFilters.ByPattern(s.filterPattern)(row) {
+				rows = append(rows, row)
+			}
+		}
+		s.filteredRows = rows
+	} else {
+		s.filteredRows = s.totalRows
+	}
+}
+
+func (s *DockerNetworksWidget) calculateVisibleRows() {
+
+	count := s.RowCount()
+
+	//no screen
+	if s.height < 0 || count == 0 {
+		s.startIndex = 0
+		s.endIndex = 0
+		return
+	}
+	selected := s.selectedIndex
+	//everything fits
+	if count <= s.height {
+		s.startIndex = 0
+		s.endIndex = count
+		return
+	}
+	//at the the start
+	if selected == 0 {
+		s.startIndex = 0
+		s.endIndex = s.height
+	} else if selected >= count-1 { //at the end
+		s.startIndex = count - s.height
+		s.endIndex = count
+	} else if selected == s.endIndex { //scroll down by one
+		s.startIndex++
+		s.endIndex++
+	} else if selected <= s.startIndex { //scroll up by one
+		s.startIndex--
+		s.endIndex--
+	} else if selected > s.endIndex { // scroll
+		s.startIndex = selected - s.height
+		s.endIndex = selected
+	}
+}
+
+//prepareForRendering sets the internal state of this widget so it is ready for
+//rendering (i.e. Buffer()).
+func (s *DockerNetworksWidget) prepareForRendering() {
+	s.sortRows()
+	s.filterRows()
+	index := ui.ActiveScreen.Cursor.Position()
+	if index < 0 {
+		index = 0
+	} else if index > s.RowCount() {
+		index = s.RowCount() - 1
+	}
+	s.selectedIndex = index
+	s.calculateVisibleRows()
+}
 func (s *DockerNetworksWidget) updateHeader() {
 	sortMode := s.sortMode
 
@@ -191,29 +274,10 @@ func (s *DockerNetworksWidget) updateHeader() {
 		}
 
 	}
-
-}
-
-func (s *DockerNetworksWidget) highlightSelectedRow() {
-	if s.RowCount() == 0 {
-		return
-	}
-	index := ui.ActiveScreen.Cursor.Position()
-	if index > s.RowCount() {
-		index = s.RowCount() - 1
-	}
-	s.selectedIndex = index
-	for i, n := range s.networks {
-		if i != index {
-			n.NotHighlighted()
-		} else {
-			n.Highlighted()
-		}
-	}
 }
 
 func (s *DockerNetworksWidget) sortRows() {
-	rows := s.networks
+	rows := s.totalRows
 	mode := s.sortMode
 	if s.sortMode == docker.NoSortNetworks {
 		return
@@ -251,36 +315,7 @@ func (s *DockerNetworksWidget) sortRows() {
 }
 
 func (s *DockerNetworksWidget) visibleRows() []*NetworkRow {
-
-	//no screen
-	if s.height < 0 {
-		return nil
-	}
-	rows := s.networks
-	count := len(rows)
-	selected := ui.ActiveScreen.Cursor.Position()
-	//everything fits
-	if count <= s.height {
-		return rows
-	}
-	//at the the start
-	if selected == 0 {
-		s.startIndex = 0
-		s.endIndex = s.height
-	} else if selected >= count-1 { //at the end
-		s.startIndex = count - s.height
-		s.endIndex = count
-	} else if selected == s.endIndex { //scroll down by one
-		s.startIndex++
-		s.endIndex++
-	} else if selected <= s.startIndex { //scroll up by one
-		s.startIndex--
-		s.endIndex--
-	} else if selected > s.endIndex { // scroll
-		s.startIndex = selected - s.height
-		s.endIndex = selected
-	}
-	return rows[s.startIndex:s.endIndex]
+	return s.filteredRows[s.startIndex:s.endIndex]
 }
 
 func networkTableHeader() *termui.TableHeader {

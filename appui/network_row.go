@@ -56,6 +56,11 @@ func NewNetworkRow(network types.NetworkResource, table drytermui.Table) *Networ
 
 }
 
+//ColumnsForFilter returns the columns that are used to filter
+func (row *NetworkRow) ColumnsForFilter() []*drytermui.ParColumn {
+	return []*drytermui.ParColumn{row.ID, row.Name, row.Driver, row.Services, row.Scope, row.Subnet, row.Gateway}
+}
+
 //Highlighted marks this rows as being highlighted
 func (row *NetworkRow) Highlighted() {
 	row.changeTextColor(
