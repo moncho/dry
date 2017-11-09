@@ -2,6 +2,8 @@ package swarm
 
 import (
 	"errors"
+	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -45,16 +47,17 @@ var nodeTableHeaders = []appui.SortableColumnHeader{
 //NodesWidget presents Docker swarm information
 type NodesWidget struct {
 	swarmClient          docker.SwarmAPI
-	nodes                []*NodeRow
+	filteredRows         []*NodeRow
+	totalRows            []*NodeRow
+	filterPattern        string
 	header               *termui.TableHeader
-	title                *termui.MarkupPar
 	selectedIndex        int
-	offset               int
 	x, y                 int
 	height, width        int
+	startIndex, endIndex int
 	mounted              bool
 	sortMode             docker.SortMode
-	startIndex, endIndex int
+	title                *termui.MarkupPar
 	totalMemory          int64
 	totalCPU             int
 	sync.RWMutex
@@ -63,15 +66,12 @@ type NodesWidget struct {
 //NewNodesWidget creates a NodesWidget
 func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
 	w := NodesWidget{
-		swarmClient:   swarmClient,
-		header:        defaultNodeTableHeader,
-		selectedIndex: 0,
-		offset:        0,
-		x:             0,
-		y:             y,
-		height:        appui.MainScreenAvailableHeight(),
-		width:         ui.ActiveScreen.Dimensions.Width,
-		sortMode:      docker.SortByNodeName}
+		swarmClient: swarmClient,
+		header:      defaultNodeTableHeader,
+		y:           y,
+		height:      appui.MainScreenAvailableHeight(),
+		width:       ui.ActiveScreen.Dimensions.Width,
+		sortMode:    docker.SortByNodeName}
 	appui.RegisterWidget(docker.NodeSource, &w)
 	return &w
 }
@@ -80,32 +80,47 @@ func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
 func (s *NodesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-	buf := gizaktermui.NewBuffer()
 	y := s.y
-
+	buf := gizaktermui.NewBuffer()
 	if s.mounted {
+		s.prepareForRendering()
+		var filter string
+		if s.filterPattern != "" {
+			filter = fmt.Sprintf(
+				"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
+		}
+
+		widgetHeader := appui.WidgetHeader("Nodes", s.RowCount(), filter)
+		widgetHeader.Y = y
+		buf.Merge(widgetHeader.Buffer())
+		y += widgetHeader.GetHeight()
+
 		s.updateHeader()
-		s.title.Y = y
-		buf.Merge(s.title.Buffer())
-		y += s.title.GetHeight() + 1
 		s.header.SetY(y)
 		buf.Merge(s.header.Buffer())
 		y += s.header.GetHeight()
 
-		s.highlightSelectedRow()
-		for _, node := range s.visibleRows() {
-			node.SetY(y)
-			node.Height = 1
-			y += node.GetHeight()
-			buf.Merge(node.Buffer())
+		selected := s.selectedIndex - s.startIndex
+
+		for i, nodeRow := range s.visibleRows() {
+			nodeRow.SetY(y)
+			y += nodeRow.GetHeight()
+			if i != selected {
+				nodeRow.NotHighlighted()
+			} else {
+				nodeRow.Highlighted()
+			}
+			buf.Merge(nodeRow.Buffer())
 		}
 	}
-
 	return buf
 }
 
-//Filter filters the node list by the given filter
+//Filter applies the given filter to the container list
 func (s *NodesWidget) Filter(filter string) {
+	s.Lock()
+	defer s.Unlock()
+	s.filterPattern = filter
 }
 
 //Mount prepares this widget for rendering
@@ -127,7 +142,7 @@ func (s *NodesWidget) Mount() error {
 				}
 				s.totalMemory += node.Description.Resources.MemoryBytes
 			}
-			s.nodes = rows
+			s.totalRows = rows
 		}
 		addSwarmSpecs(s)
 		s.align()
@@ -144,7 +159,7 @@ func (s *NodesWidget) Name() string {
 //OnEvent runs the given command
 func (s *NodesWidget) OnEvent(event appui.EventCommand) error {
 	if s.RowCount() > 0 {
-		return event(s.nodes[s.selectedIndex].node.ID)
+		return event(s.filteredRows[s.selectedIndex].node.ID)
 	}
 	return errors.New("the node list is empty")
 }
@@ -161,7 +176,7 @@ func (s *NodesWidget) Unmount() error {
 
 //RowCount returns the number of rows of this widget.
 func (s *NodesWidget) RowCount() int {
-	return len(s.nodes)
+	return len(s.filteredRows)
 }
 
 //Sort rotates to the next sort mode.
@@ -192,70 +207,112 @@ func (s *NodesWidget) align() {
 	s.title.SetX(x)
 
 	s.header.SetWidth(width)
-
 	s.header.SetX(x)
 
-	for _, n := range s.nodes {
+	for _, n := range s.totalRows {
 		n.SetX(x)
 		n.SetWidth(width)
 	}
 }
 
-func (s *NodesWidget) highlightSelectedRow() {
-	if s.RowCount() == 0 {
-		return
-	}
-	index := ui.ActiveScreen.Cursor.Position()
-	if index > s.RowCount() {
-		index = s.RowCount() - 1
-	}
-	s.selectedIndex = index
-	for i, row := range s.nodes {
-		if i != index {
-			row.NotHighlighted()
-		} else {
-			row.Highlighted()
+func (s *NodesWidget) filterRows() {
+
+	if s.filterPattern != "" {
+		var rows []*NodeRow
+
+		for _, row := range s.totalRows {
+			if appui.RowFilters.ByPattern(s.filterPattern)(row) {
+				rows = append(rows, row)
+			}
 		}
+		s.filteredRows = rows
+	} else {
+		s.filteredRows = s.totalRows
 	}
 }
 
-func (s *NodesWidget) visibleRows() []*NodeRow {
+func (s *NodesWidget) calculateVisibleRows() {
+
+	count := s.RowCount()
 
 	//no screen
-	if s.height < 0 {
-		return nil
+	if s.height < 0 || count == 0 {
+		s.startIndex = 0
+		s.endIndex = 0
+		return
 	}
-	rows := s.nodes
-	count := len(rows)
-	cursor := ui.ActiveScreen.Cursor
-	selected := cursor.Position()
+	selected := s.selectedIndex
 	//everything fits
 	if count <= s.height {
-		return rows
+		s.startIndex = 0
+		s.endIndex = count
+		return
 	}
 	//at the the start
 	if selected == 0 {
-		//internal state is reset
 		s.startIndex = 0
 		s.endIndex = s.height
-		return rows[s.startIndex : s.endIndex+1]
-	}
-
-	if selected >= s.endIndex {
-		if selected-s.height >= 0 {
-			s.startIndex = selected - s.height
-		}
+	} else if selected >= count-1 { //at the end
+		s.startIndex = count - s.height
+		s.endIndex = count
+	} else if selected == s.endIndex { //scroll down by one
+		s.startIndex++
+		s.endIndex++
+	} else if selected <= s.startIndex { //scroll up by one
+		s.startIndex--
+		s.endIndex--
+	} else if selected > s.endIndex { // scroll
+		s.startIndex = selected - s.height
 		s.endIndex = selected
 	}
-	if selected <= s.startIndex {
-		s.startIndex = s.startIndex - 1
-		if selected+s.height < count {
-			s.endIndex = s.startIndex + s.height
+}
+
+//prepareForRendering sets the internal state of this widget so it is ready for
+//rendering (i.e. Buffer()).
+func (s *NodesWidget) prepareForRendering() {
+	s.sortRows()
+	s.filterRows()
+	index := ui.ActiveScreen.Cursor.Position()
+	if index < 0 {
+		index = 0
+	} else if index > s.RowCount() {
+		index = s.RowCount() - 1
+	}
+	s.selectedIndex = index
+	s.calculateVisibleRows()
+}
+
+func (s *NodesWidget) sortRows() {
+	rows := s.totalRows
+	mode := s.sortMode
+	if s.sortMode == docker.NoSortNode {
+		return
+	}
+	var sortAlg func(i, j int) bool
+	switch mode {
+
+	case docker.SortByNodeName:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Name.Text < rows[j].Name.Text
+		}
+	case docker.SortByNodeRole:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Role.Text < rows[j].Role.Text
+		}
+	case docker.SortByNodeCPU:
+		sortAlg = func(i, j int) bool {
+			return rows[i].CPU.Text < rows[j].CPU.Text
+		}
+	case docker.SortByNodeMem:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Memory.Text < rows[j].Memory.Text
+		}
+	case docker.SortByNodeStatus:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Status.Text < rows[j].Status.Text
 		}
 	}
-	start := s.startIndex
-	end := s.endIndex + 1
-	return rows[start:end]
+	sort.SliceStable(rows, sortAlg)
 }
 
 func (s *NodesWidget) updateHeader() {
@@ -281,6 +338,10 @@ func (s *NodesWidget) updateHeader() {
 
 	}
 
+}
+
+func (s *NodesWidget) visibleRows() []*NodeRow {
+	return s.filteredRows[s.startIndex:s.endIndex]
 }
 
 func nodeTableHeader() *termui.TableHeader {

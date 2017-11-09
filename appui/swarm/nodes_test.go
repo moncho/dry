@@ -31,14 +31,14 @@ func TestNodesWidgetMount(t *testing.T) {
 		Cursor:     ui.NewCursor()}
 	w := NewNodesWidget(&mocks.SwarmDockerDaemon{}, 1)
 
-	if len(w.nodes) != 0 {
-		t.Errorf("Swarm widget is not showing the expected number of nodes. Got: %d", len(w.nodes))
+	if len(w.totalRows) != 0 {
+		t.Errorf("Swarm widget is not showing the expected number of totalRows. Got: %d", len(w.totalRows))
 	}
 
 	w.Mount()
 
-	if len(w.nodes) != 1 {
-		t.Errorf("Swarm widget is not showing the expected number of nodes. Got: %d", len(w.nodes))
+	if len(w.totalRows) != 1 {
+		t.Errorf("Swarm widget is not showing the expected number of totalRows. Got: %d", len(w.totalRows))
 	}
 
 }

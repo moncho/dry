@@ -65,13 +65,6 @@ func NewNodeRow(node swarm.Node, table drytermui.Table) *NodeRow {
 
 }
 
-//Highlighted marks this rows as being highlighted
-func (row *NodeRow) Highlighted() {
-	row.changeTextColor(
-		termui.Attribute(appui.DryTheme.Fg),
-		termui.Attribute(appui.DryTheme.CursorLineBg))
-}
-
 //Buffer returns this Row data as a termui.Buffer
 func (row *NodeRow) Buffer() termui.Buffer {
 	buf := termui.NewBuffer()
@@ -84,6 +77,18 @@ func (row *NodeRow) Buffer() termui.Buffer {
 		buf.Merge(col.Buffer())
 	}
 	return buf
+}
+
+//ColumnsForFilter returns the columns that are used to filter
+func (row *NodeRow) ColumnsForFilter() []*drytermui.ParColumn {
+	return []*drytermui.ParColumn{row.Name, row.Role, row.Labels, row.Status, row.Availability}
+}
+
+//Highlighted marks this rows as being highlighted
+func (row *NodeRow) Highlighted() {
+	row.changeTextColor(
+		termui.Attribute(appui.DryTheme.Fg),
+		termui.Attribute(appui.DryTheme.CursorLineBg))
 }
 
 //NotHighlighted marks this rows as being not highlighted
