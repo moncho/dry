@@ -105,6 +105,8 @@ func (s *StacksTasksWidget) Mount() error {
 	s.align()
 	return nil
 }
+
+//Name returns this widget name
 func (s *StacksTasksWidget) Name() string {
 	return "StacksTasksWidget"
 }

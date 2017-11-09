@@ -1,7 +1,6 @@
 package swarm
 
 import (
-	"image"
 	"strings"
 
 	"github.com/docker/cli/cli/command/formatter"
@@ -22,7 +21,7 @@ type ServiceRow struct {
 	Image        *drytermui.ParColumn
 	ServicePorts *drytermui.ParColumn
 
-	drytermui.Row
+	appui.Row
 }
 
 //NewServiceRow creats a new ServiceRow widget
@@ -47,56 +46,20 @@ func NewServiceRow(service swarm.Service, serviceInfo formatter.ServiceListInfo,
 		row.ServicePorts,
 		row.Image,
 	}
+	row.ParColumns = []*drytermui.ParColumn{
+		row.Name,
+		row.Mode,
+		row.Replicas,
+		row.ServicePorts,
+		row.Image,
+	}
 	return row
 
-}
-
-//Buffer returns this Row data as a termui.Buffer
-func (row *ServiceRow) Buffer() termui.Buffer {
-	buf := termui.NewBuffer()
-	//This set the background of the whole row
-	buf.Area.Min = image.Point{row.X, row.Y}
-	buf.Area.Max = image.Point{row.X + row.Width, row.Y + row.Height}
-	buf.Fill(' ', row.Name.TextFgColor, row.Name.TextBgColor)
-
-	for _, col := range row.Columns {
-		buf.Merge(col.Buffer())
-	}
-	return buf
 }
 
 //ColumnsForFilter returns the columns that are used to filter
 func (row *ServiceRow) ColumnsForFilter() []*drytermui.ParColumn {
 	return []*drytermui.ParColumn{row.Name, row.Image, row.Mode}
-}
-
-//Highlighted marks this rows as being highlighted
-func (row *ServiceRow) Highlighted() {
-	row.changeTextColor(
-		termui.Attribute(appui.DryTheme.Fg),
-		termui.Attribute(appui.DryTheme.CursorLineBg))
-}
-
-//NotHighlighted marks this rows as being not highlighted
-func (row *ServiceRow) NotHighlighted() {
-	row.changeTextColor(
-		termui.Attribute(appui.DryTheme.ListItem),
-		termui.Attribute(appui.DryTheme.Bg))
-}
-
-func (row *ServiceRow) changeTextColor(fg, bg termui.Attribute) {
-	row.ID.TextFgColor = fg
-	row.ID.TextBgColor = bg
-	row.Name.TextFgColor = fg
-	row.Name.TextBgColor = bg
-	row.Mode.TextFgColor = fg
-	row.Mode.TextBgColor = bg
-	row.Replicas.TextFgColor = fg
-	row.Replicas.TextBgColor = bg
-	row.ServicePorts.TextFgColor = fg
-	row.ServicePorts.TextBgColor = bg
-	row.Image.TextFgColor = fg
-	row.Image.TextBgColor = bg
 }
 
 func serviceImage(service swarm.Service) string {
