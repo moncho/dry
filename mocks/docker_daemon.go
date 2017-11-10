@@ -347,6 +347,11 @@ func (_m *DockerDaemonMock) StackTasks(stack string) ([]swarm.Task, error) {
 	return nil, nil
 }
 
+//Task empty mock
+func (_m *DockerDaemonMock) Task(id string) (swarm.Task, error) {
+	return swarm.Task{}, nil
+}
+
 //Top function mock
 func (_m *DockerDaemonMock) Top(id string) (container.ContainerTopOKBody, error) {
 

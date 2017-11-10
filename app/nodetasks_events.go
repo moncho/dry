@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+
 	"github.com/moncho/dry/appui"
 	termbox "github.com/nsf/termbox-go"
 )
@@ -19,6 +21,7 @@ func (h *taskScreenEventHandler) handle(event termbox.Event) {
 		return
 	}
 	handled := false
+	focus := true
 	switch event.Key {
 	case termbox.KeyEsc:
 		handled = true
@@ -29,6 +32,14 @@ func (h *taskScreenEventHandler) handle(event termbox.Event) {
 	case termbox.KeyF5: // refresh
 		h.widget().Unmount()
 		handled = true
+	case termbox.KeyEnter:
+		handled = true
+		focus = false
+		if err := h.widget().OnEvent(inspectTask(h.dry, h.screen, h.eventChan, h.closeViewChan)); err != nil {
+			h.dry.appmessage(
+				fmt.Sprintf("Error inspecting stack: %s", err.Error()))
+		}
+
 	}
 	if !handled {
 		switch event.Ch {
@@ -40,7 +51,7 @@ func (h *taskScreenEventHandler) handle(event termbox.Event) {
 	if !handled {
 		h.baseEventHandler.handle(event)
 	} else {
-		h.setFocus(true)
+		h.setFocus(focus)
 		refreshScreen()
 	}
 

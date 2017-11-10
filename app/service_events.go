@@ -110,6 +110,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 
 	case termbox.KeyEnter:
 		showTasks := func(serviceID string) error {
+			h.screen.Cursor.Reset()
 			h.dry.ShowServiceTasks(serviceID)
 			return refreshScreen()
 		}

@@ -220,6 +220,20 @@ func (daemon *DockerDaemon) StackTasks(stack string) ([]swarm.Task, error) {
 	return nil, pkgError.Wrap(err, "Error retrieving task list")
 }
 
+//Task returns the task with the given id
+func (daemon *DockerDaemon) Task(id string) (swarm.Task, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+
+	task, _, err := daemon.client.TaskInspectWithRaw(ctx, id)
+
+	if err == nil {
+		return task, nil
+	}
+	return swarm.Task{}, pkgError.Wrapf(err, "Error retrieving task with ID: %s", id)
+
+}
+
 func getAllStacksFilter() filters.Args {
 	filter := filters.NewArgs()
 	filter.Add("label", convert.LabelNamespace)

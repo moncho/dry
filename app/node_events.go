@@ -75,6 +75,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 
 	case termbox.KeyEnter:
 		showServices := func(nodeID string) error {
+			h.screen.Cursor.Reset()
 			h.dry.ShowTasks(nodeID)
 			return refreshScreen()
 		}

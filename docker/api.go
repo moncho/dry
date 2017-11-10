@@ -84,6 +84,7 @@ type SwarmAPI interface {
 	ServiceTasks(services ...string) ([]swarm.Task, error)
 	Stacks() ([]Stack, error)
 	StackTasks(stack string) ([]swarm.Task, error)
+	Task(id string) (swarm.Task, error)
 }
 
 //Stats holds runtime stats for a container
