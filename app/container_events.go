@@ -52,23 +52,44 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 
 	switch command.command {
 	case docker.KILL:
-		dry.Kill(id)
+		go func() {
+			dry.actionMessage(id, "Killing")
+			err := dry.dockerDaemon.Kill(id)
+			if err == nil {
+				dry.actionMessage(id, "killed")
+			} else {
+				dry.errorMessage(id, "killing", err)
+			}
+		}()
 	case docker.RESTART:
-		if err := dry.dockerDaemon.RestartContainer(id); err != nil {
-			dry.appmessage(
-				fmt.Sprintf("Error restarting container %s, err: %s", id, err.Error()))
-		}
+		go func() {
+			if err := dry.dockerDaemon.RestartContainer(id); err != nil {
+				dry.appmessage(
+					fmt.Sprintf("Error restarting container %s, err: %s", id, err.Error()))
+			}
+		}()
 	case docker.STOP:
-		if err := dry.dockerDaemon.StopContainer(id); err != nil {
-			dry.appmessage(
-				fmt.Sprintf("Error stopping container %s, err: %s", id, err.Error()))
-		}
+		go func() {
+			if err := dry.dockerDaemon.StopContainer(id); err != nil {
+				dry.appmessage(
+					fmt.Sprintf("Error stopping container %s, err: %s", id, err.Error()))
+			}
+		}()
 	case docker.LOGS:
 		logs := h.dry.dockerDaemon.Logs(id)
 		focus = false
 		go appui.Stream(h.screen, logs, h.eventChan, h.closeViewChan)
 	case docker.RM:
-		dry.dockerDaemon.Rm(id)
+		go func() {
+			dry.actionMessage(id, "Removing")
+			err := dry.dockerDaemon.Rm(id)
+			if err == nil {
+				dry.actionMessage(id, "removed")
+			} else {
+				dry.errorMessage(id, "removing", err)
+			}
+		}()
+
 	case docker.STATS:
 		c := dry.dockerDaemon.ContainerByID(id)
 		if c == nil || !docker.IsContainerRunning(c) {

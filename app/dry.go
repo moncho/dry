@@ -58,24 +58,6 @@ func (d *Dry) Close() {
 	close(d.output)
 }
 
-//Kill the docker container with the given id
-func (d *Dry) Kill(id string) {
-
-	d.actionMessage(id, "Killing")
-	err := d.dockerDaemon.Kill(id)
-	if err == nil {
-		d.actionMessage(id, "killed")
-	} else {
-		d.errorMessage(id, "killing", err)
-	}
-
-}
-
-//Logs retrieves the log of the docker container with the given id
-func (d *Dry) Logs(id string) (io.ReadCloser, error) {
-	return d.dockerDaemon.Logs(id), nil
-}
-
 //OuputChannel returns the channel where dry messages are written
 func (d *Dry) OuputChannel() <-chan string {
 	return d.output
