@@ -221,7 +221,7 @@ func (d *Dry) ShowServices() {
 	d.changeViewMode(Services)
 }
 
-//ShowTasks changes the state of dry to show the stack list
+//ShowStacks changes the state of dry to show the stack list
 func (d *Dry) ShowStacks() {
 	d.changeViewMode(Stacks)
 }
