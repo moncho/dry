@@ -70,6 +70,7 @@ Keybinding           | Description
 Keybinding           | Description
 ---------------------|---------------------------------------
 <kbd>i</kbd>         | history
+<kbd>r</kbd>         | run command in new container
 <kbd>Ctrl+d</kbd>    | remove dangling images
 <kbd>Ctrl+e</kbd>    | remove image
 <kbd>Ctrl+f</kbd>    | remove image (force)
