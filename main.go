@@ -54,6 +54,8 @@ type dryOptions struct {
 	DockerHost       string `short:"H" long:"docker_host" description:"Docker Host"`
 	DockerCertPath   string `short:"c" long:"docker_certpath" description:"Docker cert path"`
 	DockerTLSVerifiy string `short:"t" long:"docker_tls" description:"Docker TLS verify"`
+	//Whale
+	Whale uint `short:"w" long:"whale" description:"Show whale for w seconds"`
 }
 
 //-----------------------------------------------------------------------------
@@ -196,10 +198,18 @@ func main() {
 
 	//Loading screen
 	stopLoadScreen := make(chan struct{})
+
+	start := time.Now()
 	showLoadingScreen(screen, dockerEnv, stopLoadScreen)
 
 	//newApp will load dry and try to establish a connection with the docker daemon
 	dry, err := newApp(screen, dockerEnv)
+
+	//show whale to bablat
+	showWale, errP := time.ParseDuration(fmt.Sprintf("%ds", opts.Whale))
+	if errP == nil {
+		time.Sleep(showWale - time.Since(start))
+	}
 	//dry has loaded, stop showing the loading screen
 	close(stopLoadScreen)
 
