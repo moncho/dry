@@ -7,7 +7,7 @@ import (
 )
 
 func showFilterInput(eh eventHandler) {
-	rw := appui.NewAskForConfirmation("Filter? (blank to remove current filter)")
+	rw := appui.NewPrompt("Filter? (blank to remove current filter)")
 	eh.setForwardEvents(true)
 	eh.widgetRegistry().add(rw)
 	go func() {

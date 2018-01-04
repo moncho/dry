@@ -39,7 +39,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		handled = true
 	case termbox.KeyCtrlR:
 
-		rw := appui.NewAskForConfirmation("About to remove the selected service. Do you want to proceed? y/N")
+		rw := appui.NewPrompt("About to remove the selected service. Do you want to proceed? y/N")
 		h.passingEvents = true
 		handled = true
 		dry.widgetRegistry.add(rw)
@@ -69,7 +69,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 
 	case termbox.KeyCtrlS:
 
-		rw := appui.NewAskForConfirmation("Scale service. Number of replicas?")
+		rw := appui.NewPrompt("Scale service. Number of replicas?")
 		h.passingEvents = true
 		handled = true
 		dry.widgetRegistry.add(rw)

@@ -34,7 +34,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 		handled = true
 	case termbox.KeyCtrlA:
 		dry := h.dry
-		rw := appui.NewAskForConfirmation("Changing node availability, please type one of ('active'|'pause'|'drain')")
+		rw := appui.NewPrompt("Changing node availability, please type one of ('active'|'pause'|'drain')")
 		h.passingEvents = true
 		handled = true
 		dry.widgetRegistry.add(rw)

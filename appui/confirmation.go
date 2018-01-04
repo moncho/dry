@@ -6,40 +6,40 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
-//AskForConfirmation is an input widget to run images
-type AskForConfirmation struct {
+//Prompt is a prompt widget
+type Prompt struct {
 	termui.TextInput
 }
 
-//NewAskForConfirmation creates a new AskForConfirmation for the given image
-func NewAskForConfirmation(question string) *AskForConfirmation {
-	w := &AskForConfirmation{
+//NewPrompt creates a new Prompt with the given title
+func NewPrompt(title string) *Prompt {
+	w := &Prompt{
 		TextInput: *termui.NewTextInput(""),
 	}
 	w.Height = 3
-	w.Width = len(question) + 4
+	w.Width = len(title) + 4
 	w.X = (ui.ActiveScreen.Dimensions.Width - w.Width) / 2
 	w.Y = ui.ActiveScreen.Dimensions.Height / 2
 	w.Bg = gtermui.Attribute(DryTheme.Bg)
 	w.TextBgColor = gtermui.Attribute(DryTheme.Bg)
 	w.TextFgColor = gtermui.ColorWhite
-	w.BorderLabel = question
+	w.BorderLabel = title
 	w.BorderLabelFg = gtermui.ColorWhite
 
 	return w
 }
 
 //Mount callback
-func (w *AskForConfirmation) Mount() error {
+func (w *Prompt) Mount() error {
 	return nil
 }
 
 //Unmount callback
-func (w *AskForConfirmation) Unmount() error {
+func (w *Prompt) Unmount() error {
 	return nil
 }
 
 //Name returns the widget name
-func (w *AskForConfirmation) Name() string {
-	return "AskForConfirmation"
+func (w *Prompt) Name() string {
+	return "Prompt"
 }
