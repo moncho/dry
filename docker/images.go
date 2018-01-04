@@ -2,12 +2,9 @@ package docker
 
 import (
 	"fmt"
-	"strings"
 
 	dockerTypes "github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/strslice"
 	pkgError "github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
@@ -62,25 +59,24 @@ func (daemon *DockerDaemon) RunImage(image dockerTypes.ImageSummary, command str
 		return pkgError.New("Cannot run image, image has no tag or digest")
 	}
 
-	var runCommand strslice.StrSlice
-
-	splittedCommand := strings.Split(command, " ")
-	if len(splittedCommand) > 0 {
-		runCommand = strslice.StrSlice(splittedCommand)
+	imageDetails, err := daemon.InspectImage(imageName)
+	if err != nil {
+		return pkgError.Wrap(err, fmt.Sprintf("Cannot get image details %s", imageName))
 	}
 
-	cc := &container.Config{
-		Image: imageName,
-		Cmd:   runCommand,
+	cc, hc, err := newCCB().image(imageName).command(command).ports(imageDetails.ContainerConfig.ExposedPorts).build()
+	if err != nil {
+		return pkgError.Wrap(err, "Error configuring container")
 	}
-	cCreated, err := daemon.client.ContainerCreate(ctx, cc, nil, nil, "")
+
+	cCreated, err := daemon.client.ContainerCreate(ctx, &cc, &hc, nil, "")
 
 	if err != nil {
 		return pkgError.Wrap(err, fmt.Sprintf("Cannot create container for image %s", imageName))
 	}
 
 	if err := daemon.client.ContainerStart(ctx, cCreated.ID, dockerTypes.ContainerStartOptions{}); err != nil {
-		return pkgError.Wrap(err, fmt.Sprintf("Cannot start container %s for image %s", cCreated.ID, imageName))
+		return err /*pkgError.Wrap(err, fmt.Sprintf("Cannot start container %s for image %s", cCreated.ID, imageName))*/
 
 	}
 	return nil

@@ -63,3 +63,15 @@ func (mock ImageAPIClientMock) ContainerCreate(ctx context.Context, config *cont
 func (mock ImageAPIClientMock) ContainerStart(ctx context.Context, container string, options types.ContainerStartOptions) error {
 	return nil
 }
+
+func (mock ImageAPIClientMock) InspectImage(ctx context.Context, image string) (types.ImageInspect, error) {
+	return types.ImageInspect{
+		ContainerConfig: &container.Config{},
+	}, nil
+}
+
+func (mock ImageAPIClientMock) ImageInspectWithRaw(ctx context.Context, image string) (types.ImageInspect, []byte, error) {
+	return types.ImageInspect{
+		ContainerConfig: &container.Config{},
+	}, nil, nil
+}
