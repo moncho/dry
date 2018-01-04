@@ -71,12 +71,12 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key) (bool, bool) 
 		}
 	case termbox.KeyEnter: //inspect image
 		inspectImage := func(id string) error {
-			network, err := h.dry.dockerDaemon.InspectImage(id)
+			image, err := h.dry.dockerDaemon.InspectImage(id)
 			if err != nil {
 				return err
 			}
 			keepFocus = false
-			renderer := appui.NewJSONRenderer(network)
+			renderer := appui.NewJSONRenderer(image)
 			go appui.Less(renderer, screen, h.eventChan, h.closeViewChan)
 			return nil
 		}

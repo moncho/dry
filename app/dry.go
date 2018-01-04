@@ -266,8 +266,7 @@ func (d *Dry) actionMessage(cid interface{}, action string) {
 func (d *Dry) errorMessage(cid interface{}, action string, err error) {
 	d.appmessage(
 		fmt.Sprintf(
-			"<red>Error %s container </><white>%v. %s</>",
-			action, cid, err.Error()))
+			"%s", err.Error()))
 }
 
 func (d *Dry) viewMode() viewMode {
