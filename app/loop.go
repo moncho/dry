@@ -31,12 +31,6 @@ func (f *focusTracker) hasFocus() bool {
 	return f.focus
 }
 
-func (f *focusTracker) flip() {
-	f.Lock()
-	defer f.Unlock()
-	f.focus = !f.focus
-}
-
 //RenderLoop renders dry until it quits
 // nolint: gocyclo
 func RenderLoop(dry *Dry, screen *ui.Screen) {
@@ -127,7 +121,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 
 	go func() {
 		for range viewClosed {
-			focus.flip()
+			focus.set(true)
 			dry.ShowMainView()
 		}
 	}()
