@@ -167,8 +167,8 @@ func (_m *DockerDaemonMock) Kill(id string) error {
 }
 
 // Logs provides a mock function with given fields: id
-func (_m *DockerDaemonMock) Logs(id string) io.ReadCloser {
-	return nil
+func (_m *DockerDaemonMock) Logs(id, since string) (io.ReadCloser, error) {
+	return nil, nil
 }
 
 //Networks mock
@@ -295,7 +295,7 @@ func (_m *DockerDaemonMock) Service(id string) (*swarm.Service, error) {
 }
 
 //ServiceLogs mock
-func (_m *DockerDaemonMock) ServiceLogs(id string) (io.ReadCloser, error) {
+func (_m *DockerDaemonMock) ServiceLogs(id, since string) (io.ReadCloser, error) {
 	return nil, nil
 }
 
