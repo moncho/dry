@@ -9,20 +9,16 @@ import (
 )
 
 //Stream shows the content of the given stream on screen
-func Stream(screen *ui.Screen, stream io.ReadCloser, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
-	defer func() {
-		closeView <- struct{}{}
-	}()
-	screen.ClearAndFlush()
-	v := ui.NewLess(screen, DryTheme)
+func Stream(stream io.ReadCloser, keyboardQueue chan termbox.Event, done func()) {
+	defer done()
+	ui.ActiveScreen.ClearAndFlush()
+	v := ui.NewLess(ui.ActiveScreen, DryTheme)
 	//TODO make sure that io errors can be safely ignored
 	go stdcopy.StdCopy(v, v, stream)
-	if err := v.Focus(keyboardQueue); err != nil {
-		ui.ShowErrorMessage(screen, keyboardQueue, closeView, err)
-	}
+	v.Focus(keyboardQueue)
 
 	stream.Close()
 	termbox.HideCursor()
-	screen.ClearAndFlush()
-	screen.Sync()
+	ui.ActiveScreen.ClearAndFlush()
+	ui.ActiveScreen.Sync()
 }
