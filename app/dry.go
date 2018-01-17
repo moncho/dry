@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"io"
 	"sync"
 	"time"
 
@@ -149,11 +148,6 @@ func (d *Dry) Rm(id string) {
 //ServiceInspect returns information about the service with the given ID
 func (d *Dry) ServiceInspect(id string) (*swarm.Service, error) {
 	return d.dockerDaemon.Service(id)
-}
-
-//ServiceLogs retrieves the log of the service with the given id
-func (d *Dry) ServiceLogs(id string) (io.ReadCloser, error) {
-	return d.dockerDaemon.ServiceLogs(id)
 }
 
 //ShowMainView changes the state of dry to show the main view, main views are
