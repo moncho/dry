@@ -18,7 +18,7 @@ func (h *nodesScreenEventHandler) widget() appui.AppWidget {
 }
 
 func (h *nodesScreenEventHandler) handle(event termbox.Event) {
-	if h.passingEvents {
+	if h.forwardingEvents {
 		h.eventChan <- event
 		return
 	}
@@ -35,7 +35,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 	case termbox.KeyCtrlA:
 		dry := h.dry
 		rw := appui.NewPrompt("Changing node availability, please type one of ('active'|'pause'|'drain')")
-		h.passingEvents = true
+		h.setForwardEvents(true)
 		handled = true
 		dry.widgetRegistry.add(rw)
 		go func() {
@@ -48,7 +48,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 			rw.OnFocus(events)
 			dry.widgetRegistry.remove(rw)
 			availability, canceled := rw.Text()
-			h.passingEvents = false
+			h.setForwardEvents(false)
 			if canceled {
 				return
 			}

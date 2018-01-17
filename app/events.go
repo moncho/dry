@@ -41,12 +41,12 @@ type eventHandler interface {
 }
 
 type baseEventHandler struct {
-	dry           *Dry
-	screen        *ui.Screen
-	eventChan     chan termbox.Event
-	closeViewChan chan struct{}
-	focus         bool
-	passingEvents bool
+	dry              *Dry
+	screen           *ui.Screen
+	eventChan        chan termbox.Event
+	closeViewChan    chan struct{}
+	focus            bool
+	forwardingEvents bool
 
 	sync.RWMutex
 }
@@ -137,7 +137,7 @@ func (b *baseEventHandler) setFocus(focus bool) {
 }
 
 func (b *baseEventHandler) setForwardEvents(forward bool) {
-	b.passingEvents = forward
+	b.forwardingEvents = forward
 }
 
 func (b *baseEventHandler) widget() appui.AppWidget {

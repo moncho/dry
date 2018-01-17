@@ -14,7 +14,7 @@ func (h *stacksScreenEventHandler) widget() appui.AppWidget {
 }
 
 func (h *stacksScreenEventHandler) handle(event termbox.Event) {
-	if h.passingEvents {
+	if h.forwardingEvents {
 		h.eventChan <- event
 		return
 	}

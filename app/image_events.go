@@ -18,7 +18,7 @@ func (h *imagesScreenEventHandler) widget() appui.AppWidget {
 }
 
 func (h *imagesScreenEventHandler) handle(event termbox.Event) {
-	if h.passingEvents {
+	if h.forwardingEvents {
 		h.eventChan <- event
 		return
 	}
@@ -121,7 +121,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
 				return err
 			}
 			rw := appui.NewImageRunWidget(image)
-			h.passingEvents = true
+			h.setForwardEvents(true)
 			dry.widgetRegistry.add(rw)
 			go func(image types.ImageSummary) {
 				events := ui.EventSource{
@@ -133,7 +133,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune) (bool, bool) {
 				rw.OnFocus(events)
 				dry.widgetRegistry.remove(rw)
 				runCommand, canceled := rw.Text()
-				h.passingEvents = false
+				h.setForwardEvents(false)
 				if canceled {
 					return
 				}

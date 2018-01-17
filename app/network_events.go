@@ -16,7 +16,7 @@ func (h *networksScreenEventHandler) widget() appui.AppWidget {
 }
 
 func (h *networksScreenEventHandler) handle(event termbox.Event) {
-	if h.passingEvents {
+	if h.forwardingEvents {
 		h.eventChan <- event
 		return
 	}

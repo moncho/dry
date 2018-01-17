@@ -17,7 +17,7 @@ func (h *serviceTasksScreenEventHandler) widget() appui.AppWidget {
 }
 
 func (h *serviceTasksScreenEventHandler) handle(event termbox.Event) {
-	if h.passingEvents {
+	if h.forwardingEvents {
 		h.eventChan <- event
 		return
 	}
