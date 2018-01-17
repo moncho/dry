@@ -208,16 +208,16 @@ func (daemon *DockerDaemon) Kill(id string) error {
 }
 
 //Logs shows the logs of the container with the given id
-func (daemon *DockerDaemon) Logs(id string) io.ReadCloser {
+func (daemon *DockerDaemon) Logs(id string, since string) (io.ReadCloser, error) {
 	options := dockerTypes.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Timestamps: false,
 		Follow:     true,
 		Details:    false,
+		Since:      since,
 	}
-	reader, _ := daemon.client.ContainerLogs(context.Background(), id, options)
-	return reader
+	return daemon.client.ContainerLogs(context.Background(), id, options)
 }
 
 //Networks returns the list of Docker networks

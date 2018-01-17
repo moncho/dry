@@ -46,7 +46,7 @@ type ContainerAPI interface {
 	Inspect(id string) (types.ContainerJSON, error)
 	IsContainerRunning(id string) bool
 	Kill(id string) error
-	Logs(id string) io.ReadCloser
+	Logs(id string, since string) (io.ReadCloser, error)
 	OpenChannel(container *Container) *StatsChannel
 	RemoveAllStoppedContainers() (int, error)
 	RestartContainer(id string) error
@@ -77,7 +77,7 @@ type SwarmAPI interface {
 	ResolveNode(id string) (string, error)
 	ResolveService(id string) (string, error)
 	Service(id string) (*swarm.Service, error)
-	ServiceLogs(id string) (io.ReadCloser, error)
+	ServiceLogs(id string, since string) (io.ReadCloser, error)
 	Services() ([]swarm.Service, error)
 	ServiceRemove(id string) error
 	ServiceScale(id string, replicas uint64) error
