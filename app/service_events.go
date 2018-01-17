@@ -19,7 +19,7 @@ func (h *servicesScreenEventHandler) widget() appui.AppWidget {
 }
 
 func (h *servicesScreenEventHandler) handle(event termbox.Event) {
-	if h.passingEvents {
+	if h.forwardingEvents {
 		h.eventChan <- event
 		return
 	}
@@ -40,7 +40,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 	case termbox.KeyCtrlR:
 
 		rw := appui.NewPrompt("About to remove the selected service. Do you want to proceed? y/N")
-		h.passingEvents = true
+		h.setForwardEvents(true)
 		handled = true
 		dry.widgetRegistry.add(rw)
 		go func() {
@@ -53,7 +53,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 			rw.OnFocus(events)
 			dry.widgetRegistry.remove(rw)
 			confirmation, canceled := rw.Text()
-			h.passingEvents = false
+			h.setForwardEvents(false)
 			if canceled || (confirmation != "y" && confirmation != "Y") {
 				return
 			}
@@ -70,7 +70,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 	case termbox.KeyCtrlS:
 
 		rw := appui.NewPrompt("Scale service. Number of replicas?")
-		h.passingEvents = true
+		h.setForwardEvents(true)
 		handled = true
 		dry.widgetRegistry.add(rw)
 		go func() {
@@ -83,7 +83,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 			rw.OnFocus(events)
 			dry.widgetRegistry.remove(rw)
 			replicas, canceled := rw.Text()
-			h.passingEvents = false
+			h.setForwardEvents(false)
 			if canceled {
 				return
 			}
@@ -153,22 +153,45 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		}
 
 	case 'l':
+
+		prompt := logsPrompt()
+		h.setForwardEvents(true)
 		handled = true
-
-		showServiceLogs := func(serviceID string) error {
-			logs, err := h.dry.ServiceLogs(serviceID)
-			if err == nil {
-				go appui.Stream(h.screen, logs, h.eventChan, h.closeViewChan)
-				return nil
+		dry.widgetRegistry.add(prompt)
+		go func() {
+			events := ui.EventSource{
+				Events: h.eventChan,
+				EventHandledCallback: func(e termbox.Event) error {
+					return refreshScreen()
+				},
 			}
-			return err
-		}
-		if err := h.widget().OnEvent(showServiceLogs); err == nil {
-			focus = false
-		} else {
-			h.dry.appmessage("There was an error showing service logs: " + err.Error())
-		}
+			prompt.OnFocus(events)
+			dry.widgetRegistry.remove(prompt)
+			since, canceled := prompt.Text()
 
+			if canceled {
+				h.setForwardEvents(false)
+				return
+			}
+
+			showServiceLogs := func(serviceID string) error {
+				logs, err := h.dry.dockerDaemon.ServiceLogs(serviceID, since)
+				if err == nil {
+					appui.Stream(logs, h.eventChan,
+						func() {
+							h.setForwardEvents(false)
+							h.closeViewChan <- struct{}{}
+						})
+					return nil
+				}
+				return err
+			}
+			if err := h.widget().OnEvent(showServiceLogs); err != nil {
+				h.dry.appmessage("There was an error showing service logs: " + err.Error())
+				h.setForwardEvents(false)
+
+			}
+		}()
 	}
 	if !handled {
 		h.baseEventHandler.handle(event)
@@ -178,4 +201,8 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 			refreshScreen()
 		}
 	}
+}
+
+func logsPrompt() *appui.Prompt {
+	return appui.NewPrompt("Show logs since timestamp (e.g. 2013-01-02T13:23:37) or relative (e.g. 42m for 42 minutes) or leave empty")
 }

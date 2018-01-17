@@ -24,7 +24,7 @@ func (h *containersScreenEventHandler) widget() appui.AppWidget {
 }
 
 func (h *containersScreenEventHandler) handle(event termbox.Event) {
-	if h.passingEvents {
+	if h.forwardingEvents {
 		h.eventChan <- event
 		return
 	}
@@ -44,7 +44,7 @@ func (h *containersScreenEventHandler) handle(event termbox.Event) {
 
 func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 
-	focus := true
+	closeView := true
 	dry := h.dry
 	screen := h.screen
 
@@ -76,9 +76,38 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 			}
 		}()
 	case docker.LOGS:
-		logs := h.dry.dockerDaemon.Logs(id)
-		focus = false
-		go appui.Stream(h.screen, logs, h.eventChan, h.closeViewChan)
+		closeView = false
+		h.setForwardEvents(true)
+		prompt := logsPrompt()
+		dry.widgetRegistry.add(prompt)
+		go func() {
+			events := ui.EventSource{
+				Events: h.eventChan,
+				EventHandledCallback: func(e termbox.Event) error {
+					return refreshScreen()
+				},
+			}
+			prompt.OnFocus(events)
+			dry.widgetRegistry.remove(prompt)
+			since, canceled := prompt.Text()
+
+			if canceled {
+				h.setForwardEvents(false)
+				return
+			}
+
+			logs, err := h.dry.dockerDaemon.Logs(id, since)
+			if err == nil {
+				appui.Stream(logs, h.eventChan, func() {
+					h.setForwardEvents(false)
+					h.dry.SetViewMode(Main)
+					h.closeViewChan <- struct{}{}
+				})
+			} else {
+				h.dry.appmessage("Error showing container logs: " + err.Error())
+				h.setForwardEvents(false)
+			}
+		}()
 	case docker.RM:
 		go func() {
 			dry.actionMessage(id, "Removing")
@@ -97,7 +126,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 				fmt.Sprintf("Container with id %s not found or is not running", id))
 		} else {
 			statsChan := dry.dockerDaemon.OpenChannel(c)
-			focus = false
+			closeView = false
 			go statsScreen(command.container, statsChan, screen, h.eventChan, h.closeViewChan)
 		}
 
@@ -119,13 +148,13 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 				}
 				v.Focus(h.eventChan)
 			}()
-			focus = false
+			closeView = false
 		}
 	case docker.HISTORY:
 		history, err := dry.dockerDaemon.History(command.container.ImageID)
 
 		if err == nil {
-			focus = false
+			closeView = false
 			renderer := appui.NewDockerImageHistoryRenderer(history)
 
 			go appui.Less(renderer, screen, h.eventChan, h.closeViewChan)
@@ -134,7 +163,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 				fmt.Sprintf("Error showing image history: %s", err.Error()))
 		}
 	}
-	if focus {
+	if closeView {
 		h.closeViewChan <- struct{}{}
 	}
 }
@@ -198,9 +227,6 @@ func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled 
 				if container == nil {
 					return fmt.Errorf("Container with id %s not found", id)
 				}
-				//Since a command is created the focus is handled by handleCommand
-				//Fixes #24
-				focus = false
 				h.handleCommand(commandToExecute{
 					docker.LOGS,
 					container,
