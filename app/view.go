@@ -19,12 +19,13 @@ const (
 	Stacks
 	StackTasks
 	Tasks
+	ContainerMenu
 )
 
 //isMainScreen returns true if this viewMode is one of the main screens of dry
 func (v viewMode) isMainScreen() bool {
 	switch v {
-	case Main, Networks, Images, Monitor, Nodes, Services, Stacks, ServiceTasks, StackTasks, Tasks:
+	case ContainerMenu, Main, Networks, Images, Monitor, Nodes, Services, Stacks, ServiceTasks, StackTasks, Tasks:
 		return true
 	default:
 		return false

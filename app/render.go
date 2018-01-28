@@ -28,6 +28,18 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 	}
 
 	switch d.viewMode() {
+	case ContainerMenu:
+		{
+			cMenu := d.widgetRegistry.ContainerMenu
+			if err := cMenu.Mount(); err != nil {
+				screen.Render(1, err.Error())
+			}
+			bufferers = append(bufferers, cMenu)
+			count = cMenu.RowCount()
+
+			keymap = commandsMenuBar
+
+		}
 	case Main:
 		{
 			containersWidget := d.widgetRegistry.ContainerList
@@ -197,9 +209,4 @@ func footer(mapping string) *termui.MarkupPar {
 //Updates the cursor position in case it is out of bounds
 func updateCursorPosition(cursor *ui.Cursor, noOfElements int) {
 	cursor.Max(noOfElements - 1)
-	if cursor.Position() >= noOfElements {
-		cursor.Bottom()
-	} else if cursor.Position() < 0 {
-		cursor.Reset()
-	}
 }

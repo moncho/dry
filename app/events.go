@@ -9,17 +9,18 @@ import (
 )
 
 var viewsToHandlers = map[viewMode]eventHandler{
-	Images:       &imagesScreenEventHandler{},
-	Networks:     &networksScreenEventHandler{},
-	DiskUsage:    &diskUsageScreenEventHandler{},
-	Main:         &containersScreenEventHandler{},
-	Monitor:      &monitorScreenEventHandler{},
-	Nodes:        &nodesScreenEventHandler{},
-	Tasks:        &taskScreenEventHandler{},
-	Services:     &servicesScreenEventHandler{},
-	ServiceTasks: &serviceTasksScreenEventHandler{},
-	Stacks:       &stacksScreenEventHandler{},
-	StackTasks:   &stackTasksScreenEventHandler{},
+	ContainerMenu: &cMenuEventHandler{},
+	Images:        &imagesScreenEventHandler{},
+	Networks:      &networksScreenEventHandler{},
+	DiskUsage:     &diskUsageScreenEventHandler{},
+	Main:          &containersScreenEventHandler{},
+	Monitor:       &monitorScreenEventHandler{},
+	Nodes:         &nodesScreenEventHandler{},
+	Tasks:         &taskScreenEventHandler{},
+	Services:      &servicesScreenEventHandler{},
+	ServiceTasks:  &serviceTasksScreenEventHandler{},
+	Stacks:        &stacksScreenEventHandler{},
+	StackTasks:    &stackTasksScreenEventHandler{},
 }
 
 var defaultHandler eventHandler
@@ -31,7 +32,7 @@ type eventHandler interface {
 	handle(event termbox.Event)
 	//hasFocus returns true while the handler is processing events
 	hasFocus() bool
-	initialize(dry *Dry,
+	init(dry *Dry,
 		screen *ui.Screen,
 		keyboardQueueForView chan termbox.Event,
 		viewClosedChan chan struct{})
@@ -120,7 +121,7 @@ func (b *baseEventHandler) hasFocus() bool {
 	return b.focus
 }
 
-func (b *baseEventHandler) initialize(dry *Dry,
+func (b *baseEventHandler) init(dry *Dry,
 	screen *ui.Screen,
 	keyboardQueueForView chan termbox.Event,
 	closeViewChan chan struct{}) {
@@ -162,10 +163,10 @@ func (eh *eventHandlerFactory) handlerFor(view viewMode) eventHandler {
 
 	eh.once.Do(func() {
 		defaultHandler = &baseEventHandler{}
-		defaultHandler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed)
+		defaultHandler.init(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed)
 		eh.handlers = viewsToHandlers
 		for _, handler := range eh.handlers {
-			handler.initialize(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed)
+			handler.init(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed)
 		}
 	})
 	if handler, ok := eh.handlers[view]; ok {

@@ -29,6 +29,7 @@ func (h *containersScreenEventHandler) handle(event termbox.Event) {
 		return
 	}
 	focus, handled := handleKey(h, event.Key)
+
 	if !handled {
 		focus, handled = handleCharacter(h, event.Ch)
 	}
@@ -127,7 +128,11 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 		} else {
 			statsChan := dry.dockerDaemon.OpenChannel(c)
 			closeView = false
-			go statsScreen(command.container, statsChan, screen, h.eventChan, h.closeViewChan)
+			go statsScreen(command.container, statsChan, screen, h.eventChan, func() {
+				h.setForwardEvents(false)
+				h.dry.SetViewMode(Main)
+				h.closeViewChan <- struct{}{}
+			})
 		}
 
 	case docker.INSPECT:
@@ -312,31 +317,26 @@ func handleKey(h *containersScreenEventHandler, key termbox.Key) (bool, bool) {
 		}
 	case termbox.KeyEnter: //Container menu
 		showMenu := func(id string) error {
-			container := h.dry.dockerDaemon.ContainerByID(id)
-			go showContainerOptions(container, h)
-			return nil
+			h.screen.Cursor.Reset()
+			h.dry.ShowContainerMenu(id)
+			return refreshScreen()
 		}
-		if err := h.widget().OnEvent(showMenu); err == nil {
-			focus = false
+		if err := h.widget().OnEvent(showMenu); err != nil {
+			h.dry.appmessage(err.Error())
 		}
 
 	default: //Not handled
 		handled = false
 	}
+
 	return focus, handled
 }
 
 //statsScreen shows container stats on the screen
 //TODO move to appui
-func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan<- struct{}) {
-	closeViewOnExit := true
+func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen *ui.Screen, keyboardQueue chan termbox.Event, closeCallback func()) {
+	defer closeCallback()
 	screen.Clear()
-
-	defer func() {
-		if closeViewOnExit {
-			closeView <- struct{}{}
-		}
-	}()
 
 	if !docker.IsContainerRunning(container) {
 		return
@@ -398,101 +398,4 @@ loop:
 	screen.Sync()
 	mutex.Unlock()
 	close(stats.Done)
-}
-
-//statsScreen shows container stats on the screen
-func showContainerOptions(container *docker.Container, h *containersScreenEventHandler) {
-	screen := h.screen
-	selectedContainer := screen.Cursor.Position()
-	keyboardQueue := h.eventChan
-	closeView := h.closeViewChan
-	//TODO handle error
-	if container != nil {
-		screen.Clear()
-		screen.Sync()
-		screen.Cursor.Reset()
-
-		info, infoLines := appui.NewContainerInfo(container)
-		screen.Cursor.Max(infoLines)
-		screen.RenderLineWithBackGround(0, ui.ActiveScreen.Dimensions.Height-1, commandsMenuBar, appui.DryTheme.Footer)
-		screen.Render(1, info)
-		l := appui.NewContainerCommands(container,
-			0,
-			infoLines+1,
-			ui.ActiveScreen.Dimensions.Height-appui.MainScreenFooterSize-infoLines-1,
-			ui.ActiveScreen.Dimensions.Width)
-		commandsLen := len(l.Commands)
-		refreshChan := make(chan struct{}, 1)
-		var command docker.CommandDescription
-		refreshChan <- struct{}{}
-
-		go func() {
-			for {
-				_, ok := <-refreshChan
-				if ok {
-					markSelectedCommand(l.Commands, screen.Cursor.Position())
-					screen.RenderBufferer(l.List)
-					screen.Flush()
-				} else {
-					return
-				}
-			}
-		}()
-
-	loop:
-		for event := range keyboardQueue {
-			switch event.Type {
-			case termbox.EventKey:
-				if event.Key == termbox.KeyEsc {
-					close(refreshChan)
-					break loop
-				} else if event.Key == termbox.KeyArrowUp { //cursor up
-					if screen.Cursor.Position() > 0 {
-						screen.Cursor.ScrollCursorUp()
-						refreshChan <- struct{}{}
-					}
-				} else if event.Key == termbox.KeyArrowDown { // cursor down
-					if screen.Cursor.Position() < commandsLen-1 {
-						screen.Cursor.ScrollCursorDown()
-						refreshChan <- struct{}{}
-					}
-				} else if event.Key == termbox.KeyEnter { // execute command
-					command = docker.ContainerCommands[screen.Cursor.Position()]
-					close(refreshChan)
-					break loop
-				}
-			}
-		}
-
-		screen.Clear()
-		screen.Sync()
-		screen.Cursor.ScrollTo(selectedContainer)
-
-		if (docker.CommandDescription{}) != command {
-			h.handleCommand(
-				commandToExecute{
-					command.Command,
-					container,
-				})
-		} else {
-			//view is closed here if there is not a command to execute
-			closeView <- struct{}{}
-		}
-	} else {
-		//view is closed here if there is not a command to execute
-		closeView <- struct{}{}
-	}
-}
-
-//adds an arrow character before the command description on the given index
-func markSelectedCommand(commands []string, index int) {
-	copy(commands, docker.CommandDescriptions)
-	commands[index] = replaceAtIndex(
-		commands[index],
-		appui.RightArrow,
-		0)
-}
-
-func replaceAtIndex(str string, replacement string, index int) string {
-	return str[:index] + replacement + str[index+1:]
 }

@@ -15,6 +15,7 @@ import (
 // * a list of widgets to be rendered on the next rendering.
 type WidgetRegistry struct {
 	ContainerList    *appui.ContainersWidget
+	ContainerMenu    *appui.ContainerMenuWidget
 	DiskUsage        *appui.DockerDiskUsageRenderer
 	DockerInfo       *appui.DockerInfo
 	ImageList        *appui.DockerImagesWidget
@@ -39,6 +40,7 @@ func NewWidgetRegistry(daemon docker.ContainerDaemon) *WidgetRegistry {
 	w := WidgetRegistry{
 		DockerInfo:    di,
 		ContainerList: appui.NewContainersWidget(daemon, appui.MainScreenHeaderSize),
+		ContainerMenu: appui.NewContainerMenuWidget(daemon, appui.MainScreenHeaderSize),
 		ImageList:     appui.NewDockerImagesWidget(daemon, appui.MainScreenHeaderSize),
 		DiskUsage:     appui.NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
 		Monitor:       appui.NewMonitor(daemon, appui.MainScreenHeaderSize),
@@ -75,6 +77,7 @@ func (wr *WidgetRegistry) remove(w termui.Widget) {
 
 func initWidgetForViewMap(wr *WidgetRegistry) {
 	viewMap := make(map[viewMode]termui.Widget)
+	viewMap[ContainerMenu] = wr.ContainerMenu
 	viewMap[Main] = wr.ContainerList
 	viewMap[Networks] = wr.Networks
 	viewMap[Images] = wr.ImageList
@@ -82,9 +85,6 @@ func initWidgetForViewMap(wr *WidgetRegistry) {
 	viewMap[Nodes] = wr.Nodes
 	viewMap[Services] = wr.ServiceList
 	viewMap[Stacks] = wr.Stacks
-
-	//viewMap[ServiceTasks] = wr.ServiceTasks
-	//viewMap[Tasks] = wr.NodeTasks
 	wr.widgetForViewMap = viewMap
 
 }

@@ -156,6 +156,12 @@ func (d *Dry) ShowMainView() {
 	d.changeViewMode(d.state.previousViewMode)
 }
 
+//ShowServiceTasks changes the state of dry to show the given service task list
+func (d *Dry) ShowContainerMenu(cID string) {
+	d.widgetRegistry.ContainerMenu.ForContainer(cID)
+	d.changeViewMode(ContainerMenu)
+}
+
 //ShowContainers changes the state of dry to show the container list
 func (d *Dry) ShowContainers() {
 	d.changeViewMode(Main)
