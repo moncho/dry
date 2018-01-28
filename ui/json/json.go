@@ -51,7 +51,7 @@ func (jv *Viewer) Focus(events <-chan termbox.Event) error {
 	jv.term.Render()
 
 	for e := range events {
-		if e.Ch == 'q' || e.Key == termbox.KeyEsc {
+		if e.Type == termbox.EventKey && (e.Ch == 'q' || e.Key == termbox.KeyEsc) {
 			break
 		}
 		jv.handleKeypress(e)
