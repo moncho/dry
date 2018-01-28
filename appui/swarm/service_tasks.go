@@ -42,6 +42,8 @@ func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
 	buf := gizaktermui.NewBuffer()
 	if s.mounted {
 		s.prepareForRendering()
+		buf.Merge(s.info.Buffer())
+		y += s.info.GetHeight()
 		var filter string
 		if s.filterPattern != "" {
 			filter = fmt.Sprintf(

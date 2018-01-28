@@ -144,12 +144,14 @@ func (row *ContainerStatsRow) Reset() {
 
 //Update updates the content of this row with the given stats
 func (row *ContainerStatsRow) Update(container *docker.Container, stat *docker.Stats) {
-	row.setNet(stat.NetworkRx, stat.NetworkTx)
-	row.setCPU(stat.CPUPercentage)
-	row.setMem(stat.Memory, stat.MemoryLimit, stat.MemoryPercentage)
-	row.setBlockIO(stat.BlockRead, stat.BlockWrite)
-	row.setPids(stat.PidsCurrent)
-	row.setUptime(container.ContainerJSON.State.StartedAt)
+	if stat != nil {
+		row.setNet(stat.NetworkRx, stat.NetworkTx)
+		row.setCPU(stat.CPUPercentage)
+		row.setMem(stat.Memory, stat.MemoryLimit, stat.MemoryPercentage)
+		row.setBlockIO(stat.BlockRead, stat.BlockWrite)
+		row.setPids(stat.PidsCurrent)
+		row.setUptime(container.ContainerJSON.State.StartedAt)
+	}
 }
 
 func (row *ContainerStatsRow) setNet(rx float64, tx float64) {
