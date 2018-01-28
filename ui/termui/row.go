@@ -53,6 +53,12 @@ func (row *Row) SetWidth(width int) {
 			col.SetWidth(width)
 			x += width + DefaultColumnSpacing
 		}
+	} else {
+		for _, col := range row.Columns {
+			col.SetX(x)
+			col.SetWidth(width)
+			x += width + DefaultColumnSpacing
+		}
 	}
 	row.Width = width
 }
