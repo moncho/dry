@@ -1,5 +1,7 @@
 package docker
 
+import "errors"
+
 //Command represents a docker command
 type Command int
 
@@ -24,14 +26,14 @@ const (
 
 //ContainerCommands is the list of container commands
 var ContainerCommands = []CommandDescription{
-	{LOGS, "  Fetch logs"},
-	{INSPECT, "  Inspect container"},
-	{KILL, "  Kill container"},
-	{RM, "  Remove container"},
-	{RESTART, "  Restart"},
-	{HISTORY, "  Show image history"},
-	{STATS, "  Stats + Top"},
-	{STOP, "  Stop"},
+	{LOGS, "Fetch logs"},
+	{INSPECT, "Inspect container"},
+	{KILL, "Kill container"},
+	{RM, "Remove container"},
+	{RESTART, "Restart"},
+	{HISTORY, "Show image history"},
+	{STATS, "Stats + Top"},
+	{STOP, "Stop"},
 }
 
 //CommandDescriptions lists command descriptions in the same order
@@ -42,6 +44,17 @@ var CommandDescriptions = justDescriptions(ContainerCommands)
 type CommandDescription struct {
 	Command     Command
 	Description string
+}
+
+//CommandFromDescription returns the command with the given description, if any
+func CommandFromDescription(d string) (Command, error) {
+	for _, cc := range ContainerCommands {
+		if cc.Description == d {
+			return cc.Command, nil
+		}
+	}
+
+	return -1, errors.New("Command for description not found")
 }
 
 //justDescriptions extract from the given list of commands a copy
