@@ -25,7 +25,7 @@ func TestCommandFromDescription(t *testing.T) {
 			args{
 				"yup, I dont know",
 			},
-			ContainerCommands[0].Command,
+			-1,
 			true,
 		},
 	}
