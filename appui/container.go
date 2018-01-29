@@ -10,10 +10,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-const (
-	maxWidth = 80
-)
-
 //NewContainerInfo returns detailed container information. Returned int value
 //is the number of lines.
 func NewContainerInfo(container *docker.Container) (string, int) {
@@ -24,7 +20,6 @@ func NewContainerInfo(container *docker.Container) (string, int) {
 	} else {
 		status = ui.Red(container.Status)
 	}
-	lines := len(container.Command) / maxWidth
 	data := [][]string{
 		{ui.Blue("Container Name:"), ui.Yellow(container.Names[0]), ui.Blue("ID:"), ui.Yellow(docker.TruncateID(container.ID)), ui.Blue("Status:"), status},
 		{ui.Blue("Image:"), ui.Yellow(container.Image), ui.Blue("Created:"), ui.Yellow(docker.DurationForHumans(container.Created) + " ago")},
@@ -46,12 +41,10 @@ func NewContainerInfo(container *docker.Container) (string, int) {
 		strconv.Itoa(len(container.Labels)))})
 
 	table := tablewriter.NewWriter(buffer)
-	table.SetAutoFormatHeaders(false)
 	table.SetBorder(false)
 	table.SetColumnSeparator("")
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	table.SetColWidth(maxWidth)
 	table.AppendBulk(data)
 	table.Render()
-	return buffer.String(), len(data) + lines
+	return buffer.String(), len(data)
 }

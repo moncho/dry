@@ -10,10 +10,13 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
+const cMenuWidth = 30
+
 //ContainerMenuWidget shows the actions menu of a container
 type ContainerMenuWidget struct {
 	dockerDaemon  docker.ContainerAPI
 	rows          []*Row
+	cInfo         *ContainerDetailsWidget
 	cID           string
 	height, width int
 	mounted       bool
@@ -25,10 +28,12 @@ type ContainerMenuWidget struct {
 //NewContainerMenuWidget creates a TasksWidget
 func NewContainerMenuWidget(dockerDaemon docker.ContainerAPI, y int) *ContainerMenuWidget {
 	w := ContainerMenuWidget{
-		height: MainScreenAvailableHeight(),
-		width:  30,
-		y:      y,
+		dockerDaemon: dockerDaemon,
+		height:       MainScreenAvailableHeight(),
+		width:        ui.ActiveScreen.Dimensions.Width,
+		y:            y,
 	}
+
 	return &w
 }
 
@@ -40,7 +45,8 @@ func (s *ContainerMenuWidget) Buffer() gizaktermui.Buffer {
 	if s.mounted {
 		y := s.y
 		s.prepareForRendering()
-
+		buf.Merge(s.cInfo.Buffer())
+		y += s.cInfo.GetHeight()
 		for i, row := range s.rows {
 			row.SetY(y)
 			y += row.GetHeight()
@@ -76,6 +82,7 @@ func (s *ContainerMenuWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
 	if !s.mounted {
+		s.cInfo = NewContainerDetailsWidget(s.dockerDaemon.ContainerByID(s.cID), s.y)
 		rows := make([]*Row, len(docker.CommandDescriptions))
 		for i, command := range docker.CommandDescriptions {
 			r := &Row{
@@ -121,12 +128,12 @@ func (s *ContainerMenuWidget) Unmount() error {
 }
 
 func (s *ContainerMenuWidget) align() {
-	x := s.x
-	width := s.width
-
+	s.cInfo.SetWidth(s.width)
+	s.cInfo.SetX(s.x)
+	rowsX := (ui.ActiveScreen.Dimensions.Width - cMenuWidth) / 2
 	for _, row := range s.rows {
-		row.SetX(x)
-		row.SetWidth(width)
+		row.SetX(rowsX)
+		row.SetWidth(cMenuWidth)
 	}
 }
 

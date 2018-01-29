@@ -36,7 +36,7 @@ type ContainerStatsRow struct {
 //NewContainerStatsRow creats a new ContainerStatsRow widget
 func NewContainerStatsRow(container *docker.Container, table drytermui.Table) *ContainerStatsRow {
 	cf := formatter.NewContainerFormatter(container, true)
-	row := &ContainerStatsRow{
+	row := ContainerStatsRow{
 		container: container,
 		Status:    drytermui.NewThemedParColumn(DryTheme, statusSymbol),
 		Name:      drytermui.NewThemedParColumn(DryTheme, cf.Names()),
@@ -67,7 +67,7 @@ func NewContainerStatsRow(container *docker.Container, table drytermui.Table) *C
 	} else {
 		row.Status.TextFgColor = Running
 	}
-	return row
+	return &row
 
 }
 
@@ -144,14 +144,14 @@ func (row *ContainerStatsRow) Reset() {
 
 //Update updates the content of this row with the given stats
 func (row *ContainerStatsRow) Update(container *docker.Container, stat *docker.Stats) {
-	if stat != nil {
-		row.setNet(stat.NetworkRx, stat.NetworkTx)
-		row.setCPU(stat.CPUPercentage)
-		row.setMem(stat.Memory, stat.MemoryLimit, stat.MemoryPercentage)
-		row.setBlockIO(stat.BlockRead, stat.BlockWrite)
-		row.setPids(stat.PidsCurrent)
-		row.setUptime(container.ContainerJSON.State.StartedAt)
-	}
+
+	row.setNet(stat.NetworkRx, stat.NetworkTx)
+	row.setCPU(stat.CPUPercentage)
+	row.setMem(stat.Memory, stat.MemoryLimit, stat.MemoryPercentage)
+	row.setBlockIO(stat.BlockRead, stat.BlockWrite)
+	row.setPids(stat.PidsCurrent)
+	row.setUptime(container.ContainerJSON.State.StartedAt)
+
 }
 
 func (row *ContainerStatsRow) setNet(rx float64, tx float64) {
