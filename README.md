@@ -8,22 +8,17 @@
 [![Github All Releases](https://img.shields.io/github/downloads/moncho/dry/total.svg)]()
 [![Join the chat at https://gitter.im/moncho/dry](https://badges.gitter.im/moncho/dry.svg)](https://gitter.im/moncho/dry?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-**dry** is a terminal application to manage **Docker** containers and images. It aims to be an alternative to the official **Docker CLI** when it is needed to repeatedly execute commands on existing containers and images, and also as a tool to monitor **Docker** containers from a terminal.
+**Dry** is a terminal application to manage **Docker**. It shows information about Containers, Images and Networks, and, if running a **Docker Swarm**, it also shows all kinds of information about the state of the Swarm cluster. It can connect to both local or remote **Docker** daemons.
+
+Besides showing information, it can be used to manage Docker. Most of the commands that the official **Docker CLI** has, are available in **dry** with the same behaviour. A list of available commands and their keybinds can be found in **dry**'s help screen or in this README.
+
+Lastly, it can also be used as a monitoring tool for **Docker** containers.
+
+**Dry** is installed as a single binary and does not require external libraries.
 
 The demo below shows a **dry** session.
 
 [![asciicast](https://asciinema.org/a/35825.png)](https://asciinema.org/a/35825?autoplay=1&speed=1.5)
-
-Upon connecting to a **Docker** host (local or remote), the main screen will show the list of containers and version information as reported by the **Docker Engine**. At all times, information about containers, images and networks shown by **dry** is up-to-date.
-
-Most of the commands that can be executed with the official **Docker CLI** on containers, images and networks are available in **dry**, with the exact same behaviour. A list of available commands and their keybinds can be found in **dry** help screen.
-
-Besides this, it:
-
-* Shows real-time information about containers.
-* Can sort the container, image and network lists.
-* Can navigate and search the output of ***info***, ***inspect*** and ***logs*** commands.
-* Makes easier to cleanup old images and containers.
 
 ## **dry** keybinds
 
