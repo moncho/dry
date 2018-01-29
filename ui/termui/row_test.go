@@ -37,18 +37,20 @@ func TestSettingRowWidth_RowWithNoTable(t *testing.T) {
 	row.AddColumn(c2)
 	row.AddColumn(c3)
 
-	row.SetWidth(10)
-	if row.Width != 10 {
+	rowWidth := 10
+	expectedColWidth := rowWidth / len(row.Columns)
+	row.SetWidth(rowWidth)
+	if row.Width != rowWidth {
 		t.Errorf("Unexpected width, got %d", row.Width)
 	}
-	if c1.Width != 0 {
-		t.Errorf("Unexpected column width, got %d", c1.Width)
+	if c1.Width != expectedColWidth {
+		t.Errorf("Unexpected column width: got %d, expected %d", c1.Width, expectedColWidth)
 	}
-	if c2.Width != 0 {
-		t.Errorf("Unexpected column width, got %d", c2.Width)
+	if c2.Width != expectedColWidth {
+		t.Errorf("Unexpected column width: got %d, expected %d", c2.Width, expectedColWidth)
 	}
-	if c3.Width != 0 {
-		t.Errorf("Unexpected column width, got %d", c3.Width)
+	if c3.Width != expectedColWidth {
+		t.Errorf("Unexpected column width: got %d, expected %d", c3.Width, expectedColWidth)
 	}
 
 }

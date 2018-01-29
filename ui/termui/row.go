@@ -42,10 +42,7 @@ func (row *Row) SetY(y int) {
 //SetWidth sets the width of this Row
 func (row *Row) SetWidth(width int) {
 	x := row.X
-	//Setting the width of a row does very little, since
-	//column widths come from the table
-	//It might be worthy to add checks in the case of a width
-	//being set that is different than the sum of row.Table.ColumnWidths()
+
 	if row.Table != nil {
 		for i, width := range row.Table.ColumnWidths() {
 			col := row.Columns[i]
@@ -54,10 +51,13 @@ func (row *Row) SetWidth(width int) {
 			x += width + DefaultColumnSpacing
 		}
 	} else {
-		for _, col := range row.Columns {
-			col.SetX(x)
-			col.SetWidth(width)
-			x += width + DefaultColumnSpacing
+		if len(row.Columns) > 0 {
+			cWidth := width / len(row.Columns)
+			for _, col := range row.Columns {
+				col.SetX(x)
+				col.SetWidth(cWidth)
+				x += cWidth + DefaultColumnSpacing
+			}
 		}
 	}
 	row.Width = width
