@@ -45,8 +45,10 @@ func (s *ContainerMenuWidget) Buffer() gizaktermui.Buffer {
 	if s.mounted {
 		y := s.y
 		s.prepareForRendering()
-		buf.Merge(s.cInfo.Buffer())
-		y += s.cInfo.GetHeight()
+		if s.cInfo != nil {
+			buf.Merge(s.cInfo.Buffer())
+			y += s.cInfo.GetHeight()
+		}
 		for i, row := range s.rows {
 			row.SetY(y)
 			y += row.GetHeight()
@@ -82,7 +84,10 @@ func (s *ContainerMenuWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
 	if !s.mounted {
-		s.cInfo = NewContainerDetailsWidget(s.dockerDaemon.ContainerByID(s.cID), s.y)
+		c := s.dockerDaemon.ContainerByID(s.cID)
+		if c != nil {
+			s.cInfo = NewContainerDetailsWidget(c, s.y)
+		}
 		rows := make([]*Row, len(docker.CommandDescriptions))
 		for i, command := range docker.CommandDescriptions {
 			r := &Row{
@@ -128,8 +133,10 @@ func (s *ContainerMenuWidget) Unmount() error {
 }
 
 func (s *ContainerMenuWidget) align() {
-	s.cInfo.SetWidth(s.width)
-	s.cInfo.SetX(s.x)
+	if s.cInfo != nil {
+		s.cInfo.SetWidth(s.width)
+		s.cInfo.SetX(s.x)
+	}
 	rowsX := (ui.ActiveScreen.Dimensions.Width - cMenuWidth) / 2
 	for _, row := range s.rows {
 		row.SetX(rowsX)
