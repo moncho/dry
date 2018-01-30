@@ -64,12 +64,14 @@ func (mock ImageAPIClientMock) ContainerStart(ctx context.Context, container str
 	return nil
 }
 
+//InspectImage mock
 func (mock ImageAPIClientMock) InspectImage(ctx context.Context, image string) (types.ImageInspect, error) {
 	return types.ImageInspect{
 		ContainerConfig: &container.Config{},
 	}, nil
 }
 
+//ImageInspectWithRaw mock
 func (mock ImageAPIClientMock) ImageInspectWithRaw(ctx context.Context, image string) (types.ImageInspect, []byte, error) {
 	return types.ImageInspect{
 		ContainerConfig: &container.Config{},
