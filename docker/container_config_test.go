@@ -54,19 +54,19 @@ func Test_containerConfigBuilder_build(t *testing.T) {
 				"image",
 				"command",
 				map[nat.Port]struct{}{
-					"8080:8080": struct{}{},
+					"8080:8080": {},
 				},
 			},
 			container.Config{
 				Image: "image",
 				Cmd:   strings.Split("command", " "),
 				ExposedPorts: map[nat.Port]struct{}{
-					"8080:8080": struct{}{},
+					"8080:8080": {},
 				},
 			},
 			container.HostConfig{
 				PortBindings: map[nat.Port][]nat.PortBinding{
-					"8080/tcp": []nat.PortBinding{nat.PortBinding{
+					"8080/tcp": {{
 						HostPort: "8080:8080",
 					}},
 				},
@@ -79,7 +79,7 @@ func Test_containerConfigBuilder_build(t *testing.T) {
 				"image",
 				"command",
 				map[nat.Port]struct{}{
-					"asd": struct{}{},
+					"asd": {},
 				},
 			},
 			container.Config{
