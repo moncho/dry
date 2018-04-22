@@ -1,6 +1,7 @@
-FROM alpine:latest
+# build stage
+FROM alpine:latest AS build-phase
 
-LABEL VERSION v0.9-beta.2
+LABEL VERSION v0.9-beta.4
 
 RUN set -x && \
     apk update && \
@@ -11,4 +12,9 @@ RUN set -x && \
     rm -rf /var/cache/apk/* && \
     chmod 755 /usr/local/bin/dry
 
-CMD sleep 1;/usr/local/bin/dry
+# final stage
+FROM alpine
+WORKDIR /app
+COPY --from=build-phase /usr/local/bin/dry /app
+
+CMD sleep 1;/app/dry
