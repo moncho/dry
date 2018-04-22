@@ -47,8 +47,9 @@ func NewStatsChannel(daemon *DockerDaemon, container *Container) *StatsChannel {
 						return
 					}
 					if statsJSON != nil {
-						top, _ := daemon.Top(container.ID)
-						stats <- buildStats(container, statsJSON, &top)
+						if top, err := daemon.Top(container.ID); err == nil {
+							stats <- buildStats(daemon.version, container, statsJSON, &top)
+						}
 					}
 				case <-ctx.Done():
 					return
@@ -66,53 +67,48 @@ func NewStatsChannel(daemon *DockerDaemon, container *Container) *StatsChannel {
 }
 
 //buildStats builds Stats with the given information
-func buildStats(container *Container, stats *types.StatsJSON, topResult *container.ContainerTopOKBody) *Stats {
+func buildStats(version *types.Version, container *Container, stats *types.StatsJSON, topResult *container.ContainerTopOKBody) *Stats {
 	s := &Stats{
 		CID:         TruncateID(container.ID),
 		Command:     container.Command,
 		Stats:       stats,
 		ProcessList: topResult,
 	}
-	s.CPUPercentage = calculateCPUPercent(stats)
-	br, bw := calculateBlockIO(stats)
-	s.BlockRead = float64(br)
-	s.BlockWrite = float64(bw)
-	s.NetworkRx, s.NetworkTx = calculateNetwork(stats)
 
-	mem := calculateMemUsageUnixNoCache(stats.MemoryStats)
-	memLimit := float64(stats.MemoryStats.Limit)
-	cpuPercent := calculateCPUPercent(stats)
-	blkRead, blkWrite := calculateBlockIO(stats)
+	var (
+		memPercent, cpuPercent float64
+		blkRead, blkWrite      uint64 // Only used on Linux
+		mem, memLimit          float64
+		pidsStatsCurrent       uint64
+	)
+
+	if version.Os != "windows" {
+
+		cpuPercent = calculateCPUPercentUnix(stats)
+		blkRead, blkWrite = calculateBlockIO(stats.BlkioStats)
+		mem = calculateMemUsageUnixNoCache(stats.MemoryStats)
+		memLimit = float64(stats.MemoryStats.Limit)
+		memPercent = calculateMemPercentUnixNoCache(memLimit, mem)
+		pidsStatsCurrent = stats.PidsStats.Current
+	} else {
+		cpuPercent = calculateCPUPercentWindows(stats)
+		blkRead = stats.StorageStats.ReadSizeBytes
+		blkWrite = stats.StorageStats.WriteSizeBytes
+		mem = float64(stats.MemoryStats.PrivateWorkingSet)
+	}
+
 	s.CPUPercentage = cpuPercent
 	s.Memory = mem
 	s.MemoryLimit = memLimit
-	s.MemoryPercentage = calculateMemPercentUnixNoCache(memLimit, mem)
+	s.MemoryPercentage = memPercent
 	s.NetworkRx, s.NetworkTx = calculateNetwork(stats)
 	s.BlockRead = float64(blkRead)
 	s.BlockWrite = float64(blkWrite)
-	s.PidsCurrent = stats.PidsStats.Current
+	s.PidsCurrent = pidsStatsCurrent
 	return s
 }
 
-func calculateCPUPercent(stats *types.StatsJSON) float64 {
-	previousCPU := stats.PreCPUStats.CPUUsage.TotalUsage
-	previousSystem := stats.PreCPUStats.SystemUsage
-	var (
-		cpuPercent = 0.0
-		// calculate the change for the cpu usage of the container in between readings
-		cpuDelta = float64(stats.CPUStats.CPUUsage.TotalUsage - previousCPU)
-		// calculate the change for the entire system between readings
-		systemDelta = float64(stats.CPUStats.SystemUsage - previousSystem)
-	)
-
-	if systemDelta > 0.0 && cpuDelta > 0.0 {
-		cpuPercent = (cpuDelta / systemDelta) * float64(len(stats.CPUStats.CPUUsage.PercpuUsage)) * 100.0
-	}
-	return cpuPercent
-}
-
-func calculateBlockIO(stats *types.StatsJSON) (blkRead uint64, blkWrite uint64) {
-	blkio := stats.BlkioStats
+func calculateBlockIO(blkio types.BlkioStats) (blkRead uint64, blkWrite uint64) {
 	for _, bioEntry := range blkio.IoServiceBytesRecursive {
 		switch strings.ToLower(bioEntry.Op) {
 		case "read":
@@ -140,10 +136,45 @@ func calculateMemUsageUnixNoCache(mem types.MemoryStats) float64 {
 }
 
 func calculateMemPercentUnixNoCache(limit float64, usedNoCache float64) float64 {
-	// MemoryStats.Limit will never be 0 unless the container is not running and we haven't
-	// got any data from cgroup
 	if limit != 0 {
 		return usedNoCache / limit * 100.0
 	}
 	return 0
+}
+
+func calculateCPUPercentUnix(stats *types.StatsJSON) float64 {
+	previousCPU := stats.PreCPUStats.CPUUsage.TotalUsage
+	previousSystem := stats.PreCPUStats.SystemUsage
+	var (
+		cpuPercent = 0.0
+		// calculate the change for the cpu usage of the container in between readings
+		cpuDelta = float64(stats.CPUStats.CPUUsage.TotalUsage) - float64(previousCPU)
+		// calculate the change for the entire system between readings
+		systemDelta = float64(stats.CPUStats.SystemUsage) - float64(previousSystem)
+		onlineCPUs  = float64(stats.CPUStats.OnlineCPUs)
+	)
+
+	if onlineCPUs == 0.0 {
+		onlineCPUs = float64(len(stats.CPUStats.CPUUsage.PercpuUsage))
+	}
+	if systemDelta > 0.0 && cpuDelta > 0.0 {
+		cpuPercent = (cpuDelta / systemDelta) * onlineCPUs * 100.0
+	}
+	return cpuPercent
+}
+
+func calculateCPUPercentWindows(v *types.StatsJSON) float64 {
+	// Max number of 100ns intervals between the previous time read and now
+	possIntervals := uint64(v.Read.Sub(v.PreRead).Nanoseconds()) // Start with number of ns intervals
+	possIntervals /= 100                                         // Convert to number of 100ns intervals
+	possIntervals *= uint64(v.NumProcs)                          // Multiple by the number of processors
+
+	// Intervals used
+	intervalsUsed := v.CPUStats.CPUUsage.TotalUsage - v.PreCPUStats.CPUUsage.TotalUsage
+
+	// Percentage avoiding divide-by-zero
+	if possIntervals > 0 {
+		return float64(intervalsUsed) / float64(possIntervals) * 100.0
+	}
+	return 0.00
 }

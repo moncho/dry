@@ -47,7 +47,7 @@ func TestCalculateMemPercentUnixNoCache(t *testing.T) {
 
 }
 
-func TestCalculateCPUPercent(t *testing.T) {
+func TestCalculateCPUPercentUnix(t *testing.T) {
 
 	tests := []struct {
 		name     string
@@ -86,7 +86,7 @@ func TestCalculateCPUPercent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := calculateCPUPercent(test.stats)
+			result := calculateCPUPercentUnix(test.stats)
 			if test.expected != result {
 				t.Errorf("Error calculating CPU percent, expected: %f, got: %f ", test.expected, result)
 			}
