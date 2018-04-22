@@ -39,7 +39,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event) {
 		handled = true
 	case termbox.KeyCtrlR:
 
-		rw := appui.NewPrompt("About to remove the selected service. Do you want to proceed? y/N")
+		rw := appui.NewPrompt("The selected service will be removed. Do you want to proceed? y/N")
 		h.setForwardEvents(true)
 		handled = true
 		dry.widgetRegistry.add(rw)
