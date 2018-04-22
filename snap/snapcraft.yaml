@@ -19,8 +19,4 @@ parts:
 
 apps:
   dry:
-<<<<<<< HEAD
     command: dry
-=======
-    command: dry
->>>>>>> master
