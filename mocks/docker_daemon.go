@@ -342,6 +342,31 @@ func (_m *DockerDaemonMock) Stacks() ([]drydocker.Stack, error) {
 	return nil, nil
 }
 
+//StackConfigs mock
+func (_m *DockerDaemonMock) StackConfigs(stack string) ([]swarm.Config, error) {
+	return nil, nil
+}
+
+//StackNetworks mock
+func (_m *DockerDaemonMock) StackNetworks(stack string) ([]types.NetworkResource, error) {
+	return nil, nil
+}
+
+//StackSecrets mock
+func (_m *DockerDaemonMock) StackSecrets(stack string) ([]swarm.Secret, error) {
+	return nil, nil
+}
+
+//StackRemove mock
+func (_m *DockerDaemonMock) StackRemove(stack string) error {
+	return nil
+}
+
+//StackServices mock
+func (_m *DockerDaemonMock) StackServices(stack string) ([]swarm.Service, error) {
+	return nil, nil
+}
+
 //StackTasks empty mock
 func (_m *DockerDaemonMock) StackTasks(stack string) ([]swarm.Task, error) {
 	return nil, nil

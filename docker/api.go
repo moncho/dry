@@ -83,6 +83,10 @@ type SwarmAPI interface {
 	ServiceScale(id string, replicas uint64) error
 	ServiceTasks(services ...string) ([]swarm.Task, error)
 	Stacks() ([]Stack, error)
+	StackConfigs(stack string) ([]swarm.Config, error)
+	StackNetworks(stack string) ([]types.NetworkResource, error)
+	StackRemove(id string) error
+	StackSecrets(stack string) ([]swarm.Secret, error)
 	StackTasks(stack string) ([]swarm.Task, error)
 	Task(id string) (swarm.Task, error)
 }

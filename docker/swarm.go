@@ -206,12 +206,52 @@ func (daemon *DockerDaemon) Stacks() ([]Stack, error) {
 	return stacks, nil
 }
 
+//StackConfigs returns the configs created for the given stack
+func (daemon *DockerDaemon) StackConfigs(stack string) ([]swarm.Config, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	return daemon.client.ConfigList(
+		ctx,
+		types.ConfigListOptions{Filters: buildStackFilter(stack)})
+}
+
+//StackNetworks returns the networks created for the given stack
+func (daemon *DockerDaemon) StackNetworks(stack string) ([]types.NetworkResource, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	return daemon.client.NetworkList(
+		ctx,
+		types.NetworkListOptions{Filters: buildStackFilter(stack)})
+}
+
+//StackSecrets return the secrets created for the given stack
+func (daemon *DockerDaemon) StackSecrets(stack string) ([]swarm.Secret, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	return daemon.client.SecretList(
+		ctx,
+		types.SecretListOptions{Filters: buildStackFilter(stack)})
+}
+
+//StackServices returns the given stack service list
+func (daemon *DockerDaemon) StackServices(stack string) ([]swarm.Service, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	filter := buildStackFilter(stack)
+
+	stackServices, err := daemon.client.ServiceList(ctx, types.ServiceListOptions{Filters: filter})
+
+	if err == nil {
+		return stackServices, nil
+	}
+	return nil, pkgError.Wrap(err, "Error retrieving stack service list")
+}
+
 //StackTasks returns the given stack task list
 func (daemon *DockerDaemon) StackTasks(stack string) ([]swarm.Task, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	filter := filters.NewArgs()
-	filter.Add("label", "com.docker.stack.namespace="+stack)
+	filter := buildStackFilter(stack)
 
 	stackTasks, err := daemon.client.TaskList(ctx, types.TaskListOptions{Filters: filter})
 
@@ -234,7 +274,11 @@ func (daemon *DockerDaemon) Task(id string) (swarm.Task, error) {
 	return swarm.Task{}, pkgError.Wrapf(err, "Error retrieving task with ID: %s", id)
 
 }
-
+func buildStackFilter(stack string) filters.Args {
+	filter := filters.NewArgs()
+	filter.Add("label", "com.docker.stack.namespace="+stack)
+	return filter
+}
 func getAllStacksFilter() filters.Args {
 	filter := filters.NewArgs()
 	filter.Add("label", convert.LabelNamespace)
