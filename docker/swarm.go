@@ -191,10 +191,30 @@ func (daemon *DockerDaemon) Stacks() ([]Stack, error) {
 		}
 		ztack, ok := m[name]
 		if !ok {
+			cc, err := daemon.StackConfigs(name)
+			if err != nil {
+				return nil, pkgError.Errorf("cannot get configs for stack %s",
+					name)
+			}
+			nn, err := daemon.StackNetworks(name)
+			if err != nil {
+				return nil, pkgError.Errorf("cannot get networks for stack %s",
+					name)
+			}
+			ss, err := daemon.StackSecrets(name)
+			if err != nil {
+				return nil, pkgError.Errorf("cannot get secrets for stack %s",
+					name)
+			}
+
 			m[name] = &Stack{
 				Name:     name,
 				Services: 1,
+				Configs:  len(cc),
+				Secrets:  len(ss),
+				Networks: len(nn),
 			}
+
 		} else {
 			ztack.Services++
 		}

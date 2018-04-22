@@ -19,6 +19,9 @@ var defaultStackTableHeader = stackTableHeader()
 var stackTableHeaders = []appui.SortableColumnHeader{
 	{Title: "NAME", Mode: docker.SortByStackName},
 	{Title: "SERVICES", Mode: docker.NoSortStack},
+	{Title: "NETWORKS", Mode: docker.NoSortStack},
+	{Title: "CONFIGS", Mode: docker.NoSortStack},
+	{Title: "SECRETS", Mode: docker.NoSortStack},
 }
 
 //StacksWidget shows information about services running on the Swarm
@@ -83,15 +86,15 @@ func (s *StacksWidget) Buffer() gizaktermui.Buffer {
 
 		selected := s.selectedIndex - s.startIndex
 
-		for i, serviceRow := range s.visibleRows() {
-			serviceRow.SetY(y)
-			y += serviceRow.GetHeight()
+		for i, stackRow := range s.visibleRows() {
+			stackRow.SetY(y)
+			y += stackRow.GetHeight()
 			if i != selected {
-				serviceRow.NotHighlighted()
+				stackRow.NotHighlighted()
 			} else {
-				serviceRow.Highlighted()
+				stackRow.Highlighted()
 			}
-			buf.Merge(serviceRow.Buffer())
+			buf.Merge(stackRow.Buffer())
 		}
 	}
 	return buf
@@ -289,8 +292,9 @@ func stackTableHeader() *termui.TableHeader {
 
 	header := termui.NewHeader(appui.DryTheme)
 	header.ColumnSpacing = appui.DefaultColumnSpacing
-	header.AddColumn(stackTableHeaders[0].Title)
-	header.AddColumn(stackTableHeaders[1].Title)
+	for _, t := range stackTableHeaders {
+		header.AddColumn(t.Title)
+	}
 
 	return header
 }

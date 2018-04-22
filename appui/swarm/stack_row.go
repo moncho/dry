@@ -14,6 +14,9 @@ type StackRow struct {
 	stack    docker.Stack
 	Name     *drytermui.ParColumn
 	Services *drytermui.ParColumn
+	Networks *drytermui.ParColumn
+	Configs  *drytermui.ParColumn
+	Secrets  *drytermui.ParColumn
 
 	appui.Row
 }
@@ -24,6 +27,9 @@ func NewStackRow(stack docker.Stack, table drytermui.Table) *StackRow {
 		stack:    stack,
 		Name:     drytermui.NewThemedParColumn(appui.DryTheme, stack.Name),
 		Services: drytermui.NewThemedParColumn(appui.DryTheme, strconv.Itoa(stack.Services)),
+		Networks: drytermui.NewThemedParColumn(appui.DryTheme, strconv.Itoa(stack.Networks)),
+		Configs:  drytermui.NewThemedParColumn(appui.DryTheme, strconv.Itoa(stack.Configs)),
+		Secrets:  drytermui.NewThemedParColumn(appui.DryTheme, strconv.Itoa(stack.Secrets)),
 	}
 	row.Height = 1
 	row.Table = table
@@ -31,10 +37,16 @@ func NewStackRow(stack docker.Stack, table drytermui.Table) *StackRow {
 	row.Columns = []termui.GridBufferer{
 		row.Name,
 		row.Services,
+		row.Networks,
+		row.Configs,
+		row.Secrets,
 	}
 	row.ParColumns = []*drytermui.ParColumn{
 		row.Name,
 		row.Services,
+		row.Networks,
+		row.Configs,
+		row.Secrets,
 	}
 	return row
 
