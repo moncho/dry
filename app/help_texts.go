@@ -68,6 +68,10 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Enter</>     Shows the list of taks that are part of the selected service
 	<white>l</>         Displays the logs of the selected service
 	<white>Ctrl+R</>    Removes the selected service
+
+<yellow>Stack list keybinds</>
+	<white>Enter</>     Shows the list of services of the selected stack
+	<white>Ctrl+R</>    Removes the selected stack
 	
 <yellow>Move around in lists</>
 	<white>ArrowUp</>   Moves the cursor one line up
@@ -115,6 +119,8 @@ const (
 		"<b>[p]:<darkgrey>Prune</>"
 
 	serviceKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> <b>[l]:<darkgrey>Service logs</> <b>[Ctrl+R]:<darkgrey>Remove Service</> <b>[Ctrl+S]:<darkgrey>Scale service</>"
+
+	stackKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> <b>[Ctrl+R]:<darkgrey>Remove Stack</>"
 
 	nodeKeyMappings = swarmMapping + " <blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</>  <b>[Enter]:<darkgrey>Show Node Tasks</> <b>[Ctrl+A]:<darkgrey>Set Availability</>"
 

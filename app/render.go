@@ -122,7 +122,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
 			}
 			bufferers = append(bufferers, stacks)
 			count = stacks.RowCount()
-			keymap = swarmMapping
+			keymap = stackKeyMappings
 		}
 	case StackTasks:
 		{
