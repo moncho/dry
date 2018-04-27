@@ -225,7 +225,7 @@ get_architecture() {
             ;;
 
 	*)
-            _isarm=$(echo $_cputype|awk '{print substr($0,0,4)}')
+            _isarm=$(echo $_cputype|awk '{print substr($0,0,3)}')
             echo $_isarm
             if [ "$_isarm" = "arm" ]; then
                local _cputype=arm
