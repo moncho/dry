@@ -223,15 +223,11 @@ get_architecture() {
 	x86_64 | x86-64 | x64 | amd64)
             local _cputype=amd64
             ;;
-
+  arm*)
+            local _cputype=arm
+            ;;
 	*)
-            _isarm=$(echo $_cputype|awk '{print substr($0,0,3)}')
-            echo $_isarm
-            if [ "$_isarm" = "arm" ]; then
-               local _cputype=arm
-            else
                err "unknown CPU type: $CFG_CPUTYPE"
-            fi
 
     esac
 
