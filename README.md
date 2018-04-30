@@ -7,6 +7,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/moncho/dry/badge.svg?branch=master)](https://coveralls.io/github/moncho/dry?branch=master)
 [![Github All Releases](https://img.shields.io/github/downloads/moncho/dry/total.svg)]()
 [![Join the chat at https://gitter.im/moncho/dry](https://badges.gitter.im/moncho/dry.svg)](https://gitter.im/moncho/dry?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Release](https://img.shields.io/github/release/golang-standards/project-layout.svg?style=flat-square)](https://github.com/moncho/dry/releases/latest)
 
 **Dry** is a terminal application to manage **Docker**. It shows information about Containers, Images and Networks, and, if running a **Docker Swarm**, it also shows all kinds of information about the state of the Swarm cluster. It can connect to both local or remote **Docker** daemons.
 
