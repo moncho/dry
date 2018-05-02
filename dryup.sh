@@ -223,7 +223,7 @@ get_architecture() {
 	x86_64 | x86-64 | x64 | amd64)
             local _cputype=amd64
             ;;
-  arm*)
+  	arm*)
             local _cputype=arm
             ;;
 	*)
