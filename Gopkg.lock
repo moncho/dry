@@ -169,7 +169,6 @@
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   revision = "68806b4b77355d6c8577a2c8bbc6d547a5272491"
-  source = "git@github.com:/sirupsen/logrus"
 
 [[projects]]
   branch = "master"
@@ -199,6 +198,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "09d90cc1da9c7859e92018c7f9e55a328df419ec00c1f5c16e5c687914c0de87"
+  inputs-digest = "2bc69c9c660a3e55b295036f21111ffc241f72eaf569beddd74fd0018075e13a"
   solver-name = "gps-cdcl"
   solver-version = 1

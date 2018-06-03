@@ -121,20 +121,6 @@ ignored = [
 
 [[constraint]]
   branch = "master"
-  name = "github.com/sirupsen/logrus"
-  source = "git@github.com:/sirupsen/logrus"
-
-[[override]]
-  name = "github.com/spf13/cobra"
-  source = "git@github.com:/dnephin/cobra"
-  version = "1.5.1"
-
-[[override]]
-  name = "github.com/docker/notary"
-  version = "v0.4.2"
-
-[[constraint]]
-  branch = "master"
   name = "github.com/maxzender/jv"
 
   
