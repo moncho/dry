@@ -8,7 +8,6 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/docker/api/types"
 	units "github.com/docker/go-units"
 	"github.com/moncho/dry/docker"
@@ -108,23 +107,7 @@ func (r *DockerDiskUsageRenderer) tableHeader() string {
 
 func (r *DockerDiskUsageRenderer) formattedDiskUsage() string {
 	buf := bytes.NewBufferString("")
-	usage := r.diskUsage
-	context := formatter.DiskUsageContext{
-		Context: formatter.Context{
-			Output: buf,
-			Format: formatter.NewDiskUsageFormat(formatter.TableFormatKey),
-		},
-		LayersSize: usage.LayersSize,
-		Images:     usage.Images,
-		Containers: usage.Containers,
-		Volumes:    usage.Volumes,
-		Verbose:    false,
-	}
-	err := context.Write()
-	if err != nil {
-		return err.Error()
-	}
-	//The header from the table created by the formatter is removed
+	_ = r.diskUsage
 	duTable := buf.String()
 	duTable = duTable[strings.Index(duTable, "\n"):]
 	return duTable
