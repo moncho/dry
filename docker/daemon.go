@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
-	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -47,10 +45,6 @@ type DockerDaemon struct {
 	storeLock sync.RWMutex
 	resolver  Resolver
 	eventLog  *EventLog
-}
-
-func init() {
-	log.SetOutput(os.Stderr)
 }
 
 //Containers returns the containers known by the daemon
