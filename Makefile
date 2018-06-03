@@ -24,13 +24,6 @@ run: ## Runs dry
 
 vendor: ## Runs dep ensure
 	dep ensure
-	# TODO remove once https://github.com/golang/dep/issues/433 is resolved
-	# Workaround for OSX sed behaving differently
-	case "${OS}" in \
-		Darwin) find vendor -type f -name "*.go" -print0 | xargs -0 sed -i '' 's/Sirupsen\/logrus/sirupsen\/logrus/g' ;;\
-		*)      find vendor -type f -name "*.go" -print0 | xargs -0 sed -i    's/Sirupsen\/logrus/sirupsen\/logrus/g' ;;\
-	esac ;\
-	touch $@
 
 build: ## Builds dry
 	go build .
