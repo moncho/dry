@@ -13,7 +13,7 @@ import (
 var cancelMonitorWidget context.CancelFunc
 
 //Render renders dry on the given screen
-func Render(d *Dry, screen *ui.Screen, statusBar *ui.StatusBar) {
+func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 	var bufferers []gizaktermui.Bufferer
 
 	var count int

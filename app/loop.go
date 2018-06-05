@@ -60,7 +60,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 
 	keyboardQueueForView := make(chan termbox.Event)
 	dryOutputChan := dry.OuputChannel()
-	statusBar := ui.NewStatusBar(0, ui.ActiveScreen.Dimensions.Width, appui.DryTheme)
+	statusBar := ui.NewExpiringMessageWidget(0, ui.ActiveScreen.Dimensions.Width, appui.DryTheme)
 	eventHandlerFactory := &eventHandlerFactory{
 		dry:                  dry,
 		screen:               screen,
@@ -106,11 +106,11 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 			case dryMessage, ok := <-dryOutputChan:
 				if ok {
 					if focus.hasFocus() {
-						statusBar.StatusMessage(dryMessage, 10*time.Second)
+						statusBar.Message(dryMessage, 10*time.Second)
 						statusBar.Render()
 					} else {
 						//stop the status bar until the focus is retrieved
-						statusBar.Stop()
+						statusBar.Pause()
 					}
 				} else {
 					return
