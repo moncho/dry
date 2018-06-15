@@ -47,7 +47,7 @@ func TestSortServices(t *testing.T) {
 						Spec: swarm.ServiceSpec{
 							Annotations: swarm.Annotations{Name: "b"},
 							TaskTemplate: swarm.TaskSpec{
-								ContainerSpec: swarm.ContainerSpec{
+								ContainerSpec: &swarm.ContainerSpec{
 									Image: "b",
 								},
 							},
@@ -57,7 +57,7 @@ func TestSortServices(t *testing.T) {
 						Spec: swarm.ServiceSpec{
 							Annotations: swarm.Annotations{Name: "c"},
 							TaskTemplate: swarm.TaskSpec{
-								ContainerSpec: swarm.ContainerSpec{
+								ContainerSpec: &swarm.ContainerSpec{
 									Image: "c",
 								},
 							},
@@ -67,7 +67,7 @@ func TestSortServices(t *testing.T) {
 						Spec: swarm.ServiceSpec{
 							Annotations: swarm.Annotations{Name: "a"},
 							TaskTemplate: swarm.TaskSpec{
-								ContainerSpec: swarm.ContainerSpec{
+								ContainerSpec: &swarm.ContainerSpec{
 									Image: "a",
 								},
 							},
