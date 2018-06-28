@@ -41,8 +41,6 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	termuiEvents, done := ui.EventChannel()
 	keyboardQueue := make(chan termbox.Event)
 
-	timer := time.NewTicker(1 * time.Second)
-
 	viewClosed := make(chan struct{})
 	//On receive dry is rendered
 	renderChan := make(chan struct{})
@@ -67,7 +65,6 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 		keyboardQueueForView: keyboardQueueForView,
 		viewClosed:           viewClosed}
 
-	defer timer.Stop()
 	defer close(done)
 	defer close(keyboardQueue)
 	defer close(keyboardQueueForView)
@@ -97,12 +94,6 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	go func(focus *focusTracker) {
 		for {
 			select {
-			case <-timer.C:
-				if focus.hasFocus() {
-					timestamp := time.Now().Format(`15:04:05`)
-					screen.RenderLine(0, 0, `<right><white>`+timestamp+`</></right>`)
-					screen.Flush()
-				}
 			case dryMessage, ok := <-dryOutputChan:
 				if ok {
 					if focus.hasFocus() {

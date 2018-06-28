@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"time"
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
@@ -162,7 +161,6 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 	bufferers = append(bufferers, footer(keymap))
 
 	statusBar.Render()
-	screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
 	screen.RenderBufferer(bufferers...)
 	if viewRenderer != nil {
 		screen.RenderRenderer(appui.MainScreenHeaderSize, viewRenderer)
