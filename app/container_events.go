@@ -7,80 +7,47 @@ import (
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
-	"github.com/moncho/dry/ui/json"
 	termbox "github.com/nsf/termbox-go"
 )
 
-type commandToExecute struct {
+type commandRunner struct {
 	command   docker.Command
 	container *docker.Container
 }
 type containersScreenEventHandler struct {
 	baseEventHandler
+	widget appui.AppWidget
 }
 
-func (h *containersScreenEventHandler) widget() appui.AppWidget {
-	return h.dry.widgetRegistry.ContainerList
-}
-
-func (h *containersScreenEventHandler) handle(event termbox.Event) {
-	if h.forwardingEvents {
+func (h *containersScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+	if h.forwardingEvents() {
 		h.eventChan <- event
 		return
 	}
-	focus, handled := handleKey(h, event.Key)
+	handled := h.handleKey(event.Key, f)
 
 	if !handled {
-		focus, handled = handleCharacter(h, event.Ch)
+		handled = h.handleCharacter(event.Ch, f)
 	}
 	if handled {
-		h.setFocus(focus)
-		if h.hasFocus() {
-			refreshScreen()
-		}
+		refreshScreen()
 	} else {
-		h.baseEventHandler.handle(event)
+		h.baseEventHandler.handle(event, f)
 	}
 }
 
-func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
-
-	closeView := true
+func (h *containersScreenEventHandler) handleCommand(command commandRunner, f func(eventHandler)) {
 	dry := h.dry
 	screen := h.screen
-
 	id := command.container.ID
 
 	switch command.command {
 	case docker.KILL:
-		go func() {
-			dry.actionMessage(id, "Killing")
-			err := dry.dockerDaemon.Kill(id)
-			if err == nil {
-				dry.actionMessage(id, "killed")
-			} else {
-				dry.errorMessage(id, "killing", err)
-			}
-		}()
-	case docker.RESTART:
-		go func() {
-			if err := dry.dockerDaemon.RestartContainer(id); err != nil {
-				dry.appmessage(
-					fmt.Sprintf("Error restarting container %s, err: %s", id, err.Error()))
-			}
-		}()
-	case docker.STOP:
-		go func() {
-			if err := dry.dockerDaemon.StopContainer(id); err != nil {
-				dry.appmessage(
-					fmt.Sprintf("Error stopping container %s, err: %s", id, err.Error()))
-			}
-		}()
-	case docker.LOGS:
-		closeView = false
+		prompt := appui.NewPrompt(
+			fmt.Sprintf("Do you want to kill container %s? (y/N)", id))
+		widgets.add(prompt)
 		h.setForwardEvents(true)
-		prompt := logsPrompt()
-		dry.widgetRegistry.add(prompt)
+
 		go func() {
 			events := ui.EventSource{
 				Events: h.eventChan,
@@ -89,7 +56,95 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 				},
 			}
 			prompt.OnFocus(events)
-			dry.widgetRegistry.remove(prompt)
+			conf, cancel := prompt.Text()
+			h.setForwardEvents(false)
+			widgets.remove(prompt)
+			if cancel || (conf != "y" && conf != "Y") {
+
+				return
+			}
+
+			dry.actionMessage(id, "Killing")
+			err := dry.dockerDaemon.Kill(id)
+			if err == nil {
+				dry.actionMessage(id, "killed")
+			} else {
+				dry.errorMessage(id, "killing", err)
+			}
+
+		}()
+
+	case docker.RESTART:
+		prompt := appui.NewPrompt(
+			fmt.Sprintf("Do you want to restart container %s? (y/N)", id))
+		widgets.add(prompt)
+		h.setForwardEvents(true)
+
+		go func() {
+			events := ui.EventSource{
+				Events: h.eventChan,
+				EventHandledCallback: func(e termbox.Event) error {
+					return refreshScreen()
+				},
+			}
+			prompt.OnFocus(events)
+			conf, cancel := prompt.Text()
+			h.setForwardEvents(false)
+			widgets.remove(prompt)
+			if cancel || (conf != "y" && conf != "Y") {
+
+				return
+			}
+
+			if err := dry.dockerDaemon.RestartContainer(id); err != nil {
+				dry.appmessage(
+					fmt.Sprintf("Error restarting container %s, err: %s", id, err.Error()))
+			}
+
+		}()
+
+	case docker.STOP:
+		prompt := appui.NewPrompt(
+			fmt.Sprintf("Do you want to remove container %s? (y/N)", id))
+		widgets.add(prompt)
+		h.setForwardEvents(true)
+
+		go func() {
+			events := ui.EventSource{
+				Events: h.eventChan,
+				EventHandledCallback: func(e termbox.Event) error {
+					return refreshScreen()
+				},
+			}
+			prompt.OnFocus(events)
+			conf, cancel := prompt.Text()
+			h.setForwardEvents(false)
+			widgets.remove(prompt)
+			if cancel || (conf != "y" && conf != "Y") {
+
+				return
+			}
+
+			if err := dry.dockerDaemon.StopContainer(id); err != nil {
+				dry.appmessage(
+					fmt.Sprintf("Error stopping container %s, err: %s", id, err.Error()))
+			}
+
+		}()
+
+	case docker.LOGS:
+		prompt := logsPrompt()
+		widgets.add(prompt)
+		h.setForwardEvents(true)
+		go func() {
+			events := ui.EventSource{
+				Events: h.eventChan,
+				EventHandledCallback: func(e termbox.Event) error {
+					return refreshScreen()
+				},
+			}
+			prompt.OnFocus(events)
+			widgets.remove(prompt)
 			since, canceled := prompt.Text()
 
 			if canceled {
@@ -100,17 +155,38 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 			logs, err := h.dry.dockerDaemon.Logs(id, since)
 			if err == nil {
 				appui.Stream(logs, h.eventChan, func() {
-					h.setForwardEvents(false)
 					h.dry.SetViewMode(Main)
-					h.closeViewChan <- struct{}{}
+					f(viewsToHandlers[Main])
+					h.setForwardEvents(false)
+					refreshScreen()
 				})
 			} else {
 				h.dry.appmessage("Error showing container logs: " + err.Error())
-				h.setForwardEvents(false)
+
 			}
 		}()
 	case docker.RM:
+		prompt := appui.NewPrompt(
+			fmt.Sprintf("Do you want to remove container %s? (y/N)", id))
+		widgets.add(prompt)
+		h.setForwardEvents(true)
+
 		go func() {
+			events := ui.EventSource{
+				Events: h.eventChan,
+				EventHandledCallback: func(e termbox.Event) error {
+					return refreshScreen()
+				},
+			}
+			prompt.OnFocus(events)
+			conf, cancel := prompt.Text()
+			h.setForwardEvents(false)
+			widgets.remove(prompt)
+			if cancel || (conf != "y" && conf != "Y") {
+
+				return
+			}
+
 			dry.actionMessage(id, "Removing")
 			err := dry.dockerDaemon.Rm(id)
 			if err == nil {
@@ -118,210 +194,255 @@ func (h *containersScreenEventHandler) handleCommand(command commandToExecute) {
 			} else {
 				dry.errorMessage(id, "removing", err)
 			}
+
 		}()
 
 	case docker.STATS:
 		c := dry.dockerDaemon.ContainerByID(id)
 		if c == nil || !docker.IsContainerRunning(c) {
 			dry.appmessage(
-				fmt.Sprintf("Container with id %s not found or is not running", id))
+				fmt.Sprintf("Container with id %s not found or not running", id))
 		} else {
 			statsChan := dry.dockerDaemon.OpenChannel(c)
-			closeView = false
+			h.setForwardEvents(true)
+			h.dry.SetViewMode(NoView)
 			go statsScreen(command.container, statsChan, screen, h.eventChan, func() {
-				h.setForwardEvents(false)
 				h.dry.SetViewMode(Main)
-				h.closeViewChan <- struct{}{}
+				f(viewsToHandlers[Main])
+				h.setForwardEvents(false)
+				refreshScreen()
 			})
 		}
 
 	case docker.INSPECT:
-		container, err := h.dry.dockerDaemon.Inspect(id)
-		if err == nil {
-			go func() {
-				defer func() {
-					h.closeViewChan <- struct{}{}
-				}()
-				v, err := json.NewViewer(
-					h.screen,
-					appui.DryTheme,
-					container)
-				if err != nil {
-					dry.appmessage(
-						fmt.Sprintf("Error inspecting container: %s", err.Error()))
-					return
-				}
-				v.Focus(h.eventChan)
-			}()
-			closeView = false
+		h.setForwardEvents(true)
+		err := inspect(
+			h.screen,
+			h.eventChan,
+			func(id string) (interface{}, error) {
+				return h.dry.dockerDaemon.Inspect(id)
+			},
+			func() {
+				h.dry.SetViewMode(Main)
+				h.setForwardEvents(false)
+				f(h)
+				refreshScreen()
+			})(id)
+
+		if err != nil {
+			dry.appmessage(
+				fmt.Sprintf("Error inspecting container: %s", err.Error()))
+			return
 		}
+
 	case docker.HISTORY:
 		history, err := dry.dockerDaemon.History(command.container.ImageID)
 
 		if err == nil {
-			closeView = false
+
 			renderer := appui.NewDockerImageHistoryRenderer(history)
 
-			go appui.Less(renderer, screen, h.eventChan, h.closeViewChan)
+			go appui.Less(renderer, screen, h.eventChan, func() {
+				h.dry.SetViewMode(Main)
+				f(viewsToHandlers[Main])
+				h.setForwardEvents(false)
+			})
 		} else {
 			dry.appmessage(
 				fmt.Sprintf("Error showing image history: %s", err.Error()))
 		}
 	}
-	if closeView {
-		h.closeViewChan <- struct{}{}
-	}
 }
 
-func handleCharacter(h *containersScreenEventHandler, key rune) (focus, handled bool) {
-	focus = true
-	handled = false
+func (h *containersScreenEventHandler) handleCharacter(key rune, f func(eventHandler)) bool {
+	handled := true
 	dry := h.dry
 	switch key {
 
 	case '%': //filter containers
-		handled = true
-		showFilterInput(h)
-	case 'e', 'E': //remove
-		handled = true
-		if err := h.widget().OnEvent(
-			func(id string) error {
-				h.dry.appmessage("Removing container " + id)
+		h.setForwardEvents(true)
+		applyFilter := func(filter string, canceled bool) {
+			if !canceled {
+				h.widget.Filter(filter)
+			}
+			h.setForwardEvents(false)
+		}
+		showFilterInput(newEventSource(h.eventChan), applyFilter)
 
+	case 'e', 'E': //remove
+		if err := h.widget.OnEvent(
+			func(id string) error {
 				container := dry.dockerDaemon.ContainerByID(id)
 				if container == nil {
 					return fmt.Errorf("Container with id %s not found", id)
 				}
-				//Since a command is created the focus is handled by handleCommand
-				//Fixes #24
-				focus = false
-				h.handleCommand(commandToExecute{
+				h.handleCommand(commandRunner{
 					docker.RM,
 					container,
-				})
+				}, f)
 				return nil
 			}); err != nil {
 			h.dry.appmessage("There was an error removing the container: " + err.Error())
 		}
 
 	case 'i', 'I': //inspect
-		handled = true
-		if err := h.widget().OnEvent(
+		if err := h.widget.OnEvent(
 			func(id string) error {
 				container := dry.dockerDaemon.ContainerByID(id)
 				if container == nil {
 					return fmt.Errorf("Container with id %s not found", id)
 				}
-				//Since a command is created the focus is handled by handleCommand
-				//Fixes #24
-				focus = false
-				h.handleCommand(commandToExecute{
+				h.handleCommand(commandRunner{
 					docker.INSPECT,
 					container,
-				})
+				}, f)
 				return nil
 			}); err != nil {
 			h.dry.appmessage("There was an error inspecting the container: " + err.Error())
 		}
 
 	case 'l', 'L': //logs
-		handled = true
-		if err := h.widget().OnEvent(
+		if err := h.widget.OnEvent(
 			func(id string) error {
 				container := dry.dockerDaemon.ContainerByID(id)
 				if container == nil {
 					return fmt.Errorf("Container with id %s not found", id)
 				}
-				h.handleCommand(commandToExecute{
+				h.handleCommand(commandRunner{
 					docker.LOGS,
 					container,
-				})
+				}, f)
 				return nil
 			}); err != nil {
 			h.dry.appmessage("There was an error showing logs: " + err.Error())
 		}
 	case 's', 'S': //stats
-		handled = true
-		if err := h.widget().OnEvent(
+		if err := h.widget.OnEvent(
 			func(id string) error {
 				container := dry.dockerDaemon.ContainerByID(id)
 				if container == nil {
 					return fmt.Errorf("Container with id %s not found", id)
 				}
-				//Since a command is created the focus is handled by handleCommand
-				//Fixes #24
-				focus = false
-				h.handleCommand(commandToExecute{
+				h.handleCommand(commandRunner{
 					docker.STATS,
 					container,
-				})
+				}, f)
 				return nil
 			}); err != nil {
 			h.dry.appmessage("There was an error showing stats: " + err.Error())
 		}
+	default:
+		handled = false
 	}
-	return focus, handled
+	return handled
 }
 
-func handleKey(h *containersScreenEventHandler, key termbox.Key) (bool, bool) {
-	focus := true
+func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHandler)) bool {
 	handled := true
 	cursor := h.screen.Cursor
 	switch key {
 	case termbox.KeyF1: //sort
-		h.widget().Sort()
+		h.widget.Sort()
 	case termbox.KeyF2: //show all containers
 		cursor.Reset()
-		h.dry.widgetRegistry.ContainerList.ToggleShowAllContainers()
+		widgets.ContainerList.ToggleShowAllContainers()
 	case termbox.KeyF5: // refresh
 		h.dry.appmessage("Refreshing container list")
 		h.dry.dockerDaemon.Refresh(func(e error) {
 			if e == nil {
-				h.widget().Unmount()
+				h.widget.Unmount()
 				refreshScreen()
 			} else {
 				h.dry.appmessage("There was an error refreshing: " + e.Error())
 			}
 		})
 	case termbox.KeyCtrlE: //remove all stopped
-		if confirmation, err := appui.ReadLine("All stopped containers will be removed. Do you want to continue? (y/N) "); err == nil {
-			h.screen.ClearAndFlush()
-			if confirmation == "Y" || confirmation == "y" {
-				h.dry.RemoveAllStoppedContainers()
+		prompt := appui.NewPrompt(
+			"All stopped containers will be removed. Do you want to continue? (y/N) ")
+		widgets.add(prompt)
+		h.setForwardEvents(true)
+
+		go func() {
+			events := ui.EventSource{
+				Events: h.eventChan,
+				EventHandledCallback: func(e termbox.Event) error {
+					return refreshScreen()
+				},
 			}
-		}
+			prompt.OnFocus(events)
+			conf, cancel := prompt.Text()
+			h.setForwardEvents(false)
+			widgets.remove(prompt)
+			if cancel || (conf != "y" && conf != "Y") {
+				return
+			}
+			go func() {
+				h.dry.appmessage("<red>Removing all stopped containers</>")
+				if count, err := h.dry.dockerDaemon.RemoveAllStoppedContainers(); err == nil {
+					h.dry.appmessage(fmt.Sprintf("<red>Removed %d stopped containers</>", count))
+				} else {
+					h.dry.appmessage(
+						fmt.Sprintf(
+							"<red>Error removing all stopped containers: %s</>", err.Error()))
+				}
+				refreshScreen()
+			}()
+		}()
+
 	case termbox.KeyCtrlK: //kill
-		if err := h.widget().OnEvent(
+		if err := h.widget.OnEvent(
 			func(id string) error {
-				h.dry.appmessage("Killing container " + id)
-				return h.dry.dockerDaemon.Kill(id)
+				container := h.dry.dockerDaemon.ContainerByID(id)
+				if container == nil {
+					return fmt.Errorf("Container with id %s not found", id)
+				}
+				h.handleCommand(commandRunner{
+					docker.KILL,
+					container,
+				}, f)
+				return nil
 			}); err != nil {
-			h.dry.appmessage("There was an error killing the container: " + err.Error())
+			h.dry.appmessage("There was an error killing container: " + err.Error())
 		}
 	case termbox.KeyCtrlR: //start
-		if err := h.widget().OnEvent(
+		if err := h.widget.OnEvent(
 			func(id string) error {
-				h.dry.appmessage("Restarting container " + id)
-
-				return h.dry.dockerDaemon.RestartContainer(id)
+				container := h.dry.dockerDaemon.ContainerByID(id)
+				if container == nil {
+					return fmt.Errorf("Container with id %s not found", id)
+				}
+				h.handleCommand(commandRunner{
+					docker.RESTART,
+					container,
+				}, f)
+				return nil
 			}); err != nil {
-			h.dry.appmessage("There was an error refreshing: " + err.Error())
+			h.dry.appmessage("There was an error restarting: " + err.Error())
 		}
 	case termbox.KeyCtrlT: //stop
-		if err := h.widget().OnEvent(
+		if err := h.widget.OnEvent(
 			func(id string) error {
-				h.dry.appmessage("Stopping container " + id)
-				return h.dry.dockerDaemon.StopContainer(id)
+				container := h.dry.dockerDaemon.ContainerByID(id)
+				if container == nil {
+					return fmt.Errorf("Container with id %s not found", id)
+				}
+				h.handleCommand(commandRunner{
+					docker.STOP,
+					container,
+				}, f)
+				return nil
 			}); err != nil {
-			h.dry.appmessage("There was an error killing the container: " + err.Error())
+			h.dry.appmessage("There was an error stopping container: " + err.Error())
 		}
 	case termbox.KeyEnter: //Container menu
 		showMenu := func(id string) error {
 			h.screen.Cursor.Reset()
-			h.dry.ShowContainerMenu(id)
+			widgets.ContainerMenu.ForContainer(id)
+			h.dry.SetViewMode(ContainerMenu)
+			f(viewsToHandlers[ContainerMenu])
 			return refreshScreen()
 		}
-		if err := h.widget().OnEvent(showMenu); err != nil {
+		if err := h.widget.OnEvent(showMenu); err != nil {
 			h.dry.appmessage(err.Error())
 		}
 
@@ -329,31 +450,28 @@ func handleKey(h *containersScreenEventHandler, key termbox.Key) (bool, bool) {
 		handled = false
 	}
 
-	return focus, handled
+	return handled
 }
 
 //statsScreen shows container stats on the screen
 //TODO move to appui
-func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen *ui.Screen, keyboardQueue chan termbox.Event, closeCallback func()) {
-	defer closeCallback()
-	screen.Clear()
-
+func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen *ui.Screen, events <-chan termbox.Event, closeCallback func()) {
 	if !docker.IsContainerRunning(container) {
 		return
 	}
+	defer closeCallback()
+	screen.ClearAndFlush()
 
 	info, infoLines := appui.NewContainerInfo(container)
 	screen.Render(1, info)
 
-	var mutex = &sync.Mutex{}
-	screen.Flush()
-
+	var mutex sync.Mutex
 	s := stats.Stats
 
 	header := appui.NewMonitorTableHeader()
 	header.SetX(0)
 	header.SetWidth(ui.ActiveScreen.Dimensions.Width)
-	header.SetY(infoLines + 2)
+	header.SetY(infoLines + 3)
 
 	statsRow := appui.NewContainerStatsRow(container, header)
 	statsRow.SetX(0)
@@ -363,17 +481,18 @@ func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen
 loop:
 	for {
 		select {
-		case event := <-keyboardQueue:
-			switch event.Type {
-			case termbox.EventKey:
-				if event.Key == termbox.KeyEsc {
-					//the lock is acquired before breaking the loop
-					mutex.Lock()
-					s = nil
-				}
+		case event := <-events:
+			if event.Type == termbox.EventKey && event.Key == termbox.KeyEsc {
+				//the lock is acquired before breaking the loop
+				mutex.Lock()
+				s = nil
 			}
-		case stat := <-s:
+
+		case stat, ok := <-s:
 			{
+				if !ok {
+					break loop
+				}
 				mutex.Lock()
 				statsRow.Update(container, stat)
 				top, _ := appui.NewDockerTop(

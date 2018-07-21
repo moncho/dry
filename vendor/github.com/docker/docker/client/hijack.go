@@ -1,7 +1,8 @@
-package client
+package client // import "github.com/docker/docker/client"
 
 import (
 	"bufio"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -12,10 +13,8 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/pkg/tlsconfig"
 	"github.com/docker/go-connections/sockets"
 	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 )
 
 // tlsClientCon holds tls information and a dialed connection.
@@ -71,7 +70,7 @@ func tlsDialWithDialer(dialer *net.Dialer, network, addr string, config *tls.Con
 	timeout := dialer.Timeout
 
 	if !dialer.Deadline.IsZero() {
-		deadlineTimeout := dialer.Deadline.Sub(time.Now())
+		deadlineTimeout := time.Until(dialer.Deadline)
 		if timeout == 0 || deadlineTimeout < timeout {
 			timeout = deadlineTimeout
 		}
@@ -115,7 +114,7 @@ func tlsDialWithDialer(dialer *net.Dialer, network, addr string, config *tls.Con
 	// from the hostname we're connecting to.
 	if config.ServerName == "" {
 		// Make a copy to avoid polluting argument or default.
-		config = tlsconfig.Clone(config)
+		config = tlsConfigClone(config)
 		config.ServerName = hostname
 	}
 
@@ -177,18 +176,26 @@ func (cli *Client) setupHijackConn(req *http.Request, proto string) (net.Conn, e
 
 	// Server hijacks the connection, error 'connection closed' expected
 	resp, err := clientconn.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusSwitchingProtocols {
-		resp.Body.Close()
-		return nil, fmt.Errorf("unable to upgrade to %s, received %d", proto, resp.StatusCode)
+	if err != httputil.ErrPersistEOF {
+		if err != nil {
+			return nil, err
+		}
+		if resp.StatusCode != http.StatusSwitchingProtocols {
+			resp.Body.Close()
+			return nil, fmt.Errorf("unable to upgrade to %s, received %d", proto, resp.StatusCode)
+		}
 	}
 
 	c, br := clientconn.Hijack()
 	if br.Buffered() > 0 {
-		// If there is buffered content, wrap the connection
-		c = &hijackedConn{c, br}
+		// If there is buffered content, wrap the connection.  We return an
+		// object that implements CloseWrite iff the underlying connection
+		// implements it.
+		if _, ok := c.(types.CloseWriter); ok {
+			c = &hijackedConnCloseWriter{&hijackedConn{c, br}}
+		} else {
+			c = &hijackedConn{c, br}
+		}
 	} else {
 		br.Reset(nil)
 	}
@@ -196,6 +203,10 @@ func (cli *Client) setupHijackConn(req *http.Request, proto string) (net.Conn, e
 	return c, nil
 }
 
+// hijackedConn wraps a net.Conn and is returned by setupHijackConn in the case
+// that a) there was already buffered data in the http layer when Hijack() was
+// called, and b) the underlying net.Conn does *not* implement CloseWrite().
+// hijackedConn does not implement CloseWrite() either.
 type hijackedConn struct {
 	net.Conn
 	r *bufio.Reader
@@ -203,4 +214,19 @@ type hijackedConn struct {
 
 func (c *hijackedConn) Read(b []byte) (int, error) {
 	return c.r.Read(b)
+}
+
+// hijackedConnCloseWriter is a hijackedConn which additionally implements
+// CloseWrite().  It is returned by setupHijackConn in the case that a) there
+// was already buffered data in the http layer when Hijack() was called, and b)
+// the underlying net.Conn *does* implement CloseWrite().
+type hijackedConnCloseWriter struct {
+	*hijackedConn
+}
+
+var _ types.CloseWriter = &hijackedConnCloseWriter{}
+
+func (c *hijackedConnCloseWriter) CloseWrite() error {
+	conn := c.Conn.(types.CloseWriter)
+	return conn.CloseWrite()
 }

@@ -2,7 +2,6 @@ package docker
 
 import (
 	"crypto/tls"
-	"net"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -62,24 +61,16 @@ func newHTTPClient(host string, config *tls.Config) (*http.Client, error) {
 		return nil, nil
 	}
 
-	proto, addr, _, err := client.ParseHost(host)
+	url, err := client.ParseHostURL(host)
 	if err != nil {
 		return nil, err
 	}
 
-	tr := &http.Transport{
-		TLSClientConfig: config,
-		Dial: func(network, addr string) (net.Conn, error) {
-			return net.DialTimeout(proto, addr, DefaultConnectionTimeout)
-		},
-	}
-
-	if err = sockets.ConfigureTransport(tr, proto, addr); err != nil {
-		return nil, err
-	}
-
+	transport := new(http.Transport)
+	sockets.ConfigureTransport(transport, url.Scheme, url.Host)
 	return &http.Client{
-		Transport: tr,
+		Transport:     transport,
+		CheckRedirect: client.CheckRedirect,
 	}, nil
 }
 

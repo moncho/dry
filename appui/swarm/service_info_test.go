@@ -15,7 +15,7 @@ var expectedServiceInfo = `  <blue>Service Name:</>  <yellow>serviceName</>  <bl
 var testService = &swarm.Service{
 	Spec: swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: swarm.ContainerSpec{
+			ContainerSpec: &swarm.ContainerSpec{
 				Image: "bla",
 			},
 			Placement: &swarm.Placement{

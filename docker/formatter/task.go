@@ -7,7 +7,6 @@ import (
 
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/go-units"
 	"github.com/moncho/dry/docker"
 )
@@ -31,7 +30,7 @@ type TaskStringer struct {
 //ID Task id as a string
 func (t *TaskStringer) ID() string {
 	if t.trunc {
-		return stringid.TruncateID(t.task.ID)
+		return TruncateID(t.task.ID)
 	}
 	return t.task.ID
 }

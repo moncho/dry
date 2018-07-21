@@ -5,11 +5,16 @@ import (
 	"errors"
 	"io"
 
-	"github.com/docker/cli/cli/compose/convert"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	pkgError "github.com/pkg/errors"
+)
+
+const (
+	// LabelNamespace is the label used to track stack resources
+	//Copied from https://github.com/docker/cli/blob/master/cli/compose/convert/compose.go
+	LabelNamespace = "com.docker.stack.namespace"
 )
 
 //Node returns the node with the given id
@@ -184,10 +189,10 @@ func (daemon *DockerDaemon) Stacks() ([]Stack, error) {
 	m := make(map[string]*Stack)
 	for _, service := range services {
 		labels := service.Spec.Labels
-		name, ok := labels[convert.LabelNamespace]
+		name, ok := labels[LabelNamespace]
 		if !ok {
 			return nil, pkgError.Errorf("cannot get label %s for service %s",
-				convert.LabelNamespace, service.ID)
+				LabelNamespace, service.ID)
 		}
 		ztack, ok := m[name]
 		if !ok {
@@ -301,7 +306,7 @@ func buildStackFilter(stack string) filters.Args {
 }
 func getAllStacksFilter() filters.Args {
 	filter := filters.NewArgs()
-	filter.Add("label", convert.LabelNamespace)
+	filter.Add("label", LabelNamespace)
 	return filter
 }
 

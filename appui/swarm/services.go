@@ -6,8 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/cli/cli/command/formatter"
-	"github.com/docker/cli/cli/command/service"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/moncho/dry/appui"
@@ -313,7 +311,7 @@ func serviceTableHeader() *termui.TableHeader {
 	return header
 }
 
-func getServiceInfo(swarmClient docker.SwarmAPI) ([]swarm.Service, map[string]formatter.ServiceListInfo, error) {
+func getServiceInfo(swarmClient docker.SwarmAPI) ([]swarm.Service, map[string]ServiceListInfo, error) {
 
 	serviceFilters := filters.NewArgs()
 	serviceFilters.Add("runtime", string(swarm.RuntimeContainer))
@@ -322,7 +320,7 @@ func getServiceInfo(swarmClient docker.SwarmAPI) ([]swarm.Service, map[string]fo
 		return nil, nil, err
 	}
 
-	info := map[string]formatter.ServiceListInfo{}
+	info := map[string]ServiceListInfo{}
 	if len(services) > 0 {
 
 		tasks, err := swarmClient.ServiceTasks(serviceIDs(services)...)
@@ -335,7 +333,7 @@ func getServiceInfo(swarmClient docker.SwarmAPI) ([]swarm.Service, map[string]fo
 			return nil, nil, err
 		}
 
-		info = service.GetServicesStatus(services, nodes, tasks)
+		info = getServicesStatus(services, nodes, tasks)
 	}
 	return services, info, nil
 }
@@ -348,4 +346,50 @@ func serviceIDs(services []swarm.Service) []string {
 	}
 
 	return ids
+}
+
+// getServicesStatus returns a map of mode and replicas
+func getServicesStatus(services []swarm.Service, nodes []swarm.Node, tasks []swarm.Task) map[string]ServiceListInfo {
+	running := map[string]int{}
+	tasksNoShutdown := map[string]int{}
+
+	activeNodes := make(map[string]struct{})
+	for _, n := range nodes {
+		if n.Status.State != swarm.NodeStateDown {
+			activeNodes[n.ID] = struct{}{}
+		}
+	}
+
+	for _, task := range tasks {
+		if task.DesiredState != swarm.TaskStateShutdown {
+			tasksNoShutdown[task.ServiceID]++
+		}
+
+		if _, nodeActive := activeNodes[task.NodeID]; nodeActive && task.Status.State == swarm.TaskStateRunning {
+			running[task.ServiceID]++
+		}
+	}
+
+	info := map[string]ServiceListInfo{}
+	for _, service := range services {
+		info[service.ID] = ServiceListInfo{}
+		if service.Spec.Mode.Replicated != nil && service.Spec.Mode.Replicated.Replicas != nil {
+			info[service.ID] = ServiceListInfo{
+				Mode:     "replicated",
+				Replicas: fmt.Sprintf("%d/%d", running[service.ID], *service.Spec.Mode.Replicated.Replicas),
+			}
+		} else if service.Spec.Mode.Global != nil {
+			info[service.ID] = ServiceListInfo{
+				Mode:     "global",
+				Replicas: fmt.Sprintf("%d/%d", running[service.ID], tasksNoShutdown[service.ID]),
+			}
+		}
+	}
+	return info
+}
+
+// ServiceListInfo stores the information about mode and replicas to be used by template
+type ServiceListInfo struct {
+	Mode     string
+	Replicas string
 }

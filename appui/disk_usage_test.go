@@ -1,6 +1,9 @@
 package appui
 
 import (
+	"flag"
+	"io/ioutil"
+	"path/filepath"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -8,24 +11,10 @@ import (
 )
 
 const (
-	diskUsageOutput = `<green>TYPE           TOTAL                 ACTIVE                SIZE                  RECLAIMABLE</>
-
-Images              0                   0                   0B                  0B
-Containers          0                   0                   0B                  0B
-Local Volumes       0                   0                   0B                  0B
-Build Cache                                                 0B                  0B
-
-
-Deleted containers: 0 
-Deleted images: 0 
-Deleted networks: 0 
-Deleted volumes: 0 
-Total reclaimed space: 0B 
-
-`
-
 	screenHeight = 20
 )
+
+var update = flag.Bool("update", false, "update .golden files")
 
 func TestDiskUsageRendererCreation(t *testing.T) {
 
@@ -40,14 +29,45 @@ func TestDiskUsageRendererCreation(t *testing.T) {
 	}
 }
 
-func TestDiskUsageRendererRendering(t *testing.T) {
-	r := NewDockerDiskUsageRenderer(screenHeight)
+func TestDockerDiskUsageRenderer_Render(t *testing.T) {
+	type args struct {
+		diskUsage   *types.DiskUsage
+		pruneReport *docker.PruneReport
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"DiskUsageTest_noPruneReport",
+			args{
+				diskUsage: &types.DiskUsage{},
+			},
+		},
+		{
+			"DiskUsageTest",
+			args{
+				diskUsage:   &types.DiskUsage{},
+				pruneReport: &docker.PruneReport{},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 
-	du := &types.DiskUsage{}
-	pr := &docker.PruneReport{}
-	r.PrepareToRender(du, pr)
+			r := NewDockerDiskUsageRenderer(screenHeight)
 
-	if r.Render() != diskUsageOutput {
-		t.Errorf("DiskUsageRenderer render output does not match. Expected: \n'%q'\n, got: \n'%q'", diskUsageOutput, r.Render())
+			r.PrepareToRender(tt.args.diskUsage, tt.args.pruneReport)
+			actual := r.Render()
+
+			golden := filepath.Join("testdata", tt.name+".golden")
+			if *update {
+				ioutil.WriteFile(golden, []byte(actual), 0644)
+			}
+			expected, _ := ioutil.ReadFile(golden)
+			if string(expected) != actual {
+				t.Errorf("DockerDiskUsageRenderer.Render(), got: \n%v\nWant: \n%s", actual, expected)
+			}
+		})
 	}
 }

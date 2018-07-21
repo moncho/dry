@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/moncho/dry/appui"
+	"github.com/moncho/dry/appui/swarm"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	termbox "github.com/nsf/termbox-go"
@@ -11,33 +12,29 @@ import (
 
 type nodesScreenEventHandler struct {
 	baseEventHandler
+	widget *swarm.NodesWidget
 }
 
-func (h *nodesScreenEventHandler) widget() appui.AppWidget {
-	return h.dry.widgetRegistry.Nodes
-}
-
-func (h *nodesScreenEventHandler) handle(event termbox.Event) {
-	if h.forwardingEvents {
+func (h *nodesScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+	if h.forwardingEvents() {
 		h.eventChan <- event
 		return
 	}
 	handled := false
-	focus := true
 
 	switch event.Key {
 	case termbox.KeyF1: //sort
 		handled = true
-		h.dry.widgetRegistry.Nodes.Sort()
+		widgets.Nodes.Sort()
 	case termbox.KeyF5: // refresh
-		h.widget().Unmount()
+		h.widget.Unmount()
 		handled = true
 	case termbox.KeyCtrlA:
 		dry := h.dry
 		rw := appui.NewPrompt("Changing node availability, please type one of ('active'|'pause'|'drain')")
 		h.setForwardEvents(true)
 		handled = true
-		dry.widgetRegistry.add(rw)
+		widgets.add(rw)
 		go func() {
 			events := ui.EventSource{
 				Events: h.eventChan,
@@ -46,7 +43,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 				},
 			}
 			rw.OnFocus(events)
-			dry.widgetRegistry.remove(rw)
+			widgets.remove(rw)
 			availability, canceled := rw.Text()
 			h.setForwardEvents(false)
 			if canceled {
@@ -70,32 +67,37 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event) {
 				}
 				return refreshScreen()
 			}
-			h.widget().OnEvent(changeNode)
+			h.widget.OnEvent(changeNode)
 		}()
 
 	case termbox.KeyEnter:
 		showServices := func(nodeID string) error {
 			h.screen.Cursor.Reset()
-			h.dry.ShowTasks(nodeID)
+			widgets.NodeTasks.ForNode(nodeID)
+			h.dry.SetViewMode(Tasks)
+			f(viewsToHandlers[Tasks])
 			return refreshScreen()
 		}
-		h.widget().OnEvent(showServices)
+		h.widget.OnEvent(showServices)
 		handled = true
-
 	}
 	if !handled {
 		switch event.Ch {
 		case '%':
 			handled = true
-			showFilterInput(h)
+			h.setForwardEvents(true)
+			applyFilter := func(filter string, canceled bool) {
+				if !canceled {
+					h.widget.Filter(filter)
+				}
+				h.setForwardEvents(false)
+			}
+			showFilterInput(newEventSource(h.eventChan), applyFilter)
 		}
 	}
 	if !handled {
-		h.baseEventHandler.handle(event)
+		h.baseEventHandler.handle(event, f)
 	} else {
-		h.setFocus(focus)
-		if h.hasFocus() {
-			refreshScreen()
-		}
+		refreshScreen()
 	}
 }

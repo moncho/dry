@@ -12,9 +12,11 @@ func TestTaskRow(t *testing.T) {
 	task := swarm.Task{
 		ID:        "task1",
 		ServiceID: "1",
-		Spec:      swarm.TaskSpec{},
-		Slot:      0,
-		NodeID:    "1",
+		Spec: swarm.TaskSpec{
+			ContainerSpec: &swarm.ContainerSpec{},
+		},
+		Slot:   0,
+		NodeID: "1",
 	}
 	client := &mocks.SwarmDockerDaemon{}
 	ts := formatter.NewTaskStringer(client, task, true)

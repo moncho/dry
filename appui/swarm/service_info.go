@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
@@ -49,7 +48,7 @@ func NewServiceInfoWidget(swarmClient docker.SwarmAPI, service *swarm.Service, y
 
 func serviceInfo(swarmClient docker.SwarmAPI, name string, service *swarm.Service) string {
 
-	var f formatter.ServiceListInfo
+	var f ServiceListInfo
 	if _, servicesInfo, err := getServiceInfo(swarmClient); err == nil {
 		f = servicesInfo[service.ID]
 	}

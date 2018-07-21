@@ -4,46 +4,41 @@ import (
 	"fmt"
 
 	"github.com/moncho/dry/appui"
+	"github.com/moncho/dry/appui/swarm"
 	"github.com/moncho/dry/ui"
 	termbox "github.com/nsf/termbox-go"
 )
 
 type stacksScreenEventHandler struct {
 	baseEventHandler
+	widget *swarm.StacksWidget
 }
 
-func (h *stacksScreenEventHandler) widget() appui.AppWidget {
-	return h.dry.widgetRegistry.Stacks
-}
-
-func (h *stacksScreenEventHandler) handle(event termbox.Event) {
-	if h.forwardingEvents {
+func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+	if h.forwardingEvents() {
 		h.eventChan <- event
 		return
 	}
-	focus := true
-	handled := false
+	handled := true
 	switch event.Key {
 	case termbox.KeyF1: //sort
-		handled = true
-		h.dry.widgetRegistry.Stacks.Sort()
+
+		widgets.Stacks.Sort()
 	case termbox.KeyF5: // refresh
-		handled = true
 		h.dry.appmessage("Refreshing stack list")
-		h.widget().Unmount()
+		h.widget.Unmount()
 
 	case termbox.KeyEnter: //inspect
-		handled = true
 		showTasks := func(stack string) error {
-			h.dry.ShowStackTasks(stack)
+			widgets.StackTasks.ForStack(stack)
+			h.dry.SetViewMode(StackTasks)
 			return refreshScreen()
 		}
-		h.widget().OnEvent(showTasks)
+		h.widget.OnEvent(showTasks)
 	case termbox.KeyCtrlR: //remove stack
 		rw := appui.NewPrompt("The selected stack will be removed. Do you want to proceed? y/N")
 		h.setForwardEvents(true)
-		handled = true
-		h.dry.widgetRegistry.add(rw)
+		widgets.add(rw)
 		go func() {
 			events := ui.EventSource{
 				Events: h.eventChan,
@@ -52,7 +47,7 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event) {
 				},
 			}
 			rw.OnFocus(events)
-			h.dry.widgetRegistry.remove(rw)
+			widgets.remove(rw)
 			confirmation, canceled := rw.Text()
 			h.setForwardEvents(false)
 			if canceled || (confirmation != "y" && confirmation != "Y") {
@@ -66,10 +61,12 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event) {
 				refreshScreen()
 				return err
 			}
-			if err := h.widget().OnEvent(removeStack); err != nil {
+			if err := h.widget.OnEvent(removeStack); err != nil {
 				h.dry.appmessage("There was an error removing the stack: " + err.Error())
 			}
 		}()
+	default:
+		handled = false
 	}
 	if !handled {
 		switch event.Ch {
@@ -78,15 +75,19 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event) {
 			handled = true
 		case '%':
 			handled = true
-			showFilterInput(h)
+			h.setForwardEvents(true)
+			applyFilter := func(filter string, canceled bool) {
+				if !canceled {
+					h.widget.Filter(filter)
+				}
+				h.setForwardEvents(false)
+			}
+			showFilterInput(newEventSource(h.eventChan), applyFilter)
 		}
 	}
 	if handled {
-		h.setFocus(focus)
-		if h.hasFocus() {
-			refreshScreen()
-		}
+		refreshScreen()
 	} else {
-		h.baseEventHandler.handle(event)
+		h.baseEventHandler.handle(event, f)
 	}
 }

@@ -3,7 +3,6 @@ package swarm
 import (
 	"strings"
 
-	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/docker/api/types/swarm"
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
@@ -25,7 +24,7 @@ type ServiceRow struct {
 }
 
 //NewServiceRow creats a new ServiceRow widget
-func NewServiceRow(service swarm.Service, serviceInfo formatter.ServiceListInfo, table drytermui.Table) *ServiceRow {
+func NewServiceRow(service swarm.Service, serviceInfo ServiceListInfo, table drytermui.Table) *ServiceRow {
 	row := &ServiceRow{
 		service:  service,
 		ID:       drytermui.NewThemedParColumn(appui.DryTheme, service.ID),
