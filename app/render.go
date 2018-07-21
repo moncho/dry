@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"time"
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
@@ -12,14 +11,14 @@ import (
 
 var cancelMonitorWidget context.CancelFunc
 
-//Render renders dry on the given screen
-func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
+//render renders dry on the given screen
+func render(d *Dry, screen *ui.Screen) {
 	var bufferers []gizaktermui.Bufferer
 
 	var count int
 	var keymap string
 	var viewRenderer ui.Renderer
-	di := d.widgetRegistry.DockerInfo
+	di := widgets.DockerInfo
 	bufferers = append(bufferers, di)
 
 	//if the monitor widget is active it is now cancelled since (most likely) the view is going to change now
@@ -30,7 +29,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 	switch d.viewMode() {
 	case ContainerMenu:
 		{
-			cMenu := d.widgetRegistry.ContainerMenu
+			cMenu := widgets.ContainerMenu
 			if err := cMenu.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
@@ -42,7 +41,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 		}
 	case Main:
 		{
-			containersWidget := d.widgetRegistry.ContainerList
+			containersWidget := widgets.ContainerList
 			if err := containersWidget.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
@@ -54,7 +53,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 	case Images:
 		{
 
-			widget := d.widgetRegistry.ImageList
+			widget := widgets.ImageList
 			if err := widget.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
@@ -66,7 +65,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 		}
 	case Networks:
 		{
-			widget := d.widgetRegistry.Networks
+			widget := widgets.Networks
 			if err := widget.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
@@ -76,7 +75,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 		}
 	case Nodes:
 		{
-			nodes := d.widgetRegistry.Nodes
+			nodes := widgets.Nodes
 			if err := nodes.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
@@ -86,7 +85,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 		}
 	case Services:
 		{
-			servicesWidget := d.widgetRegistry.ServiceList
+			servicesWidget := widgets.ServiceList
 			if err := servicesWidget.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
@@ -96,7 +95,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 		}
 	case Tasks:
 		{
-			tasks := d.widgetRegistry.NodeTasks
+			tasks := widgets.NodeTasks
 			if err := tasks.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
@@ -106,7 +105,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 		}
 	case ServiceTasks:
 		{
-			tasks := d.widgetRegistry.ServiceTasks
+			tasks := widgets.ServiceTasks
 			if err := tasks.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
@@ -116,7 +115,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 		}
 	case Stacks:
 		{
-			stacks := d.widgetRegistry.Stacks
+			stacks := widgets.Stacks
 			if err := stacks.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
@@ -126,7 +125,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 		}
 	case StackTasks:
 		{
-			tasks := d.widgetRegistry.StackTasks
+			tasks := widgets.StackTasks
 			if err := tasks.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
@@ -137,8 +136,8 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 	case DiskUsage:
 		{
 			if du, err := d.dockerDaemon.DiskUsage(); err == nil {
-				d.widgetRegistry.DiskUsage.PrepareToRender(&du, d.PruneReport())
-				viewRenderer = d.widgetRegistry.DiskUsage
+				widgets.DiskUsage.PrepareToRender(&du, d.PruneReport())
+				viewRenderer = widgets.DiskUsage
 
 			} else {
 				screen.Render(1,
@@ -148,7 +147,7 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 		}
 	case Monitor:
 		{
-			monitor := d.widgetRegistry.Monitor
+			monitor := widgets.Monitor
 			monitor.Mount()
 			ctx, cancel := context.WithCancel(context.Background())
 			monitor.RenderLoop(ctx)
@@ -161,36 +160,17 @@ func Render(d *Dry, screen *ui.Screen, statusBar *ui.ExpiringMessageWidget) {
 	updateCursorPosition(screen.Cursor, count)
 	bufferers = append(bufferers, footer(keymap))
 
-	statusBar.Render()
-	screen.RenderLine(0, 0, `<right><white>`+time.Now().Format(`15:04:05`)+`</></right>`)
+	widgets.MessageBar.Render()
 	screen.RenderBufferer(bufferers...)
 	if viewRenderer != nil {
 		screen.RenderRenderer(appui.MainScreenHeaderSize, viewRenderer)
 	}
 
-	for _, widget := range d.widgetRegistry.activeWidgets {
+	for _, widget := range widgets.activeWidgets {
 		screen.RenderBufferer(widget)
 	}
 
 	screen.Flush()
-}
-
-//renderDry returns a Renderer with dry's current content
-func renderDry(d *Dry) ui.Renderer {
-	var output ui.Renderer
-	switch d.viewMode() {
-	case EventsMode:
-		output = appui.NewDockerEventsRenderer(d.dockerDaemon.EventLog().Events())
-	case HelpMode:
-		output = ui.StringRenderer(help)
-	case InfoMode:
-		output = appui.NewDockerInfoRenderer(d.info)
-	default:
-		{
-			output = ui.StringRenderer("Dry is not ready yet for rendering, be patient...")
-		}
-	}
-	return output
 }
 
 func footer(mapping string) *termui.MarkupPar {

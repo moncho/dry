@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/moncho/dry/appui"
@@ -23,154 +24,254 @@ var viewsToHandlers = map[viewMode]eventHandler{
 	StackTasks:    &stackTasksScreenEventHandler{},
 }
 
-var defaultHandler eventHandler
-
 //eventHandler interface to handle termbox events
 type eventHandler interface {
-	getEventChan() chan termbox.Event
-	//handle handles a termbox event
-	handle(event termbox.Event)
-	//hasFocus returns true while the handler is processing events
-	hasFocus() bool
-	init(dry *Dry,
-		screen *ui.Screen,
-		keyboardQueueForView chan termbox.Event,
-		viewClosedChan chan struct{})
-	setForwardEvents(forwardEvents bool)
-	widget() appui.AppWidget
-	widgetRegistry() *WidgetRegistry
+	events() chan termbox.Event
+	//handle handles the given termbox event, the given func can be
+	//used to set the handler of the next event
+	handle(event termbox.Event, nextHandler func(eventHandler))
 }
 
 type baseEventHandler struct {
-	dry              *Dry
-	screen           *ui.Screen
-	eventChan        chan termbox.Event
-	closeViewChan    chan struct{}
-	focus            bool
-	forwardingEvents bool
-
+	dry        *Dry
+	screen     *ui.Screen
+	eventChan  chan termbox.Event
+	forwarding bool
 	sync.RWMutex
 }
 
-func (b *baseEventHandler) getEventChan() chan termbox.Event {
+func (b *baseEventHandler) events() chan termbox.Event {
 	return b.eventChan
 }
 
-func (b *baseEventHandler) handle(event termbox.Event) {
+func (b *baseEventHandler) forwardingEvents() bool {
+	b.RLock()
+	defer b.RUnlock()
+	return b.forwarding
+}
+
+func (b *baseEventHandler) setForwardEvents(t bool) {
+	b.Lock()
+	defer b.Unlock()
+	b.forwarding = t
+}
+
+func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 	dry := b.dry
 	screen := b.screen
 	cursor := screen.Cursor
-	focus := true
+	refresh := true
 	switch event.Key {
 	case termbox.KeyArrowUp: //cursor up
 		cursor.ScrollCursorUp()
 	case termbox.KeyArrowDown: // cursor down
 		cursor.ScrollCursorDown()
-	case termbox.KeyF8: // docker events
-		dry.ShowDiskUsage()
+	case termbox.KeyF8: // disk usage
+		f(viewsToHandlers[DiskUsage])
+		dry.SetViewMode(DiskUsage)
 	case termbox.KeyF9: // docker events
-		dry.ShowDockerEvents()
-		focus = false
-		go appui.Less(renderDry(dry), screen, b.eventChan, b.closeViewChan)
+		refresh = false
+		view := dry.viewMode()
+		dry.SetViewMode(EventsMode)
+		eh := &eventHandlerForwarder{
+			eventChan: make(chan termbox.Event),
+		}
+		f(eh)
+
+		renderer := appui.NewDockerEventsRenderer(dry.dockerDaemon.EventLog().Events())
+
+		go appui.Less(renderer, screen, eh.eventChan, func() {
+			dry.SetViewMode(view)
+			f(viewsToHandlers[view])
+			refreshScreen()
+		})
 	case termbox.KeyF10: // docker info
-		dry.ShowInfo()
-		focus = false
-		go appui.Less(renderDry(dry), screen, b.eventChan, b.closeViewChan)
+		refresh = false
+
+		view := dry.viewMode()
+		dry.SetViewMode(InfoMode)
+
+		info, err := dry.dockerDaemon.Info()
+		if err == nil {
+			eh := &eventHandlerForwarder{
+				eventChan: make(chan termbox.Event),
+			}
+			f(eh)
+
+			renderer := appui.NewDockerInfoRenderer(info)
+
+			go appui.Less(renderer, screen, eh.eventChan, func() {
+				dry.SetViewMode(view)
+				f(viewsToHandlers[view])
+				refreshScreen()
+			})
+		} else {
+			dry.appmessage(
+				fmt.Sprintf(
+					"There was an error retrieving Docker information: %s", err.Error()))
+		}
 	}
 	switch event.Ch {
 	case '?', 'h', 'H': //help
-		focus = false
-		dry.ShowHelp()
-		go appui.Less(renderDry(dry), screen, b.eventChan, b.closeViewChan)
+		refresh = false
+
+		view := dry.viewMode()
+		eh := &eventHandlerForwarder{
+			eventChan: make(chan termbox.Event),
+		}
+		f(eh)
+		go appui.Less(ui.StringRenderer(help), screen, eh.eventChan, func() {
+			dry.SetViewMode(view)
+			f(viewsToHandlers[view])
+			refreshScreen()
+		})
 	case '1':
 		cursor.Reset()
-		dry.ShowContainers()
+		f(viewsToHandlers[Main])
+		dry.SetViewMode(Main)
 	case '2':
 		cursor.Reset()
-		dry.ShowImages()
+		f(viewsToHandlers[Images])
+		dry.SetViewMode(Images)
 	case '3':
 		cursor.Reset()
-		dry.ShowNetworks()
+		f(viewsToHandlers[Networks])
+		dry.SetViewMode(Networks)
 	case '4':
 		cursor.Reset()
-		dry.ShowNodes()
+		f(viewsToHandlers[Nodes])
+		dry.SetViewMode(Nodes)
 	case '5':
 		cursor.Reset()
-		dry.ShowServices()
+		f(viewsToHandlers[Services])
+		dry.SetViewMode(Services)
 	case '6':
 		cursor.Reset()
-		dry.ShowStacks()
+		f(viewsToHandlers[Stacks])
+		dry.SetViewMode(Stacks)
 	case 'm', 'M': //monitor mode
 		cursor.Reset()
-		dry.ShowMonitor()
+		f(viewsToHandlers[Monitor])
+		dry.SetViewMode(Monitor)
 	case 'g': //Cursor to the top
 		cursor.Reset()
 	case 'G': //Cursor to the bottom
 		cursor.Bottom()
 	}
-
-	b.setFocus(focus)
-	if b.hasFocus() {
+	if refresh {
 		refreshScreen()
 	}
+
 }
 
-func (b *baseEventHandler) hasFocus() bool {
-	b.RLock()
-	defer b.RUnlock()
-	return b.focus
-}
-
-func (b *baseEventHandler) init(dry *Dry,
-	screen *ui.Screen,
-	keyboardQueueForView chan termbox.Event,
-	closeViewChan chan struct{}) {
-	b.dry = dry
-	b.screen = screen
-	b.eventChan = keyboardQueueForView
-	b.closeViewChan = closeViewChan
-}
-
-func (b *baseEventHandler) setFocus(focus bool) {
-	b.Lock()
-	defer b.Unlock()
-	b.focus = focus
-}
-
-func (b *baseEventHandler) setForwardEvents(forward bool) {
-	b.forwardingEvents = forward
-}
-
-func (b *baseEventHandler) widget() appui.AppWidget {
-	return nil
-}
-
-func (b *baseEventHandler) widgetRegistry() *WidgetRegistry {
-	return b.dry.widgetRegistry
-}
-
-type eventHandlerFactory struct {
-	dry                  *Dry
-	screen               *ui.Screen
-	keyboardQueueForView chan termbox.Event
-	viewClosed           chan struct{}
-	handlers             map[viewMode]eventHandler
-	once                 sync.Once
-}
-
-//handlerFor creates eventHandlers
-func (eh *eventHandlerFactory) handlerFor(view viewMode) eventHandler {
-
-	eh.once.Do(func() {
-		defaultHandler = &baseEventHandler{}
-		defaultHandler.init(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed)
-		eh.handlers = viewsToHandlers
-		for _, handler := range eh.handlers {
-			handler.init(eh.dry, eh.screen, eh.keyboardQueueForView, eh.viewClosed)
-		}
-	})
-	if handler, ok := eh.handlers[view]; ok {
-		return handler
+func initHandlers(dry *Dry, screen *ui.Screen) map[viewMode]eventHandler {
+	return map[viewMode]eventHandler{
+		ContainerMenu: &cMenuEventHandler{
+			baseEventHandler{
+				dry:       dry,
+				screen:    screen,
+				eventChan: make(chan termbox.Event),
+			},
+		},
+		Images: &imagesScreenEventHandler{
+			baseEventHandler{
+				dry:       dry,
+				screen:    screen,
+				eventChan: make(chan termbox.Event),
+			},
+			widgets.ImageList,
+		},
+		Networks: &networksScreenEventHandler{
+			baseEventHandler{
+				dry:       dry,
+				screen:    screen,
+				eventChan: make(chan termbox.Event),
+			},
+			widgets.Networks,
+		},
+		DiskUsage: &diskUsageScreenEventHandler{
+			baseEventHandler{
+				dry:       dry,
+				screen:    screen,
+				eventChan: make(chan termbox.Event),
+			},
+		},
+		Main: &containersScreenEventHandler{
+			baseEventHandler{
+				dry:       dry,
+				screen:    screen,
+				eventChan: make(chan termbox.Event),
+			},
+			widgets.ContainerList,
+		},
+		Monitor: &monitorScreenEventHandler{
+			baseEventHandler{
+				dry:       dry,
+				screen:    screen,
+				eventChan: make(chan termbox.Event),
+			},
+			widgets.Monitor,
+		},
+		Nodes: &nodesScreenEventHandler{
+			baseEventHandler{
+				dry:       dry,
+				screen:    screen,
+				eventChan: make(chan termbox.Event),
+			},
+			widgets.Nodes,
+		},
+		Tasks: &taskScreenEventHandler{
+			baseEventHandler{
+				dry:       dry,
+				screen:    screen,
+				eventChan: make(chan termbox.Event),
+			},
+			widgets.NodeTasks,
+		},
+		Services: &servicesScreenEventHandler{
+			baseEventHandler{
+				dry:       dry,
+				screen:    screen,
+				eventChan: make(chan termbox.Event),
+			},
+			widgets.ServiceList,
+		},
+		ServiceTasks: &serviceTasksScreenEventHandler{
+			baseEventHandler{
+				dry:       dry,
+				screen:    screen,
+				eventChan: make(chan termbox.Event),
+			},
+			widgets.ServiceTasks,
+		},
+		Stacks: &stacksScreenEventHandler{
+			baseEventHandler{
+				dry:       dry,
+				screen:    screen,
+				eventChan: make(chan termbox.Event),
+			},
+			widgets.Stacks,
+		},
+		StackTasks: &stackTasksScreenEventHandler{
+			baseEventHandler{
+				dry:       dry,
+				screen:    screen,
+				eventChan: make(chan termbox.Event),
+			},
+			widgets.StackTasks,
+		},
 	}
-	return defaultHandler
+
+}
+
+type eventHandlerForwarder struct {
+	eventChan chan termbox.Event
+}
+
+func (b *eventHandlerForwarder) events() chan termbox.Event {
+	return b.eventChan
+}
+
+func (b *eventHandlerForwarder) handle(event termbox.Event, f func(eventHandler)) {
+	b.eventChan <- event
 }

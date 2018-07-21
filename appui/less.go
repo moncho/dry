@@ -8,10 +8,8 @@ import (
 )
 
 //Less renders the given renderer output in a "less" buffer
-func Less(renderer ui.Renderer, screen *ui.Screen, keyboardQueue chan termbox.Event, closeView chan struct{}) {
-	defer func() {
-		closeView <- struct{}{}
-	}()
+func Less(renderer ui.Renderer, screen *ui.Screen, events <-chan termbox.Event, onDone func()) {
+	defer onDone()
 	screen.ClearAndFlush()
 
 	less := ui.NewLess(screen, DryTheme)
@@ -19,7 +17,7 @@ func Less(renderer ui.Renderer, screen *ui.Screen, keyboardQueue chan termbox.Ev
 	io.WriteString(less, renderer.Render())
 
 	//Focus blocks until less decides that it does not want focus any more
-	less.Focus(keyboardQueue)
+	less.Focus(events)
 	termbox.HideCursor()
 	screen.ClearAndFlush()
 
