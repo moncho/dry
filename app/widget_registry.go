@@ -1,6 +1,8 @@
 package app
 
 import (
+	"sync"
+
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/appui/swarm"
 	"github.com/moncho/dry/docker"
@@ -8,36 +10,37 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
-//WidgetRegistry holds two sets of widgets:
+//widgetRegistry holds two sets of widgets:
 // * those registered in the the registry when it was created, that
 //   can be reused. These are the individually named widgets found on
 //   this struct.
 // * a list of widgets to be rendered on the next rendering.
-type WidgetRegistry struct {
-	ContainerList    *appui.ContainersWidget
-	ContainerMenu    *appui.ContainerMenuWidget
-	DiskUsage        *appui.DockerDiskUsageRenderer
-	DockerInfo       *appui.DockerInfo
-	ImageList        *appui.DockerImagesWidget
-	Monitor          *appui.Monitor
-	Networks         *appui.DockerNetworksWidget
-	Nodes            *swarm.NodesWidget
-	NodeTasks        *swarm.NodeTasksWidget
-	ServiceTasks     *swarm.ServiceTasksWidget
-	ServiceList      *swarm.ServicesWidget
-	Stacks           *swarm.StacksWidget
-	StackTasks       *swarm.StacksTasksWidget
-	activeWidgets    map[string]termui.Widget
-	widgetForViewMap map[viewMode]termui.Widget
+type widgetRegistry struct {
+	ContainerList *appui.ContainersWidget
+	ContainerMenu *appui.ContainerMenuWidget
+	DiskUsage     *appui.DockerDiskUsageRenderer
+	DockerInfo    *appui.DockerInfo
+	ImageList     *appui.DockerImagesWidget
+	Monitor       *appui.Monitor
+	Networks      *appui.DockerNetworksWidget
+	Nodes         *swarm.NodesWidget
+	NodeTasks     *swarm.NodeTasksWidget
+	ServiceTasks  *swarm.ServiceTasksWidget
+	ServiceList   *swarm.ServicesWidget
+	Stacks        *swarm.StacksWidget
+	StackTasks    *swarm.StacksTasksWidget
+	MessageBar    *ui.ExpiringMessageWidget
+	activeWidgets map[string]termui.Widget
+	sync.Mutex
 }
 
 //NewWidgetRegistry creates the WidgetCatalog
-func NewWidgetRegistry(daemon docker.ContainerDaemon) *WidgetRegistry {
+func newWidgetRegistry(daemon docker.ContainerDaemon) *widgetRegistry {
 	di := appui.NewDockerInfo(daemon)
 	di.SetX(0)
 	di.SetY(1)
 	di.SetWidth(ui.ActiveScreen.Dimensions.Width)
-	w := WidgetRegistry{
+	w := widgetRegistry{
 		DockerInfo:    di,
 		ContainerList: appui.NewContainersWidget(daemon, appui.MainScreenHeaderSize),
 		ContainerMenu: appui.NewContainerMenuWidget(daemon, appui.MainScreenHeaderSize),
@@ -52,39 +55,24 @@ func NewWidgetRegistry(daemon docker.ContainerDaemon) *WidgetRegistry {
 		Stacks:        swarm.NewStacksWidget(daemon, appui.MainScreenHeaderSize),
 		StackTasks:    swarm.NewStacksTasksWidget(daemon, appui.MainScreenHeaderSize),
 		activeWidgets: make(map[string]termui.Widget),
+		MessageBar:    ui.NewExpiringMessageWidget(0, ui.ActiveScreen.Dimensions.Width, appui.DryTheme),
 	}
-
-	initWidgetForViewMap(&w)
 
 	return &w
 }
 
-func (wr *WidgetRegistry) widgetForView(v viewMode) termui.Widget {
-	return wr.widgetForViewMap[v]
-}
-
-func (wr *WidgetRegistry) add(w termui.Widget) {
+func (wr *widgetRegistry) add(w termui.Widget) {
+	wr.Lock()
+	defer wr.Unlock()
 	if err := w.Mount(); err == nil {
 		wr.activeWidgets[w.Name()] = w
 	}
 }
 
-func (wr *WidgetRegistry) remove(w termui.Widget) {
+func (wr *widgetRegistry) remove(w termui.Widget) {
+	wr.Lock()
+	defer wr.Unlock()
 	if err := w.Unmount(); err == nil {
 		delete(wr.activeWidgets, w.Name())
 	}
-}
-
-func initWidgetForViewMap(wr *WidgetRegistry) {
-	viewMap := make(map[viewMode]termui.Widget)
-	viewMap[ContainerMenu] = wr.ContainerMenu
-	viewMap[Main] = wr.ContainerList
-	viewMap[Networks] = wr.Networks
-	viewMap[Images] = wr.ImageList
-	viewMap[Monitor] = wr.Monitor
-	viewMap[Nodes] = wr.Nodes
-	viewMap[Services] = wr.ServiceList
-	viewMap[Stacks] = wr.Stacks
-	wr.widgetForViewMap = viewMap
-
 }

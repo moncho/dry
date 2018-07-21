@@ -3,56 +3,67 @@ package app
 import (
 	"fmt"
 
-	"github.com/moncho/dry/appui"
+	"github.com/moncho/dry/appui/swarm"
 	termbox "github.com/nsf/termbox-go"
 )
 
 type stackTasksScreenEventHandler struct {
 	baseEventHandler
+	widget *swarm.StacksTasksWidget
 }
 
-func (h *stackTasksScreenEventHandler) widget() appui.AppWidget {
-	return h.dry.widgetRegistry.StackTasks
-}
-
-func (h *stackTasksScreenEventHandler) handle(event termbox.Event) {
-	if h.forwardingEvents {
+func (h *stackTasksScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+	if h.forwardingEvents() {
 		h.eventChan <- event
 		return
 	}
-	handled := false
-	focus := true
+	handled := true
 
 	switch event.Key {
 	case termbox.KeyEsc:
-		handled = true
-		h.dry.ShowStacks()
+		f(viewsToHandlers[Stacks])
+		h.dry.SetViewMode(Stacks)
 	case termbox.KeyF1: //sort
-		handled = true
-		h.widget().Sort()
+		h.widget.Sort()
 	case termbox.KeyF5: // refresh
-		handled = true
 		h.dry.appmessage("Refreshing stack tasks list")
-		h.widget().Unmount()
+		h.widget.Unmount()
 	case termbox.KeyEnter:
-		handled = true
-		focus = false
-		if err := h.widget().OnEvent(inspectTask(h.dry, h.screen, h.eventChan, h.closeViewChan)); err != nil {
+		h.setForwardEvents(true)
+		if err := h.widget.OnEvent(
+			inspect(
+				h.screen,
+				h.eventChan,
+				func(id string) (interface{}, error) {
+					return h.dry.dockerDaemon.Task(id)
+				},
+				func() {
+					h.dry.SetViewMode(StackTasks)
+					h.setForwardEvents(false)
+					f(h)
+				})); err != nil {
 			h.dry.appmessage(
 				fmt.Sprintf("Error inspecting stack: %s", err.Error()))
 		}
-
+	default:
+		handled = false
 	}
 	switch event.Ch {
 	case '%':
 		handled = true
-		showFilterInput(h)
+		h.setForwardEvents(true)
+		applyFilter := func(filter string, canceled bool) {
+			if !canceled {
+				h.widget.Filter(filter)
+			}
+			h.setForwardEvents(false)
+		}
+		showFilterInput(newEventSource(h.eventChan), applyFilter)
 	}
 
 	if !handled {
-		h.baseEventHandler.handle(event)
+		h.baseEventHandler.handle(event, f)
 	} else {
-		h.setFocus(focus)
 		refreshScreen()
 	}
 
