@@ -8,7 +8,7 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-// TextInput is a widget for text input
+// TextInput is a widget to capture user input
 type TextInput struct {
 	termui.Block
 	input         []rune
@@ -22,7 +22,7 @@ type TextInput struct {
 	TextBuilder   termui.TextBuilder
 }
 
-//NewTextInput creates a new TextInput
+//NewTextInput creates a new TextInput with the given initial text
 func NewTextInput(s string) *TextInput {
 	textInput := &TextInput{
 		Block:         *termui.NewBlock(),
@@ -39,7 +39,7 @@ func NewTextInput(s string) *TextInput {
 
 //OnFocus starts handling events sent to the given channel. It is a
 //blocking call, to return from it, either close the channel or
-//sent a closing event (i.e. KeyEnter on single line mode, KeyEsc on any mode).
+//send a closing event (i.e. KeyEnter on single line mode, KeyEsc on any mode).
 func (i *TextInput) OnFocus(event ui.EventSource) error {
 	if i.isCapturing {
 		return errors.New("This text input is already capturing events")
