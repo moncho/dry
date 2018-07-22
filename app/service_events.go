@@ -98,7 +98,35 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 			}
 			refreshScreen()
 		}()
-
+	case termbox.KeyCtrlU: //Update service
+		rw := appui.NewPrompt("The selected service will be updated. Do you want to proceed? y/N")
+		widgets.add(rw)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
+		go func() {
+			events := ui.EventSource{
+				Events: forwarder.events(),
+				EventHandledCallback: func(e termbox.Event) error {
+					return refreshScreen()
+				},
+			}
+			rw.OnFocus(events)
+			widgets.remove(rw)
+			confirmation, canceled := rw.Text()
+			f(h)
+			if canceled || (confirmation != "y" && confirmation != "Y") {
+				return
+			}
+			removeService := func(serviceID string) error {
+				err := dry.dockerDaemon.ServiceUpdate(serviceID)
+				return err
+			}
+			if err := h.widget.OnEvent(removeService); err != nil {
+				h.dry.appmessage("There was an error updating the service: " + err.Error())
+			}
+			refreshScreen()
+		}()
 	case termbox.KeyEnter:
 		showTasks := func(serviceID string) error {
 			h.screen.Cursor.Reset()
@@ -168,6 +196,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 						func() {
 							h.dry.SetViewMode(Services)
 							f(h)
+							refreshScreen()
 						})
 					return nil
 				}

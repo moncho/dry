@@ -19,6 +19,7 @@ func (h *serviceTasksScreenEventHandler) handle(event termbox.Event, f func(even
 	case termbox.KeyEsc:
 		f(viewsToHandlers[Services])
 		h.dry.SetViewMode(Services)
+		refreshScreen()
 	case termbox.KeyF1: //sort
 		widgets.ServiceTasks.Sort()
 	case termbox.KeyF5: // refresh

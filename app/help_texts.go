@@ -68,6 +68,8 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Enter</>     Shows the list of taks that are part of the selected service
 	<white>l</>         Displays the logs of the selected service
 	<white>Ctrl+R</>    Removes the selected service
+	<white>Ctrl+S</>    Scales the selected service
+	<white>Ctrl+U</>    Forces an update of the selected service
 
 <yellow>Stack list keybinds</>
 	<white>Enter</>     Shows the list of services of the selected stack
@@ -118,7 +120,7 @@ const (
 		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <b>[6]:<darkgrey>Stacks</> <blue>|</>" +
 		"<b>[p]:<darkgrey>Prune</>"
 
-	serviceKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> <b>[l]:<darkgrey>Service logs</> <b>[Ctrl+R]:<darkgrey>Remove Service</> <b>[Ctrl+S]:<darkgrey>Scale service</>"
+	serviceKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> <b>[l]:<darkgrey>Service logs</> <b>[Ctrl+R]:<darkgrey>Remove Service</> <b>[Ctrl+S]:<darkgrey>Scale service</><b>[Ctrl+K]:<darkgrey>Update service</>"
 
 	stackKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> <b>[Ctrl+R]:<darkgrey>Remove Stack</>"
 
