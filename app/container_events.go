@@ -197,7 +197,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 			} else {
 				dry.errorMessage(id, "removing", err)
 			}
-
+			refreshScreen()
 		}()
 
 	case docker.STATS:
