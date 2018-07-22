@@ -60,10 +60,6 @@ ignored = [
   unused-packages = true
 
 [[constraint]]
-  name = "github.com/chzyer/readline"
-  revision = "c914be64f07d9998f52bf0d598ec26d457168c0f"
-
-[[constraint]]
   name = "github.com/docker/docker"
   revision = "641e2c01cca0c9c66b173a52c1f1ef12a934dfa9"
 

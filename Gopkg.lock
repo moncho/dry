@@ -8,11 +8,6 @@
   version = "v0.4.5"
 
 [[projects]]
-  name = "github.com/chzyer/readline"
-  packages = ["."]
-  revision = "c914be64f07d9998f52bf0d598ec26d457168c0f"
-
-[[projects]]
   branch = "master"
   name = "github.com/docker/cli"
   packages = ["templates"]
@@ -198,6 +193,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2bc69c9c660a3e55b295036f21111ffc241f72eaf569beddd74fd0018075e13a"
+  inputs-digest = "f8900636c17a30d5188b7466cccc2c7324d32853c813e08fd11aab4e27fe0af7"
   solver-name = "gps-cdcl"
   solver-version = 1
