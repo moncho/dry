@@ -59,7 +59,9 @@ func (h *stackTasksScreenEventHandler) handle(event termbox.Event, f func(eventH
 		showFilterInput(newEventSource(forwarder.events()), applyFilter)
 	}
 
-	if !handled {
+	if handled {
+		refreshScreen()
+	} else {
 		h.baseEventHandler.handle(event, f)
 	}
 }
