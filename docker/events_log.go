@@ -1,6 +1,10 @@
 package docker
 
-import "github.com/docker/docker/api/types/events"
+import (
+	"sync"
+
+	"github.com/docker/docker/api/types/events"
+)
 
 const (
 	//DefaultCapacity of a new EventLog.
@@ -15,6 +19,7 @@ type EventLog struct {
 	tail     int // the least recent value written
 	capacity int
 	messages []*events.Message
+	sync.RWMutex
 }
 
 //NewEventLog creates an event log with the default capacity
@@ -37,6 +42,8 @@ func (el *EventLog) Count() int {
 
 //Events returns a copy of the event buffer
 func (el *EventLog) Events() []events.Message {
+	el.RLock()
+	defer el.RUnlock()
 	if el.Count() == 0 {
 		return nil
 	}
@@ -56,11 +63,15 @@ func (el *EventLog) Init(capacity int) {
 
 //Peek the latest event added
 func (el *EventLog) Peek() *events.Message {
+	el.RLock()
+	defer el.RUnlock()
 	return el.messages[el.tail-1]
 }
 
 //Push the given event to this log
 func (el *EventLog) Push(message *events.Message) {
+	el.Lock()
+	defer el.Unlock()
 	// if the array is full, rewind
 	if el.tail == el.capacity {
 		el.rewind()
