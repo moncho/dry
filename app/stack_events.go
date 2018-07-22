@@ -15,19 +15,13 @@ type stacksScreenEventHandler struct {
 }
 
 func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
-	if h.forwardingEvents() {
-		h.eventChan <- event
-		return
-	}
 	handled := true
 	switch event.Key {
 	case termbox.KeyF1: //sort
-
 		widgets.Stacks.Sort()
 	case termbox.KeyF5: // refresh
 		h.dry.appmessage("Refreshing stack list")
 		h.widget.Unmount()
-
 	case termbox.KeyEnter: //inspect
 		showTasks := func(stack string) error {
 			widgets.StackTasks.ForStack(stack)
@@ -37,11 +31,13 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandl
 		h.widget.OnEvent(showTasks)
 	case termbox.KeyCtrlR: //remove stack
 		rw := appui.NewPrompt("The selected stack will be removed. Do you want to proceed? y/N")
-		h.setForwardEvents(true)
 		widgets.add(rw)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
@@ -49,7 +45,7 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandl
 			rw.OnFocus(events)
 			widgets.remove(rw)
 			confirmation, canceled := rw.Text()
-			h.setForwardEvents(false)
+			f(h)
 			if canceled || (confirmation != "y" && confirmation != "Y") {
 				return
 			}
@@ -58,12 +54,12 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandl
 				if err == nil {
 					h.dry.appmessage(fmt.Sprintf("Stack %s removed", stack))
 				}
-				refreshScreen()
 				return err
 			}
 			if err := h.widget.OnEvent(removeStack); err != nil {
 				h.dry.appmessage("There was an error removing the stack: " + err.Error())
 			}
+			refreshScreen()
 		}()
 	default:
 		handled = false
@@ -75,14 +71,15 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandl
 			handled = true
 		case '%':
 			handled = true
-			h.setForwardEvents(true)
+			forwarder := newEventForwarder()
+			f(forwarder)
 			applyFilter := func(filter string, canceled bool) {
 				if !canceled {
 					h.widget.Filter(filter)
 				}
-				h.setForwardEvents(false)
+				f(h)
 			}
-			showFilterInput(newEventSource(h.eventChan), applyFilter)
+			showFilterInput(newEventSource(forwarder.events()), applyFilter)
 		}
 	}
 	if handled {

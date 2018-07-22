@@ -25,8 +25,7 @@ type Dry struct {
 	dockerEventsDone chan<- struct{}
 	output           chan string
 	state            *state
-	//cache is a potential replacement for state
-	cache *cache.Cache
+	cache            *cache.Cache
 }
 
 //SetViewMode changes the view mode of dry

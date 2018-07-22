@@ -18,10 +18,7 @@ type diskUsageScreenEventHandler struct {
 }
 
 func (h *diskUsageScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
-	if h.forwardingEvents() {
-		h.eventChan <- event
-		return
-	}
+
 	handled := false
 	switch event.Key {
 	case termbox.KeyArrowUp | termbox.KeyArrowDown:
@@ -33,11 +30,13 @@ func (h *diskUsageScreenEventHandler) handle(event termbox.Event, f func(eventHa
 		handled = true
 
 		rw := appui.NewPrompt(confirmation)
-		h.setForwardEvents(true)
 		widgets.add(rw)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
@@ -47,20 +46,19 @@ func (h *diskUsageScreenEventHandler) handle(event termbox.Event, f func(eventHa
 			rw.OnFocus(events)
 			widgets.remove(rw)
 			confirmation, canceled := rw.Text()
-			h.setForwardEvents(false)
+			f(h)
 			if canceled || (confirmation != "y" && confirmation != "Y") {
 				return
 			}
 			pr, err := h.dry.dockerDaemon.Prune()
 			if err == nil {
 				h.dry.cache.Add(pruneReport, pr, 30*time.Second)
-				refreshScreen()
 			} else {
 				h.dry.appmessage(
 					fmt.Sprintf(
 						"<red>Error running prune. %s</>", err))
 			}
-
+			refreshScreen()
 		}()
 	}
 	if !handled {

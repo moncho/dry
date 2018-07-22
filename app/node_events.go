@@ -16,10 +16,7 @@ type nodesScreenEventHandler struct {
 }
 
 func (h *nodesScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
-	if h.forwardingEvents() {
-		h.eventChan <- event
-		return
-	}
+
 	handled := false
 
 	switch event.Key {
@@ -32,12 +29,14 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event, f func(eventHandle
 	case termbox.KeyCtrlA:
 		dry := h.dry
 		rw := appui.NewPrompt("Changing node availability, please type one of ('active'|'pause'|'drain')")
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
 		handled = true
 		widgets.add(rw)
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
@@ -45,7 +44,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event, f func(eventHandle
 			rw.OnFocus(events)
 			widgets.remove(rw)
 			availability, canceled := rw.Text()
-			h.setForwardEvents(false)
+			f(h)
 			if canceled {
 				return
 			}
@@ -85,14 +84,15 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event, f func(eventHandle
 		switch event.Ch {
 		case '%':
 			handled = true
-			h.setForwardEvents(true)
+			forwarder := newEventForwarder()
+			f(forwarder)
 			applyFilter := func(filter string, canceled bool) {
 				if !canceled {
 					h.widget.Filter(filter)
 				}
-				h.setForwardEvents(false)
+				f(h)
 			}
-			showFilterInput(newEventSource(h.eventChan), applyFilter)
+			showFilterInput(newEventSource(forwarder.events()), applyFilter)
 		}
 	}
 	if !handled {

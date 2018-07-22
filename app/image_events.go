@@ -16,10 +16,6 @@ type imagesScreenEventHandler struct {
 }
 
 func (h *imagesScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
-	if h.forwardingEvents() {
-		h.eventChan <- event
-		return
-	}
 	handled := h.handleKeyEvent(event.Key, f)
 
 	if !handled {
@@ -42,18 +38,19 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 	case termbox.KeyCtrlD: //remove dangling images
 		prompt := appui.NewPrompt("Do you want to remove dangling images? (y/N)")
 		widgets.add(prompt)
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
 			}
 			prompt.OnFocus(events)
 			conf, cancel := prompt.Text()
-			h.setForwardEvents(false)
+			f(h)
 			widgets.remove(prompt)
 			if cancel || (conf != "y" && conf != "Y") {
 				return
@@ -75,18 +72,19 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 
 		prompt := appui.NewPrompt("Do you want to remove the selected image? (y/N)")
 		widgets.add(prompt)
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
 			}
 			prompt.OnFocus(events)
 			conf, cancel := prompt.Text()
-			h.setForwardEvents(false)
+			f(h)
 			widgets.remove(prompt)
 			if cancel || (conf != "y" && conf != "Y") {
 				return
@@ -112,18 +110,19 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 	case termbox.KeyCtrlF: //force remove image
 		prompt := appui.NewPrompt("Do you want to remove the selected image? (y/N)")
 		widgets.add(prompt)
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
 			}
 			prompt.OnFocus(events)
 			conf, cancel := prompt.Text()
-			h.setForwardEvents(false)
+			f(h)
 			widgets.remove(prompt)
 			if cancel || (conf != "y" && conf != "Y") {
 				return
@@ -147,15 +146,15 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 		}()
 
 	case termbox.KeyEnter: //inspect image
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
 		inspectImage := inspect(
 			h.screen,
-			h.eventChan,
+			forwarder.events(),
 			func(id string) (interface{}, error) {
 				return h.dry.dockerDaemon.InspectImage(id)
 			},
 			func() {
-				h.setForwardEvents(false)
 				h.dry.SetViewMode(Images)
 				f(h)
 				refreshScreen()
@@ -184,13 +183,13 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 			history, err := dry.dockerDaemon.History(id)
 
 			if err == nil {
-				h.setForwardEvents(true)
+				forwarder := newEventForwarder()
+				f(forwarder)
 				renderer := appui.NewDockerImageHistoryRenderer(history)
 
-				go appui.Less(renderer, h.screen, h.eventChan, func() {
+				go appui.Less(renderer, h.screen, forwarder.events(), func() {
 					h.dry.SetViewMode(Images)
 					f(h)
-					h.setForwardEvents(false)
 					refreshScreen()
 				})
 			}
@@ -201,30 +200,42 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 		}
 	case 'r', 'R': //Run container
 		runImage := func(id string) error {
-			h.setForwardEvents(true)
-			defer h.setForwardEvents(false)
 			image, err := h.dry.dockerDaemon.ImageByID(id)
 			if err != nil {
 				return err
 			}
 			rw := appui.NewImageRunWidget(image)
 			widgets.add(rw)
+			forwarder := newEventForwarder()
+			f(forwarder)
+			refreshScreen()
 			go func(image types.ImageSummary) {
+				defer f(h)
 				events := ui.EventSource{
-					Events: h.eventChan,
+					Events: forwarder.events(),
 					EventHandledCallback: func(e termbox.Event) error {
 						return refreshScreen()
 					},
 				}
 				rw.OnFocus(events)
 				widgets.remove(rw)
+				f(h)
 				runCommand, canceled := rw.Text()
 				if canceled {
 					return
 				}
 				if err := dry.dockerDaemon.RunImage(image, runCommand); err != nil {
 					dry.appmessage(err.Error())
+				} else {
+					var repo string
+					if len(image.RepoTags) > 0 {
+						repo = image.RepoTags[0]
+					}
+					dry.appmessage(
+						fmt.Sprintf(
+							"Image %s run successfully", repo))
 				}
+				refreshScreen()
 
 			}(image)
 			return nil
@@ -234,14 +245,15 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 				fmt.Sprintf("Error running image: %s", err.Error()))
 		}
 	case '%':
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
 		applyFilter := func(filter string, canceled bool) {
 			if !canceled {
 				h.widget.Filter(filter)
 			}
-			h.setForwardEvents(false)
+			f(h)
 		}
-		showFilterInput(newEventSource(h.eventChan), applyFilter)
+		showFilterInput(newEventSource(forwarder.events()), applyFilter)
 	default:
 		handled = false
 	}

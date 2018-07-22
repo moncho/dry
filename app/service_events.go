@@ -16,15 +16,11 @@ type servicesScreenEventHandler struct {
 }
 
 func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
-	if h.forwardingEvents() {
-		h.eventChan <- event
-		return
-	}
 	handled := true
 	dry := h.dry
 
 	switch event.Key {
-	case termbox.KeyF1: // refresh
+	case termbox.KeyF1: // sort
 		widgets.ServiceList.Sort()
 	case termbox.KeyF5: // refresh
 		h.dry.appmessage("Refreshing the service list")
@@ -32,13 +28,14 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 			h.dry.appmessage("There was an error refreshing the service list: " + err.Error())
 		}
 	case termbox.KeyCtrlR:
-
 		rw := appui.NewPrompt("The selected service will be removed. Do you want to proceed? y/N")
-		h.setForwardEvents(true)
 		widgets.add(rw)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
@@ -46,28 +43,30 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 			rw.OnFocus(events)
 			widgets.remove(rw)
 			confirmation, canceled := rw.Text()
-			h.setForwardEvents(false)
+			f(h)
 			if canceled || (confirmation != "y" && confirmation != "Y") {
 				return
 			}
 			removeService := func(serviceID string) error {
 				err := dry.dockerDaemon.ServiceRemove(serviceID)
-				refreshScreen()
 				return err
 			}
 			if err := h.widget.OnEvent(removeService); err != nil {
 				h.dry.appmessage("There was an error removing the service: " + err.Error())
 			}
+			refreshScreen()
 		}()
 
 	case termbox.KeyCtrlS:
 
 		rw := appui.NewPrompt("Scale service. Number of replicas?")
-		h.setForwardEvents(true)
 		widgets.add(rw)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
@@ -75,7 +74,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 			rw.OnFocus(events)
 			widgets.remove(rw)
 			replicas, canceled := rw.Text()
-			h.setForwardEvents(false)
+			f(h)
 			if canceled {
 				return
 			}
@@ -92,12 +91,12 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 				if err == nil {
 					dry.appmessage(fmt.Sprintf("Service %s scaled to %d replicas", serviceID, scaleTo))
 				}
-				refreshScreen()
 				return err
 			}
 			if err := h.widget.OnEvent(scaleService); err != nil {
 				h.dry.appmessage("There was an error scaling the service: " + err.Error())
 			}
+			refreshScreen()
 		}()
 
 	case termbox.KeyEnter:
@@ -115,25 +114,27 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 	switch event.Ch {
 	case '%':
 		handled = true
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
 		applyFilter := func(filter string, canceled bool) {
 			if !canceled {
 				h.widget.Filter(filter)
 			}
-			h.setForwardEvents(false)
+			f(h)
 		}
-		showFilterInput(newEventSource(h.eventChan), applyFilter)
+		showFilterInput(newEventSource(forwarder.events()), applyFilter)
 	case 'i' | 'I':
 		handled = true
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
 		inspectService := inspect(
 			h.screen,
-			h.eventChan,
+			forwarder.events(),
 			func(id string) (interface{}, error) {
 				return h.dry.dockerDaemon.Service(id)
 			},
 			func() {
-				h.setForwardEvents(false)
 				h.dry.SetViewMode(Services)
 				f(h)
 				refreshScreen()
@@ -144,27 +145,27 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 		}
 
 	case 'l':
-
 		prompt := logsPrompt()
-		h.setForwardEvents(true)
 		handled = true
 		widgets.add(prompt)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
 		go func() {
-			prompt.OnFocus(newEventSource(h.eventChan))
+			prompt.OnFocus(newEventSource(forwarder.events()))
 			widgets.remove(prompt)
 			since, canceled := prompt.Text()
 
 			if canceled {
-				h.setForwardEvents(false)
+				f(h)
 				return
 			}
 
 			showServiceLogs := func(serviceID string) error {
 				logs, err := h.dry.dockerDaemon.ServiceLogs(serviceID, since)
 				if err == nil {
-					appui.Stream(logs, h.eventChan,
+					appui.Stream(logs, forwarder.events(),
 						func() {
-							h.setForwardEvents(false)
 							h.dry.SetViewMode(Services)
 							f(h)
 						})
@@ -174,14 +175,11 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 			}
 			if err := h.widget.OnEvent(showServiceLogs); err != nil {
 				h.dry.appmessage("There was an error showing service logs: " + err.Error())
-				h.setForwardEvents(false)
-
+				f(h)
 			}
 		}()
 	}
 	if !handled {
 		h.baseEventHandler.handle(event, f)
-	} else {
-		refreshScreen()
 	}
 }

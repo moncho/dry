@@ -16,10 +16,7 @@ type cMenuEventHandler struct {
 }
 
 func (h *cMenuEventHandler) handle(event termbox.Event, f func(eventHandler)) {
-	if h.forwardingEvents() {
-		h.eventChan <- event
-		return
-	}
+
 	handled := true
 	switch event.Key {
 
@@ -69,18 +66,20 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to kill container %s? (y/N)", id))
 		widgets.add(prompt)
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
 
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
 			}
 			prompt.OnFocus(events)
 			conf, cancel := prompt.Text()
-			h.setForwardEvents(false)
+			f(h)
 			widgets.remove(prompt)
 			if cancel || (conf != "y" && conf != "Y") {
 				return
@@ -101,18 +100,20 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to restart container %s? (y/N)", id))
 		widgets.add(prompt)
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
 
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
 			}
 			prompt.OnFocus(events)
 			conf, cancel := prompt.Text()
-			h.setForwardEvents(false)
+			f(h)
 			widgets.remove(prompt)
 			if cancel || (conf != "y" && conf != "Y") {
 
@@ -134,18 +135,20 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to stop container %s? (y/N)", id))
 		widgets.add(prompt)
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
 
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
 			}
 			prompt.OnFocus(events)
 			conf, cancel := prompt.Text()
-			h.setForwardEvents(false)
+			f(h)
 			widgets.remove(prompt)
 			if cancel || (conf != "y" && conf != "Y") {
 
@@ -163,12 +166,15 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 
 		}()
 	case docker.LOGS:
-		h.setForwardEvents(true)
+
 		prompt := logsPrompt()
 		widgets.add(prompt)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
 		go func() {
 			events := ui.EventSource{
-				Events: h.events(),
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
@@ -183,11 +189,11 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 
 			logs, err := h.dry.dockerDaemon.Logs(id, since)
 			if err == nil {
-				appui.Stream(logs, h.eventChan,
+				appui.Stream(logs, forwarder.events(),
 					func() {
 						h.dry.SetViewMode(ContainerMenu)
 						f(h)
-						h.setForwardEvents(false)
+						f(h)
 						refreshScreen()
 					})
 			} else {
@@ -198,18 +204,20 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to remove container %s? (y/N)", id))
 		widgets.add(prompt)
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
 
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
 			}
 			prompt.OnFocus(events)
 			conf, cancel := prompt.Text()
-			h.setForwardEvents(false)
+			f(h)
 			widgets.remove(prompt)
 			if cancel || (conf != "y" && conf != "Y") {
 
@@ -230,29 +238,34 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		}()
 
 	case docker.STATS:
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
+
 		h.dry.SetViewMode(NoView)
 		statsChan := dry.dockerDaemon.OpenChannel(container)
-		go statsScreen(container, statsChan, screen, h.eventChan,
+		go statsScreen(container, statsChan, screen, forwarder.events(),
 			func() {
 				h.dry.SetViewMode(ContainerMenu)
 				f(h)
-				h.setForwardEvents(false)
+				f(h)
 				refreshScreen()
 			})
 
 	case docker.INSPECT:
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
+
 		err := inspect(
 			h.screen,
-			h.eventChan,
+			forwarder.events(),
 			func(id string) (interface{}, error) {
 				return h.dry.dockerDaemon.Inspect(id)
 			},
 			func() {
 				h.dry.SetViewMode(ContainerMenu)
 				f(h)
-				h.setForwardEvents(false)
 				refreshScreen()
 			})(id)
 
@@ -266,11 +279,11 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 
 		if err == nil {
 			renderer := appui.NewDockerImageHistoryRenderer(history)
-
-			go appui.Less(renderer, screen, h.eventChan, func() {
+			forwarder := newEventForwarder()
+			f(forwarder)
+			go appui.Less(renderer, screen, forwarder.events(), func() {
 				h.dry.SetViewMode(ContainerMenu)
 				f(h)
-				h.setForwardEvents(false)
 				refreshScreen()
 			})
 		} else {

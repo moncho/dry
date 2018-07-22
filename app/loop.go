@@ -12,6 +12,8 @@ import (
 var refreshScreen func() error
 var widgets *widgetRegistry
 
+type nextHandler func(eh eventHandler)
+
 //RenderLoop renders dry until it quits
 // nolint: gocyclo
 func RenderLoop(dry *Dry, screen *ui.Screen) {
@@ -77,7 +79,9 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 	}()
 
 	go func() {
+		//Initial handler
 		handler := viewsToHandlers[dry.viewMode()]
+
 		for event := range eventChan {
 			handler.handle(event, func(eh eventHandler) {
 				handler = eh

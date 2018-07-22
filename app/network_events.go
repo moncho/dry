@@ -15,10 +15,6 @@ type networksScreenEventHandler struct {
 }
 
 func (h *networksScreenEventHandler) handle(event termbox.Event, f func(eh eventHandler)) {
-	if h.forwardingEvents() {
-		h.eventChan <- event
-		return
-	}
 	dry := h.dry
 	screen := h.screen
 	handled := true
@@ -31,17 +27,18 @@ func (h *networksScreenEventHandler) handle(event termbox.Event, f func(eh event
 		h.widget.Unmount()
 		refreshScreen()
 	case termbox.KeyEnter: //inspect
-		inspectNetwork := inspect(screen, h.eventChan,
+		forwarder := newEventForwarder()
+		f(forwarder)
+		inspectNetwork := inspect(screen, forwarder.events(),
 			func(id string) (interface{}, error) {
 				return h.dry.dockerDaemon.NetworkInspect(id)
 			},
 			func() {
-				h.dry.SetViewMode(Images)
-				f(viewsToHandlers[Images])
-				h.setForwardEvents(false)
+				h.dry.SetViewMode(Networks)
+				f(h)
 				refreshScreen()
 			})
-		h.setForwardEvents(true)
+
 		if err := h.widget.OnEvent(inspectNetwork); err != nil {
 			dry.appmessage(
 				fmt.Sprintf("Error inspecting image: %s", err.Error()))
@@ -51,18 +48,19 @@ func (h *networksScreenEventHandler) handle(event termbox.Event, f func(eh event
 
 		prompt := appui.NewPrompt("Do you want to remove the selected network? (y/N)")
 		widgets.add(prompt)
-		h.setForwardEvents(true)
+		forwarder := newEventForwarder()
+		f(forwarder)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
-				Events: h.eventChan,
+				Events: forwarder.events(),
 				EventHandledCallback: func(e termbox.Event) error {
 					return refreshScreen()
 				},
 			}
 			prompt.OnFocus(events)
 			conf, cancel := prompt.Text()
-			h.setForwardEvents(false)
+			f(h)
 			widgets.remove(prompt)
 			if cancel || (conf != "y" && conf != "Y") {
 				return
@@ -96,14 +94,16 @@ func (h *networksScreenEventHandler) handle(event termbox.Event, f func(eh event
 			handled = true
 		case '%':
 			handled = true
-			h.setForwardEvents(true)
+			forwarder := newEventForwarder()
+			f(forwarder)
+			refreshScreen()
 			applyFilter := func(filter string, canceled bool) {
 				if !canceled {
 					h.widget.Filter(filter)
 				}
-				h.setForwardEvents(false)
+				f(h)
 			}
-			showFilterInput(newEventSource(h.eventChan), applyFilter)
+			showFilterInput(newEventSource(forwarder.events()), applyFilter)
 		}
 	}
 	if !handled {
