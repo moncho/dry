@@ -156,6 +156,28 @@ func (daemon *DockerDaemon) ServiceScale(id string, replicas uint64) error {
 
 }
 
+//ServiceUpdate forces an update of the given service
+func (daemon *DockerDaemon) ServiceUpdate(id string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+
+	service, _, err := daemon.client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{})
+	if err != nil {
+		return err
+	}
+
+	service.Spec.TaskTemplate.ForceUpdate++
+
+	_, err = daemon.client.ServiceUpdate(
+		ctx,
+		id,
+		service.Version,
+		service.Spec,
+		types.ServiceUpdateOptions{})
+	return err
+
+}
+
 //ServiceTasks returns the tasks being run that belong to the given list of services
 func (daemon *DockerDaemon) ServiceTasks(services ...string) ([]swarm.Task, error) {
 

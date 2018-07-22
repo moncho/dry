@@ -319,6 +319,11 @@ func (_m *DockerDaemonMock) ServiceTasks(services ...string) ([]swarm.Task, erro
 	return nil, nil
 }
 
+//ServiceUpdate forces an update of the given service
+func (_m *DockerDaemonMock) ServiceUpdate(id string) error {
+	return nil
+}
+
 // StopContainer provides a mock function with given fields: id
 func (_m *DockerDaemonMock) StopContainer(id string) error {
 	return nil
