@@ -105,7 +105,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 
 	case docker.STOP:
 		prompt := appui.NewPrompt(
-			fmt.Sprintf("Do you want to remove container %s? (y/N)", id))
+			fmt.Sprintf("Do you want to stop container %s? (y/N)", id))
 		widgets.add(prompt)
 		forwarder := newEventForwarder()
 		f(forwarder)
@@ -444,6 +444,12 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 		showMenu := func(id string) error {
 			h.screen.Cursor.Reset()
 			widgets.ContainerMenu.ForContainer(id)
+			widgets.ContainerMenu.OnUnmount = func() error {
+				h.screen.Cursor.Reset()
+				h.dry.SetViewMode(Main)
+				f(viewsToHandlers[Main])
+				return refreshScreen()
+			}
 			h.dry.SetViewMode(ContainerMenu)
 			f(viewsToHandlers[ContainerMenu])
 			return refreshScreen()
