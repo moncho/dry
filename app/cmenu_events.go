@@ -193,7 +193,6 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 					func() {
 						h.dry.SetViewMode(ContainerMenu)
 						f(h)
-						f(h)
 						refreshScreen()
 					})
 			} else {
@@ -247,7 +246,6 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		go statsScreen(container, statsChan, screen, forwarder.events(),
 			func() {
 				h.dry.SetViewMode(ContainerMenu)
-				f(h)
 				f(h)
 				refreshScreen()
 			})
