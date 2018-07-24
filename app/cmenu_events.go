@@ -21,9 +21,7 @@ func (h *cMenuEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 	switch event.Key {
 
 	case termbox.KeyEsc:
-		h.screen.Cursor.Reset()
-		h.dry.SetViewMode(Main)
-		f(viewsToHandlers[Main])
+		widgets.ContainerMenu.Unmount()
 
 	case termbox.KeyEnter:
 		err := widgets.ContainerMenu.OnEvent(func(s string) error {
@@ -184,6 +182,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			since, canceled := prompt.Text()
 
 			if canceled {
+				f(h)
 				return
 			}
 
@@ -227,9 +226,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			err := dry.dockerDaemon.Rm(id)
 			if err == nil {
 				dry.actionMessage(id, "removed")
-				f(viewsToHandlers[Main])
-				dry.SetViewMode(Main)
-				refreshScreen()
+				widgets.ContainerMenu.Unmount()
 			} else {
 				dry.errorMessage(id, "removing", err)
 			}
