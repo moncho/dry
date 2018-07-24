@@ -21,11 +21,6 @@ func render(d *Dry, screen *ui.Screen) {
 	di := widgets.DockerInfo
 	bufferers = append(bufferers, di)
 
-	//if the monitor widget is active it is now cancelled since (most likely) the view is going to change now
-	if cancelMonitorWidget != nil {
-		cancelMonitorWidget()
-	}
-
 	switch d.viewMode() {
 	case ContainerMenu:
 		{
@@ -140,6 +135,9 @@ func render(d *Dry, screen *ui.Screen) {
 		}
 	case Monitor:
 		{
+			if cancelMonitorWidget != nil {
+				cancelMonitorWidget()
+			}
 			monitor := widgets.Monitor
 			monitor.Mount()
 			ctx, cancel := context.WithCancel(context.Background())
