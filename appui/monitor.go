@@ -17,6 +17,7 @@ type Monitor struct {
 	daemon               docker.ContainerDaemon
 	rows                 []*ContainerStatsRow
 	openChannels         []*docker.StatsChannel
+	unmount              chan struct{}
 	selectedIndex        int
 	offset               int
 	x, y                 int
@@ -37,7 +38,9 @@ func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
 		x:             0,
 		y:             y,
 		height:        height,
-		width:         ui.ActiveScreen.Dimensions.Width}
+		width:         ui.ActiveScreen.Dimensions.Width,
+		unmount:       make(chan struct{}),
+	}
 	return &m
 }
 
@@ -101,6 +104,9 @@ func (m *Monitor) Name() string {
 //OnEvent refreshes the monitor widget. The command is ignored for now.
 func (m *Monitor) OnEvent(event EventCommand) error {
 	m.refresh()
+	if m.RowCount() > 0 && event != nil {
+		return event(m.visibleRows()[m.selectedIndex].container.ID)
+	}
 	return nil
 }
 
@@ -118,6 +124,8 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
+				return
+			case <-m.unmount:
 				return
 			case <-refreshTimer.C:
 				m.refresh()
@@ -139,6 +147,9 @@ func (m *Monitor) Sort() {
 
 //Unmount tells this widget that it will not be rendering anymore
 func (m *Monitor) Unmount() error {
+	m.Lock()
+	defer m.Unlock()
+	m.unmount <- struct{}{}
 	return nil
 }
 
