@@ -135,14 +135,7 @@ func render(d *Dry, screen *ui.Screen) {
 		}
 	case DiskUsage:
 		{
-			if du, err := d.dockerDaemon.DiskUsage(); err == nil {
-				widgets.DiskUsage.PrepareToRender(&du, d.PruneReport())
-				viewRenderer = widgets.DiskUsage
-
-			} else {
-				screen.Render(1,
-					"There was an error retrieving disk usage information.")
-			}
+			viewRenderer = widgets.DiskUsage
 			keymap = diskUsageKeyMappings
 		}
 	case Monitor:

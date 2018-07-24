@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
@@ -50,9 +49,12 @@ func (h *diskUsageScreenEventHandler) handle(event termbox.Event, f func(eventHa
 			if canceled || (confirmation != "y" && confirmation != "Y") {
 				return
 			}
+
 			pr, err := h.dry.dockerDaemon.Prune()
 			if err == nil {
-				h.dry.cache.Add(pruneReport, pr, 30*time.Second)
+				if du, err := h.dry.dockerDaemon.DiskUsage(); err == nil {
+					widgets.DiskUsage.PrepareToRender(&du, pr)
+				}
 			} else {
 				h.dry.appmessage(
 					fmt.Sprintf(

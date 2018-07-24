@@ -2,6 +2,7 @@ package appui
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -50,7 +51,10 @@ func NewDockerDiskUsageRenderer(screenHeight int) *DockerDiskUsageRenderer {
 func (r *DockerDiskUsageRenderer) PrepareToRender(diskUsage *types.DiskUsage, report *docker.PruneReport) {
 	r.Lock()
 	r.diskUsage = diskUsage
-	r.pruneReport = report
+	if report != nil {
+		r.pruneReport = report
+		r.lastPrune = time.Now()
+	}
 	r.Unlock()
 }
 
@@ -58,11 +62,17 @@ func (r *DockerDiskUsageRenderer) PrepareToRender(diskUsage *types.DiskUsage, re
 func (r *DockerDiskUsageRenderer) Render() string {
 	r.RLock()
 	defer r.RUnlock()
+	timeStamp := ""
+	if !r.lastPrune.IsZero() {
+		timeStamp = r.lastPrune.Format("2006-01-02 15:04:05")
+	}
 	vars := struct {
 		DiskUsageTable string
+		Timestamp      string
 		PruneTable     string
 	}{
 		r.diskUsageTable(),
+		timeStamp,
 		r.pruneTable(),
 	}
 
@@ -114,6 +124,7 @@ func (r *DockerDiskUsageRenderer) formattedDiskUsage() string {
 func buildDiskUsageTableTemplate() *template.Template {
 	markup :=
 		`{{.DiskUsageTable}}
+{{if .Timestamp}}Docker system prune executed on {{.Timestamp}}, results:{{end}}
 
 {{.PruneTable}}
 `
@@ -132,6 +143,9 @@ func applyTemplate(tmpl *template.Template, data interface{}) ([]byte, error) {
 }
 
 func diskUsage(diskUsage *types.DiskUsage) ([]byte, error) {
+	if diskUsage == nil {
+		return nil, errors.New("Disk usage report not provided")
+	}
 	buffer := bytes.NewBufferString("\n")
 
 	tmpl, err := template.New("").Parse(defaultDiskUsageTableFormat)

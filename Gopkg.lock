@@ -149,12 +149,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  name = "github.com/patrickmn/go-cache"
-  packages = ["."]
-  revision = "1881a9bccb818787f68c52bfba648c6cf34c34fa"
-  version = "v2.0.0"
-
-[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "494e70f7620561491c2ca11e185bbef4b70060da"
@@ -193,6 +187,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f8900636c17a30d5188b7466cccc2c7324d32853c813e08fd11aab4e27fe0af7"
+  inputs-digest = "3f6f4157a6f869f1aa919fed0019c9ada6fc518df9b5f11e2c6e7e05e110c472"
   solver-name = "gps-cdcl"
   solver-version = 1

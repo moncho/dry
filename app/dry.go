@@ -3,12 +3,10 @@ package app
 import (
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/docker/docker/api/types/events"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
-	cache "github.com/patrickmn/go-cache"
 )
 
 // state tracks dry state
@@ -25,7 +23,6 @@ type Dry struct {
 	dockerEventsDone chan<- struct{}
 	output           chan string
 	state            *state
-	cache            *cache.Cache
 }
 
 //SetViewMode changes the view mode of dry
@@ -50,14 +47,6 @@ func (d *Dry) OuputChannel() <-chan string {
 //Ok returns the state of dry
 func (d *Dry) Ok() (bool, error) {
 	return d.dockerDaemon.Ok()
-}
-
-//PruneReport returns docker prune report, if any available
-func (d *Dry) PruneReport() *drydocker.PruneReport {
-	if pr, ok := d.cache.Get(pruneReport); ok {
-		return pr.(*drydocker.PruneReport)
-	}
-	return nil
 }
 
 func (d *Dry) startDry() {
@@ -93,7 +82,6 @@ func (d *Dry) viewMode() viewMode {
 
 func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 	dockerEvents, dockerEventsDone, err := d.Events()
-	c := cache.New(5*time.Minute, 30*time.Second)
 	if err == nil {
 
 		state := &state{
@@ -108,7 +96,6 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 		app.output = make(chan string)
 		app.dockerEvents = dockerEvents
 		app.dockerEventsDone = dockerEventsDone
-		app.cache = c
 		app.startDry()
 		return app, nil
 	}

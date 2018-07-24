@@ -35,6 +35,9 @@ func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 	case termbox.KeyF8: // disk usage
 		f(viewsToHandlers[DiskUsage])
 		dry.SetViewMode(DiskUsage)
+		if du, err := b.dry.dockerDaemon.DiskUsage(); err == nil {
+			widgets.DiskUsage.PrepareToRender(&du, nil)
+		}
 	case termbox.KeyF9: // docker events
 		refresh = false
 		view := dry.viewMode()

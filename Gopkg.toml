@@ -104,10 +104,6 @@ ignored = [
   revision = "cca8bbc0798408af109aaaa239cbd2634846b340"
 
 [[constraint]]
-  name = "github.com/patrickmn/go-cache"
-  version = "2.0.0"
-
-[[constraint]]
   name = "github.com/pkg/errors"
   revision = "494e70f7620561491c2ca11e185bbef4b70060da"
 

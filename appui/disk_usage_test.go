@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/moncho/dry/docker"
@@ -33,6 +34,7 @@ func TestDockerDiskUsageRenderer_Render(t *testing.T) {
 	type args struct {
 		diskUsage   *types.DiskUsage
 		pruneReport *docker.PruneReport
+		timeStamp   string
 	}
 	tests := []struct {
 		name string
@@ -49,6 +51,7 @@ func TestDockerDiskUsageRenderer_Render(t *testing.T) {
 			args{
 				diskUsage:   &types.DiskUsage{},
 				pruneReport: &docker.PruneReport{},
+				timeStamp:   "1970-Jan-01",
 			},
 		},
 	}
@@ -58,6 +61,9 @@ func TestDockerDiskUsageRenderer_Render(t *testing.T) {
 			r := NewDockerDiskUsageRenderer(screenHeight)
 
 			r.PrepareToRender(tt.args.diskUsage, tt.args.pruneReport)
+			//Last prune timestamp is manually set for testing
+			timeStamp, _ := time.Parse("2006-Jan-02", tt.args.timeStamp)
+			r.lastPrune = timeStamp
 			actual := r.Render()
 
 			golden := filepath.Join("testdata", tt.name+".golden")
