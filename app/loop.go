@@ -21,9 +21,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 		return
 	}
 	termuiEvents, done := ui.EventChannel()
-	//eventChan is a buffered channel so main loop can receive a new
-	//event while the previous one is being handled
-	eventChan := make(chan termbox.Event, 1)
+	eventChan := make(chan termbox.Event)
 
 	//On receive dry is rendered
 	renderChan := make(chan struct{})
@@ -100,7 +98,12 @@ loop:
 			if event.Key == termbox.KeyCtrlC || event.Ch == 'q' || event.Ch == 'Q' {
 				break loop
 			} else {
-				eventChan <- event
+				select {
+				case eventChan <- event:
+				default:
+					log.Debug("Skipping termbox key event, channel is busy")
+				}
+
 			}
 		case termbox.EventResize:
 			ui.Resize()
