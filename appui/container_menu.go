@@ -22,6 +22,7 @@ type ContainerMenuWidget struct {
 	mounted       bool
 	selectedIndex int
 	x, y          int
+	OnUnmount     func() error
 	sync.RWMutex
 }
 
@@ -129,6 +130,9 @@ func (s *ContainerMenuWidget) Unmount() error {
 	s.Lock()
 	defer s.Unlock()
 	s.mounted = false
+	if s.OnUnmount != nil {
+		return s.OnUnmount()
+	}
 	return nil
 }
 
