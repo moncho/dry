@@ -22,6 +22,24 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 		handled = true
 		cursor.ScrollCursorDown()
 		h.widget.OnEvent(nil)
+	case termbox.KeyEnter: //Container menu
+		showMenu := func(id string) error {
+			h.widget.Unmount()
+			h.screen.Cursor.Reset()
+			widgets.ContainerMenu.ForContainer(id)
+			widgets.ContainerMenu.OnUnmount = func() error {
+				h.screen.Cursor.Reset()
+				h.dry.SetViewMode(Monitor)
+				f(h)
+				return refreshScreen()
+			}
+			h.dry.SetViewMode(ContainerMenu)
+			f(viewsToHandlers[ContainerMenu])
+			return refreshScreen()
+		}
+		if err := h.widget.OnEvent(showMenu); err != nil {
+			h.dry.appmessage(err.Error())
+		}
 	}
 	if !handled {
 		switch event.Ch {
@@ -34,15 +52,18 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 			handled = true
 			cursor.Bottom()
 			h.widget.OnEvent(nil)
-
-		case 'H', 'h', 'q', '1', '2', '3', '4', '5':
-			handled = false
-			cancelMonitorWidget()
 		default:
-			handled = true
+			handled = false
 		}
 	}
 	if !handled {
-		h.baseEventHandler.handle(event, f)
+		nh := func(eh eventHandler) {
+			if cancelMonitorWidget != nil {
+				cancelMonitorWidget()
+				cancelMonitorWidget = nil
+			}
+			f(eh)
+		}
+		h.baseEventHandler.handle(event, nh)
 	}
 }
