@@ -163,11 +163,11 @@ func initHandlers(dry *Dry, screen *ui.Screen) map[viewMode]eventHandler {
 			widgets.ContainerList,
 		},
 		Monitor: &monitorScreenEventHandler{
-			baseEventHandler{
+			baseEventHandler: baseEventHandler{
 				dry:    dry,
 				screen: screen,
 			},
-			widgets.Monitor,
+			widget: widgets.Monitor,
 		},
 		Nodes: &nodesScreenEventHandler{
 			baseEventHandler{
