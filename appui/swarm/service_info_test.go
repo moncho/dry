@@ -1,17 +1,18 @@
 package swarm
 
 import (
+	"flag"
+	"io/ioutil"
+	"path/filepath"
 	"testing"
 
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/mocks"
 )
 
-var expectedServiceInfo = `  <blue>Service Name:</>  <yellow>serviceName</>  <blue>Image:</>  <yellow>bla</>  
-  <blue>Service Mode:</>  <yellow></>  <blue>Labels:</>       <yellow></>                  <blue>Created at:</>  <yellow>01 Jan 01 00:00 UTC</>  
-  <blue>Replicas:</>      <yellow></>  <blue>Constraints:</>  <yellow>constraint,magic</>  <blue>Updated at:</>  <yellow>01 Jan 01 00:00 UTC</>  
-  <blue>Networks:</>      <yellow></>  <blue>Ports:</>        <yellow></>                  
-`
+var update = flag.Bool("update", false, "update .golden files")
+
 var testService = &swarm.Service{
 	Spec: swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
@@ -43,15 +44,39 @@ func TestServiceInfo(t *testing.T) {
 	}
 }
 
-func TestSwarmDockerInfoContent(t *testing.T) {
-	daemon := &mocks.SwarmDockerDaemon{}
-	info := serviceInfo(daemon, "serviceName", testService)
-
-	if info == "" {
-		t.Error("Docker info is empty")
+func Test_serviceInfo(t *testing.T) {
+	type args struct {
+		swarmClient docker.SwarmAPI
+		name        string
+		service     *swarm.Service
 	}
-	if info != expectedServiceInfo {
-		t.Errorf("Service info output does not match. Expected: \n'%q'\n, got: \n'%q'", expectedServiceInfo, info)
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"service_info",
+			args{
+				&mocks.SwarmDockerDaemon{},
+				"serviceName",
+				testService,
+			},
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 
+			got := serviceInfo(tt.args.swarmClient, tt.args.name, tt.args.service)
+
+			golden := filepath.Join("testdata", tt.name+".golden")
+			if *update {
+				ioutil.WriteFile(golden, []byte(got), 0644)
+			}
+			expected, _ := ioutil.ReadFile(golden)
+
+			if got != string(expected) {
+				t.Errorf("serviceInfo() = %v, want %v", got, expected)
+			}
+		})
+	}
 }

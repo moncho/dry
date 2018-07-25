@@ -1,0 +1,5 @@
+  <blue>Service Name:</>  <yellow>serviceName</>  <blue>Image:</>  <yellow>bla</>  
+  <blue>Service Mode:</>  <yellow></>   <blue>Labels:</>       <yellow></>                  <blue>Created at:</>  <yellow>01 Jan 01 00:00 UTC</>  
+  <blue>Replicas:</>      <yellow></>   <blue>Constraints:</>  <yellow>constraint,magic</>  <blue>Updated at:</>  <yellow>01 Jan 01 00:00 UTC</>  
+  <blue>Networks:</>      <yellow></>   <blue>Ports:</>        <yellow></>                  
+  <blue>Configs:</>       <yellow>0</>  <blue>Secrets:</>      <yellow>0</>                 

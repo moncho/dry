@@ -2,6 +2,7 @@ package swarm
 
 import (
 	"bytes"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,7 +28,8 @@ func NewServiceInfoWidget(swarmClient docker.SwarmAPI, service *swarm.Service, y
 	w := &ServiceInfoWidget{}
 	name, _ := swarmClient.ResolveService(service.ID)
 	w.serviceName = name
-	di := drytermui.NewParFromMarkupText(appui.DryTheme, serviceInfo(swarmClient, name, service))
+	info := serviceInfo(swarmClient, name, service)
+	di := drytermui.NewParFromMarkupText(appui.DryTheme, info)
 	di.BorderTop = false
 	di.BorderBottom = true
 	di.BorderLeft = false
@@ -35,7 +37,7 @@ func NewServiceInfoWidget(swarmClient docker.SwarmAPI, service *swarm.Service, y
 	di.BorderFg = termui.Attribute(appui.DryTheme.Footer)
 	di.BorderBg = termui.Attribute(appui.DryTheme.Bg)
 
-	di.Height = 5
+	di.Height = 6
 	di.Bg = termui.Attribute(appui.DryTheme.Bg)
 	di.TextBgColor = termui.Attribute(appui.DryTheme.Bg)
 	di.Display = false
@@ -80,6 +82,13 @@ func serviceInfo(swarmClient docker.SwarmAPI, name string, service *swarm.Servic
 		{
 			ui.Blue("Networks:"), ui.Yellow(dryFormatter.FormatSwarmNetworks(service.Spec.TaskTemplate.Networks)),
 			ui.Blue("Ports:"), ui.Yellow(dryFormatter.FormatPorts(service.Spec.EndpointSpec.Ports)),
+		},
+		{
+			ui.Blue("Configs:"), ui.Yellow(
+				strconv.Itoa(
+					len(service.Spec.TaskTemplate.ContainerSpec.Configs))),
+			ui.Blue("Secrets:"), ui.Yellow(strconv.Itoa(
+				len(service.Spec.TaskTemplate.ContainerSpec.Secrets))),
 		},
 	}
 
