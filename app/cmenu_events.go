@@ -22,6 +22,7 @@ func (h *cMenuEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 
 	case termbox.KeyEsc:
 		widgets.ContainerMenu.Unmount()
+		refreshScreen()
 
 	case termbox.KeyEnter:
 		err := widgets.ContainerMenu.OnEvent(func(s string) error {
@@ -48,8 +49,6 @@ func (h *cMenuEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 
 	if !handled {
 		h.baseEventHandler.handle(event, f)
-	} else {
-		refreshScreen()
 	}
 }
 
@@ -87,11 +86,10 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			err := dry.dockerDaemon.Kill(id)
 			if err == nil {
 				widgets.ContainerMenu.ForContainer(id)
-				refreshScreen()
 			} else {
 				dry.errorMessage(id, "killing", err)
 			}
-
+			refreshScreen()
 		}()
 	case docker.RESTART:
 
@@ -120,12 +118,11 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 
 			if err := dry.dockerDaemon.RestartContainer(id); err == nil {
 				widgets.ContainerMenu.ForContainer(id)
-				refreshScreen()
 			} else {
 				dry.appmessage(
 					fmt.Sprintf("Error restarting container %s, err: %s", id, err.Error()))
 			}
-
+			refreshScreen()
 		}()
 
 	case docker.STOP:
@@ -157,11 +154,10 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			err := dry.dockerDaemon.StopContainer(id)
 			if err == nil {
 				widgets.ContainerMenu.ForContainer(id)
-				refreshScreen()
 			} else {
 				dry.errorMessage(id, "stopping", err)
 			}
-
+			refreshScreen()
 		}()
 	case docker.LOGS:
 
@@ -230,14 +226,12 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			} else {
 				dry.errorMessage(id, "removing", err)
 			}
-
+			refreshScreen()
 		}()
 
 	case docker.STATS:
 		forwarder := newEventForwarder()
 		f(forwarder)
-		refreshScreen()
-
 		h.dry.SetViewMode(NoView)
 		statsChan := dry.dockerDaemon.OpenChannel(container)
 		go statsScreen(container, statsChan, screen, forwarder.events(),
@@ -276,6 +270,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			renderer := appui.NewDockerImageHistoryRenderer(history)
 			forwarder := newEventForwarder()
 			f(forwarder)
+			refreshScreen()
 			go appui.Less(renderer, screen, forwarder.events(), func() {
 				h.dry.SetViewMode(ContainerMenu)
 				f(h)

@@ -25,9 +25,7 @@ func (h *containersScreenEventHandler) handle(event termbox.Event, f func(eventH
 	if !handled {
 		handled = h.handleCharacter(event.Ch, f)
 	}
-	if handled {
-		refreshScreen()
-	} else {
+	if !handled {
 		h.baseEventHandler.handle(event, f)
 	}
 }
@@ -139,6 +137,8 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 		widgets.add(prompt)
 		forwarder := newEventForwarder()
 		f(forwarder)
+		refreshScreen()
+
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
@@ -272,6 +272,7 @@ func (h *containersScreenEventHandler) handleCharacter(key rune, f func(eventHan
 			f(h)
 		}
 		showFilterInput(newEventSource(forwarder.events()), applyFilter)
+		refreshScreen()
 
 	case 'e', 'E': //remove
 		if err := h.widget.OnEvent(
@@ -347,9 +348,11 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 	switch key {
 	case termbox.KeyF1: //sort
 		h.widget.Sort()
+		refreshScreen()
 	case termbox.KeyF2: //show all containers
 		cursor.Reset()
 		widgets.ContainerList.ToggleShowAllContainers()
+		refreshScreen()
 	case termbox.KeyF5: // refresh
 		h.dry.appmessage("Refreshing container list")
 		h.dry.dockerDaemon.Refresh(func(e error) {
@@ -458,7 +461,7 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 			h.dry.appmessage(err.Error())
 		}
 
-	default: //Not handled
+	default:
 		handled = false
 	}
 
