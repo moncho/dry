@@ -471,10 +471,11 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 //statsScreen shows container stats on the screen
 //TODO move to appui
 func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen *ui.Screen, events <-chan termbox.Event, closeCallback func()) {
+	defer closeCallback()
+
 	if !docker.IsContainerRunning(container) {
 		return
 	}
-	defer closeCallback()
 	screen.ClearAndFlush()
 
 	info, infoLines := appui.NewContainerInfo(container)
