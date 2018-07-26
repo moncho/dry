@@ -235,11 +235,12 @@ func (daemon *DockerDaemon) Stacks() ([]Stack, error) {
 			}
 
 			m[name] = &Stack{
-				Name:     name,
-				Services: 1,
-				Configs:  len(cc),
-				Secrets:  len(ss),
-				Networks: len(nn),
+				Name:         name,
+				Services:     1,
+				Orchestrator: "Swarm",
+				Configs:      len(cc),
+				Secrets:      len(ss),
+				Networks:     len(nn),
 			}
 
 		} else {

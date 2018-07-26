@@ -2,9 +2,11 @@ package docker
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/docker/docker/api/types/swarm"
+	dockerAPI "github.com/docker/docker/client"
 	"github.com/moncho/dry/docker/mock"
 	"github.com/pkg/errors"
 )
@@ -67,5 +69,64 @@ func (r *resolverMock) Resolve(ctx context.Context, t interface{}, id string) (s
 		return "Service" + id, nil
 	default:
 		return "", errors.Errorf("unsupported type")
+	}
+}
+
+func TestDockerDaemon_Stacks(t *testing.T) {
+	type fields struct {
+		client    dockerAPI.APIClient
+		swarmMode bool
+		resolver  Resolver
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    []Stack
+		wantErr bool
+	}{
+		{
+			"retrieve stacks",
+			fields{
+				mock.SwarmAPIClientMock{},
+				true,
+				&resolverMock{},
+			},
+			[]Stack{
+				{
+					Name:         "stack1",
+					Orchestrator: "Swarm",
+					Services:     2,
+					Configs:      0,
+					Secrets:      0,
+					Networks:     0,
+				},
+				{
+					Name:         "stack2",
+					Orchestrator: "Swarm",
+					Services:     1,
+					Configs:      0,
+					Secrets:      0,
+					Networks:     0,
+				},
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			daemon := &DockerDaemon{
+				client:    tt.fields.client,
+				swarmMode: tt.fields.swarmMode,
+				resolver:  tt.fields.resolver,
+			}
+			got, err := daemon.Stacks()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DockerDaemon.Stacks() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DockerDaemon.Stacks() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
