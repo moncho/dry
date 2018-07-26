@@ -19,6 +19,7 @@ var defaultStackTableHeader = stackTableHeader()
 var stackTableHeaders = []appui.SortableColumnHeader{
 	{Title: "NAME", Mode: docker.SortByStackName},
 	{Title: "SERVICES", Mode: docker.NoSortStack},
+	{Title: "ORCHESTRATOR", Mode: docker.NoSortStack},
 	{Title: "NETWORKS", Mode: docker.NoSortStack},
 	{Title: "CONFIGS", Mode: docker.NoSortStack},
 	{Title: "SECRETS", Mode: docker.NoSortStack},
