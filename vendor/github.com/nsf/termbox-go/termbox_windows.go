@@ -1,5 +1,6 @@
 package termbox
 
+import "math"
 import "syscall"
 import "unsafe"
 import "unicode/utf16"
@@ -57,12 +58,18 @@ type (
 		control_key_state dword
 		event_flags       dword
 	}
+	console_font_info struct {
+		font      uint32
+		font_size coord
+	}
 )
 
 const (
 	mouse_lmb = 0x1
 	mouse_rmb = 0x2
 	mouse_mmb = 0x4 | 0x8 | 0x10
+	SM_CXMIN  = 28
+	SM_CYMIN  = 29
 )
 
 func (this coord) uintptr() uintptr {
@@ -70,6 +77,7 @@ func (this coord) uintptr() uintptr {
 }
 
 var kernel32 = syscall.NewLazyDLL("kernel32.dll")
+var moduser32 = syscall.NewLazyDLL("user32.dll")
 var is_cjk = runewidth.IsEastAsian()
 
 var (
@@ -91,6 +99,8 @@ var (
 	proc_create_event                     = kernel32.NewProc("CreateEventW")
 	proc_wait_for_multiple_objects        = kernel32.NewProc("WaitForMultipleObjects")
 	proc_set_event                        = kernel32.NewProc("SetEvent")
+	proc_get_current_console_font         = kernel32.NewProc("GetCurrentConsoleFont")
+	get_system_metrics                    = moduser32.NewProc("GetSystemMetrics")
 )
 
 func set_console_active_screen_buffer(h syscall.Handle) (err error) {
@@ -335,6 +345,19 @@ func set_event(ev syscall.Handle) (err error) {
 	return
 }
 
+func get_current_console_font(h syscall.Handle, info *console_font_info) (err error) {
+	r0, _, e1 := syscall.Syscall(proc_get_current_console_font.Addr(),
+		3, uintptr(h), 0, uintptr(unsafe.Pointer(info)))
+	if int(r0) == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
 type diff_msg struct {
 	pos   short
 	lines short
@@ -379,6 +402,7 @@ var (
 	tmp_coord0 = coord{0, 0}
 	tmp_coord  = coord{0, 0}
 	tmp_rect   = small_rect{0, 0, 0, 0}
+	tmp_finfo  console_font_info
 )
 
 func get_cursor_position(out syscall.Handle) coord {
@@ -397,20 +421,55 @@ func get_term_size(out syscall.Handle) coord {
 	return tmp_info.size
 }
 
+func get_win_min_size(out syscall.Handle) coord {
+	x, _, err := get_system_metrics.Call(SM_CXMIN)
+	y, _, err := get_system_metrics.Call(SM_CYMIN)
+
+	if x == 0 || y == 0 {
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	err1 := get_current_console_font(out, &tmp_finfo)
+	if err1 != nil {
+		panic(err1)
+	}
+
+	return coord{
+		x: short(math.Ceil(float64(x) / float64(tmp_finfo.font_size.x))),
+		y: short(math.Ceil(float64(y) / float64(tmp_finfo.font_size.y))),
+	}
+}
+
 func get_win_size(out syscall.Handle) coord {
 	err := get_console_screen_buffer_info(out, &tmp_info)
 	if err != nil {
 		panic(err)
 	}
-	return coord{
+
+	min_size := get_win_min_size(out)
+
+	size := coord{
 		x: tmp_info.window.right - tmp_info.window.left + 1,
 		y: tmp_info.window.bottom - tmp_info.window.top + 1,
 	}
+
+	if size.x < min_size.x {
+		size.x = min_size.x
+	}
+
+	if size.y < min_size.y {
+		size.y = min_size.y
+	}
+
+	return size
 }
 
 func update_size_maybe() {
-	size := get_term_size(out)
+	size := get_win_size(out)
 	if size.x != term_size.x || size.y != term_size.y {
+		set_console_screen_buffer_size(out, size)
 		term_size = size
 		back_buffer.resize(int(size.x), int(size.y))
 		front_buffer.resize(int(size.x), int(size.y))
