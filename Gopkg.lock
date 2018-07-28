@@ -128,19 +128,6 @@
   revision = "12e0ff74603c9a3209d8bf84f8ab349fe1ad9477"
 
 [[projects]]
-  branch = "master"
-  digest = "1:9bc9075c4e44f2ffc461be854625441f014c4a31449136cb02fca40df1294db6"
-  name = "github.com/maxzender/jv"
-  packages = [
-    "colorwriter",
-    "jsonfmt",
-    "jsontree",
-    "terminal",
-  ]
-  pruneopts = "UT"
-  revision = "fc6873a9d8dac289a0be39a230ae33da05d18bea"
-
-[[projects]]
   digest = "1:df41a5c94494f2f1d11ca168367c3ff550fa4e062ef17f951b5f7326b3b451de"
   name = "github.com/mitchellh/go-homedir"
   packages = ["."]
@@ -260,10 +247,6 @@
     "github.com/gosuri/uitable/util/strutil",
     "github.com/jessevdk/go-flags",
     "github.com/mattn/go-runewidth",
-    "github.com/maxzender/jv/colorwriter",
-    "github.com/maxzender/jv/jsonfmt",
-    "github.com/maxzender/jv/jsontree",
-    "github.com/maxzender/jv/terminal",
     "github.com/mitchellh/go-homedir",
     "github.com/mitchellh/go-wordwrap",
     "github.com/nsf/termbox-go",
