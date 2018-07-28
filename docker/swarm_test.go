@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/docker/docker/api/types/swarm"
@@ -120,6 +121,7 @@ func TestDockerDaemon_Stacks(t *testing.T) {
 				resolver:  tt.fields.resolver,
 			}
 			got, err := daemon.Stacks()
+			sort.SliceStable(stacksByName{got}.swarmStacks, stacksByName{got}.Less)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DockerDaemon.Stacks() error = %v, wantErr %v", err, tt.wantErr)
 				return
