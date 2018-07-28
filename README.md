@@ -88,6 +88,7 @@ Keybinding           | Description
 <kbd>l</kbd>         | service logs
 <kbd>Ctrl+r</kbd>    | remove service
 <kbd>Ctrl+s</kbd>    | scale service
+<kbd>Ctrl+u</kbd>    | update service
 <kbd>Enter</kbd>     | show service tasks
 
 
@@ -108,7 +109,7 @@ Keybinding           | Description
 
 ## Installation
 
-The easiest way to install the latest binaries for Linux and Mac is to run this in your shell:
+The easiest way to install the latest binaries for Linux and Mac is to run this in a shell:
 
 ```sh
 curl -sSf https://moncho.github.io/dry/dryup.sh | sudo sh
@@ -149,7 +150,7 @@ Open a console, type ```dry```. It will try to connect to:
 * if none given, a Docker host defined in the **$DOCKER_HOST** environment variable.
 * if not defined, to **unix:///var/run/docker.sock**.
 
-If no connection with a Docker host succeeds, **dry** will exit immediately.
+If no connection with a Docker host succeeds, **dry** will exit.
 
 ```dry -p``` launches dry with [pprof](https://golang.org/pkg/net/http/pprof/) package active.
 
@@ -172,6 +173,5 @@ Built on top of:
 
 * [termbox](https://github.com/nsf/termbox-go)
 * [termui](https://github.com/gizak/termui)
-* [Docker engine-api](https://github.com/docker/engine-api)
-
-Also reused some code and ideas from the [Docker project](https://github.com/docker/docker).
+* [Docker](https://github.com/docker/docker)
+* [Docker CLI](github.com/docker/cli/cli)
