@@ -32,7 +32,7 @@ install: ## Installs dry
 	go install $(PKG)
 
 test: ## Run tests
-	go test $(shell go list ./... | grep -v /vendor/ | grep -v mock)
+	go test -v -cover $(shell go list ./... | grep -v /vendor/ | grep -v mock)
 
 benchmark: ## Run benchmarks
 	go test -bench $(shell go list ./... | grep -v /vendor/ | grep -v mock) 
