@@ -27,6 +27,9 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 		if err := h.widget.Unmount(); err != nil {
 			h.dry.appmessage("There was an error refreshing the service list: " + err.Error())
 		}
+	case termbox.KeyCtrlL:
+		h.showLogs(true, f)
+
 	case termbox.KeyCtrlR:
 		rw := appui.NewPrompt("The selected service will be removed. Do you want to proceed? y/N")
 		widgets.add(rw)
@@ -173,42 +176,46 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 		}
 
 	case 'l':
-		prompt := logsPrompt()
 		handled = true
-		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
-		refreshScreen()
-		go func() {
-			prompt.OnFocus(newEventSource(forwarder.events()))
-			widgets.remove(prompt)
-			since, canceled := prompt.Text()
-
-			if canceled {
-				f(h)
-				return
-			}
-
-			showServiceLogs := func(serviceID string) error {
-				logs, err := h.dry.dockerDaemon.ServiceLogs(serviceID, since)
-				if err == nil {
-					appui.Stream(logs, forwarder.events(),
-						func() {
-							h.dry.SetViewMode(Services)
-							f(h)
-							refreshScreen()
-						})
-					return nil
-				}
-				return err
-			}
-			if err := h.widget.OnEvent(showServiceLogs); err != nil {
-				h.dry.appmessage("There was an error showing service logs: " + err.Error())
-				f(h)
-			}
-		}()
+		h.showLogs(false, f)
 	}
 	if !handled {
 		h.baseEventHandler.handle(event, f)
 	}
+}
+
+func (h *servicesScreenEventHandler) showLogs(withTimestamp bool, f func(eventHandler)) {
+	prompt := logsPrompt()
+	widgets.add(prompt)
+	forwarder := newEventForwarder()
+	f(forwarder)
+	refreshScreen()
+	go func() {
+		prompt.OnFocus(newEventSource(forwarder.events()))
+		widgets.remove(prompt)
+		since, canceled := prompt.Text()
+
+		if canceled {
+			f(h)
+			return
+		}
+
+		showServiceLogs := func(serviceID string) error {
+			logs, err := h.dry.dockerDaemon.ServiceLogs(serviceID, since, withTimestamp)
+			if err == nil {
+				appui.Stream(logs, forwarder.events(),
+					func() {
+						h.dry.SetViewMode(Services)
+						f(h)
+						refreshScreen()
+					})
+				return nil
+			}
+			return err
+		}
+		if err := h.widget.OnEvent(showServiceLogs); err != nil {
+			h.dry.appmessage("There was an error showing service logs: " + err.Error())
+			f(h)
+		}
+	}()
 }

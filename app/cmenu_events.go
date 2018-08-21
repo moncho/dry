@@ -182,7 +182,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 				return
 			}
 
-			logs, err := h.dry.dockerDaemon.Logs(id, since)
+			logs, err := h.dry.dockerDaemon.Logs(id, since, false)
 			if err == nil {
 				appui.Stream(logs, forwarder.events(),
 					func() {

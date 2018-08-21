@@ -23,10 +23,10 @@ func (s stacksByName) Less(i, j int) bool {
 }
 
 //SortStacks sorts the given stack slice using the given mode
-func SortStacks(services []Stack, mode SortMode) {
+func SortStacks(stacks []Stack, mode SortMode) {
 	switch mode {
 	case SortByStackName:
-		sort.SliceStable(stacksByName{services}.swarmStacks, stacksByName{services}.Less)
+		sort.SliceStable(stacksByName{stacks}.swarmStacks, stacksByName{stacks}.Less)
 	}
 
 }

@@ -133,40 +133,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 		}()
 
 	case docker.LOGS:
-		prompt := logsPrompt()
-		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
-		refreshScreen()
-
-		go func() {
-			events := ui.EventSource{
-				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
-					return refreshScreen()
-				},
-			}
-			prompt.OnFocus(events)
-			widgets.remove(prompt)
-			since, canceled := prompt.Text()
-
-			if canceled {
-				f(h)
-				return
-			}
-
-			logs, err := h.dry.dockerDaemon.Logs(id, since)
-			if err == nil {
-				appui.Stream(logs, forwarder.events(), func() {
-					h.dry.SetViewMode(Main)
-					f(h)
-					refreshScreen()
-				})
-			} else {
-				h.dry.appmessage("Error showing container logs: " + err.Error())
-
-			}
-		}()
+		h.showLogs(id, false, f)
 	case docker.RM:
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to remove container %s? (y/N)", id))
@@ -413,6 +380,18 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 			}); err != nil {
 			h.dry.appmessage("There was an error killing container: " + err.Error())
 		}
+	case termbox.KeyCtrlL: //Logs with timestamp
+		if err := h.widget.OnEvent(
+			func(id string) error {
+				container := h.dry.dockerDaemon.ContainerByID(id)
+				if container == nil {
+					return fmt.Errorf("Container with id %s not found", id)
+				}
+				h.showLogs(id, true, f)
+				return nil
+			}); err != nil {
+			h.dry.appmessage("There was an error showing logs: " + err.Error())
+		}
 	case termbox.KeyCtrlR: //start
 		if err := h.widget.OnEvent(
 			func(id string) error {
@@ -533,4 +512,41 @@ loop:
 	screen.Sync()
 	mutex.Unlock()
 	close(stats.Done)
+}
+
+func (h *containersScreenEventHandler) showLogs(id string, withTimestamp bool, f func(eventHandler)) {
+	prompt := logsPrompt()
+	widgets.add(prompt)
+	forwarder := newEventForwarder()
+	f(forwarder)
+	refreshScreen()
+
+	go func() {
+		events := ui.EventSource{
+			Events: forwarder.events(),
+			EventHandledCallback: func(e termbox.Event) error {
+				return refreshScreen()
+			},
+		}
+		prompt.OnFocus(events)
+		widgets.remove(prompt)
+		since, canceled := prompt.Text()
+
+		if canceled {
+			f(h)
+			return
+		}
+
+		logs, err := h.dry.dockerDaemon.Logs(id, since, withTimestamp)
+		if err == nil {
+			appui.Stream(logs, forwarder.events(), func() {
+				h.dry.SetViewMode(Main)
+				f(h)
+				refreshScreen()
+			})
+		} else {
+			h.dry.appmessage("Error showing container logs: " + err.Error())
+
+		}
+	}()
 }
