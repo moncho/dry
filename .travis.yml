@@ -7,4 +7,4 @@ env:
 before_install:
   - go get github.com/mattn/goveralls
 script:
-  - $HOME/gopath/bin/goveralls -service=travis-ci
+  - GO111MODULE=on $HOME/gopath/bin/goveralls -service=travis-ci
