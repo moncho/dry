@@ -46,12 +46,11 @@ func renderString(x, y, maxWidth int, s string, foreground, background termbox.A
 	return stringWidth, additionalLines + 1
 }
 
-// renderLineWithMarkup takes the incoming string, uses the given markup to tokenize it and to extract markup
-// elements, and displays it all starting at (x,y) location.
+// renderLineWithMarkup renders the given string, uses the given markup to T it
+// and to extract markup elements, and displays it all starting at (x,y) location.
 // returns the number of screen lines used to render the line
 func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) int {
-	start, column := 0, 0
-
+	var start int
 	stringWidth := 0
 	//tracks the number of screen lines used to render
 	additionalLines := 0
@@ -65,7 +64,7 @@ func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) int {
 		}
 
 		// Here comes the actual text: display it one character at a time.
-		for i, char := range token {
+		for _, char := range token {
 			runewidth := runewidth.RuneWidth(char)
 			stringWidth += runewidth
 			//Check if a new line is going to be needed
@@ -74,15 +73,10 @@ func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) int {
 				availableWidth = availableWidth * 2
 				additionalLines++
 				y += additionalLines
-				start = 0
+			}
 
-			}
-			if !markup.RightAligned {
-				start = x + column
-				column++
-			} else {
-				start = maxWidth - len(token) + i
-			}
+			start = maxWidth - len(token)
+
 			termbox.SetCell(start, y, char, markup.Foreground, markup.Background)
 		}
 	}

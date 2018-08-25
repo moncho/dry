@@ -46,7 +46,6 @@ func tags() map[string]termbox.Attribute {
 	tags[`grey`] = termbox.Attribute(Grey)
 	tags[`grey2`] = termbox.Attribute(Grey2)
 	tags[`darkgrey`] = termbox.Attribute(Darkgrey)
-	tags[`right`] = termbox.ColorDefault // Termbox can combine attributes and a single color using bitwise OR.
 	tags[`b`] = termbox.AttrBold
 	tags[`u`] = termbox.AttrUnderline
 	tags[`r`] = termbox.AttrReverse
@@ -64,12 +63,10 @@ func tags() map[string]termbox.Attribute {
 // bold, <u>...</u> for underline, and <r>...</r> for reverse. Unlike
 // colors the attributes require matching closing tag.
 //
-// The <right>...</right> tag is used to right align the enclosed string
 type Markup struct {
-	Foreground   termbox.Attribute // Foreground color.
-	Background   termbox.Attribute // Background color (so far always termbox.ColorDefault).
-	RightAligned bool              // True when the string is right aligned.
-	theme        *ColorTheme
+	Foreground termbox.Attribute // Foreground color.
+	Background termbox.Attribute // Background color (so far always termbox.ColorDefault).
+	theme      *ColorTheme
 }
 
 // NewMarkup creates a markup to define tag to Termbox translation rules and store default
@@ -79,7 +76,6 @@ func NewMarkup(theme *ColorTheme) *Markup {
 	markup.Foreground = termbox.Attribute(theme.Fg)
 	markup.Background = termbox.Attribute(theme.Bg)
 	markup.theme = theme
-	markup.RightAligned = false
 	return markup
 }
 
@@ -98,15 +94,10 @@ func (markup *Markup) IsTag(str string) bool {
 
 func (markup *Markup) process(tag string, open bool) bool {
 	if attribute, ok := tagsToAttributeMap[tag]; ok {
-		switch tag {
-		case `right`:
-			markup.RightAligned = open // On for <right>, off for </right>.
-		default:
-			if open {
-				markup.Foreground = attribute // Set the Termbox color.
-			} else {
-				markup.Foreground = termbox.Attribute(markup.theme.Fg)
-			}
+		if open {
+			markup.Foreground = attribute // Set the Termbox color.
+		} else {
+			markup.Foreground = termbox.Attribute(markup.theme.Fg)
 		}
 	}
 

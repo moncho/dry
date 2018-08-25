@@ -142,7 +142,7 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 	screen.Lock()
 	defer screen.Unlock()
 
-	start, column := 0, 0
+	var start int
 	for _, token := range Tokenize(str, SupportedTags) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
 		if screen.markup.IsTag(token) {
@@ -151,12 +151,7 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 
 		// Here comes the actual text: displays it one character at a time.
 		for i, char := range token {
-			if !screen.markup.RightAligned {
-				start = x + column
-				column++
-			} else {
-				start = ActiveScreen.Dimensions.Width - len(token) + i
-			}
+			start = ActiveScreen.Dimensions.Width - len(token) + i
 			termbox.SetCell(start, y, char, screen.markup.Foreground, screen.markup.Background)
 		}
 	}
@@ -167,7 +162,8 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor Color) {
 	screen.Lock()
 	defer screen.Unlock()
-	start, column := 0, 0
+	var start int
+
 	if x > 0 {
 		fill(0, y, x, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
 	}
@@ -179,12 +175,7 @@ func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor
 
 		// Here comes the actual text: display it one character at a time.
 		for i, char := range token {
-			if !screen.markup.RightAligned {
-				start = x + column
-				column++
-			} else {
-				start = ActiveScreen.Dimensions.Width - len(token) + i
-			}
+			start = ActiveScreen.Dimensions.Width - len(token) + i
 			termbox.SetCell(start, y, char, screen.markup.Foreground, termbox.Attribute(bgColor))
 		}
 	}
