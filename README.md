@@ -2,6 +2,7 @@
 
 [![MIT License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/moncho/dryblob/master/LICENSE)
 [![wercker status](https://app.wercker.com/status/66c3ab71a46c0c8841f34a526fc23189/s/master "wercker status")](https://app.wercker.com/project/bykey/66c3ab71a46c0c8841f34a526fc23189)
+[![Build Status](https://travis-ci.org/moncho/dry.svg?branch=master)](https://travis-ci.org/moncho/dry)
 [![Go Report Card](https://goreportcard.com/badge/github.com/moncho/dry)](https://goreportcard.com/report/github.com/moncho/dry)
 [![GoDoc](https://godoc.org/github.com/moncho/dry?status.svg)](https://godoc.org/github.com/moncho/dry)
 [![Coverage Status](https://coveralls.io/repos/github/moncho/dry/badge.svg?branch=master)](https://coveralls.io/github/moncho/dry?branch=master)
@@ -9,9 +10,11 @@
 [![Join the chat at https://gitter.im/moncho/dry](https://badges.gitter.im/moncho/dry.svg)](https://gitter.im/moncho/dry?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Release](https://img.shields.io/github/release/moncho/dry.svg?style=flat-square)](https://github.com/moncho/dry/releases/latest)
 
-**Dry** is a terminal application to manage **Docker**. It shows information about Containers, Images and Networks, and, if running a **Docker Swarm**, it also shows all kinds of information about the state of the Swarm cluster. It can connect to both local or remote **Docker** daemons.
+**Dry** is a terminal application to manage **Docker** and **Docker Swarm**.
 
-Besides showing information, it can be used to manage Docker. Most of the commands that the official **Docker CLI** has, are available in **dry** with the same behaviour. A list of available commands and their keybinds can be found in **dry**'s help screen or in this README.
+It shows information about Containers, Images and Networks, and, if running a **Swarm** cluster, it shows information about Nodes, Service, Stacks and the rest of **Swarm** constructs. It can be used with both local or remote **Docker** daemons.
+
+Besides showing information, it can be used to manage Docker. Most of the commands that the official **Docker CLI** provides, are available in **dry** with the same behaviour. A list of available commands and their keybindings can be found in **dry**'s help screen or in this README.
 
 Lastly, it can also be used as a monitoring tool for **Docker** containers.
 
