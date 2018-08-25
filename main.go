@@ -215,7 +215,7 @@ func main() {
 
 	if err == nil {
 		if opts.MonitorMode {
-			dry.SetViewMode(app.Monitor)
+			dry.ViewMode(app.Monitor)
 		}
 		app.RenderLoop(dry, screen)
 		dry.Close()

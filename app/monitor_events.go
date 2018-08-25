@@ -29,11 +29,11 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 			widgets.ContainerMenu.ForContainer(id)
 			widgets.ContainerMenu.OnUnmount = func() error {
 				h.screen.Cursor.Reset()
-				h.dry.SetViewMode(Monitor)
+				h.dry.ViewMode(Monitor)
 				f(h)
 				return refreshScreen()
 			}
-			h.dry.SetViewMode(ContainerMenu)
+			h.dry.ViewMode(ContainerMenu)
 			f(viewsToHandlers[ContainerMenu])
 			return refreshScreen()
 		}

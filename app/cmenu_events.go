@@ -186,7 +186,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			if err == nil {
 				appui.Stream(logs, forwarder.events(),
 					func() {
-						h.dry.SetViewMode(ContainerMenu)
+						h.dry.ViewMode(ContainerMenu)
 						f(h)
 						refreshScreen()
 					})
@@ -232,11 +232,11 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 	case docker.STATS:
 		forwarder := newEventForwarder()
 		f(forwarder)
-		h.dry.SetViewMode(NoView)
+		h.dry.ViewMode(NoView)
 		statsChan := dry.dockerDaemon.OpenChannel(container)
 		go statsScreen(container, statsChan, screen, forwarder.events(),
 			func() {
-				h.dry.SetViewMode(ContainerMenu)
+				h.dry.ViewMode(ContainerMenu)
 				f(h)
 				refreshScreen()
 			})
@@ -253,7 +253,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 				return h.dry.dockerDaemon.Inspect(id)
 			},
 			func() {
-				h.dry.SetViewMode(ContainerMenu)
+				h.dry.ViewMode(ContainerMenu)
 				f(h)
 				refreshScreen()
 			})(id)
@@ -272,7 +272,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			f(forwarder)
 			refreshScreen()
 			go appui.Less(renderer, screen, forwarder.events(), func() {
-				h.dry.SetViewMode(ContainerMenu)
+				h.dry.ViewMode(ContainerMenu)
 				f(h)
 				refreshScreen()
 			})

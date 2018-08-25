@@ -34,7 +34,7 @@ func (h *networksScreenEventHandler) handle(event termbox.Event, f func(eh event
 				return h.dry.dockerDaemon.NetworkInspect(id)
 			},
 			func() {
-				h.dry.SetViewMode(Networks)
+				h.dry.ViewMode(Networks)
 				f(h)
 				refreshScreen()
 			})

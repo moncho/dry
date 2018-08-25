@@ -176,9 +176,9 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 			statsChan := dry.dockerDaemon.OpenChannel(c)
 			forwarder := newEventForwarder()
 			f(forwarder)
-			h.dry.SetViewMode(NoView)
+			h.dry.ViewMode(NoView)
 			go statsScreen(command.container, statsChan, screen, forwarder.events(), func() {
-				h.dry.SetViewMode(Main)
+				h.dry.ViewMode(Main)
 				f(h)
 				refreshScreen()
 			})
@@ -194,7 +194,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 				return h.dry.dockerDaemon.Inspect(id)
 			},
 			func() {
-				h.dry.SetViewMode(Main)
+				h.dry.ViewMode(Main)
 				f(h)
 				refreshScreen()
 			})(id)
@@ -214,7 +214,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 			renderer := appui.NewDockerImageHistoryRenderer(history)
 
 			go appui.Less(renderer, screen, forwarder.events(), func() {
-				h.dry.SetViewMode(Main)
+				h.dry.ViewMode(Main)
 				f(h)
 			})
 		} else {
@@ -428,11 +428,11 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 			widgets.ContainerMenu.ForContainer(id)
 			widgets.ContainerMenu.OnUnmount = func() error {
 				h.screen.Cursor.Reset()
-				h.dry.SetViewMode(Main)
+				h.dry.ViewMode(Main)
 				f(viewsToHandlers[Main])
 				return refreshScreen()
 			}
-			h.dry.SetViewMode(ContainerMenu)
+			h.dry.ViewMode(ContainerMenu)
 			f(viewsToHandlers[ContainerMenu])
 			return refreshScreen()
 		}
@@ -540,7 +540,7 @@ func (h *containersScreenEventHandler) showLogs(id string, withTimestamp bool, f
 		logs, err := h.dry.dockerDaemon.Logs(id, since, withTimestamp)
 		if err == nil {
 			appui.Stream(logs, forwarder.events(), func() {
-				h.dry.SetViewMode(Main)
+				h.dry.ViewMode(Main)
 				f(h)
 				refreshScreen()
 			})

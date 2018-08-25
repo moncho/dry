@@ -18,7 +18,7 @@ func (h *taskScreenEventHandler) handle(event termbox.Event, f func(eventHandler
 	switch event.Key {
 	case termbox.KeyEsc:
 		f(viewsToHandlers[Nodes])
-		h.dry.SetViewMode(Nodes)
+		h.dry.ViewMode(Nodes)
 	case termbox.KeyF1: //sort
 		widgets.NodeTasks.Sort()
 	case termbox.KeyF5: // refresh
@@ -34,7 +34,7 @@ func (h *taskScreenEventHandler) handle(event termbox.Event, f func(eventHandler
 					return h.dry.dockerDaemon.Task(id)
 				},
 				func() {
-					h.dry.SetViewMode(Tasks)
+					h.dry.ViewMode(Tasks)
 					f(h)
 					refreshScreen()
 				})); err != nil {

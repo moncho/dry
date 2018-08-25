@@ -9,28 +9,15 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
-// state tracks dry state
-type state struct {
-	sync.RWMutex
-	previousViewMode viewMode
-	viewMode         viewMode
-}
-
 //Dry represents the application.
 type Dry struct {
 	dockerDaemon     drydocker.ContainerDaemon
 	dockerEvents     <-chan events.Message
 	dockerEventsDone chan<- struct{}
 	output           chan string
-	state            *state
-}
 
-//SetViewMode changes the view mode of dry
-func (d *Dry) SetViewMode(newViewMode viewMode) {
-	d.state.Lock()
-	defer d.state.Unlock()
-
-	d.state.viewMode = newViewMode
+	sync.RWMutex
+	view viewMode
 }
 
 //Close closes dry, releasing any resources held by it
@@ -47,6 +34,14 @@ func (d *Dry) OuputChannel() <-chan string {
 //Ok returns the state of dry
 func (d *Dry) Ok() (bool, error) {
 	return d.dockerDaemon.Ok()
+}
+
+//ViewMode changes the view mode of dry
+func (d *Dry) ViewMode(v viewMode) {
+	d.Lock()
+	defer d.Unlock()
+
+	d.view = v
 }
 
 func (d *Dry) startDry() {
@@ -75,31 +70,27 @@ func (d *Dry) errorMessage(cid interface{}, action string, err error) {
 }
 
 func (d *Dry) viewMode() viewMode {
-	d.state.RLock()
-	defer d.state.RUnlock()
-	return d.state.viewMode
+	d.RLock()
+	defer d.RUnlock()
+	return d.view
 }
 
 func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 	dockerEvents, dockerEventsDone, err := d.Events()
-	if err == nil {
-
-		state := &state{
-			viewMode:         Main,
-			previousViewMode: Main,
-		}
-		app := &Dry{}
-		widgets = newWidgetRegistry(d)
-		viewsToHandlers = initHandlers(app, screen)
-		app.state = state
-		app.dockerDaemon = d
-		app.output = make(chan string)
-		app.dockerEvents = dockerEvents
-		app.dockerEventsDone = dockerEventsDone
-		app.startDry()
-		return app, nil
+	if err != nil {
+		return nil, err
 	}
-	return nil, err
+
+	app := &Dry{}
+	widgets = newWidgetRegistry(d)
+	viewsToHandlers = initHandlers(app, screen)
+	app.dockerDaemon = d
+	app.output = make(chan string)
+	app.dockerEvents = dockerEvents
+	app.dockerEventsDone = dockerEventsDone
+	app.startDry()
+	return app, nil
+
 }
 
 //NewDry creates a new dry application

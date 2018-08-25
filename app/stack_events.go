@@ -25,7 +25,7 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandl
 	case termbox.KeyEnter: //inspect
 		showTasks := func(stack string) error {
 			widgets.StackTasks.ForStack(stack)
-			h.dry.SetViewMode(StackTasks)
+			h.dry.ViewMode(StackTasks)
 			f(viewsToHandlers[StackTasks])
 			return refreshScreen()
 		}

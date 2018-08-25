@@ -135,7 +135,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 			h.screen.Cursor.Reset()
 			widgets.ServiceTasks.ForService(serviceID)
 			f(viewsToHandlers[ServiceTasks])
-			dry.SetViewMode(ServiceTasks)
+			dry.ViewMode(ServiceTasks)
 			return refreshScreen()
 		}
 		h.widget.OnEvent(showTasks)
@@ -166,7 +166,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 				return h.dry.dockerDaemon.Service(id)
 			},
 			func() {
-				h.dry.SetViewMode(Services)
+				h.dry.ViewMode(Services)
 				f(h)
 				refreshScreen()
 			})
@@ -205,7 +205,7 @@ func (h *servicesScreenEventHandler) showLogs(withTimestamp bool, f func(eventHa
 			if err == nil {
 				appui.Stream(logs, forwarder.events(),
 					func() {
-						h.dry.SetViewMode(Services)
+						h.dry.ViewMode(Services)
 						f(h)
 						refreshScreen()
 					})
