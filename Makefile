@@ -20,27 +20,24 @@ GOARCHS = amd64 386 arm
 print-%: ; @echo $*=$($*)
 
 run: ## Runs dry
-	go run ./main.go
-
-vendor: ## Runs dep ensure
-	dep ensure
+	GO111MODULE=on go run ./main.go
 
 build: ## Builds dry
-	go build .
+	GO111MODULE=on go build .
 
 install: ## Installs dry
-	go install $(PKG)
+	GO111MODULE=on go install $(PKG)
 
 test: ## Run tests
-	go test -v -cover $(shell go list ./... | grep -v /vendor/ | grep -v mock)
+	GO111MODULE=on go test -v -cover $(shell go list ./... | grep -v /vendor/ | grep -v mock)
 
 benchmark: ## Run benchmarks
-	go test -bench $(shell go list ./... | grep -v /vendor/ | grep -v mock) 
+	GO111MODULE=on go test -bench $(shell go list ./... | grep -v /vendor/ | grep -v mock) 
 
 define buildpretty
 $(if $(and $(filter-out darwin_arm,$(1)_$(2)), $(filter-out windows_arm,$(1)_$(2)), $(filter-out windows_386,$(1)_$(2))), \
 	mkdir -p ${PREFIX}/cross/$(1)/$(2);
-	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build -o ${PREFIX}/cross/$(1)/$(2)/dry -a ${GO_LDFLAGS_STATIC} .;
+	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 GO111MODULE=on go build -o ${PREFIX}/cross/$(1)/$(2)/dry -a ${GO_LDFLAGS_STATIC} .;
 )
 endef
 
@@ -50,7 +47,7 @@ cross: *.go VERSION ## Cross compiles dry
 define buildrelease
 $(if $(and $(filter-out darwin_arm,$(1)_$(2)), $(filter-out windows_arm,$(1)_$(2)), $(filter-out windows_386,$(1)_$(2))), \
 	mkdir -p ${PREFIX}/cross/$(1)/$(2);
-	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build -o ${PREFIX}/cross/dry-$(1)-$(2) -a ${GO_LDFLAGS_STATIC} .;
+	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 GO111MODULE=on go build -o ${PREFIX}/cross/dry-$(1)-$(2) -a ${GO_LDFLAGS_STATIC} .;
 )
 endef
 

@@ -1,4 +1,4 @@
-box: golang:1.10.1
+box: golang:1.11
 dev:
   steps:
     - internal/watch:
@@ -18,9 +18,9 @@ build:
     - script:
         name: go build
         code: |
-          go build .
+          GO111MODULE=on go build .
     # Test the project
     - script:
         name: go test
         code: |
-          go test $(go list ./... | grep -v /vendor/)
+          GO111MODULE=on go test $(go list ./... | grep -v /vendor/)
