@@ -4,7 +4,6 @@ go:
   - 1.11
 env:
   - GO111MODULE=on
-before_install:
-  - go get github.com/mattn/goveralls
 script:
-  - GO111MODULE=on $HOME/gopath/bin/goveralls -service=travis-ci
+  - go test
+  - go build 
