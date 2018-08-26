@@ -39,11 +39,6 @@ func NewScreen(theme *ColorTheme) (*Screen, error) {
 	return screen, nil
 }
 
-func screenDimensions() *Dimensions {
-	w, h := termbox.Size()
-	return &Dimensions{Width: w, Height: h}
-}
-
 // Close gets called upon program termination to close the Termbox.
 func (screen *Screen) Close() *Screen {
 	screen.closing = true
@@ -90,19 +85,6 @@ func (screen *Screen) Sync() *Screen {
 	return screen
 }
 
-// ClearLine erases the contents of the line starting from (x,y) coordinate
-// till the end of the line.
-func (screen *Screen) ClearLine(x int, y int) *Screen {
-	screen.RLock()
-	defer screen.RUnlock()
-	for i := x; i < ActiveScreen.Dimensions.Width; i++ {
-		termbox.SetCell(i, y, ' ', termbox.Attribute(screen.theme.Fg), termbox.Attribute(screen.theme.Bg))
-	}
-	screen.Flush()
-
-	return screen
-}
-
 //ColorTheme changes the color theme of the screen to the given one.
 func (screen *Screen) ColorTheme(theme *ColorTheme) *Screen {
 	screen.Lock()
@@ -136,13 +118,12 @@ func (screen *Screen) RenderBufferer(bs ...termui.Bufferer) {
 	}
 }
 
-// RenderLine takes the incoming string, tokenizes it to extract markup
-// elements, and displays it all starting at (x,y) location.
+// RenderLine renders the given string, removing markup elements, at the given location.
 func (screen *Screen) RenderLine(x int, y int, str string) {
 	screen.Lock()
 	defer screen.Unlock()
 
-	var start int
+	column := x
 	for _, token := range Tokenize(str, SupportedTags) {
 		// First check if it's a tag. Tags are eaten up and not displayed.
 		if screen.markup.IsTag(token) {
@@ -150,36 +131,11 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 		}
 
 		// Here comes the actual text: displays it one character at a time.
-		for i, char := range token {
-			start = ActiveScreen.Dimensions.Width - len(token) + i
-			termbox.SetCell(start, y, char, screen.markup.Foreground, screen.markup.Background)
+		for _, char := range token {
+			termbox.SetCell(column, y, char, screen.markup.Foreground, screen.markup.Background)
+			column++
 		}
 	}
-}
-
-//RenderLineWithBackGround does what RenderLine does but rendering the line
-//with the given background color
-func (screen *Screen) RenderLineWithBackGround(x int, y int, str string, bgColor Color) {
-	screen.Lock()
-	defer screen.Unlock()
-	var start int
-
-	if x > 0 {
-		fill(0, y, x, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
-	}
-	for _, token := range Tokenize(str, SupportedTags) {
-		// First check if it's a tag. Tags are eaten up and not displayed.
-		if screen.markup.IsTag(token) {
-			continue
-		}
-
-		// Here comes the actual text: display it one character at a time.
-		for i, char := range token {
-			start = ActiveScreen.Dimensions.Width - len(token) + i
-			termbox.SetCell(start, y, char, screen.markup.Foreground, termbox.Attribute(bgColor))
-		}
-	}
-	fill(start+1, y, ActiveScreen.Dimensions.Width, y, termbox.Cell{Ch: ' ', Bg: termbox.Attribute(bgColor)})
 }
 
 //Render renders the given content starting from the given row
@@ -202,4 +158,9 @@ func (screen *Screen) RenderRenderer(row int, renderer Renderer) {
 
 func toTmAttr(x termui.Attribute) termbox.Attribute {
 	return termbox.Attribute(x)
+}
+
+func screenDimensions() *Dimensions {
+	w, h := termbox.Size()
+	return &Dimensions{Width: w, Height: h}
 }
