@@ -46,11 +46,11 @@ func renderString(x, y, maxWidth int, s string, foreground, background termbox.A
 	return stringWidth, additionalLines + 1
 }
 
-// renderLineWithMarkup renders the given string, uses the given markup to T it
-// and to extract markup elements, and displays it all starting at (x,y) location.
+// renderLineWithMarkup renders the given string, using the given markup processor to
+// identify and ignore markup elements, at the given location.
 // returns the number of screen lines used to render the line
 func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) int {
-	var start int
+	column := x
 	stringWidth := 0
 	//tracks the number of screen lines used to render
 	additionalLines := 0
@@ -75,9 +75,8 @@ func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) int {
 				y += additionalLines
 			}
 
-			start = maxWidth - len(token)
-
-			termbox.SetCell(start, y, char, markup.Foreground, markup.Background)
+			termbox.SetCell(column, y, char, markup.Foreground, markup.Background)
+			column++
 		}
 	}
 	//At least one screen line has been used
