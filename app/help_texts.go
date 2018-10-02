@@ -62,10 +62,10 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Enter</>     Returns low-level information of the selected network
 
 <yellow>Node list keybinds</>
-	<white>Enter</>     Shows the list of taks running on the selected node
+	<white>Enter</>     Shows the list of tasks running on the selected node
 
 <yellow>Service list keybinds</>
-	<white>Enter</>     Shows the list of taks that are part of the selected service
+	<white>Enter</>     Shows the list of tasks that are part of the selected service
 	<white>l</>         Displays the logs of the selected service
 	<white>Ctrl+R</>    Removes the selected service
 	<white>Ctrl+S</>    Scales the selected service
