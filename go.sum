@@ -6,7 +6,7 @@ github.com/docker/cli v0.0.0-20180712011953-7178075fdad6 h1:pLY+ZkBfTNWBJoFgjUIz
 github.com/docker/cli v0.0.0-20180712011953-7178075fdad6/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
 github.com/docker/distribution v0.0.0-20180522175653-f0cc92778478 h1:yCzgNaIN+6iGPBy5h8LVw9ULFerVIiCdPMKiH2A6I/g=
 github.com/docker/distribution v0.0.0-20180522175653-f0cc92778478/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
-github.com/docker/docker v0.0.0-20180602184202-641e2c01cca0 h1:hIgtMJd4k5cr/VgYeN/p+FRN6zQlN67uZnYnIyYOKRM=
+github.com/docker/docker v0.0.0-20180602184202-641e2c01cca0 h1:FwbLJxKI53B2+EthnrhHqjv6iasbYX10hyRAptjSsH0=
 github.com/docker/docker v0.0.0-20180602184202-641e2c01cca0/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/go-connections v0.4.0 h1:El9xVISelRB7BuFusrZozjnkIM5YnzCViNKohAFqRJQ=
 github.com/docker/go-connections v0.4.0/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5XhDvyHbTtUxmeec=
