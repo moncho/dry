@@ -22,7 +22,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.0-20150823121946-12e0ff74603c
 	github.com/mitchellh/go-homedir v0.0.0-20160621174243-756f7b183b7a
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7
-	github.com/nsf/termbox-go v0.0.0-20180613055208-5c94acc5e6eb
+	github.com/nsf/termbox-go v0.0.0-20190104133558-0938b5187e61
 	github.com/olekukonko/tablewriter v0.0.0-20160115111002-cca8bbc07984
 	github.com/onsi/ginkgo v1.6.0 // indirect
 	github.com/onsi/gomega v1.4.1 // indirect
