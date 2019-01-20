@@ -201,6 +201,7 @@ func (h *servicesScreenEventHandler) showLogs(withTimestamp bool, f func(eventHa
 		}
 
 		showServiceLogs := func(serviceID string) error {
+			since = curateLogsDuration(since)
 			logs, err := h.dry.dockerDaemon.ServiceLogs(serviceID, since, withTimestamp)
 			if err == nil {
 				appui.Stream(logs, forwarder.events(),
@@ -214,8 +215,8 @@ func (h *servicesScreenEventHandler) showLogs(withTimestamp bool, f func(eventHa
 			return err
 		}
 		if err := h.widget.OnEvent(showServiceLogs); err != nil {
-			h.dry.appmessage("There was an error showing service logs: " + err.Error())
 			f(h)
+			h.dry.appmessage("There was an error showing service logs: " + err.Error())
 		}
 	}()
 }

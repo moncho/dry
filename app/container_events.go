@@ -286,6 +286,7 @@ func (h *containersScreenEventHandler) handleCharacter(key rune, f func(eventHan
 				}, f)
 				return nil
 			}); err != nil {
+
 			h.dry.appmessage("There was an error showing logs: " + err.Error())
 		}
 	case 's', 'S': //stats
@@ -536,7 +537,7 @@ func (h *containersScreenEventHandler) showLogs(id string, withTimestamp bool, f
 			f(h)
 			return
 		}
-
+		since = curateLogsDuration(since)
 		logs, err := h.dry.dockerDaemon.Logs(id, since, withTimestamp)
 		if err == nil {
 			appui.Stream(logs, forwarder.events(), func() {
@@ -545,6 +546,7 @@ func (h *containersScreenEventHandler) showLogs(id string, withTimestamp bool, f
 				refreshScreen()
 			})
 		} else {
+			f(h)
 			h.dry.appmessage("Error showing container logs: " + err.Error())
 
 		}

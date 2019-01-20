@@ -4,6 +4,7 @@ import (
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
 	termbox "github.com/nsf/termbox-go"
+	"strings"
 )
 
 func logsPrompt() *appui.Prompt {
@@ -33,4 +34,13 @@ func inspect(
 		go appui.Less(renderer, screen, events, onClose)
 		return nil
 	}
+}
+
+func curateLogsDuration(s string) string {
+	neg := strings.Index(s, "-")
+	if neg >= 0 {
+		return s[neg+1:]
+	}
+	return s
+
 }
