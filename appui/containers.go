@@ -142,10 +142,13 @@ func (s *ContainersWidget) Name() string {
 
 //OnEvent runs the given command
 func (s *ContainersWidget) OnEvent(event EventCommand) error {
-	if s.RowCount() > 0 {
-		return event(s.filteredRows[s.selectedIndex].container.ID)
+	if s.RowCount() <= 0 {
+		return errors.New("The container list is empty")
+	} else if s.filteredRows[s.selectedIndex] == nil {
+		return errors.New(
+			fmt.Sprintf("The container list does not have an element on pos %d", s.selectedIndex))
 	}
-	return errors.New("The container list is empty")
+	return event(s.filteredRows[s.selectedIndex].container.ID)
 }
 
 //RowCount returns the number of rows of this widget.
