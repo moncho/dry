@@ -1,7 +1,8 @@
 package appui
 
 import (
-	"reflect"
+	gizak "github.com/gizak/termui"
+	"github.com/moncho/dry/ui/termui"
 	"testing"
 )
 
@@ -10,18 +11,55 @@ func TestRowFilter_ByPattern(t *testing.T) {
 		pattern string
 	}
 	tests := []struct {
-		name string
-		rf   RowFilter
-		args args
-		want RowFilter
+		name       string
+		filterable FilterableRow
+		args       args
+		want       bool
 	}{
-	// TODO: Add test cases.
+		{
+			"blabla -> true",
+			filterable{
+				columns: []*termui.ParColumn{
+					&termui.ParColumn{
+						Par: gizak.Par{Text: "blabla"},
+					},
+				},
+			},
+			args{
+				"blabla",
+			},
+			true,
+		},
+		{
+			"nope -> false",
+			filterable{
+				columns: []*termui.ParColumn{
+					&termui.ParColumn{
+						Par: gizak.Par{Text: "yes"},
+					},
+				},
+			},
+			args{
+				"nope",
+			},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.rf.ByPattern(tt.args.pattern); !reflect.DeepEqual(got, tt.want) {
+			filter := RowFilters.ByPattern(tt.args.pattern)
+			got := filter(tt.filterable)
+			if got != tt.want {
 				t.Errorf("RowFilter.ByPattern() = %v, want %v", got, tt.want)
 			}
 		})
 	}
+}
+
+type filterable struct {
+	columns []*termui.ParColumn
+}
+
+func (f filterable) ColumnsForFilter() []*termui.ParColumn {
+	return f.columns
 }
