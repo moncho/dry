@@ -2,18 +2,19 @@ module github.com/moncho/dry
 
 require (
 	github.com/Microsoft/go-winio v0.4.9 // indirect
+	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/cli v0.0.0-20180712011953-7178075fdad6
 	github.com/docker/distribution v0.0.0-20180522175653-f0cc92778478
-	github.com/docker/docker v0.0.0-20180602184202-641e2c01cca0
+	github.com/docker/docker v0.7.3-0.20190115220918-5ec31380a5d3
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.3.3
 	github.com/docker/libnetwork v0.0.0-20180222171459-0ae9b6f38f24 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/gizak/termui v0.0.0-20180614095157-19bab32e9cf4
 	github.com/gogo/protobuf v1.1.1 // indirect
-	github.com/golang/protobuf v1.2.0 // indirect
 	github.com/google/go-cmp v0.2.0 // indirect
+	github.com/gorilla/mux v1.6.2 // indirect
 	github.com/gosuri/uitable v0.0.0-20151209045405-62e40473eadf
 	github.com/gotestyourself/gotestyourself v2.1.0+incompatible // indirect
 	github.com/hpcloud/tail v1.0.0 // indirect
@@ -35,10 +36,9 @@ require (
 	github.com/vishvananda/netlink v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc // indirect
 	golang.org/x/crypto v0.0.0-20180723164146-c126467f60eb // indirect
-	golang.org/x/net v0.0.0-20180724234803-3673e40ba225
-	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f // indirect
-	golang.org/x/sys v0.0.0-20180724212812-e072cadbbdc8 // indirect
-	golang.org/x/text v0.3.0 // indirect
+	golang.org/x/net v0.0.0-20180826012351-8a410e7b638d
+	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
+	google.golang.org/grpc v1.18.0 // indirect
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
