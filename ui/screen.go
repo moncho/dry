@@ -6,6 +6,7 @@ import (
 
 	termui "github.com/gizak/termui"
 	"github.com/nsf/termbox-go"
+	"github.com/pkg/errors"
 )
 
 //ActiveScreen is the currently active screen
@@ -26,7 +27,9 @@ type Screen struct {
 //calculates current screen dimensions. Once created, the screen is
 //ready for display.
 func NewScreen(theme *ColorTheme) (*Screen, error) {
-
+	if err := termbox.Init(); err != nil {
+		return nil, errors.Wrap(err, "Error initializing termbox")
+	}
 	sd := screenDimensions()
 
 	termbox.SetOutputMode(termbox.Output256)
@@ -36,15 +39,19 @@ func NewScreen(theme *ColorTheme) (*Screen, error) {
 	screen.theme = theme
 	screen.Dimensions = sd
 	ActiveScreen = screen
+
 	return screen, nil
 }
 
 // Close gets called upon program termination to close the Termbox.
 func (screen *Screen) Close() *Screen {
 	screen.closing = true
+
 	screen.Lock()
 	defer screen.Unlock()
-	termbox.Close()
+	if termbox.IsInit {
+		termbox.Close()
+	}
 	return screen
 }
 
