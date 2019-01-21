@@ -470,18 +470,24 @@ func (daemon *DockerDaemon) Version() (*dockerTypes.Version, error) {
 }
 
 //init initializes the internals of the docker daemon.
-func (daemon *DockerDaemon) init() {
+func (daemon *DockerDaemon) init() error {
 	daemon.eventLog = NewEventLog()
-	daemon.Version()
+	//This loads Docker Version information
+	if _, err := daemon.Version(); err != nil {
+		return pkgError.Wrap(err, "Error retrieving Docker version")
+	}
 
 	if info, err := daemon.Info(); err == nil {
 		daemon.swarmMode = info.Swarm.LocalNodeState == swarm.LocalNodeStateActive
+	} else {
+		return pkgError.Wrap(err, "Error retrieving Docker info")
 	}
 	GlobalRegistry.Register(
 		ContainerSource,
 		func(ctx context.Context, message dockerEvents.Message) error {
 			return daemon.refreshAndWait()
 		})
+	return nil
 }
 
 func containers(client dockerAPI.ContainerAPIClient) ([]*Container, error) {

@@ -41,7 +41,9 @@ func connect(client client.APIClient, env *Env) (*DockerDaemon, error) {
 		dockerEnv: env,
 		resolver:  newResolver(client, false),
 	}
-	d.init()
+	if err := d.init(); err != nil {
+		return nil, err
+	}
 	return d, nil
 }
 
