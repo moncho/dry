@@ -14,8 +14,6 @@ import (
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/version"
-	"github.com/nsf/termbox-go"
-	pkgError "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -58,20 +56,13 @@ type dryOptions struct {
 	Whale uint `short:"w" long:"whale" description:"Show whale for w seconds"`
 }
 
-//-----------------------------------------------------------------------------
-
-func newApp(screen *ui.Screen, dockerEnv *docker.Env) (*app.Dry, error) {
-	return app.NewDry(screen, dockerEnv)
-}
-
 func newDockerEnv(opts dryOptions) *docker.Env {
 	dockerEnv := docker.NewEnv()
 	if opts.DockerHost == "" {
 		if os.Getenv("DOCKER_HOST") == "" {
-			log.Info(
-				fmt.Sprintf(
-					"No DOCKER_HOST environment variable found and no Host parameter was given, trying %s",
-					docker.DefaultDockerHost))
+			log.Printf(
+				"No DOCKER_HOST env variable found and no Host parameter was given, connecting to %s",
+				docker.DefaultDockerHost)
 			dockerEnv.DockerHost = docker.DefaultDockerHost
 		} else {
 			dockerEnv.DockerHost = os.Getenv("DOCKER_HOST")
@@ -86,7 +77,7 @@ func newDockerEnv(opts dryOptions) *docker.Env {
 	return dockerEnv
 }
 
-func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env, stop <-chan struct{}) {
+func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env) chan<- struct{} {
 	screen.Clear()
 	midscreen := ui.ActiveScreen.Dimensions.Width / 2
 	height := ui.ActiveScreen.Dimensions.Height
@@ -97,6 +88,8 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env, stop <-chan str
 	} else {
 		screen.RenderLine(2, height-1, ui.White("No Docker host"))
 	}
+
+	stop := make(chan struct{})
 
 	//20 is a safe aproximation for the length of interpreted characters from the message
 	screen.RenderLine(ui.ActiveScreen.Dimensions.Width-len(cheese)+20, height-1, cheese)
@@ -125,28 +118,27 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env, stop <-chan str
 				}
 
 			case <-timeOut.C:
-				screen.Close()
-				log.Error(
+				log.Print(
 					"Dry could not connect with the host after 30 seconds.")
-				os.Exit(0)
+				return
 			case <-stop:
 				return
 			}
 		}
 	}()
+	return stop
 }
 func main() {
 	running := false
 
 	defer func() {
 		if r := recover(); r != nil {
-			termbox.Close()
-			log.WithField("error", r).Error(
-				"Dry panicked")
-			log.Info("Bye")
+			log.Fatalf(
+				"Dry panicked: %d", r)
+			log.Print("Bye")
 			os.Exit(1)
 		} else if running {
-			log.Info("Bye")
+			log.Print("Bye")
 		}
 	}()
 	// parse flags
@@ -159,10 +151,10 @@ func main() {
 			return
 		}
 		if flagError.Type == flags.ErrUnknownFlag {
-			log.Error("Use --help to view all available options.")
+			log.Print("Use --help to view all available options.")
 			return
 		}
-		log.Errorf("Error parsing flags: %s\n", err)
+		log.Printf("Error parsing flags: %s", err)
 		return
 	}
 	if opts.Description {
@@ -170,58 +162,45 @@ func main() {
 		return
 	}
 	if opts.Version {
-		fmt.Printf("dry version %s, build %s\n", version.VERSION, version.GITCOMMIT)
+		fmt.Printf("dry version %s, build %s", version.VERSION, version.GITCOMMIT)
 		return
 	}
-	log.Info("Launching dry")
-	if err = termbox.Init(); err != nil {
-		log.Error(pkgError.Wrap(err, "There was an error initializing termbox"))
-		return
-	}
+	log.Print("Starting dry")
 	dockerEnv := newDockerEnv(opts)
 
 	// Start profiling (if required)
 	if opts.Profile {
 		go func() {
-			log.Info(http.ListenAndServe("localhost:6060", nil))
+			log.Fatal(http.ListenAndServe("localhost:6060", nil))
 		}()
 	}
 	screen, err := ui.NewScreen(appui.DryTheme)
-	defer screen.Close()
 	if err != nil {
-		log.WithField("error", err).Error(
-			"There was an error launching dry")
+		log.Printf("Dry error: %s", err)
 		return
 	}
 
 	running = true
 
-	//Loading screen
-	stopLoadScreen := make(chan struct{})
-
 	start := time.Now()
-	showLoadingScreen(screen, dockerEnv, stopLoadScreen)
+	stopLoadScreen := showLoadingScreen(screen, dockerEnv)
 
-	//newApp will load dry and try to establish a connection with the docker daemon
-	dry, err := newApp(screen, dockerEnv)
+	dry, err := app.NewDry(screen, dockerEnv)
 
 	//show whale to bablat
-	showWale, errP := time.ParseDuration(fmt.Sprintf("%ds", opts.Whale))
-	if errP == nil {
+	if opts.Whale > 0 {
+		showWale, _ := time.ParseDuration(fmt.Sprintf("%ds", opts.Whale))
 		time.Sleep(showWale - time.Since(start))
 	}
-	//dry has loaded, stop showing the loading screen
+	//dry has loaded, stopping the loading screen
 	close(stopLoadScreen)
-
 	if err == nil {
 		if opts.MonitorMode {
 			dry.ViewMode(app.Monitor)
 		}
 		app.RenderLoop(dry, screen)
-		dry.Close()
 	} else {
-		//screen has to be closed before logging
-		log.WithField("error", err).Error(
-			"There was an error launching dry")
+		defer log.Printf("Dry error: %s", err)
 	}
+	screen.Close()
 }
