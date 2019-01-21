@@ -98,7 +98,6 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env) chan<- struct{}
 		rotorPos := 0
 		forward := true
 		ticker := time.NewTicker(250 * time.Millisecond)
-		timeOut := time.NewTimer(30 * time.Second)
 
 		for {
 			select {
@@ -117,10 +116,6 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env) chan<- struct{}
 					rotorPos--
 				}
 
-			case <-timeOut.C:
-				log.Print(
-					"Dry could not connect with the host after 30 seconds.")
-				return
 			case <-stop:
 				return
 			}
