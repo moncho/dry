@@ -145,8 +145,7 @@ func (s *ContainersWidget) OnEvent(event EventCommand) error {
 	if s.RowCount() <= 0 {
 		return errors.New("The container list is empty")
 	} else if s.filteredRows[s.selectedIndex] == nil {
-		return errors.New(
-			fmt.Sprintf("The container list does not have an element on pos %d", s.selectedIndex))
+		return fmt.Errorf("The container list does not have an element on pos %d", s.selectedIndex)
 	}
 	return event(s.filteredRows[s.selectedIndex].container.ID)
 }
