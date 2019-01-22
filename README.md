@@ -125,10 +125,10 @@ sudo chmod 755 /usr/local/bin/dry
 
 If you dont like to **curl | sh**, binaries are provided.
 
-* **darwin** [386](https://github.com/moncho/dry/releases/download/v0.9-beta.7/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.9-beta.7/dry-darwin-amd64)
-* **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.9-beta.7/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.9-beta.7/dry-freebsd-amd64)
-* **linux** [386](https://github.com/moncho/dry/releases/download/v0.9-beta.7/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.9-beta.7/dry-linux-amd64)
-* **windows** [386](https://github.com/moncho/dry/releases/download/v0.9-beta.7/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.9-beta.7/dry-windows-amd64)
+* **darwin** [386](https://github.com/moncho/dry/releases/download/v0.9-beta.8/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.9-beta.8/dry-darwin-amd64)
+* **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.9-beta.8/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.9-beta.8/dry-freebsd-amd64)
+* **linux** [386](https://github.com/moncho/dry/releases/download/v0.9-beta.8/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.9-beta.8/dry-linux-amd64)
+* **windows** [386](https://github.com/moncho/dry/releases/download/v0.9-beta.8/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.9-beta.8/dry-windows-amd64)
 
 #### Mac OS X / Homebrew
 
