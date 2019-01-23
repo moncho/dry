@@ -10,8 +10,8 @@ type KeyValuePar struct {
 	X, Y   int
 	Width  int
 	Height int
-	key    *gtermui.Par
-	value  *gtermui.Par
+	key    *gtermui.Paragraph
+	value  *gtermui.Paragraph
 }
 
 //NewKeyValuePar creates a KeyValuePar widget with the given values
@@ -20,13 +20,13 @@ func NewKeyValuePar(key, value string, theme *ui.ColorTheme) *KeyValuePar {
 	bg := gtermui.Attribute(theme.Bg)
 
 	kv.Height = 1
-	kv.key = gtermui.NewPar(key + ":")
+	kv.key = gtermui.NewParagraph(key + ":")
 	kv.key.Border = false
 	kv.key.Bg = bg
 	kv.key.TextBgColor = bg
 	kv.key.TextFgColor = gtermui.Attribute(theme.Key)
 
-	kv.value = gtermui.NewPar(" " + value)
+	kv.value = gtermui.NewParagraph(" " + value)
 	kv.value.Border = false
 	kv.value.Bg = bg
 	kv.value.TextBgColor = bg

@@ -9,10 +9,10 @@ import (
 type TableHeader struct {
 	X, Y              int
 	Height, Width     int
-	Columns           []*termui.Par
+	Columns           []*termui.Paragraph
 	ColumnSpacing     int
-	fixedWidthColumns []*termui.Par
-	varWidthColumns   []*termui.Par
+	fixedWidthColumns []*termui.Paragraph
+	varWidthColumns   []*termui.Paragraph
 	Theme             *ui.ColorTheme
 	columnWidths      []int
 }
@@ -111,8 +111,8 @@ func (th *TableHeader) ColumnWidths() []int {
 	return th.columnWidths
 }
 
-func newHeaderColumn(columnTitle string, th *TableHeader) *termui.Par {
-	p := termui.NewPar(columnTitle)
+func newHeaderColumn(columnTitle string, th *TableHeader) *termui.Paragraph {
+	p := termui.NewParagraph(columnTitle)
 	p.Height = th.Height
 	p.Border = false
 	p.Bg = termui.Attribute(th.Theme.Bg)

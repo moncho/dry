@@ -7,7 +7,7 @@ import (
 
 //ParColumn is a termui.Par that can be used in a grid to show text
 type ParColumn struct {
-	termui.Par
+	termui.Paragraph
 }
 
 //NewThemedParColumn creates a new paragraph column with the given text using the given color theme
@@ -21,7 +21,7 @@ func NewThemedParColumn(theme *ui.ColorTheme, s string) *ParColumn {
 
 //NewParColumn creates a new paragraph column with the given text
 func NewParColumn(s string) *ParColumn {
-	p := termui.NewPar(s)
+	p := termui.NewParagraph(s)
 	p.Border = false
 
 	return &ParColumn{*p}

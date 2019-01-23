@@ -5,18 +5,18 @@ import "github.com/moncho/dry/ui"
 
 //MarkupPar is a paragraph with marked-up text
 type MarkupPar struct {
-	gizaktermui.Par
+	gizaktermui.Paragraph
 	textBuilder gizaktermui.TextBuilder
 }
 
 //NewParFromMarkupText creates a new termui paragraph from marked-up text.
 func NewParFromMarkupText(theme *ui.ColorTheme, str string) *MarkupPar {
-	return &MarkupPar{Par: *gizaktermui.NewPar(str), textBuilder: &markupTextBuilder{ui.NewMarkup(theme)}}
+	return &MarkupPar{Paragraph: *gizaktermui.NewParagraph(str), textBuilder: &markupTextBuilder{ui.NewMarkup(theme)}}
 }
 
 //Content sets the paragraph content to the given text.
 func (p *MarkupPar) Content(str string) {
-	p.Par.Text = str
+	p.Paragraph.Text = str
 }
 
 // Buffer return this paragraph content as a termui.Buffer
