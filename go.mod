@@ -7,7 +7,7 @@ require (
 	github.com/docker/cli v0.0.0-20180712011953-7178075fdad6
 	github.com/docker/distribution v0.0.0-20180522175653-f0cc92778478
 	github.com/docker/docker v0.7.3-0.20190115220918-5ec31380a5d3
-	github.com/docker/go-connections v0.4.0
+	github.com/docker/go-connections v0.4.1-0.20180821093606-97c2040d34df
 	github.com/docker/go-units v0.3.3
 	github.com/docker/libnetwork v0.0.0-20180222171459-0ae9b6f38f24 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect

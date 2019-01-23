@@ -15,6 +15,8 @@ github.com/docker/docker v0.7.3-0.20190115220918-5ec31380a5d3 h1:vUxaD/38TYQX1hS
 github.com/docker/docker v0.7.3-0.20190115220918-5ec31380a5d3/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/go-connections v0.4.0 h1:El9xVISelRB7BuFusrZozjnkIM5YnzCViNKohAFqRJQ=
 github.com/docker/go-connections v0.4.0/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5XhDvyHbTtUxmeec=
+github.com/docker/go-connections v0.4.1-0.20180821093606-97c2040d34df h1:cGbd/ECh4QPOc6+Tbvdk5NjCcOYESiwc1RjXp0XciVg=
+github.com/docker/go-connections v0.4.1-0.20180821093606-97c2040d34df/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5XhDvyHbTtUxmeec=
 github.com/docker/go-units v0.3.3 h1:Xk8S3Xj5sLGlG5g67hJmYMmUgXv5N4PhkjJHHqrwnTk=
 github.com/docker/go-units v0.3.3/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
 github.com/docker/libnetwork v0.0.0-20180222171459-0ae9b6f38f24 h1:knR8nqAxP02v5I67VsbyRCEYSysCFnKLSqYp0fbIHHc=
