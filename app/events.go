@@ -28,14 +28,9 @@ func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 	cursor := screen.Cursor
 	refresh := true
 	switch event.Key {
-	case termbox.KeyArrowUp: //cursor up
-		cursor.ScrollCursorUp()
 	case termbox.KeyArrowUp, termbox.KeyCtrlP: //cursor up
 		cursor.ScrollCursorUp()
-		cursor.ScrollCursorUp()
 	case termbox.KeyArrowDown, termbox.KeyCtrlN: // cursor down
-		cursor.ScrollCursorDown()
-	case termbox.KeyCtrlN: // cursor down
 		cursor.ScrollCursorDown()
 	case termbox.KeyF8: // disk usage
 		f(viewsToHandlers[DiskUsage])
