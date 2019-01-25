@@ -33,7 +33,7 @@ func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 	case termbox.KeyArrowUp, termbox.KeyCtrlP: //cursor up
 		cursor.ScrollCursorUp()
 		cursor.ScrollCursorUp()
-	case termbox.KeyArrowDown: // cursor down
+	case termbox.KeyArrowDown, termbox.KeyCtrlN: // cursor down
 		cursor.ScrollCursorDown()
 	case termbox.KeyCtrlN: // cursor down
 		cursor.ScrollCursorDown()
