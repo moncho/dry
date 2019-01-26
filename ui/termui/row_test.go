@@ -29,9 +29,9 @@ func TestRowCreation(t *testing.T) {
 
 func TestSettingRowWidth_RowWithNoTable(t *testing.T) {
 	row := Row{}
-	c1 := &gtermui.Par{}
-	c2 := &gtermui.Par{}
-	c3 := &gtermui.Par{}
+	c1 := &gtermui.Paragraph{}
+	c2 := &gtermui.Paragraph{}
+	c3 := &gtermui.Paragraph{}
 
 	row.AddColumn(c1)
 	row.AddColumn(c2)
@@ -60,9 +60,9 @@ func TestSettingRowWidth_RowWithTable(t *testing.T) {
 	row.Table = testTable(func() []int {
 		return []int{2, 2, 2}
 	})
-	c1 := &gtermui.Par{}
-	c2 := &gtermui.Par{}
-	c3 := &gtermui.Par{}
+	c1 := &gtermui.Paragraph{}
+	c2 := &gtermui.Paragraph{}
+	c3 := &gtermui.Paragraph{}
 
 	row.AddColumn(c1)
 	row.AddColumn(c2)

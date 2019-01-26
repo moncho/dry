@@ -21,7 +21,7 @@ func TestRowFilter_ByPattern(t *testing.T) {
 			filterable{
 				columns: []*termui.ParColumn{
 					&termui.ParColumn{
-						Par: gizak.Par{Text: "blabla"},
+						Paragraph: gizak.Paragraph{Text: "blabla"},
 					},
 				},
 			},
@@ -35,7 +35,7 @@ func TestRowFilter_ByPattern(t *testing.T) {
 			filterable{
 				columns: []*termui.ParColumn{
 					&termui.ParColumn{
-						Par: gizak.Par{Text: "yes"},
+						Paragraph: gizak.Paragraph{Text: "yes"},
 					},
 				},
 			},
