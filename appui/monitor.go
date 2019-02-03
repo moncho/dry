@@ -2,6 +2,7 @@ package appui
 
 import (
 	"context"
+	"strconv"
 	"sync"
 	"time"
 
@@ -9,6 +10,8 @@ import (
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 )
+
+var defaultRefreshRate time.Duration = 500 * time.Millisecond
 
 //Monitor is a self-refreshing ui component that shows monitoring information about docker
 //containers.
@@ -23,6 +26,7 @@ type Monitor struct {
 	x, y                 int
 	height, width        int
 	startIndex, endIndex int
+	refreshRate          time.Duration
 	sync.RWMutex
 }
 
@@ -40,21 +44,26 @@ func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
 		height:        height,
 		width:         ui.ActiveScreen.Dimensions.Width,
 		unmount:       make(chan struct{}),
+		refreshRate:   defaultRefreshRate,
 	}
 	return &m
 }
 
 //Buffer returns the content of this monitor as a termui.Buffer
 func (m *Monitor) Buffer() gizaktermui.Buffer {
-	m.Lock()
-	defer m.Unlock()
+	m.RLock()
+	defer m.RUnlock()
 	y := m.y
 	buf := gizaktermui.NewBuffer()
+	widgetHeader := NewWidgetHeader()
+	widgetHeader.HeaderEntry("Running Containers", strconv.Itoa(m.RowCount()))
+	widgetHeader.HeaderEntry("Refresh rate", m.refreshRate.String())
 
-	widgetHeader := WidgetHeader("Containers", m.RowCount(), "")
 	widgetHeader.Y = y
 	buf.Merge(widgetHeader.Buffer())
-	y += widgetHeader.Height
+	y += widgetHeader.GetHeight()
+	//Empty line between the header and the rest of the content
+	y++
 
 	m.header.SetY(y)
 	buf.Merge(m.header.Buffer())
@@ -78,6 +87,8 @@ func (m *Monitor) Filter(filter string) {
 
 //Mount prepares this widget for rendering
 func (m *Monitor) Mount() error {
+	m.Lock()
+	defer m.Unlock()
 	daemon := m.daemon
 	containers := daemon.Containers(
 		[]docker.ContainerFilter{docker.ContainerFilters.Running()}, docker.SortByName)
@@ -110,11 +121,20 @@ func (m *Monitor) OnEvent(event EventCommand) error {
 	return nil
 }
 
+//RefreshRate sets the refresh rate of this monitor to the given amount in
+//milliseconds.
+func (m *Monitor) RefreshRate(millis int) {
+	m.Lock()
+	defer m.Unlock()
+	m.refreshRate = time.Duration(millis) * time.Millisecond
+}
+
 //RenderLoop makes this monitor to render itself until stopped.
 func (m *Monitor) RenderLoop(ctx context.Context) {
 
 	go func() {
-		refreshTimer := time.NewTicker(500 * time.Millisecond)
+		m.refresh()
+		refreshTimer := time.NewTicker(m.refreshRate)
 		defer refreshTimer.Stop()
 		defer func() {
 			for _, c := range m.openChannels {

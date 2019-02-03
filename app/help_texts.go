@@ -101,7 +101,7 @@ const (
 		"<b>[m]:<darkgrey>Monitor mode</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <b>[6]:<darkgrey>Stacks</> <blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
 
 	monitorMapping = commonMappings +
-		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <b>[6]:<darkgrey>Stacks</>"
+		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <b>[6]:<darkgrey>Stacks</> <blue>|</> <b>[s]:<darkgrey>Set refresh rate</></>"
 
 	swarmMapping = commonMappings +
 		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <b>[6]:<darkgrey>Stacks</>"

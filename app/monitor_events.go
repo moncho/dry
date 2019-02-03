@@ -1,8 +1,12 @@
 package app
 
 import (
+	"errors"
+	"fmt"
 	"github.com/moncho/dry/appui"
+	"github.com/moncho/dry/ui"
 	termbox "github.com/nsf/termbox-go"
+	"strconv"
 )
 
 type monitorScreenEventHandler struct {
@@ -52,8 +56,39 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 			handled = true
 			cursor.Bottom()
 			h.widget.OnEvent(nil)
-		default:
-			handled = false
+		case 's': // Set the delay between updates to <delay> seconds.
+			handled = true
+			h.widget.Unmount()
+			prompt := appui.NewPrompt("Set the delay between updates (in milliseconds)")
+			widgets.add(prompt)
+			forwarder := newEventForwarder()
+			f(forwarder)
+			h.dry.ViewMode(NoView)
+			refreshScreen()
+			go func() {
+				defer h.widget.Mount()
+				defer h.dry.ViewMode(Monitor)
+				defer f(h)
+				events := ui.EventSource{
+					Events: forwarder.events(),
+					EventHandledCallback: func(e termbox.Event) error {
+						return refreshScreen()
+					},
+				}
+				prompt.OnFocus(events)
+				input, cancel := prompt.Text()
+				widgets.remove(prompt)
+				if cancel {
+					return
+				}
+				refreshRate, err := toInt(input)
+				if err != nil {
+					h.dry.appmessage(
+						fmt.Sprintf("Error setting refresh rate: %s", err.Error()))
+					return
+				}
+				h.widget.RefreshRate(refreshRate)
+			}()
 		}
 	}
 	if !handled {
@@ -66,4 +101,16 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 		}
 		h.baseEventHandler.handle(event, nh)
 	}
+}
+
+func toInt(s string) (int, error) {
+	i, err := strconv.Atoi(s)
+
+	if err != nil {
+		return -1, errors.New("Be nice, a number is expected")
+	}
+	if i < 0 {
+		return -1, errors.New("Negative values are not allowed")
+	}
+	return i, nil
 }
