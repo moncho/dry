@@ -49,7 +49,7 @@ func (header *WidgetHeader) Buffer() gizaktermui.Buffer {
 	par.SetX(0)
 	par.SetY(header.Y)
 	par.Border = false
-	par.Width = width
+	par.Width = len([]rune(s))
 	par.TextBgColor = gizaktermui.Attribute(DryTheme.Bg)
 	par.Bg = gizaktermui.Attribute(DryTheme.Bg)
 	return par.Buffer()

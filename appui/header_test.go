@@ -2,6 +2,7 @@ package appui
 
 import (
 	"github.com/moncho/dry/ui/termui"
+	"strings"
 	"testing"
 )
 
@@ -39,7 +40,11 @@ func TestWidgetHeader(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got != tt.want {
+
+			//Trimming the string to ignore whitespaces caused by the length
+			//of the widget being the length of the markup tags +
+			//the length of the header entries.
+			if strings.Trim(got, " ") != tt.want {
 				t.Errorf("WidgetHeader got = '%s', want '%s'", got, tt.want)
 			}
 		})
