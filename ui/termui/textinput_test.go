@@ -3,7 +3,6 @@ package termui
 import (
 	"errors"
 	"image"
-	"sort"
 	"testing"
 
 	"github.com/gizak/termui"
@@ -643,19 +642,4 @@ func equal(m1, m2 map[image.Point]termui.Cell) bool {
 
 	return true
 
-}
-func sortedKeys(m map[image.Point]termui.Cell) []image.Point {
-	var result []image.Point
-	for k := range m {
-		result = append(result, k)
-	}
-	sort.SliceStable(result, func(i int, j int) bool {
-		if result[i].X < result[j].X {
-			return true
-		} else if result[i].X == result[j].X {
-			return result[i].Y <= result[j].Y
-		}
-		return false
-	})
-	return result
 }
