@@ -1,8 +1,8 @@
 package swarm
 
 import (
-	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -69,17 +69,16 @@ func (s *StacksWidget) Buffer() gizaktermui.Buffer {
 	buf := gizaktermui.NewBuffer()
 	if s.mounted {
 		s.prepareForRendering()
-		var filter string
+		widgetHeader := appui.NewWidgetHeader()
+		widgetHeader.HeaderEntry("Stacks", strconv.Itoa(s.RowCount()))
 		if s.filterPattern != "" {
-			filter = fmt.Sprintf(
-				"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
+			widgetHeader.HeaderEntry("Active filter", s.filterPattern)
 		}
-
-		widgetHeader := appui.WidgetHeader("Stacks", s.RowCount(), filter)
 		widgetHeader.Y = y
 		buf.Merge(widgetHeader.Buffer())
 		y += widgetHeader.GetHeight()
-
+		//Empty line between the header and the rest of the content
+		y++
 		s.updateHeader()
 		s.header.SetY(y)
 		buf.Merge(s.header.Buffer())

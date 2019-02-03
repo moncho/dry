@@ -2,10 +2,10 @@ package appui
 
 import (
 	"fmt"
+	"strings"
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
 )
 
@@ -15,18 +15,42 @@ type SortableColumnHeader struct {
 	Mode  docker.SortMode
 }
 
-//WidgetHeader is a widget that renders a line with the result of
-//appending the given what, count and details in a common format.
-func WidgetHeader(what string, howMany int, details string) *termui.MarkupPar {
-	par := termui.NewParFromMarkupText(DryTheme,
-		fmt.Sprintf(
-			"<b><blue>%s: </><yellow>%d</></>", what, howMany)+" "+details)
+type WidgetHeader struct {
+	elements map[string]string
+	keys     []string
+	Y        int
+}
+
+func NewWidgetHeader() *WidgetHeader {
+	return &WidgetHeader{
+		elements: make(map[string]string),
+	}
+}
+func (header *WidgetHeader) HeaderEntry(key, value string) {
+	header.keys = append(header.keys, key)
+	header.elements[key] = value
+}
+func (header *WidgetHeader) GetHeight() int {
+	return 1
+}
+
+// Buffer return this paragraph content as a termui.Buffer
+func (header *WidgetHeader) Buffer() gizaktermui.Buffer {
+	var entries []string
+	width := 0
+	for _, k := range header.keys {
+		entries = append(entries,
+			fmt.Sprintf("<b><blue>%s: </><yellow>%s</></>", k, header.elements[k]))
+		width += len(k) + len(header.elements[k])
+	}
+	s := strings.Join(entries, " <blue>|</> ")
+	par := termui.NewParFromMarkupText(DryTheme, s)
 
 	par.SetX(0)
+	par.SetY(header.Y)
 	par.Border = false
-	par.Width = ui.ActiveScreen.Dimensions.Width
+	par.Width = width
 	par.TextBgColor = gizaktermui.Attribute(DryTheme.Bg)
 	par.Bg = gizaktermui.Attribute(DryTheme.Bg)
-
-	return par
+	return par.Buffer()
 }

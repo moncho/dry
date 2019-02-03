@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -69,17 +70,17 @@ func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 	if s.mounted {
 		s.prepareForRendering()
 		y := s.y
-		var filter string
+		widgetHeader := NewWidgetHeader()
+		widgetHeader.HeaderEntry("Containers", strconv.Itoa(s.RowCount()))
 		if s.filterPattern != "" {
-			filter = fmt.Sprintf(
-				"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
+			widgetHeader.HeaderEntry("Active filter", s.filterPattern)
 		}
-
-		widgetHeader := WidgetHeader("Containers", s.RowCount(), filter)
+		widgetHeader.Buffer()
 		widgetHeader.Y = y
 		buf.Merge(widgetHeader.Buffer())
 		y += widgetHeader.GetHeight()
-
+		//Empty line between the header and the rest of the content
+		y++
 		s.header.SetY(y)
 		s.updateTableHeader()
 		buf.Merge(s.header.Buffer())
