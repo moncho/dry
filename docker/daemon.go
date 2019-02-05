@@ -237,8 +237,8 @@ func (daemon *DockerDaemon) Ok() (bool, error) {
 }
 
 //OpenChannel creates a channel with the runtime stats of the given container
-func (daemon *DockerDaemon) OpenChannel(container *Container) *StatsChannel {
-	return NewStatsChannel(daemon, container)
+func (daemon *DockerDaemon) StatsChannel(container *Container) (*StatsChannel, error) {
+	return NewStatsChannel(daemon, container), nil
 }
 
 //Prune requests the Docker daemon to prune unused containers, images
@@ -429,12 +429,6 @@ func (daemon *DockerDaemon) store() ContainerStore {
 	return daemon.s
 }
 
-//Stats shows resource usage statistics of the container with the given id
-func (daemon *DockerDaemon) Stats(id string) (<-chan *Stats, chan<- struct{}) {
-	stream := NewStatsChannel(daemon, daemon.store().Get(id))
-	return stream.Stats, stream.Done
-}
-
 //StopContainer stops the container with the given id
 func (daemon *DockerDaemon) StopContainer(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
@@ -448,9 +442,7 @@ func (daemon *DockerDaemon) StopContainer(id string) error {
 }
 
 //Top returns Top information for the given container
-func (daemon *DockerDaemon) Top(id string) (container.ContainerTopOKBody, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
-	defer cancel()
+func (daemon *DockerDaemon) Top(ctx context.Context, id string) (container.ContainerTopOKBody, error) {
 	return daemon.client.ContainerTop(ctx, id, nil)
 }
 
@@ -491,20 +483,23 @@ func (daemon *DockerDaemon) init() error {
 }
 
 func containers(client dockerAPI.ContainerAPIClient) ([]*Container, error) {
-	//Since this is how dry fist connects to the Docker daemon
-	//a different (longer) timeout is used.
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultConnectionTimeout)
 	defer cancel()
 	containers, err := client.ContainerList(ctx, dockerTypes.ContainerListOptions{All: true, Size: true})
-	if err == nil {
-		var cPointers []*Container
-		for i, c := range containers {
-			details, _ := client.ContainerInspect(ctx, c.ID)
-			cPointers = append(cPointers, &Container{containers[i], details})
-		}
-		return cPointers, nil
+	if err != nil {
+		return nil, pkgError.Wrap(err, "Error retrieving container list")
 	}
-	return nil, pkgError.Wrap(err, "Error retrieving container list")
+
+	var cc []*Container
+	for i, c := range containers {
+		details, err := client.ContainerInspect(ctx, c.ID)
+		if err != nil {
+			return nil, pkgError.Wrapf(err, "Error inspecting container %s", c.ID)
+		}
+		cc = append(cc, &Container{containers[i], details})
+	}
+	return cc, nil
+
 }
 
 func images(client dockerAPI.ImageAPIClient, opts dockerTypes.ImageListOptions) ([]dockerTypes.ImageSummary, error) {

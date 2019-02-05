@@ -47,11 +47,11 @@ type ContainerAPI interface {
 	IsContainerRunning(id string) bool
 	Kill(id string) error
 	Logs(id string, since string, withTimeStamp bool) (io.ReadCloser, error)
-	OpenChannel(container *Container) *StatsChannel
+	StatsChannel(container *Container) (*StatsChannel, error)
 	RemoveAllStoppedContainers() (int, error)
 	RestartContainer(id string) error
 	StopContainer(id string) error
-	Top(id string) (container.ContainerTopOKBody, error)
+	Top(ctx context.Context, id string) (container.ContainerTopOKBody, error)
 }
 
 //ImageAPI defines the API for Docker images
@@ -107,6 +107,7 @@ type Stats struct {
 	PidsCurrent      uint64
 	Stats            *types.StatsJSON
 	ProcessList      *container.ContainerTopOKBody
+	Error            error
 }
 
 //Resolver defines the interface for ID to name resolution

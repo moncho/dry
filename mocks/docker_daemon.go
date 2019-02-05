@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"strconv"
@@ -217,9 +218,9 @@ func (_m *DockerDaemonMock) Ok() (bool, error) {
 	return false, nil
 }
 
-//OpenChannel mocks OpenChannel
-func (_m *DockerDaemonMock) OpenChannel(container *drydocker.Container) *drydocker.StatsChannel {
-	return nil
+//StatsChannel mocks StatsChannel
+func (_m *DockerDaemonMock) StatsChannel(container *drydocker.Container) (*drydocker.StatsChannel, error) {
+	return nil, nil
 }
 
 // Prune mocks prune command
@@ -383,7 +384,7 @@ func (_m *DockerDaemonMock) Task(id string) (swarm.Task, error) {
 }
 
 //Top function mock
-func (_m *DockerDaemonMock) Top(id string) (container.ContainerTopOKBody, error) {
+func (_m *DockerDaemonMock) Top(ctx context.Context, id string) (container.ContainerTopOKBody, error) {
 
 	return container.ContainerTopOKBody{}, nil
 }
