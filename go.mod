@@ -19,10 +19,13 @@ require (
 	github.com/gotestyourself/gotestyourself v2.1.0+incompatible // indirect
 	github.com/hpcloud/tail v1.0.0 // indirect
 	github.com/jessevdk/go-flags v0.0.0-20151028205243-fc93116606d0
+	github.com/json-iterator/go v1.1.5
 	github.com/maruel/panicparse v0.0.0-20180318230139-4417700b5a8d // indirect
 	github.com/mattn/go-runewidth v0.0.4
 	github.com/mitchellh/go-homedir v0.0.0-20160621174243-756f7b183b7a
 	github.com/mitchellh/go-wordwrap v1.0.0
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/nsf/termbox-go v0.0.0-20190121233118-02980233997d
 	github.com/olekukonko/tablewriter v0.0.0-20160115111002-cca8bbc07984
 	github.com/onsi/ginkgo v1.6.0 // indirect

@@ -1,7 +1,9 @@
 package docker
 
 import (
-	"encoding/json"
+	"github.com/json-iterator/go"
+	"github.com/pkg/errors"
+	"io"
 	"strings"
 	"time"
 
@@ -26,30 +28,34 @@ func NewStatsChannel(daemon *DockerDaemon, container *Container) *StatsChannel {
 		done := make(chan struct{})
 
 		go func() {
-			cli := daemon.client
 			ctx, cancel := context.WithCancel(context.Background())
-			containerStats, err := cli.ContainerStats(ctx, container.Names[0], true)
+			containerStats, err := daemon.client.ContainerStats(ctx, container.Names[0], true)
 			responseBody := containerStats.Body
 			defer responseBody.Close()
 			defer close(stats)
 			if err != nil {
+				stats <- &Stats{
+					Error: errors.Wrapf(err, "Error creating stats stream for container %s", container.ID)}
 				return
 			}
 
-			var statsJSON *types.StatsJSON
-			dec := json.NewDecoder(responseBody)
+			var statsJSON types.StatsJSON
+			dec := jsoniter.NewDecoder(responseBody)
 
 			timer := time.NewTicker(1000 * time.Millisecond)
+			defer timer.Stop()
 			for {
 				select {
 				case <-timer.C:
 					if err := dec.Decode(&statsJSON); err != nil {
-						return
-					}
-					if statsJSON != nil {
-						if top, err := daemon.Top(container.ID); err == nil {
-							stats <- buildStats(daemon.version, container, statsJSON, &top)
+						if err == io.EOF {
+							return
 						}
+						continue
+					}
+
+					if top, err := daemon.Top(ctx, container.ID); err == nil {
+						stats <- buildStats(daemon.version, container, &statsJSON, &top)
 					}
 				case <-ctx.Done():
 					return
