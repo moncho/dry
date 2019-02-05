@@ -57,7 +57,7 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 			cursor.Bottom()
 			h.widget.OnEvent(nil)
 		case 's': // Set the delay between updates to <delay> seconds.
-			handled = true
+			//widget is mounted on render, dont Mount here
 			h.widget.Unmount()
 			prompt := appui.NewPrompt("Set the delay between updates (in milliseconds)")
 			widgets.add(prompt)
@@ -66,7 +66,6 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 			h.dry.ViewMode(NoView)
 			refreshScreen()
 			go func() {
-				defer h.widget.Mount()
 				defer h.dry.ViewMode(Monitor)
 				defer f(h)
 				events := ui.EventSource{
