@@ -10,32 +10,34 @@ import (
 //SourceType is a representation of the sources types that might emit Docker events
 type SourceType string
 
-//ContainerSource for events emitted by Docker containers
-var ContainerSource = SourceType("container")
+const (
+	//ContainerSource for events emitted by Docker containers
+	ContainerSource = SourceType("container")
 
-//DaemonSource for events emitted by the Docker daemon
-var DaemonSource = SourceType("daemon")
+	//DaemonSource for events emitted by the Docker daemon
+	DaemonSource = SourceType("daemon")
 
-//ImageSource for events emitted by Docker images
-var ImageSource = SourceType("image")
+	//ImageSource for events emitted by Docker images
+	ImageSource = SourceType("image")
 
-//NetworkSource for events emitted by Docker networks
-var NetworkSource = SourceType("network")
+	//NetworkSource for events emitted by Docker networks
+	NetworkSource = SourceType("network")
 
-//PluginSource for events emitted by Docker plugins
-var PluginSource = SourceType("plugin")
+	//PluginSource for events emitted by Docker plugins
+	PluginSource = SourceType("plugin")
 
-//VolumeSource for events emitted by Docker volumes
-var VolumeSource = SourceType("volume")
+	//VolumeSource for events emitted by Docker volumes
+	VolumeSource = SourceType("volume")
 
-//ServiceSource for events emitted by Docker services
-var ServiceSource = SourceType("service")
+	//ServiceSource for events emitted by Docker services
+	ServiceSource = SourceType("service")
 
-//NodeSource for events emitted by Docker nodes
-var NodeSource = SourceType("node")
+	//NodeSource for events emitted by Docker nodes
+	NodeSource = SourceType("node")
 
-//SecretSource for events emitted by Docker secrets
-var SecretSource = SourceType("secret")
+	//SecretSource for events emitted by Docker secrets
+	SecretSource = SourceType("secret")
+)
 
 //CallbackRegistry d
 type CallbackRegistry interface {
