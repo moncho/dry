@@ -233,13 +233,17 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		forwarder := newEventForwarder()
 		f(forwarder)
 		h.dry.ViewMode(NoView)
-		statsChan := dry.dockerDaemon.OpenChannel(container)
-		go statsScreen(container, statsChan, screen, forwarder.events(),
-			func() {
-				h.dry.ViewMode(ContainerMenu)
-				f(h)
-				refreshScreen()
-			})
+		if statsChan, err := dry.dockerDaemon.StatsChannel(container); err != nil {
+			dry.appmessage(
+				fmt.Sprintf("Error showing container stats: %s", err.Error()))
+		} else {
+			go statsScreen(container, statsChan, screen, forwarder.events(),
+				func() {
+					h.dry.ViewMode(ContainerMenu)
+					f(h)
+					refreshScreen()
+				})
+		}
 
 	case docker.INSPECT:
 		forwarder := newEventForwarder()

@@ -173,15 +173,19 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 			dry.appmessage(
 				fmt.Sprintf("Container with id %s not found or not running", id))
 		} else {
-			statsChan := dry.dockerDaemon.OpenChannel(c)
-			forwarder := newEventForwarder()
-			f(forwarder)
-			h.dry.ViewMode(NoView)
-			go statsScreen(command.container, statsChan, screen, forwarder.events(), func() {
-				h.dry.ViewMode(Main)
-				f(h)
-				refreshScreen()
-			})
+			if statsChan, err := dry.dockerDaemon.StatsChannel(c); err != nil {
+				dry.appmessage(
+					fmt.Sprintf("Error showing container stats: %s", err.Error()))
+			} else {
+				forwarder := newEventForwarder()
+				f(forwarder)
+				h.dry.ViewMode(NoView)
+				go statsScreen(command.container, statsChan, screen, forwarder.events(), func() {
+					h.dry.ViewMode(Main)
+					f(h)
+					refreshScreen()
+				})
+			}
 		}
 
 	case docker.INSPECT:
