@@ -2,6 +2,7 @@ package appui
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"strconv"
 	"sync"
 	"time"
@@ -95,7 +96,10 @@ func (m *Monitor) Mount() error {
 	var rows []*ContainerStatsRow
 	var channels []*docker.StatsChannel
 	for _, c := range containers {
-		statsChan := daemon.OpenChannel(c)
+		statsChan, err := daemon.StatsChannel(c)
+		if err != nil {
+			return errors.Wrap(err, "Error mounting monitor widget")
+		}
 		rows = append(rows, NewSelfUpdatedContainerStatsRow(statsChan, defaultMonitorTableHeader))
 		channels = append(channels, statsChan)
 	}
