@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
@@ -466,7 +467,6 @@ func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen
 	screen.Render(1, info)
 
 	var mutex sync.Mutex
-	s := stats.Stats
 
 	header := appui.NewMonitorTableHeader()
 	header.SetX(0)
@@ -478,19 +478,23 @@ func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen
 	statsRow.SetY(header.Y + header.Height + 1)
 	statsRow.SetWidth(ui.ActiveScreen.Dimensions.Width)
 
+	t := time.NewTicker(1 * time.Second)
 loop:
 	for {
 		select {
 
-		case stats.Refresh <- struct{}{}:
+		case <-t.C:
+			stats.Refresh <- struct{}{}
 
 		case event := <-events:
 			if event.Type == termbox.EventKey && event.Key == termbox.KeyEsc {
 				//the lock is acquired before breaking the loop
 				mutex.Lock()
-				s = nil
+				t.Stop()
+				stats.Done <- struct{}{}
+				break loop
 			}
-		case stat, ok := <-s:
+		case stat, ok := <-stats.Stats:
 			{
 				if !ok {
 					break loop
@@ -509,17 +513,12 @@ loop:
 				screen.Flush()
 				mutex.Unlock()
 			}
-		default:
-		}
-		if s == nil {
-			break loop
 		}
 	}
 	//cleanup before exiting, the screen is cleared and the lock released
 	screen.Clear()
 	screen.Sync()
 	mutex.Unlock()
-	close(stats.Done)
 }
 
 func (h *containersScreenEventHandler) showLogs(id string, withTimestamp bool, f func(eventHandler)) {
