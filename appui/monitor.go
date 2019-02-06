@@ -152,6 +152,12 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 			case <-m.unmount:
 				return
 			case <-refreshTimer.C:
+				for _, c := range m.openChannels {
+					select {
+					case c.Refresh <- struct{}{}:
+					default:
+					}
+				}
 				m.refresh()
 			}
 		}

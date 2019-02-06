@@ -5,7 +5,6 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"strings"
-	"time"
 
 	"golang.org/x/net/context"
 
@@ -18,6 +17,7 @@ import (
 type StatsChannel struct {
 	Container *Container
 	Stats     <-chan *Stats
+	Refresh   chan<- struct{}
 	Done      chan<- struct{}
 }
 
@@ -26,12 +26,14 @@ func NewStatsChannel(daemon *DockerDaemon, container *Container) *StatsChannel {
 	if IsContainerRunning(container) {
 		stats := make(chan *Stats)
 		done := make(chan struct{})
+		refresh := make(chan struct{})
 
 		go func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			containerStats, err := daemon.client.ContainerStats(ctx, container.Names[0], true)
 			responseBody := containerStats.Body
 			defer responseBody.Close()
+			defer close(refresh)
 			defer close(stats)
 			if err != nil {
 				stats <- &Stats{
@@ -42,11 +44,9 @@ func NewStatsChannel(daemon *DockerDaemon, container *Container) *StatsChannel {
 			var statsJSON types.StatsJSON
 			dec := jsoniter.NewDecoder(responseBody)
 
-			timer := time.NewTicker(1000 * time.Millisecond)
-			defer timer.Stop()
 			for {
 				select {
-				case <-timer.C:
+				case <-refresh:
 					if err := dec.Decode(&statsJSON); err != nil {
 						if err == io.EOF {
 							return
@@ -66,7 +66,11 @@ func NewStatsChannel(daemon *DockerDaemon, container *Container) *StatsChannel {
 			}
 		}()
 
-		return &StatsChannel{container, stats, done}
+		return &StatsChannel{
+			Container: container,
+			Stats:     stats,
+			Refresh:   refresh,
+			Done:      done}
 	}
 	return &StatsChannel{Container: container}
 

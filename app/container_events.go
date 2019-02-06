@@ -475,19 +475,21 @@ func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen
 
 	statsRow := appui.NewContainerStatsRow(container, header)
 	statsRow.SetX(0)
-	statsRow.SetY(header.Y + 1)
+	statsRow.SetY(header.Y + header.Height + 1)
 	statsRow.SetWidth(ui.ActiveScreen.Dimensions.Width)
 
 loop:
 	for {
 		select {
+
+		case stats.Refresh <- struct{}{}:
+
 		case event := <-events:
 			if event.Type == termbox.EventKey && event.Key == termbox.KeyEsc {
 				//the lock is acquired before breaking the loop
 				mutex.Lock()
 				s = nil
 			}
-
 		case stat, ok := <-s:
 			{
 				if !ok {
@@ -497,7 +499,7 @@ loop:
 				statsRow.Update(container, stat)
 				top, _ := appui.NewDockerTop(
 					stat.ProcessList,
-					0, statsRow.Y+2,
+					0, statsRow.Y+statsRow.Height+2,
 					ui.ActiveScreen.Dimensions.Height-infoLines-statsRow.GetHeight(),
 					ui.ActiveScreen.Dimensions.Width)
 				screen.RenderBufferer(
@@ -507,6 +509,7 @@ loop:
 				screen.Flush()
 				mutex.Unlock()
 			}
+		default:
 		}
 		if s == nil {
 			break loop
