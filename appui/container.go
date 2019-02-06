@@ -10,10 +10,12 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+var newLine = []byte{'\n'}
+
 //NewContainerInfo returns detailed container information. Returned int value
 //is the number of lines.
 func NewContainerInfo(container *docker.Container) (string, int) {
-	buffer := new(bytes.Buffer)
+	var buffer bytes.Buffer
 	var status string
 	if docker.IsContainerRunning(container) {
 		status = ui.Yellow(container.Status)
@@ -40,11 +42,13 @@ func NewContainerInfo(container *docker.Container) (string, int) {
 	data = append(data, []string{ui.Blue("Labels"), ui.Yellow(
 		strconv.Itoa(len(container.Labels)))})
 
-	table := tablewriter.NewWriter(buffer)
+	table := tablewriter.NewWriter(&buffer)
 	table.SetBorder(false)
 	table.SetColumnSeparator("")
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.AppendBulk(data)
 	table.Render()
-	return buffer.String(), len(data)
+	res := buffer.Bytes()
+
+	return string(res), bytes.Count(res, newLine)
 }
