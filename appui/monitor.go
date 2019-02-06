@@ -142,7 +142,7 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 		defer refreshTimer.Stop()
 		defer func() {
 			for _, c := range m.openChannels {
-				c.Done <- struct{}{}
+				c.Stop()
 			}
 		}()
 		for {
@@ -153,10 +153,7 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 				return
 			case <-refreshTimer.C:
 				for _, c := range m.openChannels {
-					select {
-					case c.Refresh <- struct{}{}:
-					default:
-					}
+					c.Refresh()
 				}
 				m.refresh()
 			}

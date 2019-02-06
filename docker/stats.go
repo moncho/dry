@@ -17,8 +17,26 @@ import (
 type StatsChannel struct {
 	Container *Container
 	Stats     <-chan *Stats
-	Refresh   chan<- struct{}
-	Done      chan<- struct{}
+	refresh   chan<- struct{}
+	done      chan<- struct{}
+}
+
+func (s *StatsChannel) Stop() {
+	if s.done == nil {
+		return
+	}
+	s.done <- struct{}{}
+}
+
+func (s *StatsChannel) Refresh() {
+	if s.refresh == nil {
+		return
+	}
+	select {
+	case s.refresh <- struct{}{}:
+	default:
+	}
+
 }
 
 //NewStatsChannel creates a channel on which to receive the runtime stats of the given container
@@ -69,8 +87,8 @@ func NewStatsChannel(daemon *DockerDaemon, container *Container) *StatsChannel {
 		return &StatsChannel{
 			Container: container,
 			Stats:     stats,
-			Refresh:   refresh,
-			Done:      done}
+			refresh:   refresh,
+			done:      done}
 	}
 	return &StatsChannel{Container: container}
 

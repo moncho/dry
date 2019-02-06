@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/moncho/dry/appui"
@@ -466,8 +465,6 @@ func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen
 	info, infoLines := appui.NewContainerInfo(container)
 	screen.Render(1, info)
 
-	var mutex sync.Mutex
-
 	header := appui.NewMonitorTableHeader()
 	header.SetX(0)
 	header.SetWidth(ui.ActiveScreen.Dimensions.Width)
@@ -484,14 +481,10 @@ loop:
 		select {
 
 		case <-t.C:
-			stats.Refresh <- struct{}{}
+			stats.Refresh()
 
 		case event := <-events:
 			if event.Type == termbox.EventKey && event.Key == termbox.KeyEsc {
-				//the lock is acquired before breaking the loop
-				mutex.Lock()
-				t.Stop()
-				stats.Done <- struct{}{}
 				break loop
 			}
 		case stat, ok := <-stats.Stats:
@@ -499,7 +492,6 @@ loop:
 				if !ok {
 					break loop
 				}
-				mutex.Lock()
 				statsRow.Update(container, stat)
 				top, _ := appui.NewDockerTop(
 					stat.ProcessList,
@@ -511,14 +503,14 @@ loop:
 					top,
 					statsRow)
 				screen.Flush()
-				mutex.Unlock()
 			}
 		}
 	}
+	t.Stop()
+	stats.Stop()
 	//cleanup before exiting, the screen is cleared and the lock released
 	screen.Clear()
 	screen.Sync()
-	mutex.Unlock()
 }
 
 func (h *containersScreenEventHandler) showLogs(id string, withTimestamp bool, f func(eventHandler)) {
