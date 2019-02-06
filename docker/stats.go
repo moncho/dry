@@ -73,7 +73,10 @@ func NewStatsChannel(daemon *DockerDaemon, container *Container) *StatsChannel {
 					}
 
 					if top, err := daemon.Top(ctx, container.ID); err == nil {
-						stats <- buildStats(daemon.version, container, &statsJSON, &top)
+						select {
+						case stats <- buildStats(daemon.version, container, &statsJSON, &top):
+						default:
+						}
 					}
 				case <-ctx.Done():
 					return
