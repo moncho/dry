@@ -95,7 +95,7 @@ loop:
 			break loop
 		case termbox.EventKey:
 			//Ctrl+C breaks the loop (and exits dry) no matter what
-			if event.Key == termbox.KeyCtrlC || event.Ch == 'q' || event.Ch == 'Q' {
+			if event.Key == termbox.KeyCtrlC || event.Ch == 'Q' {
 				break loop
 			} else {
 				select {
