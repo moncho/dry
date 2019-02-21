@@ -21,8 +21,6 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 		return
 	}
 	termuiEvents, done := ui.EventChannel()
-	eventChan := make(chan termbox.Event)
-
 	//On receive dry is rendered
 	renderChan := make(chan struct{})
 
@@ -36,21 +34,11 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 
 	dryOutputChan := dry.OuputChannel()
 
-	defer close(done)
-	defer close(eventChan)
-	//make the global refreshScreen a noop before closing
-	defer func() {
-		closingLock.Lock()
-		defer closingLock.Unlock()
-		refreshScreen = func() error {
-			return nil
-		}
-	}()
-
-	defer close(renderChan)
-
-	//renders dry on message until renderChan is closed
+	var wg sync.WaitGroup
 	go func() {
+		wg.Add(1)
+		defer wg.Done()
+
 		for range renderChan {
 			if !screen.Closing() {
 				screen.Clear()
@@ -76,17 +64,7 @@ func RenderLoop(dry *Dry, screen *ui.Screen) {
 		}
 	}()
 
-	go func() {
-		//Initial handler
-		handler := viewsToHandlers[dry.viewMode()]
-
-		for event := range eventChan {
-			handler.handle(event, func(eh eventHandler) {
-				handler = eh
-			})
-		}
-	}()
-
+	handler := viewsToHandlers[dry.viewMode()]
 	//main loop that handles termui events
 loop:
 	for event := range termuiEvents {
@@ -98,12 +76,9 @@ loop:
 			if event.Key == termbox.KeyCtrlC || event.Ch == 'Q' {
 				break loop
 			} else {
-				select {
-				case eventChan <- event:
-				default:
-					log.Debug("Skipping termbox key event, channel is busy")
-				}
-
+				handler.handle(event, func(eh eventHandler) {
+					handler = eh
+				})
 			}
 		case termbox.EventResize:
 			ui.Resize()
@@ -113,4 +88,18 @@ loop:
 	}
 
 	log.Debug("something broke the loop. Time to die")
+
+	//Close terminal event channel
+	close(done)
+	//make the global refreshScreen func a noop before closing
+	closingLock.Lock()
+	refreshScreen = func() error {
+		return nil
+	}
+	closingLock.Unlock()
+
+	//Close the channel used to notify the rendering goroutine
+	close(renderChan)
+	//Wait for the rendering goroutine to exit
+	wg.Wait()
 }
