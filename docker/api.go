@@ -23,6 +23,7 @@ type ContainerDaemon interface {
 	ImageAPI
 	NetworkAPI
 	SwarmAPI
+	ContainerRuntime
 	DiskUsage() (types.DiskUsage, error)
 	DockerEnv() *Env
 	Events() (<-chan events.Message, chan<- struct{}, error)
@@ -39,7 +40,7 @@ type ContainerDaemon interface {
 	Version() (*types.Version, error)
 }
 
-//ContainerAPI defines the API for containers
+//ContainerAPI is a subset of the Docker API to manage containers
 type ContainerAPI interface {
 	ContainerByID(id string) *Container
 	Containers(filter []ContainerFilter, mode SortMode) []*Container
@@ -47,14 +48,17 @@ type ContainerAPI interface {
 	IsContainerRunning(id string) bool
 	Kill(id string) error
 	Logs(id string, since string, withTimeStamp bool) (io.ReadCloser, error)
-	StatsChannel(container *Container) (*StatsChannel, error)
 	RemoveAllStoppedContainers() (int, error)
 	RestartContainer(id string) error
 	StopContainer(id string) error
+}
+
+type ContainerRuntime interface {
+	StatsChannel(container *Container) (*StatsChannel, error)
 	Top(ctx context.Context, id string) (container.ContainerTopOKBody, error)
 }
 
-//ImageAPI defines the API for Docker images
+//ImageAPI is a subset of the Docker API to manage images
 type ImageAPI interface {
 	History(id string) ([]image.HistoryResponseItem, error)
 	ImageByID(id string) (types.ImageSummary, error)
@@ -62,7 +66,7 @@ type ImageAPI interface {
 	RunImage(image types.ImageSummary, command string) error
 }
 
-//NetworkAPI defines the API for Docker networks
+//NetworkAPI is a subset of the Docker API to manage networks
 type NetworkAPI interface {
 	Networks() ([]types.NetworkResource, error)
 	NetworkInspect(id string) (types.NetworkResource, error)

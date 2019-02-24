@@ -238,7 +238,7 @@ func (daemon *DockerDaemon) Ok() (bool, error) {
 
 //OpenChannel creates a channel with the runtime stats of the given container
 func (daemon *DockerDaemon) StatsChannel(container *Container) (*StatsChannel, error) {
-	return NewStatsChannel(daemon, container), nil
+	return newStatsChannel(daemon.version, daemon.client, container)
 }
 
 //Prune requests the Docker daemon to prune unused containers, images

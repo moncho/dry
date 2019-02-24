@@ -391,7 +391,6 @@ func (_m *DockerDaemonMock) Top(ctx context.Context, id string) (container.Conta
 
 // Version provides a mock function with given fields:
 func (_m *DockerDaemonMock) Version() (*types.Version, error) {
-
 	return &types.Version{
 		Version:       "1.0",
 		APIVersion:    "1.27",

@@ -1,6 +1,8 @@
 package docker
 
 import (
+	"fmt"
+	"github.com/docker/docker/client"
 	"github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"io"
@@ -12,88 +14,87 @@ import (
 	"github.com/docker/docker/api/types/container"
 )
 
-//StatsChannel is a container and its stats channel.
-//If the container is not running stats and done channel are nil.
+//StatsChannel manages the stats channel of a container
 type StatsChannel struct {
 	Container *Container
-	Stats     <-chan *Stats
-	refresh   chan<- struct{}
-	done      chan<- struct{}
+	version   *types.Version
+	client    client.ContainerAPIClient
+	refresh   chan struct{}
 }
 
-func (s *StatsChannel) Stop() {
-	if s.done == nil {
-		return
-	}
-	s.done <- struct{}{}
-}
-
+//Refresh forces a refresh of the container stats
 func (s *StatsChannel) Refresh() {
-	if s.refresh == nil {
-		return
-	}
 	select {
 	case s.refresh <- struct{}{}:
 	default:
 	}
-
 }
 
-//NewStatsChannel creates a channel on which to receive the runtime stats of the given container
-func NewStatsChannel(daemon *DockerDaemon, container *Container) *StatsChannel {
-	if IsContainerRunning(container) {
-		stats := make(chan *Stats)
-		done := make(chan struct{})
-		refresh := make(chan struct{})
+//Start starts sending stats to the channel returned
+func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
+	stats := make(chan *Stats)
 
-		go func() {
-			ctx, cancel := context.WithCancel(context.Background())
-			containerStats, err := daemon.client.ContainerStats(ctx, container.Names[0], true)
-			responseBody := containerStats.Body
-			defer responseBody.Close()
-			defer close(refresh)
-			defer close(stats)
-			if err != nil {
-				stats <- &Stats{
-					Error: errors.Wrapf(err, "Error creating stats stream for container %s", container.ID)}
-				return
-			}
+	go func() {
+		containerStats, err := s.client.ContainerStats(ctx, s.Container.Names[0], true)
 
-			var statsJSON types.StatsJSON
-			dec := jsoniter.NewDecoder(responseBody)
+		if err != nil {
+			stats <- &Stats{
+				Error: errors.Wrapf(err, "Error creating stats stream for container %s", s.Container.ID)}
+			return
+		}
 
-			for {
-				select {
-				case <-refresh:
-					if err := dec.Decode(&statsJSON); err != nil {
-						if err == io.EOF {
-							return
-						}
-						continue
+		responseBody := containerStats.Body
+		var statsJSON types.StatsJSON
+		dec := jsoniter.NewDecoder(responseBody)
+	loop:
+		for {
+			select {
+			case <-s.refresh:
+				if err := dec.Decode(&statsJSON); err != nil {
+					if err == io.EOF {
+						stats <- &Stats{
+							Error: fmt.Errorf(
+								"End of stats stream reached for container %s", s.Container.ID)}
+					} else {
+						stats <- &Stats{
+							Error: errors.Wrapf(err, "Error reading stats for container %s", s.Container.ID)}
 					}
-
-					if top, err := daemon.Top(ctx, container.ID); err == nil {
-						select {
-						case stats <- buildStats(daemon.version, container, &statsJSON, &top):
-						default:
-						}
-					}
-				case <-ctx.Done():
-					return
-				case <-done:
-					cancel()
-					return
+					break loop
 				}
-			}
-		}()
 
-		return &StatsChannel{
-			Container: container,
-			Stats:     stats,
-			refresh:   refresh,
-			done:      done}
+				top, err := s.client.ContainerTop(ctx, s.Container.ID, nil)
+
+				if err != nil {
+					stats <- &Stats{
+						Error: errors.Wrapf(err, "Error retrieving top info for container %s", s.Container.ID)}
+					break loop
+				}
+				select {
+				case stats <- buildStats(s.version, s.Container, &statsJSON, &top):
+				default:
+				}
+			case <-ctx.Done():
+				break loop
+			}
+		}
+		responseBody.Close()
+		close(stats)
+	}()
+	return stats
+}
+
+//newStatsChannel creates a ready to use stats channel
+func newStatsChannel(version *types.Version, client client.ContainerAPIClient, container *Container) (*StatsChannel, error) {
+	if container == nil {
+		return nil, errors.New("Container cannot be null")
+	} else if !IsContainerRunning(container) {
+		return nil, fmt.Errorf("Container %s is not running", container.ID)
 	}
-	return &StatsChannel{Container: container}
+	return &StatsChannel{
+		client:    client,
+		Container: container,
+		version:   version,
+		refresh:   make(chan struct{})}, nil
 
 }
 
