@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -476,6 +477,8 @@ func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen
 	statsRow.SetWidth(ui.ActiveScreen.Dimensions.Width)
 
 	t := time.NewTicker(1 * time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
+	sChan := stats.Start(ctx)
 loop:
 	for {
 		select {
@@ -487,12 +490,12 @@ loop:
 			if event.Type == termbox.EventKey && event.Key == termbox.KeyEsc {
 				break loop
 			}
-		case stat, ok := <-stats.Stats:
+		case stat, ok := <-sChan:
 			{
 				if !ok {
 					break loop
 				}
-				statsRow.Update(container, stat)
+				statsRow.Update(stat)
 				top, _ := appui.NewDockerTop(
 					stat.ProcessList,
 					0, statsRow.Y+statsRow.Height+2,
@@ -507,8 +510,7 @@ loop:
 		}
 	}
 	t.Stop()
-	stats.Stop()
-	//cleanup before exiting, the screen is cleared and the lock released
+	cancel()
 	screen.Clear()
 	screen.Sync()
 }
