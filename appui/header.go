@@ -2,17 +2,19 @@ package appui
 
 import (
 	"fmt"
+	"github.com/moncho/dry/docker"
 	"strings"
 
 	gizaktermui "github.com/gizak/termui"
-	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui/termui"
 )
+
+type sortMode = docker.SortMode
 
 //SortableColumnHeader is a column header associated to a  sort mode
 type SortableColumnHeader struct {
 	Title string // Title to display in the tableHeader.
-	Mode  docker.SortMode
+	Mode  sortMode
 }
 
 type WidgetHeader struct {

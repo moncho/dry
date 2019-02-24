@@ -136,18 +136,19 @@ func TestContainerStatsRow_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			row := &ContainerStatsRow{
-				Status: tt.fields.Status,
-				Name:   tt.fields.Name,
-				ID:     tt.fields.ID,
-				CPU:    tt.fields.CPU,
-				Memory: tt.fields.Memory,
-				Net:    tt.fields.Net,
-				Block:  tt.fields.Block,
-				Pids:   tt.fields.Pids,
-				Uptime: tt.fields.Uptime,
+				Status:    tt.fields.Status,
+				Name:      tt.fields.Name,
+				ID:        tt.fields.ID,
+				CPU:       tt.fields.CPU,
+				Memory:    tt.fields.Memory,
+				Net:       tt.fields.Net,
+				Block:     tt.fields.Block,
+				Pids:      tt.fields.Pids,
+				Uptime:    tt.fields.Uptime,
+				container: tt.args.container,
 			}
 			stats := tt.args.stats
-			row.Update(tt.args.container, stats)
+			row.Update(stats)
 			if stats != nil {
 				if row.Pids.Text != strconv.Itoa(int(stats.PidsCurrent)) {
 					t.Errorf("Unexpected pids. Got %s, expected %d", row.Pids.Text, stats.PidsCurrent)

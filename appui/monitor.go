@@ -2,8 +2,11 @@ package appui
 
 import (
 	"context"
+	"fmt"
 	"github.com/pkg/errors"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -12,6 +15,28 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
+const (
+	id sortMode = iota
+	name
+	cpu
+	mem
+	netio
+	blockio
+	pids
+	uptime
+)
+
+var monitorTableHeaders = map[string]sortMode{
+	"CONTAINER": id,
+	"NAME":      name,
+	"CPU":       cpu,
+	"MEM":       mem,
+	"NET RX/TX": netio,
+	"BLOCK I/O": blockio,
+	"PIDS":      pids,
+	"UPTIME":    uptime,
+}
+
 var defaultRefreshRate time.Duration = 500 * time.Millisecond
 
 //Monitor is a self-refreshing ui component that shows monitoring information about docker
@@ -19,6 +44,7 @@ var defaultRefreshRate time.Duration = 500 * time.Millisecond
 type Monitor struct {
 	header               *MonitorTableHeader
 	daemon               docker.ContainerDaemon
+	rowChannels          map[*ContainerStatsRow]*docker.StatsChannel
 	rows                 []*ContainerStatsRow
 	openChannels         []*docker.StatsChannel
 	unmount              chan struct{}
@@ -28,6 +54,7 @@ type Monitor struct {
 	height, width        int
 	startIndex, endIndex int
 	refreshRate          time.Duration
+	sortMode             sortMode
 	sync.RWMutex
 }
 
@@ -46,6 +73,7 @@ func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
 		width:         ui.ActiveScreen.Dimensions.Width,
 		unmount:       make(chan struct{}),
 		refreshRate:   defaultRefreshRate,
+		sortMode:      id,
 	}
 	return &m
 }
@@ -61,6 +89,7 @@ func (m *Monitor) Buffer() gizaktermui.Buffer {
 	widgetHeader.HeaderEntry("Refresh rate", m.refreshRate.String())
 
 	widgetHeader.Y = y
+
 	buf.Merge(widgetHeader.Buffer())
 	y += widgetHeader.GetHeight()
 	//Empty line between the header and the rest of the content
@@ -72,6 +101,7 @@ func (m *Monitor) Buffer() gizaktermui.Buffer {
 	y += m.header.Height
 
 	m.highlightSelectedRow()
+	m.sortRows()
 	for _, r := range m.visibleRows() {
 		r.SetY(y)
 		y += r.GetHeight()
@@ -91,6 +121,7 @@ func (m *Monitor) Mount() error {
 	m.Lock()
 	defer m.Unlock()
 	daemon := m.daemon
+	rowChannels := make(map[*ContainerStatsRow]*docker.StatsChannel)
 	containers := daemon.Containers(
 		[]docker.ContainerFilter{docker.ContainerFilters.Running()}, docker.SortByName)
 	var rows []*ContainerStatsRow
@@ -100,14 +131,18 @@ func (m *Monitor) Mount() error {
 		if err != nil {
 			return errors.Wrap(err, "Error mounting monitor widget")
 		}
-		rows = append(rows, NewSelfUpdatedContainerStatsRow(statsChan, defaultMonitorTableHeader))
+		row := NewContainerStatsRow(c, defaultMonitorTableHeader)
+		rows = append(rows, row)
 		channels = append(channels, statsChan)
+		rowChannels[row] = statsChan
 	}
 
 	m.rows = rows
 	m.openChannels = channels
+	m.rowChannels = rowChannels
 
 	m.align()
+	m.updateTableHeader()
 	return nil
 }
 
@@ -116,13 +151,24 @@ func (m *Monitor) Name() string {
 	return "Monitor"
 }
 
-//OnEvent refreshes the monitor widget. The command is ignored for now.
+//OnEvent refreshes the monitor widget and runs the given
+//command on the highlighted row.
+//It can be used to refresh the widget.
 func (m *Monitor) OnEvent(event EventCommand) error {
 	m.refresh()
-	if m.RowCount() > 0 && event != nil {
-		return event(m.visibleRows()[m.selectedIndex].container.ID)
+	if event == nil {
+		return nil
 	}
-	return nil
+	rows := len(m.visibleRows())
+	if rows < 0 {
+		errors.New("There are no rows")
+	}
+
+	if m.selectedIndex >= rows {
+		return fmt.Errorf("There is no row on index %d", m.selectedIndex)
+	}
+
+	return event(m.visibleRows()[m.selectedIndex].container.ID)
 }
 
 //RefreshRate sets the refresh rate of this monitor to the given amount in
@@ -137,27 +183,33 @@ func (m *Monitor) RefreshRate(millis int) {
 func (m *Monitor) RenderLoop(ctx context.Context) {
 
 	go func() {
-		m.refresh()
+		statsCtx, cancel := context.WithCancel(ctx)
+		for row, ch := range m.rowChannels {
+			stats := ch.Start(statsCtx)
+			go func(row *ContainerStatsRow) {
+				for stat := range stats {
+					row.Update(stat)
+				}
+				row.markAsNotRunning()
+			}(row)
+		}
+		m.refreshRows()
+
 		refreshTimer := time.NewTicker(m.refreshRate)
-		defer refreshTimer.Stop()
-		defer func() {
-			for _, c := range m.openChannels {
-				c.Stop()
-			}
-		}()
 		for {
 			select {
-			case <-ctx.Done():
-				return
 			case <-m.unmount:
+				refreshTimer.Stop()
+				cancel()
+				return
+			case <-ctx.Done():
+				refreshTimer.Stop()
 				return
 			case <-refreshTimer.C:
-				for _, c := range m.openChannels {
-					c.Refresh()
-				}
-				m.refresh()
+				m.refreshRows()
 			}
 		}
+
 	}()
 
 }
@@ -169,7 +221,15 @@ func (m *Monitor) RowCount() int {
 
 //Sort sorts the container list
 func (m *Monitor) Sort() {
+	m.Lock()
+	defer m.Unlock()
+	if m.sortMode == uptime {
+		m.sortMode = id
+	} else {
+		m.sortMode++
+	}
 
+	m.updateTableHeader()
 }
 
 //Unmount tells this widget that it will not be rendering anymore
@@ -212,6 +272,73 @@ func (m *Monitor) highlightSelectedRow() {
 		}
 	}
 }
+func (m *Monitor) refresh() {
+	ui.ActiveScreen.RenderBufferer(m)
+	ui.ActiveScreen.Flush()
+}
+func (m *Monitor) refreshRows() {
+
+	for _, c := range m.openChannels {
+		c.Refresh()
+	}
+	m.refresh()
+}
+func (m *Monitor) sortRows() {
+	rows := m.rows
+	mode := m.sortMode
+
+	var sortAlg func(i, j int) bool
+
+	switch mode {
+	case id:
+		sortAlg = func(i, j int) bool {
+			return rows[i].ID.Text > rows[j].ID.Text
+		}
+	case name:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Name.Text > rows[j].Name.Text
+		}
+	case cpu:
+		sortAlg = func(i, j int) bool {
+			return rows[i].CPU.Percent > rows[j].CPU.Percent
+		}
+	case mem:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Memory.Percent > rows[j].Memory.Percent
+		}
+	case netio:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Net.Text > rows[j].Net.Text
+		}
+	case blockio:
+		sortAlg = func(i, j int) bool {
+			return rows[i].Block.Text > rows[j].Block.Text
+		}
+	case pids:
+		sortAlg = func(i, j int) bool {
+			return rows[i].PidsVal > rows[j].PidsVal
+		}
+	case uptime:
+		sortAlg = func(i, j int) bool {
+			return rows[i].UptimeVal.After(rows[j].UptimeVal)
+		}
+	}
+	sort.SliceStable(rows, sortAlg)
+}
+
+func (m *Monitor) updateTableHeader() {
+
+	for _, c := range m.header.Columns {
+		colTitle := c.Text
+		if strings.Contains(colTitle, DownArrow) {
+			colTitle = colTitle[DownArrowLength:]
+			c.Text = colTitle
+		}
+		if sortMode, ok := monitorTableHeaders[colTitle]; ok && sortMode == m.sortMode {
+			c.Text = DownArrow + colTitle
+		}
+	}
+}
 
 func (m *Monitor) visibleRows() []*ContainerStatsRow {
 
@@ -250,8 +377,4 @@ func (m *Monitor) visibleRows() []*ContainerStatsRow {
 	start := m.startIndex
 	end := m.endIndex + 1
 	return rows[start:end]
-}
-func (m *Monitor) refresh() {
-	ui.ActiveScreen.RenderBufferer(m)
-	ui.ActiveScreen.Flush()
 }

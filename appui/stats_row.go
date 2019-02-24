@@ -29,6 +29,8 @@ type ContainerStatsRow struct {
 	Block     *drytermui.ParColumn
 	Pids      *drytermui.ParColumn
 	Uptime    *drytermui.ParColumn
+	PidsVal   uint64
+	UptimeVal time.Time
 
 	drytermui.Row
 }
@@ -69,23 +71,6 @@ func NewContainerStatsRow(container *docker.Container, table drytermui.Table) *C
 	}
 	return &row
 
-}
-
-//NewSelfUpdatedContainerStatsRow creates a ContainerStatsRow that updates
-//itself on stats message sent on the given channel
-func NewSelfUpdatedContainerStatsRow(s *docker.StatsChannel, table drytermui.Table) *ContainerStatsRow {
-	c := s.Container
-	row := NewContainerStatsRow(c, table)
-
-	if docker.IsContainerRunning(c) {
-		go func() {
-			for stat := range s.Stats {
-				row.Update(c, stat)
-			}
-			row.markAsNotRunning()
-		}()
-	}
-	return row
 }
 
 //Highlighted marks this rows as being highlighted
@@ -143,14 +128,14 @@ func (row *ContainerStatsRow) Reset() {
 }
 
 //Update updates the content of this row with the given stats
-func (row *ContainerStatsRow) Update(container *docker.Container, stat *docker.Stats) {
+func (row *ContainerStatsRow) Update(stat *docker.Stats) {
 	if stat != nil {
 		row.setNet(stat.NetworkRx, stat.NetworkTx)
 		row.setCPU(stat.CPUPercentage)
 		row.setMem(stat.Memory, stat.MemoryLimit, stat.MemoryPercentage)
 		row.setBlockIO(stat.BlockRead, stat.BlockWrite)
 		row.setPids(stat.PidsCurrent)
-		row.setUptime(container.ContainerJSON.State.StartedAt)
+		row.setUptime(row.container.ContainerJSON.State.StartedAt)
 	}
 }
 
@@ -162,6 +147,7 @@ func (row *ContainerStatsRow) setBlockIO(read float64, write float64) {
 	row.Block.Content(fmt.Sprintf("%s / %s", units.BytesSize(read), units.BytesSize(write)))
 }
 func (row *ContainerStatsRow) setPids(pids uint64) {
+	row.PidsVal = pids
 	row.Pids.Content(strconv.Itoa(int(pids)))
 }
 
@@ -191,6 +177,7 @@ func (row *ContainerStatsRow) setMem(val float64, limit float64, percent float64
 
 func (row *ContainerStatsRow) setUptime(startedAt string) {
 	if startTime, err := time.Parse(time.RFC3339, startedAt); err == nil {
+		row.UptimeVal = startTime
 		row.Uptime.Text = units.HumanDuration(time.Now().UTC().Sub(startTime))
 	} else {
 		row.Uptime.Text = ""
