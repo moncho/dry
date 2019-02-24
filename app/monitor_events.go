@@ -18,6 +18,10 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 	handled := false
 	cursor := h.screen.Cursor
 	switch event.Key {
+	case termbox.KeyF1:
+		handled = true
+		h.widget.Sort()
+		h.widget.OnEvent(nil)
 	case termbox.KeyArrowUp: //cursor up
 		handled = true
 		cursor.ScrollCursorUp()
