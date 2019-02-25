@@ -38,6 +38,7 @@ require (
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/vishvananda/netlink v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc // indirect
+	go.uber.org/goleak v0.10.0
 	golang.org/x/crypto v0.0.0-20180723164146-c126467f60eb // indirect
 	golang.org/x/net v0.0.0-20190119204137-ed066c81e75e
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect

@@ -52,12 +52,12 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 			case <-s.refresh:
 				if err := dec.Decode(&statsJSON); err != nil {
 					if err == io.EOF {
-						stats <- &Stats{
+						nonBlockingSend(stats, &Stats{
 							Error: fmt.Errorf(
-								"End of stats stream reached for container %s", s.Container.ID)}
+								"End of stats stream reached for container %s", s.Container.ID)})
 					} else {
-						stats <- &Stats{
-							Error: errors.Wrapf(err, "Error reading stats for container %s", s.Container.ID)}
+						nonBlockingSend(stats, &Stats{
+							Error: errors.Wrapf(err, "Error reading stats for container %s", s.Container.ID)})
 					}
 					break loop
 				}
@@ -65,14 +65,11 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 				top, err := s.client.ContainerTop(ctx, s.Container.ID, nil)
 
 				if err != nil {
-					stats <- &Stats{
-						Error: errors.Wrapf(err, "Error retrieving top info for container %s", s.Container.ID)}
+					nonBlockingSend(stats, &Stats{
+						Error: errors.Wrapf(err, "Error retrieving top info for container %s", s.Container.ID)})
 					break loop
 				}
-				select {
-				case stats <- buildStats(s.version, s.Container, &statsJSON, &top):
-				default:
-				}
+				nonBlockingSend(stats, buildStats(s.version, s.Container, &statsJSON, &top))
 			case <-ctx.Done():
 				break loop
 			}
@@ -209,4 +206,11 @@ func calculateCPUPercentWindows(v *types.StatsJSON) float64 {
 		return float64(intervalsUsed) / float64(possIntervals) * 100.0
 	}
 	return 0.00
+}
+
+func nonBlockingSend(stats chan<- *Stats, s *Stats) {
+	select {
+	case stats <- s:
+	default:
+	}
 }
