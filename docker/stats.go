@@ -35,15 +35,18 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 	stats := make(chan *Stats)
 
 	go func() {
+		defer close(stats)
 		containerStats, err := s.client.ContainerStats(ctx, s.Container.Names[0], true)
 
 		if err != nil {
-			stats <- &Stats{
-				Error: errors.Wrapf(err, "Error creating stats stream for container %s", s.Container.ID)}
+			nonBlockingSend(stats, &Stats{
+				Error: errors.Wrapf(err, "Error creating stats stream for container %s", s.Container.ID)})
 			return
 		}
 
 		responseBody := containerStats.Body
+		defer responseBody.Close()
+
 		var statsJSON types.StatsJSON
 		dec := jsoniter.NewDecoder(responseBody)
 	loop:
@@ -74,8 +77,7 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 				break loop
 			}
 		}
-		responseBody.Close()
-		close(stats)
+
 	}()
 	return stats
 }

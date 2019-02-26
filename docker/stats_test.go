@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -19,12 +20,13 @@ import (
 type statsClientMock struct {
 	client.ContainerAPIClient
 	statsBody io.ReadCloser
+	statsErr  error
 }
 
 func (s statsClientMock) ContainerStats(ctx context.Context, id string, stream bool) (types.ContainerStats, error) {
 	return types.ContainerStats{
 		Body: s.statsBody,
-	}, nil
+	}, s.statsErr
 }
 
 func (s statsClientMock) ContainerTop(ctx context.Context, container string, arguments []string) (containertypes.ContainerTopOKBody, error) {
@@ -95,7 +97,7 @@ func TestStatsChannel_refreshingPublishesStats(t *testing.T) {
 	cancel()
 }
 
-func TestStatsChannel_noErrors_goroutineExistsOnCtxCancel(t *testing.T) {
+func TestStatsChannel_noErrors_goroutineExitsOnCtxCancel(t *testing.T) {
 	defer goleak.VerifyNoLeaks(t)
 	sc := StatsChannel{
 		Container: &Container{
@@ -120,7 +122,7 @@ func TestStatsChannel_noErrors_goroutineExistsOnCtxCancel(t *testing.T) {
 	cancel()
 }
 
-func TestStatsChannel_errorBuildingStats_goroutineExistsOnCtxCancel(t *testing.T) {
+func TestStatsChannel_errorBuildingStats_goroutineExitsOnCtxCancel(t *testing.T) {
 	defer goleak.VerifyNoLeaks(t)
 	sc := StatsChannel{
 		Container: &Container{
@@ -144,6 +146,29 @@ func TestStatsChannel_errorBuildingStats_goroutineExistsOnCtxCancel(t *testing.T
 	sc.Refresh()
 	sc.Start(ctx)
 	cancel()
+}
+
+func TestStatsChannel_errorOpeningStream_goroutineExits(t *testing.T) {
+	defer goleak.VerifyNoLeaks(t)
+	sc := StatsChannel{
+		Container: &Container{
+			types.Container{
+				ID:    "1234",
+				Names: []string{"1234"},
+			},
+			types.ContainerJSON{},
+		},
+		version: &types.Version{
+			Os: "Not windows",
+		},
+		client: statsClientMock{
+			statsErr: errors.New("No stats for you, my friend"),
+		},
+		//Using a buffered chan in the test so Start goroutine receives the refresh
+		//signal
+		refresh: make(chan struct{}, 1)}
+	ctx, _ := context.WithCancel(context.Background())
+	sc.Start(ctx)
 }
 
 func TestCalculateMemUsageUnixNoCache(t *testing.T) {
