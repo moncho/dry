@@ -182,9 +182,10 @@ func (m *Monitor) RefreshRate(millis int) {
 //RenderLoop makes this monitor to render itself until stopped.
 func (m *Monitor) RenderLoop(ctx context.Context) {
 
-	go func() {
+	go func(rowChannels map[*ContainerStatsRow]*docker.StatsChannel) {
 		statsCtx, cancel := context.WithCancel(ctx)
-		for row, ch := range m.rowChannels {
+		defer cancel()
+		for row, ch := range rowChannels {
 			stats := ch.Start(statsCtx)
 			go func(row *ContainerStatsRow) {
 				for stat := range stats {
@@ -200,7 +201,6 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 			select {
 			case <-m.unmount:
 				refreshTimer.Stop()
-				cancel()
 				return
 			case <-ctx.Done():
 				refreshTimer.Stop()
@@ -210,7 +210,7 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 			}
 		}
 
-	}()
+	}(m.rowChannels)
 
 }
 
