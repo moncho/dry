@@ -1,4 +1,4 @@
-box: golang:1.11
+box: golang:1.12
 dev:
   steps:
     - internal/watch:
