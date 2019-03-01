@@ -236,7 +236,7 @@ func (daemon *DockerDaemon) Ok() (bool, error) {
 	return daemon.err == nil, daemon.err
 }
 
-//OpenChannel creates a channel with the runtime stats of the given container
+//StatsChannel creates a channel with the runtime stats of the given container
 func (daemon *DockerDaemon) StatsChannel(container *Container) (*StatsChannel, error) {
 	return newStatsChannel(daemon.version, daemon.client, container)
 }
