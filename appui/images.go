@@ -41,17 +41,13 @@ type DockerImagesWidget struct {
 
 //NewDockerImagesWidget creates a renderer for a container list
 func NewDockerImagesWidget(dockerDaemon docker.ImageAPI, y int) *DockerImagesWidget {
-	w := DockerImagesWidget{
+	return &DockerImagesWidget{
 		y:            y,
 		dockerDaemon: dockerDaemon,
 		header:       defaultImageTableHeader,
 		height:       MainScreenAvailableHeight(),
 		sortMode:     docker.SortImagesByRepo,
 		width:        ui.ActiveScreen.Dimensions.Width}
-
-	RegisterWidget(docker.ImageSource, &w)
-
-	return &w
 }
 
 //Buffer returns the content of this widget as a termui.Buffer

@@ -64,15 +64,13 @@ type NodesWidget struct {
 
 //NewNodesWidget creates a NodesWidget
 func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
-	w := NodesWidget{
+	return &NodesWidget{
 		swarmClient: swarmClient,
 		header:      defaultNodeTableHeader,
 		y:           y,
 		height:      appui.MainScreenAvailableHeight(),
 		width:       ui.ActiveScreen.Dimensions.Width,
 		sortMode:    docker.SortByNodeName}
-	appui.RegisterWidget(docker.NodeSource, &w)
-	return &w
 }
 
 //Buffer returns the content of this widget as a termui.Buffer

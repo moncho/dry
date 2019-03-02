@@ -43,16 +43,13 @@ type DockerNetworksWidget struct {
 
 //NewDockerNetworksWidget creates a renderer for a network list
 func NewDockerNetworksWidget(dockerDaemon docker.NetworkAPI, y int) *DockerNetworksWidget {
-	w := DockerNetworksWidget{
+	return &DockerNetworksWidget{
 		dockerDaemon: dockerDaemon,
 		y:            y,
 		header:       defaultNetworkTableHeader,
 		height:       MainScreenAvailableHeight(),
 		sortMode:     docker.SortNetworksByID,
 		width:        ui.ActiveScreen.Dimensions.Width}
-
-	RegisterWidget(docker.NetworkSource, &w)
-	return &w
 }
 
 //Buffer returns the content of this widget as a termui.Buffer

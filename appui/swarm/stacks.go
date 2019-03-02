@@ -44,7 +44,7 @@ type StacksWidget struct {
 
 //NewStacksWidget creates a StacksWidget
 func NewStacksWidget(swarmClient docker.SwarmAPI, y int) *StacksWidget {
-	w := StacksWidget{
+	return &StacksWidget{
 		swarmClient:   swarmClient,
 		header:        defaultStackTableHeader,
 		selectedIndex: 0,
@@ -54,11 +54,6 @@ func NewStacksWidget(swarmClient docker.SwarmAPI, y int) *StacksWidget {
 		height:        appui.MainScreenAvailableHeight(),
 		sortMode:      docker.SortByServiceName,
 		width:         ui.ActiveScreen.Dimensions.Width}
-
-	appui.RegisterWidget(docker.ServiceSource, &w)
-
-	return &w
-
 }
 
 //Buffer returns the content of this widget as a termui.Buffer

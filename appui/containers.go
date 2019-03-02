@@ -46,7 +46,7 @@ type ContainersWidget struct {
 
 //NewContainersWidget creates a ContainersWidget
 func NewContainersWidget(dockerDaemon docker.ContainerAPI, y int) *ContainersWidget {
-	w := ContainersWidget{
+	return &ContainersWidget{
 		dockerDaemon:      dockerDaemon,
 		y:                 y,
 		header:            defaultContainerTableHeader,
@@ -54,11 +54,6 @@ func NewContainersWidget(dockerDaemon docker.ContainerAPI, y int) *ContainersWid
 		showAllContainers: false,
 		sortMode:          docker.SortByContainerID,
 		width:             ui.ActiveScreen.Dimensions.Width}
-
-	RegisterWidget(docker.ContainerSource, &w)
-
-	return &w
-
 }
 
 //Buffer returns the content of this widget as a termui.Buffer

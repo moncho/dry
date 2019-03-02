@@ -45,7 +45,7 @@ type ServicesWidget struct {
 
 //NewServicesWidget creates a ServicesWidget
 func NewServicesWidget(swarmClient docker.SwarmAPI, y int) *ServicesWidget {
-	w := ServicesWidget{
+	return &ServicesWidget{
 		swarmClient:   swarmClient,
 		header:        defaultServiceTableHeader,
 		selectedIndex: 0,
@@ -54,10 +54,6 @@ func NewServicesWidget(swarmClient docker.SwarmAPI, y int) *ServicesWidget {
 		height:        appui.MainScreenAvailableHeight(),
 		sortMode:      docker.SortByServiceName,
 		width:         ui.ActiveScreen.Dimensions.Width}
-
-	appui.RegisterWidget(docker.ServiceSource, &w)
-
-	return &w
 
 }
 
