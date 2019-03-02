@@ -14,8 +14,8 @@ type ContainerStore interface {
 	Size() int
 }
 
-// InMemoryContainerStore is an in-memory container store backed up by a Docker daemon.
-type InMemoryContainerStore struct {
+// inMemoryContainerStore is an in-memory container store backed up by a Docker daemon.
+type inMemoryContainerStore struct {
 	s      map[string]*Container
 	c      []*Container
 	client dockerAPI.ContainerAPIClient
@@ -29,7 +29,7 @@ func NewDockerContainerStore(client dockerAPI.ContainerAPIClient) (ContainerStor
 	if err != nil {
 		return nil, err
 	}
-	store := &InMemoryContainerStore{
+	store := &inMemoryContainerStore{
 		s:      make(map[string]*Container),
 		client: client,
 	}
@@ -39,7 +39,7 @@ func NewDockerContainerStore(client dockerAPI.ContainerAPIClient) (ContainerStor
 	return store, nil
 }
 
-func (c *InMemoryContainerStore) add(cont *Container) {
+func (c *inMemoryContainerStore) add(cont *Container) {
 	c.Lock()
 	//If a container with the given ID exists already it is replaced
 	if _, ok := c.s[cont.ID]; ok {
@@ -58,7 +58,7 @@ func (c *InMemoryContainerStore) add(cont *Container) {
 }
 
 // Get returns a container from the store by id.
-func (c *InMemoryContainerStore) Get(id string) *Container {
+func (c *inMemoryContainerStore) Get(id string) *Container {
 	c.RLock()
 	res := c.s[id]
 	c.RUnlock()
@@ -66,12 +66,12 @@ func (c *InMemoryContainerStore) Get(id string) *Container {
 }
 
 // List returns a list of containers from the store.
-func (c *InMemoryContainerStore) List() []*Container {
+func (c *inMemoryContainerStore) List() []*Container {
 	return c.all(nil)
 }
 
 // Remove removes a container from the store by id.
-func (c *InMemoryContainerStore) Remove(id string) {
+func (c *inMemoryContainerStore) Remove(id string) {
 	c.Lock()
 	delete(c.s, id)
 	for pos, container := range c.c {
@@ -83,35 +83,27 @@ func (c *InMemoryContainerStore) Remove(id string) {
 	c.Unlock()
 }
 
-// Sort sorts the store
-func (c *InMemoryContainerStore) Sort(mode SortMode) []*Container {
-	c.RLock()
-	defer c.RUnlock()
-	containers := c.List()
-	SortContainers(containers, mode)
-	return containers
-}
-
 // Size returns the number of containers in the store.
-func (c *InMemoryContainerStore) Size() int {
+func (c *inMemoryContainerStore) Size() int {
 	c.RLock()
 	defer c.RUnlock()
 	return len(c.c)
 }
 
 // Filter returns containers found in the store by the given filter.
-func (c *InMemoryContainerStore) Filter(filter ContainerFilter) []*Container {
+func (c *inMemoryContainerStore) Filter(filter ContainerFilter) []*Container {
 	return c.all(filter)
 }
 
-func (c *InMemoryContainerStore) all(filter ContainerFilter) []*Container {
+func (c *inMemoryContainerStore) all(filter ContainerFilter) []*Container {
 	c.RLock()
+	defer c.RUnlock()
+
 	var containers []*Container
 	for _, cont := range c.c {
 		if filter == nil || filter(cont) {
 			containers = append(containers, cont)
 		}
 	}
-	c.RUnlock()
 	return containers
 }

@@ -46,7 +46,7 @@ func TestMemoryStoreCreation(t *testing.T) {
 		t.Error("Memstore contains an unexpected container")
 	}
 
-	checkMemoryStore(memStore.(*InMemoryContainerStore), containerCount, t)
+	checkMemoryStore(memStore.(*inMemoryContainerStore), containerCount, t)
 }
 
 func createTestContainers(numberOfContainers int) []dockerTypes.Container {
@@ -62,7 +62,7 @@ func createTestContainers(numberOfContainers int) []dockerTypes.Container {
 	return containers
 }
 
-func checkMemoryStore(memStore *InMemoryContainerStore, containerCount int, t *testing.T) {
+func checkMemoryStore(memStore *inMemoryContainerStore, containerCount int, t *testing.T) {
 	containers := memStore.List()
 	if memStore.Size() != containerCount {
 		t.Errorf("Memstore does not contain the expected the number of elements, expected: %d, got: %d", containerCount, memStore.Size())

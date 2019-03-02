@@ -57,11 +57,6 @@ func (daemon *DockerDaemon) Containers(filters []ContainerFilter, mode SortMode)
 	return c
 }
 
-//ContainerCount returns the total number of containers.
-func (daemon *DockerDaemon) ContainerCount() int {
-	return daemon.store().Size()
-}
-
 //ContainerByID returns the container with the given ID
 func (daemon *DockerDaemon) ContainerByID(cid string) *Container {
 	return daemon.store().Get(cid)

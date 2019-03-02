@@ -74,12 +74,14 @@ func notifyCallbacks(r *registry) EventCallback {
 		r.RLock()
 		defer r.RUnlock()
 		actor := SourceType(message.Type)
-		for _, callback := range r.actions[actor] {
+		for _, c := range r.actions[actor] {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
 			default:
-				go callback(ctx, message)
+				go func(callback EventCallback) {
+					callback(ctx, message)
+				}(c)
 			}
 		}
 		return nil
