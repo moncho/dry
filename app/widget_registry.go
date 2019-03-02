@@ -1,7 +1,11 @@
 package app
 
 import (
+	"context"
 	"sync"
+	"time"
+
+	"github.com/docker/docker/api/types/events"
 
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/appui/swarm"
@@ -58,6 +62,13 @@ func newWidgetRegistry(daemon docker.ContainerDaemon) *widgetRegistry {
 		MessageBar:    ui.NewExpiringMessageWidget(0, ui.ActiveScreen.Dimensions.Width, appui.DryTheme),
 	}
 
+	refreshOnContainerEvent(w.ContainerList, daemon)
+	refreshOnDockerEvent(docker.ImageSource, w.ImageList)
+	refreshOnDockerEvent(docker.NetworkSource, w.Networks)
+	refreshOnDockerEvent(docker.NodeSource, w.Nodes)
+	refreshOnDockerEvent(docker.ServiceSource, w.ServiceList)
+	refreshOnDockerEvent(docker.ServiceSource, w.Stacks)
+
 	return &w
 }
 
@@ -75,4 +86,41 @@ func (wr *widgetRegistry) remove(w termui.Widget) {
 	if err := w.Unmount(); err == nil {
 		delete(wr.activeWidgets, w.Name())
 	}
+}
+
+var timeBetweenRefresh = 1000 * time.Millisecond
+
+func refreshOnDockerEvent(source docker.SourceType, w termui.Widget) {
+	last := time.Now()
+	docker.GlobalRegistry.Register(
+		source,
+		func(ctx context.Context, m events.Message) error {
+			if time.Since(last) > timeBetweenRefresh {
+				last = time.Now()
+				err := w.Unmount()
+				if err != nil {
+					return err
+				}
+				return refreshScreen()
+			}
+			return nil
+		})
+}
+func refreshOnContainerEvent(w termui.Widget, daemon docker.ContainerDaemon) {
+	last := time.Now()
+	docker.GlobalRegistry.Register(
+		docker.ContainerSource,
+		func(ctx context.Context, m events.Message) error {
+			if time.Since(last) > timeBetweenRefresh {
+				last = time.Now()
+				daemon.Refresh(func(e error) {
+					err := w.Unmount()
+					if err != nil {
+						return
+					}
+					refreshScreen()
+				})
+			}
+			return nil
+		})
 }
