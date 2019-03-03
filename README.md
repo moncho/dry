@@ -74,8 +74,8 @@ Keybinding           | Description
 <kbd>Ctrl+d</kbd>    | remove dangling images
 <kbd>Ctrl+e</kbd>    | remove image
 <kbd>Ctrl+f</kbd>    | remove image (force)
+<kbd>Ctrl+u</kbd>    | remove unused images
 <kbd>Enter</kbd>     | inspect
-
 
 #### Network commands
 
@@ -96,7 +96,6 @@ Keybinding           | Description
 <kbd>Ctrl+u</kbd>    | update service
 <kbd>Enter</kbd>     | show service tasks
 
-
 #### Moving around buffers
 
 Keybinding           | Description
@@ -110,7 +109,6 @@ Keybinding           | Description
 <kbd>s</kbd>         | search
 <kbd>pg up</kbd>     | move the cursor "screen size" lines up
 <kbd>pg down</kbd>   | move the cursor "screen size" lines down
-
 
 ## Installation
 
@@ -141,7 +139,7 @@ brew install dry
 
 #### Docker
 
-```docker run -it -v  /var/run/docker.sock:/var/run/docker.sock moncho/dry ```
+```docker run -it -v  /var/run/docker.sock:/var/run/docker.sock moncho/dry```
 
 #### Arch Linux
 
