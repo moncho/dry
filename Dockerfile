@@ -1,7 +1,7 @@
 # build stage
 FROM alpine:latest AS build-phase
 
-LABEL VERSION v0.9-beta.7
+LABEL VERSION v0.9-beta.9
 
 RUN set -x && \
     apk update && \
