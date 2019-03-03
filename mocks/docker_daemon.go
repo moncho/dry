@@ -275,6 +275,11 @@ func (_m *DockerDaemonMock) RemoveNetwork(id string) error {
 	return nil
 }
 
+//RemoveUnusedImages mock
+func (_m *DockerDaemonMock) RemoveUnusedImages() (int, error) {
+	return 0, nil
+}
+
 //ResolveNode mock
 func (_m *DockerDaemonMock) ResolveNode(id string) (string, error) {
 	return "", nil

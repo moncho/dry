@@ -62,7 +62,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 			} else {
 				h.dry.appmessage(
 					fmt.Sprintf(
-						"<red>Error removing dangling images. %s</>", err))
+						"<red>Error removing dangling images: %s</>", err))
 			}
 			refreshScreen()
 
@@ -140,6 +140,39 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 			if err := h.widget.OnEvent(rmImage); err != nil {
 				h.dry.appmessage(
 					fmt.Sprintf("Error forcing image removal: %s", err.Error()))
+			}
+			refreshScreen()
+
+		}()
+
+	case termbox.KeyCtrlU: //remove unused images
+		prompt := appui.NewPrompt("Do you want to remove all unused images? (y/N)")
+		widgets.add(prompt)
+		forwarder := newEventForwarder()
+		f(forwarder)
+		refreshScreen()
+		go func() {
+			events := ui.EventSource{
+				Events: forwarder.events(),
+				EventHandledCallback: func(e termbox.Event) error {
+					return refreshScreen()
+				},
+			}
+			prompt.OnFocus(events)
+			conf, cancel := prompt.Text()
+			f(h)
+			widgets.remove(prompt)
+			if cancel || (conf != "y" && conf != "Y") {
+				return
+			}
+
+			h.dry.appmessage("<red>Removing unused images</>")
+			if count, err := h.dry.dockerDaemon.RemoveUnusedImages(); err == nil {
+				h.dry.appmessage(fmt.Sprintf("<red>Removed %d images</>", count))
+			} else {
+				h.dry.appmessage(
+					fmt.Sprintf(
+						"<red>Error removing unused images: %s</>", err))
 			}
 			refreshScreen()
 

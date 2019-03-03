@@ -50,16 +50,18 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Ctrl+r</>    Restarts selected container
 	<white>s</>         Displays a live stream of the selected container resource usage statistics
 	<white>Ctrl+t</>    Stops selected container (noop if it is not running)
-	<white>Enter</>     Returns low-level information of the selected container
+	<white>Enter</>     Shows low-level information of the selected container
 
 <yellow>Image list keybinds</>
+	<white>Ctrl+d</>    Removes dangling images
 	<white>Ctrl+e</>    Removes the selected image
 	<white>Ctrl+f</>    Forces removal of the selected image
+	<white>Ctrl+u</>    Removes unused images
 	<white>i</>         Shows image history
-	<white>Enter</>     Returns low-level information of the selected image
+	<white>Enter</>     Shows low-level information of the selected image
 
 <yellow>Network list keybinds</>
-	<white>Enter</>     Returns low-level information of the selected network
+	<white>Enter</>     Shows low-level information of the selected network
 
 <yellow>Node list keybinds</>
 	<white>Enter</>     Shows the list of tasks running on the selected node
@@ -109,7 +111,7 @@ const (
 	imagesKeyMappings = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
 		"<b>[1]:<darkgrey>Containers</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <b>[6]:<darkgrey>Stacks</> <blue>|</>" +
-		"<b>[Ctrl+D]:<darkgrey>Remove Dangling</> <b>[Ctrl+E]:<darkgrey>Remove</> <b>[Ctrl+F]:<darkgrey>Force Remove</> <b>[I]:<darkgrey>History</>"
+		"<b>[Ctrl+D]:<darkgrey>Remove Dangling</> <b>[Ctrl+E]:<darkgrey>Remove</> <b>[Ctrl+F]:<darkgrey>Force Remove</> <b>[Ctrl+U]:<darkgrey>Remove Unused</> <b>[I]:<darkgrey>History</>"
 
 	networkKeyMappings = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +

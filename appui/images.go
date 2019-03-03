@@ -1,6 +1,7 @@
 package appui
 
 import (
+	"github.com/docker/docker/api/types"
 	"sort"
 	"strconv"
 	"strings"
@@ -24,7 +25,7 @@ var imageTableHeaders = []SortableColumnHeader{
 
 //DockerImagesWidget knows how render a container list
 type DockerImagesWidget struct {
-	dockerDaemon         docker.ImageAPI
+	images               func() ([]types.ImageSummary, error)
 	filteredRows         []*ImageRow
 	totalRows            []*ImageRow
 	filterPattern        string
@@ -40,14 +41,14 @@ type DockerImagesWidget struct {
 }
 
 //NewDockerImagesWidget creates a renderer for a container list
-func NewDockerImagesWidget(dockerDaemon docker.ImageAPI, y int) *DockerImagesWidget {
+func NewDockerImagesWidget(images func() ([]types.ImageSummary, error), y int) *DockerImagesWidget {
 	return &DockerImagesWidget{
-		y:            y,
-		dockerDaemon: dockerDaemon,
-		header:       defaultImageTableHeader,
-		height:       MainScreenAvailableHeight(),
-		sortMode:     docker.SortImagesByRepo,
-		width:        ui.ActiveScreen.Dimensions.Width}
+		y:        y,
+		images:   images,
+		header:   defaultImageTableHeader,
+		height:   MainScreenAvailableHeight(),
+		sortMode: docker.SortImagesByRepo,
+		width:    ui.ActiveScreen.Dimensions.Width}
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
@@ -101,7 +102,7 @@ func (s *DockerImagesWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
 	if !s.mounted {
-		images, err := s.dockerDaemon.Images()
+		images, err := s.images()
 		if err != nil {
 			return err
 		}

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/image"
 
 	"github.com/moncho/dry/mocks"
 	"github.com/moncho/dry/ui"
@@ -23,7 +22,7 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 		Dimensions: &ui.Dimensions{Height: 15, Width: 100},
 		Cursor:     cursor}
 
-	renderer := NewDockerImagesWidget(daemon, 0)
+	renderer := NewDockerImagesWidget(daemon.Images, 0)
 
 	if err := renderer.Mount(); err != nil {
 		t.Errorf("There was an error mounting the widget %v", err)
@@ -70,7 +69,7 @@ func TestImagesToShow(t *testing.T) {
 
 	ui.ActiveScreen = &ui.Screen{Dimensions: &ui.Dimensions{Height: 20, Width: 100},
 		Cursor: cursor}
-	renderer := NewDockerImagesWidget(daemon, 0)
+	renderer := NewDockerImagesWidget(daemon.Images, 0)
 	if err := renderer.Mount(); err != nil {
 		t.Errorf("There was an error mounting the widget %v", err)
 	}
@@ -98,7 +97,11 @@ func TestImagesToShow(t *testing.T) {
 }
 
 func TestImagesToShowNoImages(t *testing.T) {
-	renderer := NewDockerImagesWidget(noopImageAPI{}, 0)
+
+	imageFunc := func() ([]types.ImageSummary, error) {
+		return []types.ImageSummary{}, nil
+	}
+	renderer := NewDockerImagesWidget(imageFunc, 0)
 
 	renderer.Mount()
 
@@ -106,26 +109,4 @@ func TestImagesToShowNoImages(t *testing.T) {
 	if len(images) != 0 {
 		t.Error("Unexpected number of image rows, it should be 0")
 	}
-
-}
-
-type noopImageAPI struct {
-}
-
-func (i noopImageAPI) History(id string) ([]image.HistoryResponseItem, error) {
-	return []image.HistoryResponseItem{}, nil
-}
-
-func (i noopImageAPI) ImageByID(id string) (types.ImageSummary, error) {
-	return types.ImageSummary{}, nil
-
-}
-func (i noopImageAPI) Images() ([]types.ImageSummary, error) {
-	return []types.ImageSummary{}, nil
-}
-func (i noopImageAPI) ImagesCount() int {
-	return 0
-}
-func (i noopImageAPI) RunImage(image types.ImageSummary, command string) error {
-	return nil
 }

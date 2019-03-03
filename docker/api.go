@@ -33,9 +33,7 @@ type ContainerDaemon interface {
 	Ok() (bool, error)
 	Prune() (*PruneReport, error)
 	Rm(id string) error
-	Rmi(id string, force bool) ([]types.ImageDeleteResponseItem, error)
 	Refresh(notify func(error))
-	RemoveDanglingImages() (int, error)
 	RemoveNetwork(id string) error
 	Version() (*types.Version, error)
 }
@@ -63,6 +61,9 @@ type ImageAPI interface {
 	History(id string) ([]image.HistoryResponseItem, error)
 	ImageByID(id string) (types.ImageSummary, error)
 	Images() ([]types.ImageSummary, error)
+	RemoveDanglingImages() (int, error)
+	RemoveUnusedImages() (int, error)
+	Rmi(id string, force bool) ([]types.ImageDeleteResponseItem, error)
 	RunImage(image types.ImageSummary, command string) error
 }
 

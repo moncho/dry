@@ -378,6 +378,19 @@ func (daemon *DockerDaemon) RemoveDanglingImages() (int, error) {
 	return int(atomic.LoadUint32(&count)), err
 }
 
+//RemoveUnusedImages removes unused images
+func (daemon *DockerDaemon) RemoveUnusedImages() (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
+	args := filters.NewArgs()
+	args.Add("dangling", "false")
+
+	report, err := daemon.client.ImagesPrune(ctx, args)
+
+	return len(report.ImagesDeleted), err
+}
+
 //RemoveNetwork removes the network with the given id
 func (daemon *DockerDaemon) RemoveNetwork(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
