@@ -161,7 +161,7 @@ func (m *Monitor) OnEvent(event EventCommand) error {
 	}
 	rows := len(m.visibleRows())
 	if rows < 0 {
-		errors.New("There are no rows")
+		return errors.New("There are no rows")
 	}
 
 	if m.selectedIndex >= rows {
