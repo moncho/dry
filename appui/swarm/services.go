@@ -107,16 +107,18 @@ func (s *ServicesWidget) Filter(filter string) {
 func (s *ServicesWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
-	if !s.mounted {
-		s.mounted = true
-		var rows []*ServiceRow
-		if services, servicesInfo, err := getServiceInfo(s.swarmClient); err == nil {
-			for _, service := range services {
-				rows = append(rows, NewServiceRow(service, servicesInfo[service.ID], s.header))
-			}
-		}
-		s.totalRows = rows
+	if s.mounted {
+		s.align()
+		return nil
 	}
+	s.mounted = true
+	var rows []*ServiceRow
+	if services, servicesInfo, err := getServiceInfo(s.swarmClient); err == nil {
+		for _, service := range services {
+			rows = append(rows, NewServiceRow(service, servicesInfo[service.ID], s.header))
+		}
+	}
+	s.totalRows = rows
 	s.align()
 	return nil
 }

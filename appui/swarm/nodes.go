@@ -79,38 +79,40 @@ func (s *NodesWidget) Buffer() gizaktermui.Buffer {
 	defer s.Unlock()
 	y := s.y
 	buf := gizaktermui.NewBuffer()
-	if s.mounted {
-		s.prepareForRendering()
-
-		widgetHeader := appui.NewWidgetHeader()
-		widgetHeader.HeaderEntry("Nodes", strconv.Itoa(s.RowCount()))
-		if s.filterPattern != "" {
-			widgetHeader.HeaderEntry("Active filter", s.filterPattern)
-		}
-
-		widgetHeader.Y = y
-		buf.Merge(widgetHeader.Buffer())
-		y += widgetHeader.GetHeight()
-		//Empty line between the header and the rest of the content
-		y++
-		s.updateHeader()
-		s.header.SetY(y)
-		buf.Merge(s.header.Buffer())
-		y += s.header.GetHeight()
-
-		selected := s.selectedIndex - s.startIndex
-
-		for i, nodeRow := range s.visibleRows() {
-			nodeRow.SetY(y)
-			y += nodeRow.GetHeight()
-			if i != selected {
-				nodeRow.NotHighlighted()
-			} else {
-				nodeRow.Highlighted()
-			}
-			buf.Merge(nodeRow.Buffer())
-		}
+	if !s.mounted {
+		return buf
 	}
+	s.prepareForRendering()
+
+	widgetHeader := appui.NewWidgetHeader()
+	widgetHeader.HeaderEntry("Nodes", strconv.Itoa(s.RowCount()))
+	if s.filterPattern != "" {
+		widgetHeader.HeaderEntry("Active filter", s.filterPattern)
+	}
+
+	widgetHeader.Y = y
+	buf.Merge(widgetHeader.Buffer())
+	y += widgetHeader.GetHeight()
+	//Empty line between the header and the rest of the content
+	y++
+	s.updateHeader()
+	s.header.SetY(y)
+	buf.Merge(s.header.Buffer())
+	y += s.header.GetHeight()
+
+	selected := s.selectedIndex - s.startIndex
+
+	for i, nodeRow := range s.visibleRows() {
+		nodeRow.SetY(y)
+		y += nodeRow.GetHeight()
+		if i != selected {
+			nodeRow.NotHighlighted()
+		} else {
+			nodeRow.Highlighted()
+		}
+		buf.Merge(nodeRow.Buffer())
+	}
+
 	return buf
 }
 
@@ -125,27 +127,30 @@ func (s *NodesWidget) Filter(filter string) {
 func (s *NodesWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
-	if !s.mounted {
-		swarmClient := s.swarmClient
-		if nodes, err := swarmClient.Nodes(); err == nil {
-			docker.SortNodes(nodes, s.sortMode)
-			var rows []*NodeRow
-			s.totalCPU = 0
-			s.totalMemory = 0
-			for _, node := range nodes {
-				row := NewNodeRow(node, s.header)
-				rows = append(rows, row)
-				if cpu, err := strconv.Atoi(row.CPU.Text); err == nil {
-					s.totalCPU += cpu
-				}
-				s.totalMemory += node.Description.Resources.MemoryBytes
-			}
-			s.totalRows = rows
-		}
-		addSwarmSpecs(s)
-		s.align()
-		s.mounted = true
+	if s.mounted {
+		return nil
+
 	}
+	swarmClient := s.swarmClient
+	if nodes, err := swarmClient.Nodes(); err == nil {
+		docker.SortNodes(nodes, s.sortMode)
+		var rows []*NodeRow
+		s.totalCPU = 0
+		s.totalMemory = 0
+		for _, node := range nodes {
+			row := NewNodeRow(node, s.header)
+			rows = append(rows, row)
+			if cpu, err := strconv.Atoi(row.CPU.Text); err == nil {
+				s.totalCPU += cpu
+			}
+			s.totalMemory += node.Description.Resources.MemoryBytes
+		}
+		s.totalRows = rows
+	}
+	addSwarmSpecs(s)
+	s.align()
+	s.mounted = true
+
 	return nil
 }
 

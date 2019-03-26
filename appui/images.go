@@ -101,20 +101,22 @@ func (s *DockerImagesWidget) Filter(filter string) {
 func (s *DockerImagesWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
-	if !s.mounted {
-		images, err := s.images()
-		if err != nil {
-			return err
-		}
-
-		imageRows := make([]*ImageRow, len(images))
-		for i, image := range images {
-			imageRows[i] = NewImageRow(image, s.header)
-		}
-		s.totalRows = imageRows
-		s.mounted = true
-		s.align()
+	if s.mounted {
+		return nil
 	}
+	images, err := s.images()
+	if err != nil {
+		return err
+	}
+
+	imageRows := make([]*ImageRow, len(images))
+	for i, image := range images {
+		imageRows[i] = NewImageRow(image, s.header)
+	}
+	s.totalRows = imageRows
+	s.mounted = true
+	s.align()
+
 	return nil
 }
 

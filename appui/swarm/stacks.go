@@ -106,20 +106,23 @@ func (s *StacksWidget) Filter(filter string) {
 func (s *StacksWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
-	if !s.mounted {
-		s.mounted = true
-		var rows []*StackRow
-		if stacks, err := s.swarmClient.Stacks(); err == nil {
-			for _, stack := range stacks {
-				rows = append(rows, NewStackRow(stack, s.header))
-			}
-			s.totalRows = rows
-		} else {
-			return err
+	if s.mounted {
+		s.align()
+		return nil
+	}
+	s.mounted = true
+	var rows []*StackRow
+	if stacks, err := s.swarmClient.Stacks(); err == nil {
+		for _, stack := range stacks {
+			rows = append(rows, NewStackRow(stack, s.header))
 		}
+		s.totalRows = rows
+	} else {
+		return err
 	}
 	s.align()
 	return nil
+
 }
 
 //Name returns this widget name

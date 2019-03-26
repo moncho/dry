@@ -110,24 +110,26 @@ func (s *ContainersWidget) Filter(filter string) {
 func (s *ContainersWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
-	if !s.mounted {
-
-		var filters []docker.ContainerFilter
-		if s.showAllContainers {
-			filters = append(filters, docker.ContainerFilters.Unfiltered())
-		} else {
-			filters = append(filters, docker.ContainerFilters.Running())
-		}
-		dockerContainers := s.dockerDaemon.Containers(filters, s.sortMode)
-
-		rows := make([]*ContainerRow, len(dockerContainers))
-		for i, container := range dockerContainers {
-			rows[i] = NewContainerRow(container, s.header)
-		}
-		s.totalRows = rows
-		s.mounted = true
-		s.align()
+	if s.mounted {
+		return nil
 	}
+
+	var filters []docker.ContainerFilter
+	if s.showAllContainers {
+		filters = append(filters, docker.ContainerFilters.Unfiltered())
+	} else {
+		filters = append(filters, docker.ContainerFilters.Running())
+	}
+	dockerContainers := s.dockerDaemon.Containers(filters, s.sortMode)
+
+	rows := make([]*ContainerRow, len(dockerContainers))
+	for i, container := range dockerContainers {
+		rows[i] = NewContainerRow(container, s.header)
+	}
+	s.totalRows = rows
+	s.mounted = true
+	s.align()
+
 	return nil
 }
 
