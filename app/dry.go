@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/docker/docker/api/types/events"
@@ -9,12 +10,13 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
-//Dry represents the application.
+//Dry resources and state
 type Dry struct {
 	dockerDaemon     drydocker.ContainerDaemon
 	dockerEvents     <-chan events.Message
 	dockerEventsDone chan<- struct{}
 	output           chan string
+	screen           *ui.Screen
 
 	sync.RWMutex
 	view viewMode
@@ -44,27 +46,38 @@ func (d *Dry) ViewMode(v viewMode) {
 	d.view = v
 }
 
-func (d *Dry) startDry() {
-	de := dockerEventsListener{d}
-	de.init()
-}
-
-func (d *Dry) appmessage(message string) {
+func (d *Dry) showDockerEvents() {
 	go func() {
-		select {
-		case d.output <- message:
-		default:
+		for event := range d.dockerEvents {
+			//exec_ messages are sent continuously if docker is checking
+			//a container's health, so they are ignored
+			if strings.Contains(event.Action, "exec_") {
+				continue
+			}
+			//top messages are sent continuously on monitor mode, ignored
+			if strings.Contains(event.Action, "top") {
+				continue
+			}
+			d.message(fmt.Sprintf("Docker: %s %s", event.Action, event.ID))
 		}
 	}()
 }
 
+//message publishes the given message
+func (d *Dry) message(message string) {
+	select {
+	case d.output <- message:
+	default:
+	}
+}
+
 func (d *Dry) actionMessage(cid interface{}, action string) {
-	d.appmessage(fmt.Sprintf("<red>%s container with id </><white>%v</>",
+	d.message(fmt.Sprintf("<red>%s container with id </><white>%v</>",
 		action, cid))
 }
 
 func (d *Dry) errorMessage(cid interface{}, action string, err error) {
-	d.appmessage(
+	d.message(
 		fmt.Sprintf(
 			"%s", err.Error()))
 }
@@ -81,15 +94,16 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 		return nil, err
 	}
 
-	app := &Dry{}
-	widgets = newWidgetRegistry(d)
-	viewsToHandlers = initHandlers(app, screen)
-	app.dockerDaemon = d
-	app.output = make(chan string)
-	app.dockerEvents = dockerEvents
-	app.dockerEventsDone = dockerEventsDone
-	app.startDry()
-	return app, nil
+	dry := &Dry{}
+	widgets = initRegistry(d)
+	viewsToHandlers = initHandlers(dry, screen)
+	dry.dockerDaemon = d
+	dry.output = make(chan string)
+	dry.dockerEvents = dockerEvents
+	dry.dockerEventsDone = dockerEventsDone
+	dry.screen = screen
+	dry.showDockerEvents()
+	return dry, nil
 
 }
 

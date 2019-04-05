@@ -71,7 +71,7 @@ func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 				refreshScreen()
 			})
 		} else {
-			dry.appmessage(
+			dry.message(
 				fmt.Sprintf(
 					"There was an error retrieving Docker information: %s", err.Error()))
 		}

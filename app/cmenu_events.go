@@ -41,7 +41,7 @@ func (h *cMenuEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 			return nil
 		})
 		if err != nil {
-			h.dry.appmessage(fmt.Sprintf("Could not run command: %s", err.Error()))
+			h.dry.message(fmt.Sprintf("Could not run command: %s", err.Error()))
 		}
 	default:
 		handled = false
@@ -119,7 +119,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			if err := dry.dockerDaemon.RestartContainer(id); err == nil {
 				widgets.ContainerMenu.ForContainer(id)
 			} else {
-				dry.appmessage(
+				dry.message(
 					fmt.Sprintf("Error restarting container %s, err: %s", id, err.Error()))
 			}
 			refreshScreen()
@@ -191,7 +191,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 						refreshScreen()
 					})
 			} else {
-				h.dry.appmessage("Error showing container logs: " + err.Error())
+				h.dry.message("Error showing container logs: " + err.Error())
 			}
 		}()
 	case docker.RM:
@@ -234,7 +234,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		f(forwarder)
 		h.dry.ViewMode(NoView)
 		if statsChan, err := dry.dockerDaemon.StatsChannel(container); err != nil {
-			dry.appmessage(
+			dry.message(
 				fmt.Sprintf("Error showing container stats: %s", err.Error()))
 		} else {
 			go statsScreen(container, statsChan, screen, forwarder.events(),
@@ -263,7 +263,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			})(id)
 
 		if err != nil {
-			dry.appmessage(
+			dry.message(
 				fmt.Sprintf("Error inspecting container: %s", err.Error()))
 			return
 		}
@@ -281,7 +281,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 				refreshScreen()
 			})
 		} else {
-			dry.appmessage(
+			dry.message(
 				fmt.Sprintf("Error showing image history: %s", err.Error()))
 		}
 	}

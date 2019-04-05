@@ -23,9 +23,9 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 	case termbox.KeyF1: // sort
 		widgets.ServiceList.Sort()
 	case termbox.KeyF5: // refresh
-		h.dry.appmessage("Refreshing the service list")
+		h.dry.message("Refreshing the service list")
 		if err := h.widget.Unmount(); err != nil {
-			h.dry.appmessage("There was an error refreshing the service list: " + err.Error())
+			h.dry.message("There was an error refreshing the service list: " + err.Error())
 		}
 	case termbox.KeyCtrlL:
 		h.showLogs(true, f)
@@ -55,7 +55,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 				return err
 			}
 			if err := h.widget.OnEvent(removeService); err != nil {
-				h.dry.appmessage("There was an error removing the service: " + err.Error())
+				h.dry.message("There was an error removing the service: " + err.Error())
 			}
 			refreshScreen()
 		}()
@@ -83,7 +83,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 			}
 			scaleTo, err := strconv.Atoi(replicas)
 			if err != nil || scaleTo < 0 {
-				dry.appmessage(
+				dry.message(
 					fmt.Sprintf("Cannot scale service, invalid number of replicas: %s", replicas))
 				return
 			}
@@ -92,12 +92,12 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 				err := dry.dockerDaemon.ServiceScale(serviceID, uint64(scaleTo))
 
 				if err == nil {
-					dry.appmessage(fmt.Sprintf("Service %s scaled to %d replicas", serviceID, scaleTo))
+					dry.message(fmt.Sprintf("Service %s scaled to %d replicas", serviceID, scaleTo))
 				}
 				return err
 			}
 			if err := h.widget.OnEvent(scaleService); err != nil {
-				h.dry.appmessage("There was an error scaling the service: " + err.Error())
+				h.dry.message("There was an error scaling the service: " + err.Error())
 			}
 			refreshScreen()
 		}()
@@ -126,7 +126,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 				return err
 			}
 			if err := h.widget.OnEvent(removeService); err != nil {
-				h.dry.appmessage("There was an error updating the service: " + err.Error())
+				h.dry.message("There was an error updating the service: " + err.Error())
 			}
 			refreshScreen()
 		}()
@@ -172,7 +172,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 			})
 
 		if err := h.widget.OnEvent(inspectService); err != nil {
-			h.dry.appmessage("There was an error inspecting the service: " + err.Error())
+			h.dry.message("There was an error inspecting the service: " + err.Error())
 		}
 
 	case 'l':
@@ -216,7 +216,7 @@ func (h *servicesScreenEventHandler) showLogs(withTimestamp bool, f func(eventHa
 		}
 		if err := h.widget.OnEvent(showServiceLogs); err != nil {
 			f(h)
-			h.dry.appmessage("There was an error showing service logs: " + err.Error())
+			h.dry.message("There was an error showing service logs: " + err.Error())
 		}
 	}()
 }

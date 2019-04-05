@@ -23,7 +23,7 @@ func (h *networksScreenEventHandler) handle(event termbox.Event, f func(eh event
 		h.widget.Sort()
 		refreshScreen()
 	case termbox.KeyF5: // refresh
-		h.dry.appmessage("Refreshing network list")
+		h.dry.message("Refreshing network list")
 		h.widget.Unmount()
 		refreshScreen()
 	case termbox.KeyEnter: //inspect
@@ -40,7 +40,7 @@ func (h *networksScreenEventHandler) handle(event termbox.Event, f func(eh event
 			})
 
 		if err := h.widget.OnEvent(inspectNetwork); err != nil {
-			dry.appmessage(
+			dry.message(
 				fmt.Sprintf("Error inspecting image: %s", err.Error()))
 		}
 
@@ -69,15 +69,15 @@ func (h *networksScreenEventHandler) handle(event termbox.Event, f func(eh event
 			rmNetwork := func(id string) error {
 				shortID := drydocker.TruncateID(id)
 				if err := h.dry.dockerDaemon.RemoveNetwork(id); err == nil {
-					h.dry.appmessage(fmt.Sprintf("<red>Removed network:</> <white>%s</>", shortID))
+					h.dry.message(fmt.Sprintf("<red>Removed network:</> <white>%s</>", shortID))
 				} else {
-					h.dry.appmessage(fmt.Sprintf("<red>Error network image </><white>%s: %s</>", shortID, err.Error()))
+					h.dry.message(fmt.Sprintf("<red>Error network image </><white>%s: %s</>", shortID, err.Error()))
 				}
 
 				return nil
 			}
 			if err := h.widget.OnEvent(rmNetwork); err != nil {
-				dry.appmessage(
+				dry.message(
 					fmt.Sprintf("Error removing network: %s", err.Error()))
 			}
 			refreshScreen()

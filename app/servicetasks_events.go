@@ -39,7 +39,7 @@ func (h *serviceTasksScreenEventHandler) handle(event termbox.Event, f func(even
 					f(h)
 					refreshScreen()
 				})); err != nil {
-			h.dry.appmessage(
+			h.dry.message(
 				fmt.Sprintf("Error inspecting stack: %s", err.Error()))
 		}
 

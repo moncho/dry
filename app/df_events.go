@@ -56,7 +56,7 @@ func (h *diskUsageScreenEventHandler) handle(event termbox.Event, f func(eventHa
 					widgets.DiskUsage.PrepareToRender(&du, pr)
 				}
 			} else {
-				h.dry.appmessage(
+				h.dry.message(
 					fmt.Sprintf(
 						"<red>Error running prune. %s</>", err))
 			}

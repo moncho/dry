@@ -46,7 +46,7 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 			return refreshScreen()
 		}
 		if err := h.widget.OnEvent(showMenu); err != nil {
-			h.dry.appmessage(err.Error())
+			h.dry.message(err.Error())
 		}
 	}
 	if !handled {
@@ -86,7 +86,7 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 				}
 				refreshRate, err := toInt(input)
 				if err != nil {
-					h.dry.appmessage(
+					h.dry.message(
 						fmt.Sprintf("Error setting refresh rate: %s", err.Error()))
 					return
 				}

@@ -20,7 +20,7 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandl
 	case termbox.KeyF1: //sort
 		widgets.Stacks.Sort()
 	case termbox.KeyF5: // refresh
-		h.dry.appmessage("Refreshing stack list")
+		h.dry.message("Refreshing stack list")
 		h.widget.Unmount()
 	case termbox.KeyEnter: //inspect
 		showTasks := func(stack string) error {
@@ -53,12 +53,12 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandl
 			removeStack := func(stack string) error {
 				err := h.dry.dockerDaemon.StackRemove(stack)
 				if err == nil {
-					h.dry.appmessage(fmt.Sprintf("Stack %s removed", stack))
+					h.dry.message(fmt.Sprintf("Stack %s removed", stack))
 				}
 				return err
 			}
 			if err := h.widget.OnEvent(removeStack); err != nil {
-				h.dry.appmessage("There was an error removing the stack: " + err.Error())
+				h.dry.message("There was an error removing the stack: " + err.Error())
 			}
 			refreshScreen()
 		}()

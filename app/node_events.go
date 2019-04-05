@@ -49,7 +49,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event, f func(eventHandle
 				return
 			}
 			if availability != "active" && availability != "pause" && availability != "drain" {
-				dry.appmessage(fmt.Sprintf("Invalid availability: %s", availability))
+				dry.message(fmt.Sprintf("Invalid availability: %s", availability))
 				return
 			}
 
@@ -59,9 +59,9 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event, f func(eventHandle
 					docker.NewNodeAvailability(availability))
 
 				if err == nil {
-					dry.appmessage(fmt.Sprintf("Node %s availability is now %s", nodeID, availability))
+					dry.message(fmt.Sprintf("Node %s availability is now %s", nodeID, availability))
 				} else {
-					dry.appmessage(fmt.Sprintf("Could not change node availability, error %s", err.Error()))
+					dry.message(fmt.Sprintf("Could not change node availability, error %s", err.Error()))
 					return err
 				}
 				return refreshScreen()

@@ -56,11 +56,11 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 				return
 			}
 
-			h.dry.appmessage("<red>Removing dangling images</>")
+			h.dry.message("<red>Removing dangling images</>")
 			if count, err := h.dry.dockerDaemon.RemoveDanglingImages(); err == nil {
-				h.dry.appmessage(fmt.Sprintf("<red>Removed %d dangling images</>", count))
+				h.dry.message(fmt.Sprintf("<red>Removed %d dangling images</>", count))
 			} else {
-				h.dry.appmessage(
+				h.dry.message(
 					fmt.Sprintf(
 						"<red>Error removing dangling images: %s</>", err))
 			}
@@ -93,14 +93,14 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 			rmImage := func(id string) error {
 				shortID := drydocker.TruncateID(id)
 				if _, err := h.dry.dockerDaemon.Rmi(id, false); err == nil {
-					h.dry.appmessage(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
+					h.dry.message(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
 				} else {
-					h.dry.appmessage(fmt.Sprintf("<red>Error removing image </><white>%s: %s</>", shortID, err.Error()))
+					h.dry.message(fmt.Sprintf("<red>Error removing image </><white>%s: %s</>", shortID, err.Error()))
 				}
 				return nil
 			}
 			if err := h.widget.OnEvent(rmImage); err != nil {
-				h.dry.appmessage(
+				h.dry.message(
 					fmt.Sprintf("Error removing image: %s", err.Error()))
 			}
 			refreshScreen()
@@ -131,14 +131,14 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 			rmImage := func(id string) error {
 				shortID := drydocker.TruncateID(id)
 				if _, err := h.dry.dockerDaemon.Rmi(id, true); err == nil {
-					h.dry.appmessage(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
+					h.dry.message(fmt.Sprintf("<red>Removed image:</> <white>%s</>", shortID))
 				} else {
-					h.dry.appmessage(fmt.Sprintf("<red>Error removing image </><white>%s: %s</>", shortID, err.Error()))
+					h.dry.message(fmt.Sprintf("<red>Error removing image </><white>%s: %s</>", shortID, err.Error()))
 				}
 				return nil
 			}
 			if err := h.widget.OnEvent(rmImage); err != nil {
-				h.dry.appmessage(
+				h.dry.message(
 					fmt.Sprintf("Error forcing image removal: %s", err.Error()))
 			}
 			refreshScreen()
@@ -166,11 +166,11 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 				return
 			}
 
-			h.dry.appmessage("<red>Removing unused images</>")
+			h.dry.message("<red>Removing unused images</>")
 			if count, err := h.dry.dockerDaemon.RemoveUnusedImages(); err == nil {
-				h.dry.appmessage(fmt.Sprintf("<red>Removed %d images</>", count))
+				h.dry.message(fmt.Sprintf("<red>Removed %d images</>", count))
 			} else {
-				h.dry.appmessage(
+				h.dry.message(
 					fmt.Sprintf(
 						"<red>Error removing unused images: %s</>", err))
 			}
@@ -194,7 +194,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 			})
 
 		if err := h.widget.OnEvent(inspectImage); err != nil {
-			h.dry.appmessage(
+			h.dry.message(
 				fmt.Sprintf("Error inspecting image: %s", err.Error()))
 		}
 
@@ -229,7 +229,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 			return err
 		}
 		if err := h.widget.OnEvent(showHistory); err != nil {
-			dry.appmessage(err.Error())
+			dry.message(err.Error())
 		}
 	case 'r', 'R': //Run container
 		runImage := func(id string) error {
@@ -258,13 +258,13 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 					return
 				}
 				if err := dry.dockerDaemon.RunImage(image, runCommand); err != nil {
-					dry.appmessage(err.Error())
+					dry.message(err.Error())
 				} else {
 					var repo string
 					if len(image.RepoTags) > 0 {
 						repo = image.RepoTags[0]
 					}
-					dry.appmessage(
+					dry.message(
 						fmt.Sprintf(
 							"Image %s run successfully", repo))
 				}
@@ -274,7 +274,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 			return nil
 		}
 		if err := h.widget.OnEvent(runImage); err != nil {
-			dry.appmessage(
+			dry.message(
 				fmt.Sprintf("Error running image: %s", err.Error()))
 		}
 	case '%':
