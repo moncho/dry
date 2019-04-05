@@ -76,7 +76,6 @@ func (daemon *DockerDaemon) DockerEnv() *Env {
 
 // Events returns a channel to receive Docker events.
 func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct{}, error) {
-
 	args := filters.NewArgs()
 
 	args.Add("scope", "local")
