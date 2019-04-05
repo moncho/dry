@@ -119,7 +119,7 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 		}
 	}(&inputMode)
 
-	for range less.refresh {
+	for _ = range less.refresh {
 		//If input is being read, refresh events are ignore
 		//the only UI changes are happening on the input bar
 		//and are done by the InputBox

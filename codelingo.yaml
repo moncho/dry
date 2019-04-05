@@ -4,3 +4,14 @@ tenets:
   - import: codelingo/effective-go/underscores-in-name
   - import: codelingo/effective-go/single-method-interface-name
   - import: codelingo/effective-go/avoid-annotations-in-comments
+  - name: for-range-go-1-3-3
+    flows:
+      codelingo/review:
+        comment: for range needs to be compilable with go 1.3.3
+    query: |
+      import codelingo/ast/go
+      
+      @review comment
+      go.range_stmt(depth = any):
+        tok != "="
+        tok != ":="
