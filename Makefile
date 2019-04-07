@@ -15,7 +15,7 @@ CTIMEVAR=-X $(PKG)/version.GITCOMMIT=$(GITCOMMIT) -X $(PKG)/version.VERSION=$(VE
 GO_LDFLAGS=-ldflags "-w $(CTIMEVAR)"
 GO_LDFLAGS_STATIC=-ldflags "-w $(CTIMEVAR) -extldflags -static"
 GOOSES = darwin freebsd linux windows
-GOARCHS = amd64 386 arm
+GOARCHS = amd64 386 arm arm64
 
 print-%: ; @echo $*=$($*)
 
