@@ -125,11 +125,10 @@ func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env) chan<- struct{}
 }
 func main() {
 	running := false
-
 	defer func() {
 		if r := recover(); r != nil {
 			log.Fatalf(
-				"Dry panicked: %d", r)
+				"Dry panicked: %v", r)
 			log.Print("Bye")
 			os.Exit(1)
 		} else if running {
@@ -149,7 +148,7 @@ func main() {
 			log.Print("Use --help to view all available options.")
 			return
 		}
-		log.Printf("Error parsing flags: %s", err)
+		log.Printf("Could not parse flags: %s", err)
 		return
 	}
 	if opts.Description {
@@ -171,10 +170,9 @@ func main() {
 	}
 	screen, err := ui.NewScreen(appui.DryTheme)
 	if err != nil {
-		log.Printf("Dry error: %s", err)
+		log.Printf("Dry could not start: %s", err)
 		return
 	}
-
 	running = true
 
 	start := time.Now()
@@ -189,13 +187,15 @@ func main() {
 	}
 	//dry has loaded, stopping the loading screen
 	close(stopLoadScreen)
-	if err == nil {
-		if opts.MonitorMode {
-			dry.ViewMode(app.Monitor)
-		}
-		app.RenderLoop(dry, screen)
-	} else {
-		defer log.Printf("Dry error: %s", err)
+	if err != nil {
+		screen.Close()
+		log.Printf("Dry could not start: %s", err)
+		return
 	}
+	if opts.MonitorMode {
+		dry.ViewMode(app.Monitor)
+	}
+	app.RenderLoop(dry)
 	screen.Close()
+
 }
