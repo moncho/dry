@@ -1,6 +1,7 @@
 # Set an output prefix, which is the local directory if not specified
 PREFIX?=$(shell pwd)
 
+GOFILES_NOVENDOR := $(shell find . -name vendor -prune -o -type f -name '*.go' -not -name '*.pb.go' -print)
 # Populate version variables
 # Add to compile time flags
 PKG := github.com/moncho/dry
@@ -27,6 +28,32 @@ build: ## Builds dry
 
 install: ## Installs dry
 	GO111MODULE=on go install $(PKG)
+
+lint: ## Runs linters
+	@echo ">> CODE QUALITY"
+
+	@echo -n "     REVIVE    "
+	@which revive > /dev/null; if [ $$? -ne 0 ]; then \
+		$(GO) get -u github.com/mgechev/revive; \
+	fi
+	@revive -formatter friendly -exclude vendor/... ./...
+	@printf '%s\n' '$(OK)'
+
+	@echo -n "     FMT       "
+	@$(foreach gofile, $(GOFILES_NOVENDOR),\
+			out=$$(gofmt -s -l -d -e $(gofile) | tee /dev/stderr); if [ -n "$$out" ]; then exit 1; fi;)
+	@printf '%s\n' '$(OK)'
+
+	@echo -n "     SPELL     "
+	@which misspell > /dev/null; if [ $$? -ne 0 ]; then \
+		$(GO) get -u github.com/client9/misspell/cmd/misspell; \
+	fi
+	@$(foreach gofile, $(GOFILES_NOVENDOR),\
+			misspell --error $(gofile) || exit 1;)
+	@printf '%s\n' '$(OK)'
+
+fmt: ## Runs fmt
+	@gofmt -s -l -w $(GOFILES_NOVENDOR)
 
 test: ## Run tests
 	GO111MODULE=on go test -v -cover $(shell go list ./... | grep -v /vendor/ | grep -v mock)
