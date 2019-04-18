@@ -52,7 +52,7 @@ func TestDockerDaemon_RemoveUnusedImages(t *testing.T) {
 			fields{
 				client: imageAPIClientMock{
 					imagesDeleted: []dockerTypes.ImageDeleteResponseItem{
-						dockerTypes.ImageDeleteResponseItem{},
+						{},
 					},
 				},
 			},
