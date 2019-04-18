@@ -76,7 +76,7 @@ func TestStatsChannel_refreshingPublishesStats(t *testing.T) {
 			Os: "Not windows",
 		},
 		client: statsClientMock{
-			statsBody: ioutil.NopCloser(strings.NewReader(asJson(types.StatsJSON{}))),
+			statsBody: ioutil.NopCloser(strings.NewReader(asJSON(types.StatsJSON{}))),
 		},
 		//Using a buffered chan in the test so Start goroutine receives the refresh
 		//signal
@@ -111,7 +111,7 @@ func TestStatsChannel_noErrors_goroutineExitsOnCtxCancel(t *testing.T) {
 			Os: "Not windows",
 		},
 		client: statsClientMock{
-			statsBody: ioutil.NopCloser(strings.NewReader(asJson(types.StatsJSON{}))),
+			statsBody: ioutil.NopCloser(strings.NewReader(asJSON(types.StatsJSON{}))),
 		},
 		//Using a buffered chan in the test so Start goroutine receives the refresh
 		//signal
@@ -260,7 +260,7 @@ func TestCalculateCPUPercentUnix(t *testing.T) {
 
 }
 
-func asJson(stats types.StatsJSON) string {
+func asJSON(stats types.StatsJSON) string {
 	var buffer bytes.Buffer
 	enc := json.NewEncoder(&buffer)
 	enc.Encode(stats)
