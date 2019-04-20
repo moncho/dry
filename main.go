@@ -47,7 +47,7 @@ var loadMessage = []string{docker.Whale0,
 //options dry's flags
 type options struct {
 	Description bool   `short:"d" long:"description" description:"Shows the description"`
-	MonitorMode string `short:"m" long:"monitor" description:"Starts in monitor mode, " optional:"yes" optional-value:"500"`
+	MonitorMode string `short:"m" long:"monitor" description:"Starts in monitor mode, given value (if any) is the refresh rate" optional:"yes" optional-value:"500"`
 	// enable profiling
 	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
 	Version bool `short:"v" long:"version" description:"Dry version"`
