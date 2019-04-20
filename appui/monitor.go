@@ -37,7 +37,7 @@ var monitorTableHeaders = map[string]sortMode{
 	"UPTIME":    uptime,
 }
 
-var defaultRefreshRate time.Duration = 500 * time.Millisecond
+var defaultRefreshRate = 500 * time.Millisecond
 
 //Monitor is a self-refreshing ui component that shows monitoring information about docker
 //containers.
@@ -129,7 +129,7 @@ func (m *Monitor) Mount() error {
 	for _, c := range containers {
 		statsChan, err := daemon.StatsChannel(c)
 		if err != nil {
-			return errors.Wrap(err, "Error mounting monitor widget")
+			return errors.Wrap(err, "error mounting monitor widget")
 		}
 		row := NewContainerStatsRow(c, defaultMonitorTableHeader)
 		rows = append(rows, row)
@@ -277,7 +277,6 @@ func (m *Monitor) refresh() {
 	ui.ActiveScreen.Flush()
 }
 func (m *Monitor) refreshRows() {
-
 	for _, c := range m.openChannels {
 		c.Refresh()
 	}
