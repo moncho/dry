@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
+	"strconv"
 	"time"
 
 	"net/http"
@@ -14,6 +16,7 @@ import (
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/version"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -41,10 +44,10 @@ var loadMessage = []string{docker.Whale0,
 	docker.Whale7,
 	docker.Whale}
 
-//dryOptions represents command line flags variables
-type dryOptions struct {
-	Description bool `short:"d" long:"description" description:"Dry description"`
-	MonitorMode bool `short:"m" long:"monitor" description:"Starts dry in monitor mode"`
+//options dry's flags
+type options struct {
+	Description bool   `short:"d" long:"description" description:"Shows the description"`
+	MonitorMode string `short:"m" long:"monitor" description:"Starts in monitor mode, " optional:"yes" optional-value:"500"`
 	// enable profiling
 	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
 	Version bool `short:"v" long:"version" description:"Dry version"`
@@ -56,35 +59,44 @@ type dryOptions struct {
 	Whale uint `short:"w" long:"whale" description:"Show whale for w seconds"`
 }
 
-func newDockerEnv(opts dryOptions) *docker.Env {
-	dockerEnv := docker.NewEnv()
+func config(opts options) (app.Config, error) {
+	var cfg app.Config
 	if opts.DockerHost == "" {
 		if os.Getenv("DOCKER_HOST") == "" {
 			log.Printf(
 				"No DOCKER_HOST env variable found and no Host parameter was given, connecting to %s",
 				docker.DefaultDockerHost)
-			dockerEnv.DockerHost = docker.DefaultDockerHost
+			cfg.DockerHost = docker.DefaultDockerHost
 		} else {
-			dockerEnv.DockerHost = os.Getenv("DOCKER_HOST")
-			dockerEnv.DockerTLSVerify = docker.GetBool(os.Getenv("DOCKER_TLS_VERIFY"))
-			dockerEnv.DockerCertPath = os.Getenv("DOCKER_CERT_PATH")
+			cfg.DockerHost = os.Getenv("DOCKER_HOST")
+			cfg.DockerTLSVerify = docker.GetBool(os.Getenv("DOCKER_TLS_VERIFY"))
+			cfg.DockerCertPath = os.Getenv("DOCKER_CERT_PATH")
 		}
 	} else {
-		dockerEnv.DockerHost = opts.DockerHost
-		dockerEnv.DockerTLSVerify = docker.GetBool(opts.DockerTLSVerifiy)
-		dockerEnv.DockerCertPath = opts.DockerCertPath
+		cfg.DockerHost = opts.DockerHost
+		cfg.DockerTLSVerify = docker.GetBool(opts.DockerTLSVerifiy)
+		cfg.DockerCertPath = opts.DockerCertPath
 	}
-	return dockerEnv
+
+	if opts.MonitorMode != "" {
+		cfg.MonitorMode = true
+		refreshRate, err := strconv.Atoi(opts.MonitorMode)
+		if err != nil {
+			return cfg, errors.Wrap(err, "invalid refresh rate")
+		}
+		cfg.MonitorRefreshRate = refreshRate
+	}
+	return cfg, nil
 }
 
-func showLoadingScreen(screen *ui.Screen, dockerEnv *docker.Env) chan<- struct{} {
+func showLoadingScreen(screen *ui.Screen, cfg app.Config) chan<- struct{} {
 	screen.Clear()
-	midscreen := ui.ActiveScreen.Dimensions.Width / 2
-	height := ui.ActiveScreen.Dimensions.Height
+	midscreen := screen.Dimensions.Width / 2
+	height := screen.Dimensions.Height
 	screen.RenderAtColumn(midscreen-len(connecting)/2, 1, ui.White(connecting))
 	screen.RenderLine(2, height-2, fmt.Sprintf("<blue>Dry Version:</> %s", ui.White(version.VERSION)))
-	if dockerEnv != nil {
-		screen.RenderLine(2, height-1, fmt.Sprintf("<blue>Docker Host:</> %s", ui.White(dockerEnv.DockerHost)))
+	if cfg.DockerHost != "" {
+		screen.RenderLine(2, height-1, fmt.Sprintf("<blue>Docker Host:</> %s", ui.White(cfg.DockerHost)))
 	} else {
 		screen.RenderLine(2, height-1, ui.White("No Docker host"))
 	}
@@ -129,6 +141,7 @@ func main() {
 		if r := recover(); r != nil {
 			log.Fatalf(
 				"Dry panicked: %v", r)
+			log.Error(string(debug.Stack()))
 			log.Print("Bye")
 			os.Exit(1)
 		} else if running {
@@ -136,8 +149,8 @@ func main() {
 		}
 	}()
 	// parse flags
-	var opts dryOptions
-	var parser = flags.NewParser(&opts, flags.Default)
+	var opts options
+	parser := flags.NewParser(&opts, flags.Default)
 	_, err := parser.Parse()
 	if err != nil {
 		flagError := err.(*flags.Error)
@@ -160,8 +173,6 @@ func main() {
 		return
 	}
 	log.Print("Starting dry")
-	dockerEnv := newDockerEnv(opts)
-
 	// Start profiling (if required)
 	if opts.Profile {
 		go func() {
@@ -174,28 +185,29 @@ func main() {
 		return
 	}
 	running = true
+	cfg, err := config(opts)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
 
 	start := time.Now()
-	stopLoadScreen := showLoadingScreen(screen, dockerEnv)
+	doneLoading := showLoadingScreen(screen, cfg)
 
-	dry, err := app.NewDry(screen, dockerEnv)
+	dry, err := app.NewDry(screen, cfg)
 
-	//show whale to bablat
+	//if asked to, show whale to bablat a bit longer
 	if opts.Whale > 0 {
 		showWale, _ := time.ParseDuration(fmt.Sprintf("%ds", opts.Whale))
 		time.Sleep(showWale - time.Since(start))
 	}
 	//dry has loaded, stopping the loading screen
-	close(stopLoadScreen)
+	close(doneLoading)
 	if err != nil {
 		screen.Close()
 		log.Printf("Dry could not start: %s", err)
 		return
 	}
-	if opts.MonitorMode {
-		dry.ViewMode(app.Monitor)
-	}
 	app.RenderLoop(dry)
 	screen.Close()
-
 }
