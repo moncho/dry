@@ -34,21 +34,21 @@ func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 		cursor.ScrollCursorDown()
 	case termbox.KeyF8: // disk usage
 		f(viewsToHandlers[DiskUsage])
-		dry.ViewMode(DiskUsage)
+		dry.changeView(DiskUsage)
 		if du, err := b.dry.dockerDaemon.DiskUsage(); err == nil {
 			widgets.DiskUsage.PrepareToRender(&du, nil)
 		}
 	case termbox.KeyF9: // docker events
 		refresh = false
 		view := dry.viewMode()
-		dry.ViewMode(EventsMode)
+		dry.changeView(EventsMode)
 		eh := newEventForwarder()
 		f(eh)
 
 		renderer := appui.NewDockerEventsRenderer(dry.dockerDaemon.EventLog().Events())
 
 		go appui.Less(renderer, screen, eh.events(), func() {
-			dry.ViewMode(view)
+			dry.changeView(view)
 			f(viewsToHandlers[view])
 			refreshScreen()
 		})
@@ -56,7 +56,7 @@ func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 		refresh = false
 
 		view := dry.viewMode()
-		dry.ViewMode(InfoMode)
+		dry.changeView(InfoMode)
 
 		info, err := dry.dockerDaemon.Info()
 		if err == nil {
@@ -66,7 +66,7 @@ func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 			renderer := appui.NewDockerInfoRenderer(info)
 
 			go appui.Less(renderer, screen, eh.events(), func() {
-				dry.ViewMode(view)
+				dry.changeView(view)
 				f(viewsToHandlers[view])
 				refreshScreen()
 			})
@@ -88,38 +88,38 @@ func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 		eh := newEventForwarder()
 		f(eh)
 		go appui.Less(ui.StringRenderer(help), screen, eh.events(), func() {
-			dry.ViewMode(view)
+			dry.changeView(view)
 			f(viewsToHandlers[view])
 			refreshScreen()
 		})
 	case '1':
 		cursor.Reset()
 		f(viewsToHandlers[Main])
-		dry.ViewMode(Main)
+		dry.changeView(Main)
 	case '2':
 		cursor.Reset()
 		f(viewsToHandlers[Images])
-		dry.ViewMode(Images)
+		dry.changeView(Images)
 	case '3':
 		cursor.Reset()
 		f(viewsToHandlers[Networks])
-		dry.ViewMode(Networks)
+		dry.changeView(Networks)
 	case '4':
 		cursor.Reset()
 		f(viewsToHandlers[Nodes])
-		dry.ViewMode(Nodes)
+		dry.changeView(Nodes)
 	case '5':
 		cursor.Reset()
 		f(viewsToHandlers[Services])
-		dry.ViewMode(Services)
+		dry.changeView(Services)
 	case '6':
 		cursor.Reset()
 		f(viewsToHandlers[Stacks])
-		dry.ViewMode(Stacks)
+		dry.changeView(Stacks)
 	case 'm', 'M': //monitor mode
 		cursor.Reset()
 		f(viewsToHandlers[Monitor])
-		dry.ViewMode(Monitor)
+		dry.changeView(Monitor)
 	case 'g': //Cursor to the top
 		cursor.Reset()
 	case 'G': //Cursor to the bottom

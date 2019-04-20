@@ -73,7 +73,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event, f func(eventHandle
 		showServices := func(nodeID string) error {
 			h.screen.Cursor.Reset()
 			widgets.NodeTasks.ForNode(nodeID)
-			h.dry.ViewMode(Tasks)
+			h.dry.changeView(Tasks)
 			f(viewsToHandlers[Tasks])
 			return refreshScreen()
 		}

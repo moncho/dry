@@ -37,11 +37,11 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 			widgets.ContainerMenu.ForContainer(id)
 			widgets.ContainerMenu.OnUnmount = func() error {
 				h.screen.Cursor.Reset()
-				h.dry.ViewMode(Monitor)
+				h.dry.changeView(Monitor)
 				f(h)
 				return refreshScreen()
 			}
-			h.dry.ViewMode(ContainerMenu)
+			h.dry.changeView(ContainerMenu)
 			f(viewsToHandlers[ContainerMenu])
 			return refreshScreen()
 		}
@@ -67,10 +67,10 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 			widgets.add(prompt)
 			forwarder := newEventForwarder()
 			f(forwarder)
-			h.dry.ViewMode(NoView)
+			h.dry.changeView(NoView)
 			refreshScreen()
 			go func() {
-				defer h.dry.ViewMode(Monitor)
+				defer h.dry.changeView(Monitor)
 				defer f(h)
 				events := ui.EventSource{
 					Events: forwarder.events(),

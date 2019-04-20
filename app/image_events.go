@@ -188,7 +188,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 				return h.dry.dockerDaemon.InspectImage(id)
 			},
 			func() {
-				h.dry.ViewMode(Images)
+				h.dry.changeView(Images)
 				f(h)
 				refreshScreen()
 			})
@@ -221,7 +221,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 				renderer := appui.NewDockerImageHistoryRenderer(history)
 
 				go appui.Less(renderer, h.screen, forwarder.events(), func() {
-					h.dry.ViewMode(Images)
+					h.dry.changeView(Images)
 					f(h)
 					refreshScreen()
 				})

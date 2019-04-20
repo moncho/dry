@@ -6,13 +6,13 @@ import (
 	"sync"
 
 	"github.com/docker/docker/api/types/events"
-	drydocker "github.com/moncho/dry/docker"
+	docker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 )
 
 //Dry resources and state
 type Dry struct {
-	dockerDaemon     drydocker.ContainerDaemon
+	dockerDaemon     docker.ContainerDaemon
 	dockerEvents     <-chan events.Message
 	dockerEventsDone chan<- struct{}
 	output           chan string
@@ -38,8 +38,8 @@ func (d *Dry) Ok() (bool, error) {
 	return d.dockerDaemon.Ok()
 }
 
-//ViewMode changes the view mode of dry
-func (d *Dry) ViewMode(v viewMode) {
+//changeView changes the active view mode
+func (d *Dry) changeView(v viewMode) {
 	d.Lock()
 	defer d.Unlock()
 
@@ -88,7 +88,7 @@ func (d *Dry) viewMode() viewMode {
 	return d.view
 }
 
-func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
+func new(screen *ui.Screen, d *docker.DockerDaemon) (*Dry, error) {
 	dockerEvents, dockerEventsDone, err := d.Events()
 	if err != nil {
 		return nil, err
@@ -108,10 +108,19 @@ func newDry(screen *ui.Screen, d *drydocker.DockerDaemon) (*Dry, error) {
 }
 
 //NewDry creates a new dry application
-func NewDry(screen *ui.Screen, env *drydocker.Env) (*Dry, error) {
-	d, err := drydocker.ConnectToDaemon(env)
+func NewDry(screen *ui.Screen, cfg Config) (*Dry, error) {
+
+	d, err := docker.ConnectToDaemon(cfg.dockerEnv())
 	if err != nil {
 		return nil, err
 	}
-	return newDry(screen, d)
+	dry, err := new(screen, d)
+	if err != nil {
+		return nil, err
+	}
+	if cfg.MonitorMode {
+		dry.changeView(Monitor)
+		widgets.Monitor.RefreshRate(cfg.MonitorRefreshRate)
+	}
+	return dry, nil
 }

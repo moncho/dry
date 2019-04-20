@@ -18,7 +18,7 @@ func (h *serviceTasksScreenEventHandler) handle(event termbox.Event, f func(even
 	switch event.Key {
 	case termbox.KeyEsc:
 		f(viewsToHandlers[Services])
-		h.dry.ViewMode(Services)
+		h.dry.changeView(Services)
 		refreshScreen()
 	case termbox.KeyF1: //sort
 		widgets.ServiceTasks.Sort()
@@ -35,7 +35,7 @@ func (h *serviceTasksScreenEventHandler) handle(event termbox.Event, f func(even
 					return h.dry.dockerDaemon.Task(id)
 				},
 				func() {
-					h.dry.ViewMode(ServiceTasks)
+					h.dry.changeView(ServiceTasks)
 					f(h)
 					refreshScreen()
 				})); err != nil {
