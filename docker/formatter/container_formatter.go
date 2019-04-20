@@ -10,7 +10,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/go-units"
-	"github.com/gosuri/uitable/util/strutil"
+	"github.com/mattn/go-runewidth"
 	"github.com/moncho/dry/docker"
 )
 
@@ -85,7 +85,7 @@ func (c *ContainerFormatter) Command() string {
 	c.addHeader(commandHeader)
 	command := c.c.Command
 	if c.trunc {
-		command = strutil.Resize(command, 30)
+		command = resize(command, 30)
 	}
 	return command
 }
@@ -256,4 +256,42 @@ func FormatLabels(labels map[string]string) string {
 		joinLabels = append(joinLabels, fmt.Sprintf("%s=%s", k, v))
 	}
 	return strings.Join(joinLabels, ",")
+}
+
+func resize(s string, length uint) string {
+	slen := runewidth.StringWidth(s)
+	n := int(length)
+	if slen == n {
+		return s
+	}
+	s = padRight(s, n, ' ')
+	if slen > n {
+		rs := []rune(s)
+		var buf bytes.Buffer
+		w := 0
+		for _, r := range rs {
+			buf.WriteRune(r)
+			rw := runewidth.RuneWidth(r)
+			w += rw
+			if w >= n-3 {
+				break
+			}
+
+		}
+		buf.WriteString("...")
+		s = buf.String()
+	}
+	return s
+}
+
+func padRight(str string, length int, pad byte) string {
+	slen := runewidth.StringWidth(str)
+	if slen >= length {
+		return str
+	}
+	buf := bytes.NewBufferString(str)
+	for i := 0; i < length-slen; i++ {
+		buf.WriteByte(pad)
+	}
+	return buf.String()
 }
