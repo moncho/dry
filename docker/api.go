@@ -25,7 +25,7 @@ type ContainerDaemon interface {
 	SwarmAPI
 	ContainerRuntime
 	DiskUsage() (types.DiskUsage, error)
-	DockerEnv() *Env
+	DockerEnv() Env
 	Events() (<-chan events.Message, chan<- struct{}, error)
 	EventLog() *EventLog
 	Info() (types.Info, error)
