@@ -30,8 +30,8 @@ const (
                (____/
 
 `
-	cheese     = "<white>made with ♥ (and go) by</> <blue>moncho</>"
-	connecting = "ŏ Trying to connect to the Docker Host ŏ"
+	cheese     = "<white>made with \U0001F499  (and go) by</> <blue>moncho</>"
+	connecting = "\U0001f433  Trying to connect to the Docker Host \U0001f433"
 )
 
 var loadMessage = []string{docker.Whale0,
