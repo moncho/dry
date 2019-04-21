@@ -1,25 +1,21 @@
 package app
 
 import (
-	"context"
-
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
 )
 
-var cancelMonitorWidget context.CancelFunc
-
 //render renders dry on the given screen
 func render(d *Dry, screen *ui.Screen) {
-	var bufferers []gizaktermui.Bufferer
+	bufferers := []gizaktermui.Bufferer{
+		widgets.DockerInfo,
+	}
 
 	var count int
 	var keymap string
 	var viewRenderer ui.Renderer
-	di := widgets.DockerInfo
-	bufferers = append(bufferers, di)
 
 	switch d.viewMode() {
 	case ContainerMenu:
@@ -135,15 +131,9 @@ func render(d *Dry, screen *ui.Screen) {
 		}
 	case Monitor:
 		{
-			if cancelMonitorWidget != nil {
-				cancelMonitorWidget()
-			}
 			monitor := widgets.Monitor
 			monitor.Mount()
-			ctx, cancel := context.WithCancel(context.Background())
-			monitor.RenderLoop(ctx)
 			keymap = monitorMapping
-			cancelMonitorWidget = cancel
 			count = monitor.RowCount()
 		}
 	}

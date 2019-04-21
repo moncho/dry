@@ -3,12 +3,13 @@ package appui
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
@@ -47,13 +48,13 @@ type Monitor struct {
 	rowChannels          map[*ContainerStatsRow]*docker.StatsChannel
 	rows                 []*ContainerStatsRow
 	openChannels         []*docker.StatsChannel
-	unmount              chan struct{}
 	selectedIndex        int
 	offset               int
 	x, y                 int
 	height, width        int
 	startIndex, endIndex int
 	refreshRate          time.Duration
+	cancel               context.CancelFunc
 	sortMode             sortMode
 	sync.RWMutex
 }
@@ -71,7 +72,6 @@ func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
 		y:             y,
 		height:        height,
 		width:         ui.ActiveScreen.Dimensions.Width,
-		unmount:       make(chan struct{}),
 		refreshRate:   defaultRefreshRate,
 		sortMode:      id,
 	}
@@ -120,6 +120,9 @@ func (m *Monitor) Filter(filter string) {
 func (m *Monitor) Mount() error {
 	m.Lock()
 	defer m.Unlock()
+	if m.cancel != nil {
+		return nil
+	}
 	daemon := m.daemon
 	rowChannels := make(map[*ContainerStatsRow]*docker.StatsChannel)
 	containers := daemon.Containers(
@@ -143,6 +146,9 @@ func (m *Monitor) Mount() error {
 
 	m.align()
 	m.updateTableHeader()
+	ctx, cancel := context.WithCancel(context.Background())
+	m.refreshLoop(ctx)
+	m.cancel = cancel
 	return nil
 }
 
@@ -161,11 +167,11 @@ func (m *Monitor) OnEvent(event EventCommand) error {
 	}
 	rows := len(m.visibleRows())
 	if rows < 0 {
-		return errors.New("There are no rows")
+		return errors.New("there are no rows")
 	}
 
 	if m.selectedIndex >= rows {
-		return fmt.Errorf("There is no row on index %d", m.selectedIndex)
+		return fmt.Errorf("there is no row on index %d", m.selectedIndex)
 	}
 
 	return event(m.visibleRows()[m.selectedIndex].container.ID)
@@ -179,14 +185,12 @@ func (m *Monitor) RefreshRate(millis int) {
 	m.refreshRate = time.Duration(millis) * time.Millisecond
 }
 
-//RenderLoop makes this monitor to render itself until stopped.
-func (m *Monitor) RenderLoop(ctx context.Context) {
-
+//refreshLoop signals this monitor to refresh itself until the given context is cancelled
+func (m *Monitor) refreshLoop(ctx context.Context) {
 	go func(rowChannels map[*ContainerStatsRow]*docker.StatsChannel) {
-		statsCtx, cancel := context.WithCancel(ctx)
-		defer cancel()
+
 		for row, ch := range rowChannels {
-			stats := ch.Start(statsCtx)
+			stats := ch.Start(ctx)
 			go func(row *ContainerStatsRow) {
 				for stat := range stats {
 					row.Update(stat)
@@ -194,24 +198,19 @@ func (m *Monitor) RenderLoop(ctx context.Context) {
 				row.markAsNotRunning()
 			}(row)
 		}
-		m.refreshRows()
-
+		m.refresh()
 		refreshTimer := time.NewTicker(m.refreshRate)
 		for {
 			select {
-			case <-m.unmount:
-				refreshTimer.Stop()
-				return
 			case <-ctx.Done():
 				refreshTimer.Stop()
 				return
 			case <-refreshTimer.C:
-				m.refreshRows()
+				m.refresh()
 			}
 		}
 
 	}(m.rowChannels)
-
 }
 
 //RowCount returns the number of rows of this Monitor.
@@ -235,8 +234,9 @@ func (m *Monitor) Sort() {
 //Unmount tells this widget that it will not be rendering anymore
 func (m *Monitor) Unmount() error {
 	m.Lock()
+	m.cancel()
+	m.cancel = nil
 	defer m.Unlock()
-	m.unmount <- struct{}{}
 	return nil
 }
 
@@ -276,12 +276,7 @@ func (m *Monitor) refresh() {
 	ui.ActiveScreen.RenderBufferer(m)
 	ui.ActiveScreen.Flush()
 }
-func (m *Monitor) refreshRows() {
-	for _, c := range m.openChannels {
-		c.Refresh()
-	}
-	m.refresh()
-}
+
 func (m *Monitor) sortRows() {
 	rows := m.rows
 	mode := m.sortMode

@@ -3,10 +3,11 @@ package app
 import (
 	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
 	termbox "github.com/nsf/termbox-go"
-	"strconv"
 )
 
 type monitorScreenEventHandler struct {
@@ -95,14 +96,10 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 		}
 	}
 	if !handled {
-		nh := func(eh eventHandler) {
-			if cancelMonitorWidget != nil {
-				cancelMonitorWidget()
-				cancelMonitorWidget = nil
-			}
+		h.baseEventHandler.handle(event, func(eh eventHandler) {
+			h.widget.Unmount()
 			f(eh)
-		}
-		h.baseEventHandler.handle(event, nh)
+		})
 	}
 }
 
@@ -110,10 +107,10 @@ func toInt(s string) (int, error) {
 	i, err := strconv.Atoi(s)
 
 	if err != nil {
-		return -1, errors.New("Be nice, a number is expected")
+		return -1, errors.New("be nice, a number is expected")
 	}
 	if i < 0 {
-		return -1, errors.New("Negative values are not allowed")
+		return -1, errors.New("negative values are not allowed")
 	}
 	return i, nil
 }

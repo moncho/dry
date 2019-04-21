@@ -48,8 +48,7 @@ func TestStatsChannel_cancellingContextClosesResources(t *testing.T) {
 		},
 		client: statsClientMock{
 			statsBody: ioutil.NopCloser(strings.NewReader("")),
-		},
-		refresh: make(chan struct{})}
+		}}
 	ctx, cancel := context.WithCancel(context.Background())
 	stats := sc.Start(ctx)
 	var wg sync.WaitGroup
@@ -62,7 +61,7 @@ func TestStatsChannel_cancellingContextClosesResources(t *testing.T) {
 	wg.Wait()
 }
 
-func TestStatsChannel_refreshingPublishesStats(t *testing.T) {
+func TestStatsChannel_statsArePublished(t *testing.T) {
 
 	sc := StatsChannel{
 		Container: &Container{
@@ -77,10 +76,7 @@ func TestStatsChannel_refreshingPublishesStats(t *testing.T) {
 		},
 		client: statsClientMock{
 			statsBody: ioutil.NopCloser(strings.NewReader(asJSON(types.StatsJSON{}))),
-		},
-		//Using a buffered chan in the test so Start goroutine receives the refresh
-		//signal
-		refresh: make(chan struct{}, 1)}
+		}}
 	ctx, cancel := context.WithCancel(context.Background())
 	stats := sc.Start(ctx)
 	var wg sync.WaitGroup
@@ -92,7 +88,6 @@ func TestStatsChannel_refreshingPublishesStats(t *testing.T) {
 		}
 		wg.Done()
 	}()
-	sc.Refresh()
 	wg.Wait()
 	cancel()
 }
@@ -112,12 +107,8 @@ func TestStatsChannel_noErrors_goroutineExitsOnCtxCancel(t *testing.T) {
 		},
 		client: statsClientMock{
 			statsBody: ioutil.NopCloser(strings.NewReader(asJSON(types.StatsJSON{}))),
-		},
-		//Using a buffered chan in the test so Start goroutine receives the refresh
-		//signal
-		refresh: make(chan struct{}, 1)}
+		}}
 	ctx, cancel := context.WithCancel(context.Background())
-	sc.Refresh()
 	sc.Start(ctx)
 	cancel()
 }
@@ -138,12 +129,8 @@ func TestStatsChannel_errorBuildingStats_goroutineExitsOnCtxCancel(t *testing.T)
 		client: statsClientMock{
 			//Empty reader results in EOF error
 			statsBody: ioutil.NopCloser(strings.NewReader("")),
-		},
-		//Using a buffered chan in the test so Start goroutine receives the refresh
-		//signal
-		refresh: make(chan struct{}, 1)}
+		}}
 	ctx, cancel := context.WithCancel(context.Background())
-	sc.Refresh()
 	sc.Start(ctx)
 	cancel()
 }
@@ -163,10 +150,7 @@ func TestStatsChannel_errorOpeningStream_goroutineExits(t *testing.T) {
 		},
 		client: statsClientMock{
 			statsErr: errors.New("No stats for you, my friend"),
-		},
-		//Using a buffered chan in the test so Start goroutine receives the refresh
-		//signal
-		refresh: make(chan struct{}, 1)}
+		}}
 	ctx, _ := context.WithCancel(context.Background())
 	sc.Start(ctx)
 }

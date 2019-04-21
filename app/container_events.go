@@ -483,9 +483,6 @@ loop:
 	for {
 		select {
 
-		case <-t.C:
-			stats.Refresh()
-
 		case event := <-events:
 			if event.Type == termbox.EventKey && event.Key == termbox.KeyEsc {
 				break loop

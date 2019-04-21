@@ -2,16 +2,17 @@ package docker
 
 import (
 	"fmt"
-	"github.com/docker/docker/client"
-	"github.com/json-iterator/go"
-	"github.com/pkg/errors"
 	"io"
 	"strings"
+
+	"github.com/docker/docker/client"
+	"github.com/pkg/errors"
 
 	"golang.org/x/net/context"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	jsoniter "github.com/json-iterator/go"
 )
 
 //StatsChannel manages the stats channel of a container
@@ -19,15 +20,6 @@ type StatsChannel struct {
 	Container *Container
 	version   *types.Version
 	client    client.ContainerAPIClient
-	refresh   chan struct{}
-}
-
-//Refresh forces a refresh of the container stats
-func (s *StatsChannel) Refresh() {
-	select {
-	case s.refresh <- struct{}{}:
-	default:
-	}
 }
 
 //Start starts sending stats to the channel returned
@@ -52,7 +44,7 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 	loop:
 		for {
 			select {
-			case <-s.refresh:
+			default:
 				if err := dec.Decode(&statsJSON); err != nil {
 					if err == io.EOF {
 						nonBlockingSend(stats, &Stats{
@@ -93,7 +85,7 @@ func newStatsChannel(version *types.Version, client client.ContainerAPIClient, c
 		client:    client,
 		Container: container,
 		version:   version,
-		refresh:   make(chan struct{})}, nil
+	}, nil
 
 }
 
