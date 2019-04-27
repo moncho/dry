@@ -2,6 +2,7 @@ package termui
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/gizak/termui"
 	"github.com/moncho/dry/ui"
@@ -15,11 +16,13 @@ type TextInput struct {
 	cursorX       int
 	cursorY       int
 	cursorLinePos int
-	isCapturing   bool
 	escaped       bool //tracks if the input process was finished (i.e. user pressed Enter) or exited (i.e. user pressed Esc)
 	TextFgColor   termui.Attribute
 	TextBgColor   termui.Attribute
 	TextBuilder   termui.TextBuilder
+
+	sync.RWMutex
+	isCapturing bool
 }
 
 //NewTextInput creates a new TextInput with the given initial text
@@ -41,10 +44,12 @@ func NewTextInput(s string) *TextInput {
 //blocking call, to return from it, either close the channel or
 //send a closing event (i.e. KeyEnter on single line mode, KeyEsc on any mode).
 func (i *TextInput) OnFocus(event ui.EventSource) error {
+	i.Lock()
 	if i.isCapturing {
 		return errors.New("This text input is already capturing events")
 	}
 	i.isCapturing = true
+	i.Unlock()
 	i.escaped = false
 	var err error
 mainloop:
@@ -91,7 +96,10 @@ mainloop:
 		}
 	}
 	termbox.HideCursor()
+	i.Lock()
 	i.isCapturing = false
+	i.Unlock()
+
 	return err
 }
 
@@ -215,12 +223,13 @@ func (i *TextInput) Buffer() termui.Buffer {
 	if i.BorderTop {
 		cursorYOffset++
 	}
-
+	i.RLock()
 	if i.isCapturing {
 		i.cursorX = i.cursorLinePos + cursorXOffset - textXOffset
 		i.cursorY = cursorYOffset
 		termbox.SetCursor(i.cursorX, i.cursorY)
 	}
+	i.RUnlock()
 
 	return buffer
 }
