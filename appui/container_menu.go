@@ -19,11 +19,12 @@ type ContainerMenuWidget struct {
 	cInfo         *ContainerDetailsWidget
 	cID           string
 	height, width int
-	mounted       bool
 	selectedIndex int
 	x, y          int
 	OnUnmount     func() error
+
 	sync.RWMutex
+	mounted bool
 }
 
 //NewContainerMenuWidget creates a TasksWidget
@@ -40,33 +41,35 @@ func NewContainerMenuWidget(dockerDaemon docker.ContainerAPI, y int) *ContainerM
 
 //Buffer returns the content of this widget as a termui.Buffer
 func (s *ContainerMenuWidget) Buffer() gizaktermui.Buffer {
-	s.Lock()
-	defer s.Unlock()
 	buf := gizaktermui.NewBuffer()
-	if s.mounted {
-		y := s.y
-		s.prepareForRendering()
-		if s.cInfo != nil {
-			buf.Merge(s.cInfo.Buffer())
-			y += s.cInfo.GetHeight()
-		}
-		for i, row := range s.rows {
-			row.SetY(y)
-			y += row.GetHeight()
-			if i != s.selectedIndex {
-				row.NotHighlighted()
-			} else {
-				row.Highlighted()
-			}
-			buf.Merge(row.Buffer())
-		}
-
+	if !s.mounted {
+		return buf
 	}
+	s.RLock()
+	defer s.RUnlock()
+
+	y := s.y
+	s.prepareForRendering()
+	if s.cInfo != nil {
+		buf.Merge(s.cInfo.Buffer())
+		y += s.cInfo.GetHeight()
+	}
+	for i, row := range s.rows {
+		row.SetY(y)
+		y += row.GetHeight()
+		if i != s.selectedIndex {
+			row.NotHighlighted()
+		} else {
+			row.Highlighted()
+		}
+		buf.Merge(row.Buffer())
+	}
+
 	return buf
 }
 
 //Filter is a noop for this widget
-func (s *ContainerMenuWidget) Filter(filter string) {
+func (s *ContainerMenuWidget) Filter(_ string) {
 
 }
 
@@ -82,27 +85,29 @@ func (s *ContainerMenuWidget) ForContainer(cID string) {
 
 //Mount prepares this widget for rendering
 func (s *ContainerMenuWidget) Mount() error {
+	if s.mounted {
+		return nil
+	}
 	s.Lock()
 	defer s.Unlock()
-	if !s.mounted {
-		c := s.dockerDaemon.ContainerByID(s.cID)
-		if c != nil {
-			s.cInfo = NewContainerDetailsWidget(c, s.y)
-		}
-		rows := make([]*Row, len(docker.CommandDescriptions))
-		for i, command := range docker.CommandDescriptions {
-			r := &Row{
-				ParColumns: []*drytermui.ParColumn{drytermui.NewThemedParColumn(DryTheme, command)},
-			}
-			r.AddColumn(r.ParColumns[0])
-			r.Height = 1
-			r.Width = r.ParColumns[0].Width
-			rows[i] = r
-		}
-		s.rows = rows
-		s.align()
-		s.mounted = true
+	c := s.dockerDaemon.ContainerByID(s.cID)
+	if c != nil {
+		s.cInfo = NewContainerDetailsWidget(c, s.y)
 	}
+	rows := make([]*Row, len(docker.CommandDescriptions))
+	for i, command := range docker.CommandDescriptions {
+		r := &Row{
+			ParColumns: []*drytermui.ParColumn{drytermui.NewThemedParColumn(DryTheme, command)},
+		}
+		r.AddColumn(r.ParColumns[0])
+		r.Height = 1
+		r.Width = r.ParColumns[0].Width
+		rows[i] = r
+	}
+	s.rows = rows
+	s.align()
+	s.mounted = true
+
 	return nil
 }
 
