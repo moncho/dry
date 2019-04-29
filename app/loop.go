@@ -87,11 +87,11 @@ loop:
 			//Ctrl+C breaks the loop (and exits dry) no matter what
 			if event.Key == termbox.KeyCtrlC || event.Ch == 'Q' {
 				break loop
-			} else {
-				handler.handle(event, func(eh eventHandler) {
-					handler = eh
-				})
 			}
+			handler.handle(event, func(eh eventHandler) {
+				handler = eh
+			})
+
 		case termbox.EventResize:
 			ui.Resize()
 			//Reload dry ui elements
