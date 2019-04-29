@@ -90,40 +90,47 @@ func (wr *widgetRegistry) remove(w termui.Widget) {
 	}
 }
 
-var timeBetweenRefresh = 1000 * time.Millisecond
+var timeBetweenRefresh = 250 * time.Millisecond
 
 func refreshOnDockerEvent(source docker.SourceType, w termui.Widget, view viewMode) {
 	last := time.Now()
+	var lock sync.Mutex
 	docker.GlobalRegistry.Register(
 		source,
 		func(ctx context.Context, m events.Message) error {
-			if time.Since(last) > timeBetweenRefresh {
-				last = time.Now()
-				err := w.Unmount()
-				if err != nil {
-					return err
-				}
-				return refreshIfView(view)
+			lock.Lock()
+			defer lock.Unlock()
+			if time.Since(last) < timeBetweenRefresh {
+				return nil
 			}
-			return nil
+			last = time.Now()
+			err := w.Unmount()
+			if err != nil {
+				return err
+			}
+			return refreshIfView(view)
 		})
 }
 func refreshOnContainerEvent(w termui.Widget, daemon docker.ContainerDaemon) {
 	last := time.Now()
+	var lock sync.Mutex
 	docker.GlobalRegistry.Register(
 		docker.ContainerSource,
 		func(ctx context.Context, m events.Message) error {
-			if time.Since(last) > timeBetweenRefresh {
-				last = time.Now()
-				daemon.Refresh(func(e error) {
-					err := w.Unmount()
-					if err != nil {
-						return
-					}
-
-					refreshIfView(Main)
-				})
+			lock.Lock()
+			defer lock.Unlock()
+			if time.Since(last) < timeBetweenRefresh {
+				return nil
 			}
+			last = time.Now()
+			daemon.Refresh(func(e error) {
+				err := w.Unmount()
+				if err != nil {
+					return
+				}
+
+				refreshIfView(Main)
+			})
 			return nil
 		})
 }
