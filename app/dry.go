@@ -88,7 +88,7 @@ func (d *Dry) viewMode() viewMode {
 	return d.view
 }
 
-func new(screen *ui.Screen, d *docker.DockerDaemon) (*Dry, error) {
+func newDry(screen *ui.Screen, d *docker.DockerDaemon) (*Dry, error) {
 	dockerEvents, dockerEventsDone, err := d.Events()
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func NewDry(screen *ui.Screen, cfg Config) (*Dry, error) {
 	if err != nil {
 		return nil, err
 	}
-	dry, err := new(screen, d)
+	dry, err := newDry(screen, d)
 	if err != nil {
 		return nil, err
 	}
