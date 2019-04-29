@@ -37,8 +37,9 @@ type DockerNetworksWidget struct {
 	startIndex, endIndex int
 	x, y                 int
 	sortMode             docker.SortMode
-	mounted              bool
+
 	sync.RWMutex
+	mounted bool
 }
 
 //NewDockerNetworksWidget creates a renderer for a network list
@@ -54,41 +55,44 @@ func NewDockerNetworksWidget(dockerDaemon docker.NetworkAPI, y int) *DockerNetwo
 
 //Buffer returns the content of this widget as a termui.Buffer
 func (s *DockerNetworksWidget) Buffer() gizaktermui.Buffer {
-	s.Lock()
-	defer s.Unlock()
-	y := s.y
+	s.RLock()
+	defer s.RUnlock()
 	buf := gizaktermui.NewBuffer()
-	if s.mounted {
-		s.prepareForRendering()
-		widgetHeader := NewWidgetHeader()
-		widgetHeader.HeaderEntry("Networks", strconv.Itoa(s.RowCount()))
-		if s.filterPattern != "" {
-			widgetHeader.HeaderEntry("Active filter", s.filterPattern)
-		}
-
-		widgetHeader.Y = y
-		buf.Merge(widgetHeader.Buffer())
-		y += widgetHeader.GetHeight()
-		//Empty line between the header and the rest of the content
-		y++
-		s.updateHeader()
-		s.header.SetY(y)
-		buf.Merge(s.header.Buffer())
-		y += s.header.GetHeight()
-
-		selected := s.selectedIndex - s.startIndex
-
-		for i, imageRow := range s.visibleRows() {
-			imageRow.SetY(y)
-			y += imageRow.GetHeight()
-			if i != selected {
-				imageRow.NotHighlighted()
-			} else {
-				imageRow.Highlighted()
-			}
-			buf.Merge(imageRow.Buffer())
-		}
+	if !s.mounted {
+		return buf
 	}
+	y := s.y
+
+	s.prepareForRendering()
+	widgetHeader := NewWidgetHeader()
+	widgetHeader.HeaderEntry("Networks", strconv.Itoa(s.RowCount()))
+	if s.filterPattern != "" {
+		widgetHeader.HeaderEntry("Active filter", s.filterPattern)
+	}
+
+	widgetHeader.Y = y
+	buf.Merge(widgetHeader.Buffer())
+	y += widgetHeader.GetHeight()
+	//Empty line between the header and the rest of the content
+	y++
+	s.updateHeader()
+	s.header.SetY(y)
+	buf.Merge(s.header.Buffer())
+	y += s.header.GetHeight()
+
+	selected := s.selectedIndex - s.startIndex
+
+	for i, imageRow := range s.visibleRows() {
+		imageRow.SetY(y)
+		y += imageRow.GetHeight()
+		if i != selected {
+			imageRow.NotHighlighted()
+		} else {
+			imageRow.Highlighted()
+		}
+		buf.Merge(imageRow.Buffer())
+	}
+
 	return buf
 }
 
@@ -103,20 +107,22 @@ func (s *DockerNetworksWidget) Filter(filter string) {
 func (s *DockerNetworksWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
-	if !s.mounted {
-		networks, err := s.dockerDaemon.Networks()
-		if err != nil {
-			return err
-		}
-
-		networkRows := make([]*NetworkRow, len(networks))
-		for i, network := range networks {
-			networkRows[i] = NewNetworkRow(network, s.header)
-		}
-		s.totalRows = networkRows
-		s.mounted = true
-		s.align()
+	if s.mounted {
+		return nil
 	}
+	networks, err := s.dockerDaemon.Networks()
+	if err != nil {
+		return err
+	}
+
+	networkRows := make([]*NetworkRow, len(networks))
+	for i, network := range networks {
+		networkRows[i] = NewNetworkRow(network, s.header)
+	}
+	s.totalRows = networkRows
+	s.mounted = true
+	s.align()
+
 	return nil
 }
 
@@ -162,8 +168,8 @@ func (s *DockerNetworksWidget) Sort() {
 
 //Unmount tells this widget that it will not be rendering anymore
 func (s *DockerNetworksWidget) Unmount() error {
-	s.RLock()
-	defer s.RUnlock()
+	s.Lock()
+	defer s.Unlock()
 	s.mounted = false
 	return nil
 }
