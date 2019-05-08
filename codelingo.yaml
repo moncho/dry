@@ -1,2 +1,6 @@
 tenets:
-  - import: codelingo/effective-go/loop-variable-used-in-go-routine
+  - import: codelingo/effective-go/comment-first-word-as-subject
+  - import: codelingo/effective-go/comment-first-word-when-empty
+  - import: codelingo/effective-go/underscores-in-name
+  - import: codelingo/effective-go/single-method-interface-name
+  - import: codelingo/effective-go/avoid-annotations-in-comments

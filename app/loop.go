@@ -51,7 +51,7 @@ func RenderLoop(dry *Dry) {
 		wg.Add(1)
 		defer wg.Done()
 
-		for range renderChan {
+		for _ = range renderChan {
 			if !screen.Closing() {
 				screen.Clear()
 				render(dry, screen)
