@@ -14,7 +14,7 @@ import (
 type eventCallback func()
 
 // A View is a region of the screen where text can be rendered. It maintains
-//its own internal buffer and cursor position.)
+//its own internal buffer and cursor position.
 type View struct {
 	name             string
 	x0, y0, x1, y1   int      //view position in the screen

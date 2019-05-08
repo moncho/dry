@@ -10,12 +10,13 @@ import (
 
 // ExpiringMessageWidget shows some text for an amount time then clears itself
 type ExpiringMessageWidget struct {
-	sync.Mutex
 	y           int
 	screenWidth int
-	message     string
 	clearTimer  *time.Timer
 	markup      *Markup
+
+	sync.RWMutex
+	message string
 }
 
 // NewExpiringMessageWidget creates a new ExpiringMessageWidget struct
@@ -33,8 +34,9 @@ func NewExpiringMessageWidget(y, screenWidth int, theme *ColorTheme) *ExpiringMe
 //message will activate it again
 func (s *ExpiringMessageWidget) Pause() {
 	s.Lock()
-	defer s.Unlock()
 	s.stopTimer()
+	s.Unlock()
+
 }
 
 func (s *ExpiringMessageWidget) stopTimer() {
@@ -50,21 +52,26 @@ func (s *ExpiringMessageWidget) Message(msg string, clearDelay time.Duration) {
 	defer s.Unlock()
 	s.stopTimer()
 	s.message = msg
-	if clearDelay != 0 {
-		s.clearTimer = time.AfterFunc(clearDelay, func() {
-			clearMessage := strings.Repeat(" ", len(msg))
-			s.message = ""
-			renderString(0, s.y, s.screenWidth, clearMessage, termbox.Attribute(s.markup.theme.Fg), termbox.Attribute(s.markup.theme.Bg))
-		})
+	if clearDelay == 0 {
+		return
 	}
+	s.clearTimer = time.AfterFunc(clearDelay, func() {
+		s.Lock()
+		s.message = ""
+		s.Unlock()
+		clearMessage := strings.Repeat(" ", len(msg))
+		renderString(0, s.y, s.screenWidth, clearMessage, termbox.Attribute(s.markup.theme.Fg), termbox.Attribute(s.markup.theme.Bg))
+	})
+
 }
 
 //Render renders the status message
 func (s *ExpiringMessageWidget) Render() {
-	s.Lock()
-	defer s.Unlock()
-	if s.message != "" {
-		w, _ := termbox.Size()
-		renderLineWithMarkup(0, s.y, w, s.message, s.markup)
+	if s.message == "" {
+		return
 	}
+	s.RLock()
+	defer s.RUnlock()
+	w, _ := termbox.Size()
+	renderLineWithMarkup(0, s.y, w, s.message, s.markup)
 }

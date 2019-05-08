@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"strconv"
+	"sync"
 	"time"
 
 	units "github.com/docker/go-units"
@@ -33,6 +34,7 @@ type ContainerStatsRow struct {
 	UptimeVal time.Time
 
 	drytermui.Row
+	sync.RWMutex
 }
 
 //NewContainerStatsRow creats a new ContainerStatsRow widget
@@ -89,6 +91,8 @@ func (row *ContainerStatsRow) NotHighlighted() {
 
 //Buffer returns this Row data as a termui.Buffer
 func (row *ContainerStatsRow) Buffer() termui.Buffer {
+	row.RLock()
+	defer row.RUnlock()
 	buf := termui.NewBuffer()
 	//This set the background of the whole row
 	buf.Area.Min = image.Point{row.X, row.Y}
@@ -129,14 +133,17 @@ func (row *ContainerStatsRow) Reset() {
 
 //Update updates the content of this row with the given stats
 func (row *ContainerStatsRow) Update(stat *docker.Stats) {
-	if stat != nil {
-		row.setNet(stat.NetworkRx, stat.NetworkTx)
-		row.setCPU(stat.CPUPercentage)
-		row.setMem(stat.Memory, stat.MemoryLimit, stat.MemoryPercentage)
-		row.setBlockIO(stat.BlockRead, stat.BlockWrite)
-		row.setPids(stat.PidsCurrent)
-		row.setUptime(row.container.ContainerJSON.State.StartedAt)
+	if stat == nil {
+		return
 	}
+	row.Lock()
+	defer row.Unlock()
+	row.setNet(stat.NetworkRx, stat.NetworkTx)
+	row.setCPU(stat.CPUPercentage)
+	row.setMem(stat.Memory, stat.MemoryLimit, stat.MemoryPercentage)
+	row.setBlockIO(stat.BlockRead, stat.BlockWrite)
+	row.setPids(stat.PidsCurrent)
+	row.setUptime(row.container.ContainerJSON.State.StartedAt)
 }
 
 func (row *ContainerStatsRow) setNet(rx float64, tx float64) {

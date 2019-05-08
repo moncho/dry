@@ -17,7 +17,7 @@ GO_LDFLAGS=-ldflags "-w $(CTIMEVAR)"
 GO_LDFLAGS_STATIC=-ldflags "-w $(CTIMEVAR) -extldflags -static"
 GOOSES = darwin freebsd linux windows
 GOARCHS = amd64 386 arm arm64
-
+UNSUPPORTED = darwin_arm darwin_arm64 windows_arm windows_arm64 windows_386 freebsd_arm64
 print-%: ; @echo $*=$($*)
 
 run: ## Runs dry
@@ -62,9 +62,9 @@ benchmark: ## Run benchmarks
 	GO111MODULE=on go test -bench $(shell go list ./... | grep -v /vendor/ | grep -v mock) 
 
 define buildpretty
-$(if $(and $(filter-out darwin_arm,$(1)_$(2)), $(filter-out windows_arm,$(1)_$(2)), $(filter-out windows_386,$(1)_$(2))), \
+$(if $(and $(filter-out $(UNSUPPORTED),$(1)_$(2))), \
 	mkdir -p ${PREFIX}/cross/$(1)/$(2);
-	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 GO111MODULE=on go build -o ${PREFIX}/cross/$(1)/$(2)/dry -a ${GO_LDFLAGS_STATIC} .;
+	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 GO111MODULE=on go build -o ${PREFIX}/cross/$(1)/$(2)/dry -a ${GO_LDFLAGS} .;
 )
 endef
 
@@ -72,9 +72,9 @@ cross: *.go VERSION ## Cross compiles dry
 	$(foreach GOARCH,$(GOARCHS),$(foreach GOOS,$(GOOSES),$(call buildpretty,$(GOOS),$(GOARCH))))
 
 define buildrelease
-$(if $(and $(filter-out darwin_arm,$(1)_$(2)), $(filter-out windows_arm,$(1)_$(2)), $(filter-out windows_386,$(1)_$(2))), \
+$(if $(and $(filter-out $(UNSUPPORTED),$(1)_$(2))), \
 	mkdir -p ${PREFIX}/cross/$(1)/$(2);
-	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 GO111MODULE=on go build -o ${PREFIX}/cross/dry-$(1)-$(2) -a ${GO_LDFLAGS_STATIC} .;
+	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 GO111MODULE=on go build -o ${PREFIX}/cross/dry-$(1)-$(2) -a ${GO_LDFLAGS} .;
 )
 endef
 

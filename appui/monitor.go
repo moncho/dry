@@ -112,17 +112,18 @@ func (m *Monitor) Buffer() gizaktermui.Buffer {
 }
 
 //Filter filters the container list by the given filter
-func (m *Monitor) Filter(filter string) {
+func (m *Monitor) Filter(_ string) {
 
 }
 
 //Mount prepares this widget for rendering
 func (m *Monitor) Mount() error {
-	m.Lock()
-	defer m.Unlock()
+
 	if m.cancel != nil {
 		return nil
 	}
+	m.Lock()
+	defer m.Unlock()
 	daemon := m.daemon
 	rowChannels := make(map[*ContainerStatsRow]*docker.StatsChannel)
 	containers := daemon.Containers(
