@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/gdamore/tcell/termbox"
 	"github.com/gizak/termui"
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
 )
 
 var theme = &ui.ColorTheme{Fg: ui.ColorBlack, Bg: ui.ColorWhite}

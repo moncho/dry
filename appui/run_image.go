@@ -17,12 +17,12 @@ type ImageRunWidget struct {
 func NewImageRunWidget(image types.ImageSummary) *ImageRunWidget {
 	w := &ImageRunWidget{
 		image:     image,
-		TextInput: *termui.NewTextInput(""),
+		TextInput: *termui.NewTextInput(ui.ActiveScreen, ""),
 	}
 	w.Height = 3
-	w.Width = ui.ActiveScreen.Dimensions.Width / 2
-	w.X = (ui.ActiveScreen.Dimensions.Width - w.Width) / 2
-	w.Y = ui.ActiveScreen.Dimensions.Height / 2
+	w.Width = ui.ActiveScreen.Dimensions().Width / 2
+	w.X = (ui.ActiveScreen.Dimensions().Width - w.Width) / 2
+	w.Y = ui.ActiveScreen.Dimensions().Height / 2
 	w.Bg = gtermui.Attribute(DryTheme.Bg)
 	w.TextBgColor = gtermui.Attribute(DryTheme.Bg)
 	w.TextFgColor = gtermui.ColorWhite

@@ -174,7 +174,7 @@ Code released under the MIT license. See
 
 Built on top of:
 
-* [termbox](https://github.com/nsf/termbox-go)
+* [tcell](https://github.com/gdamore/tcell)
 * [termui](https://github.com/gizak/termui)
 * [Docker](https://github.com/docker/docker)
 * [Docker CLI](github.com/docker/cli/cli)

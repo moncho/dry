@@ -4,10 +4,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell/termbox"
 )
 
-//SupportedTags maps supported tags to a termbox.Attribute
+//SupportedTags maps supported tags to a tcell.Attribute
 var SupportedTags = supportedTagsRegexp()
 var tagsToAttributeMap = tags()
 
@@ -58,19 +58,14 @@ func tags() map[string]termbox.Attribute {
 // color whereas the </> tag changes color back to default. For example:
 //
 // <green>Hello, <red>world!</>
-//
-// The color tags could be combined with the attributes: <b>...</b> for
-// bold, <u>...</u> for underline, and <r>...</r> for reverse. Unlike
-// colors the attributes require matching closing tag.
-//
 type Markup struct {
-	Foreground termbox.Attribute // Foreground color.
-	Background termbox.Attribute // Background color (so far always termbox.ColorDefault).
+	Foreground termbox.Attribute
+	Background termbox.Attribute
 	theme      *ColorTheme
 }
 
-// NewMarkup creates a markup to define tag to Termbox translation rules and store default
-// colors and column alignments.
+//NewMarkup creates a markup processor that uses the given theme for default
+//colors.
 func NewMarkup(theme *ColorTheme) *Markup {
 	markup := &Markup{}
 	markup.Foreground = termbox.Attribute(theme.Fg)

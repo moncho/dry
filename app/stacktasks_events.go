@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/moncho/dry/appui/swarm"
-	termbox "github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell"
 )
 
 type stackTasksScreenEventHandler struct {
@@ -12,19 +12,19 @@ type stackTasksScreenEventHandler struct {
 	widget *swarm.StacksTasksWidget
 }
 
-func (h *stackTasksScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+func (h *stackTasksScreenEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 	handled := true
 
-	switch event.Key {
-	case termbox.KeyEsc:
+	switch event.Key() {
+	case tcell.KeyEsc:
 		f(viewsToHandlers[Stacks])
 		h.dry.changeView(Stacks)
-	case termbox.KeyF1: //sort
+	case tcell.KeyF1: //sort
 		h.widget.Sort()
-	case termbox.KeyF5: // refresh
+	case tcell.KeyF5: // refresh
 		h.dry.message("Refreshing stack tasks list")
 		h.widget.Unmount()
-	case termbox.KeyEnter:
+	case tcell.KeyEnter:
 		forwarder := newEventForwarder()
 		f(forwarder)
 		if err := h.widget.OnEvent(
@@ -45,7 +45,7 @@ func (h *stackTasksScreenEventHandler) handle(event termbox.Event, f func(eventH
 	default:
 		handled = false
 	}
-	switch event.Ch {
+	switch event.Rune() {
 	case '%':
 		handled = true
 		forwarder := newEventForwarder()

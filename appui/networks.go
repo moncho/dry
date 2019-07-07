@@ -8,7 +8,6 @@ import (
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
 )
 
@@ -33,6 +32,7 @@ type DockerNetworksWidget struct {
 	totalRows            []*NetworkRow
 	filterPattern        string
 	height, width        int
+	screen               Screen
 	selectedIndex        int
 	startIndex, endIndex int
 	x, y                 int
@@ -43,14 +43,15 @@ type DockerNetworksWidget struct {
 }
 
 //NewDockerNetworksWidget creates a renderer for a network list
-func NewDockerNetworksWidget(dockerDaemon docker.NetworkAPI, y int) *DockerNetworksWidget {
+func NewDockerNetworksWidget(dockerDaemon docker.NetworkAPI, s Screen, y int) *DockerNetworksWidget {
 	return &DockerNetworksWidget{
 		dockerDaemon: dockerDaemon,
 		y:            y,
 		header:       defaultNetworkTableHeader,
-		height:       MainScreenAvailableHeight(),
+		height:       MainScreenAvailableHeight(s),
 		sortMode:     docker.SortNetworksByID,
-		width:        ui.ActiveScreen.Dimensions.Width}
+		screen:       s,
+		width:        s.Dimensions().Width}
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
@@ -246,7 +247,7 @@ func (s *DockerNetworksWidget) calculateVisibleRows() {
 func (s *DockerNetworksWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()
-	index := ui.ActiveScreen.Cursor.Position()
+	index := s.screen.Cursor().Position()
 	if index < 0 {
 		index = 0
 	} else if index > s.RowCount() {

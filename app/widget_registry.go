@@ -36,32 +36,34 @@ type widgetRegistry struct {
 	StackTasks    *swarm.StacksTasksWidget
 	MessageBar    *ui.ExpiringMessageWidget
 
-	sync.Mutex
-	activeWidgets map[string]termui.Widget
+	sync.RWMutex
+	widgets map[string]termui.Widget
 }
 
 //initRegistry creates a widget registry with its widget ready to be used
 func initRegistry(daemon docker.ContainerDaemon) *widgetRegistry {
+	d := ui.ActiveScreen.Dimensions()
+	height, width := d.Height, d.Width
 	di := appui.NewDockerInfo(daemon)
 	di.SetX(0)
 	di.SetY(1)
-	di.SetWidth(ui.ActiveScreen.Dimensions.Width)
+	di.SetWidth(width)
 	w := widgetRegistry{
 		DockerInfo:    di,
-		ContainerList: appui.NewContainersWidget(daemon, appui.MainScreenHeaderSize),
-		ContainerMenu: appui.NewContainerMenuWidget(daemon, appui.MainScreenHeaderSize),
-		ImageList:     appui.NewDockerImagesWidget(daemon.Images, appui.MainScreenHeaderSize),
-		DiskUsage:     appui.NewDockerDiskUsageRenderer(ui.ActiveScreen.Dimensions.Height),
-		Monitor:       appui.NewMonitor(daemon, appui.MainScreenHeaderSize),
-		Networks:      appui.NewDockerNetworksWidget(daemon, appui.MainScreenHeaderSize),
-		Nodes:         swarm.NewNodesWidget(daemon, appui.MainScreenHeaderSize),
-		NodeTasks:     swarm.NewNodeTasksWidget(daemon, appui.MainScreenHeaderSize),
-		ServiceTasks:  swarm.NewServiceTasksWidget(daemon, appui.MainScreenHeaderSize),
-		ServiceList:   swarm.NewServicesWidget(daemon, appui.MainScreenHeaderSize),
-		Stacks:        swarm.NewStacksWidget(daemon, appui.MainScreenHeaderSize),
-		StackTasks:    swarm.NewStacksTasksWidget(daemon, appui.MainScreenHeaderSize),
-		activeWidgets: make(map[string]termui.Widget),
-		MessageBar:    ui.NewExpiringMessageWidget(0, ui.ActiveScreen.Dimensions.Width, appui.DryTheme),
+		ContainerList: appui.NewContainersWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		ContainerMenu: appui.NewContainerMenuWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		ImageList:     appui.NewDockerImagesWidget(daemon.Images, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		DiskUsage:     appui.NewDockerDiskUsageRenderer(height),
+		Monitor:       appui.NewMonitor(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		Networks:      appui.NewDockerNetworksWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		Nodes:         swarm.NewNodesWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		NodeTasks:     swarm.NewNodeTasksWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		ServiceTasks:  swarm.NewServiceTasksWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		ServiceList:   swarm.NewServicesWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		Stacks:        swarm.NewStacksWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		StackTasks:    swarm.NewStacksTasksWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		widgets:       make(map[string]termui.Widget),
+		MessageBar:    ui.NewExpiringMessageWidget(0, ui.ActiveScreen),
 	}
 
 	refreshOnContainerEvent(w.ContainerList, daemon)
@@ -74,20 +76,36 @@ func initRegistry(daemon docker.ContainerDaemon) *widgetRegistry {
 	return &w
 }
 
-func (wr *widgetRegistry) add(w termui.Widget) {
+func (wr *widgetRegistry) add(w termui.Widget) error {
 	wr.Lock()
 	defer wr.Unlock()
-	if err := w.Mount(); err == nil {
-		wr.activeWidgets[w.Name()] = w
+	err := w.Mount()
+	if err == nil {
+		wr.widgets[w.Name()] = w
 	}
+	return err
 }
 
-func (wr *widgetRegistry) remove(w termui.Widget) {
+func (wr *widgetRegistry) remove(w termui.Widget) error {
 	wr.Lock()
 	defer wr.Unlock()
-	if err := w.Unmount(); err == nil {
-		delete(wr.activeWidgets, w.Name())
+	delete(wr.widgets, w.Name())
+	return w.Unmount()
+}
+
+func (wr *widgetRegistry) activeWidgets() []termui.Widget {
+	wr.RLock()
+	defer wr.RUnlock()
+	widgets := make([]termui.Widget, len(wr.widgets))
+	i := 0
+	for _, widget := range wr.widgets {
+		widgets[i] = widget
+		i++
 	}
+	return widgets
+}
+func (wr *widgetRegistry) reload() {
+
 }
 
 var timeBetweenRefresh = 250 * time.Millisecond

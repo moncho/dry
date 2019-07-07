@@ -23,13 +23,13 @@ type topRenderer struct {
 }
 
 //NewDockerTopRenderer creates renderer for docker top result
-func NewDockerTopRenderer(processList *container.ContainerTopOKBody) ui.Renderer {
+func NewDockerTopRenderer(processList *container.ContainerTopOKBody) fmt.Stringer {
 	return &topRenderer{
 		processList: processList,
 	}
 }
 
-func (r *topRenderer) Render() string {
+func (r *topRenderer) String() string {
 	buf := bytes.NewBufferString("")
 
 	procList := r.processList

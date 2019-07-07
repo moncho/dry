@@ -3,48 +3,13 @@ package ui
 import (
 	"unicode/utf8"
 
+	"github.com/gdamore/tcell"
+
 	"github.com/mattn/go-runewidth"
-	"github.com/nsf/termbox-go"
 )
 
 //Functions that serve as building blocks for rendering structs
 //defined in the ui package.
-
-//fill fills the screen with the given cell starting at x,y until w,h.
-func fill(x, y, w, h int, cell termbox.Cell) {
-	for lx := 0; lx < w; lx++ {
-		termbox.SetCell(x+lx, y, cell.Ch, cell.Fg, cell.Bg)
-	}
-}
-
-//renderString renders the given string starting at x, y in the screen, returns the
-//rune-width of the given string and the number of screen lines used to render
-func renderString(x, y, maxWidth int, s string, foreground, background termbox.Attribute) (int, int) {
-	stringWidth := 0
-	virtualScreenWidth := maxWidth
-	//tracks the number of screen lines used to render
-	additionalLines := 0
-	startCol := x
-
-	for _, char := range s {
-		runewidth := runewidth.RuneWidth(char)
-		stringWidth += runewidth
-		//Check if a new line is going to be needed
-		if stringWidth > virtualScreenWidth {
-			//A new line is going to be used, the virtual screen width has to be
-			//extended
-			virtualScreenWidth += virtualScreenWidth + maxWidth
-			additionalLines++
-			y += additionalLines
-			//new line, start column goes back to the beginning
-			startCol = x
-		}
-		termbox.SetCell(startCol, y, char, foreground, background)
-		startCol += runewidth
-
-	}
-	return stringWidth, additionalLines + 1
-}
 
 // renderLineWithMarkup renders the given string, using the given markup processor to
 // identify and ignore markup elements, at the given location.
@@ -74,8 +39,8 @@ func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) int {
 				additionalLines++
 				y += additionalLines
 			}
-
-			termbox.SetCell(column, y, char, markup.Foreground, markup.Background)
+			style := mkStyle(markup.Foreground, markup.Background)
+			ActiveScreen.screen.SetCell(column, y, style, char)
 			column++
 		}
 	}
@@ -101,48 +66,22 @@ func vOffsetToCOffset(text []byte, boffset int) (voffset, coffset int) {
 	return
 }
 
-func byteSliceGrow(s []byte, desiredCap int) []byte {
-	if cap(s) < desiredCap {
-		ns := make([]byte, len(s), desiredCap)
-		copy(ns, s)
-		return ns
-	}
-	return s
-}
-
-func byteSliceRemove(text []byte, from, to int) []byte {
-	size := to - from
-	copy(text[from:], text[to:])
-	text = text[:len(text)-size]
-	return text
-}
-
-func byteSliceInsert(text []byte, offset int, what []byte) []byte {
-	n := len(text) + len(what)
-	text = byteSliceGrow(text, n)
-	text = text[:n]
-	copy(text[offset+len(what):], text[offset:])
-	copy(text[offset:], what)
-	return text
-}
-
-// EventChannel returns a channel with termbox's events and a done channel.
-func EventChannel() (<-chan termbox.Event, chan struct{}) {
-	// termbox.PollEvent() can get stuck on unexpected signal
-	// handling cases, so termbox polling is done is a separate goroutine
-	evCh := make(chan termbox.Event)
+// EventChannel returns a channel on which termbox's events are published.
+func EventChannel() (<-chan tcell.Event, chan struct{}) {
+	events := make(chan tcell.Event)
 	done := make(chan struct{})
 	go func() {
-		defer func() { recover() }()
-		defer func() { close(evCh) }()
+		defer func() { close(events) }()
+
 		for {
+			events <- ActiveScreen.screen.PollEvent()
 			select {
-			case evCh <- termbox.PollEvent():
 			case <-done:
 				return
+			default:
 			}
 		}
-	}()
-	return evCh, done
 
+	}()
+	return events, done
 }

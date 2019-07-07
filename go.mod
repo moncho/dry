@@ -10,6 +10,7 @@ require (
 	github.com/docker/go-connections v0.4.1-0.20180821093606-97c2040d34df
 	github.com/docker/go-units v0.3.3
 	github.com/docker/libnetwork v0.0.0-20180222171459-0ae9b6f38f24 // indirect
+	github.com/gdamore/tcell v1.1.2
 	github.com/gizak/termui v0.0.0-20190118200331-b3075f731367
 	github.com/gogo/protobuf v1.1.1 // indirect
 	github.com/google/go-cmp v0.2.0 // indirect
@@ -23,7 +24,6 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.0
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/nsf/termbox-go v0.0.0-20190121233118-02980233997d
 	github.com/olekukonko/tablewriter v0.0.1
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect

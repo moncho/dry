@@ -3,14 +3,14 @@ package ui
 import (
 	"unicode/utf8"
 
-	"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/termbox"
 )
 
 const (
 	preferredHorizontalThreshold = 5
 	tabStopLength                = 8
 	editBoxWidth                 = 30
-	coldef                       = termbox.ColorDefault
 )
 
 //InputBox captures user input
@@ -22,7 +22,7 @@ type InputBox struct {
 	cursorCOffset int // cursor offset in unicode code points
 	x, y          int // InputBox position in the screen
 	output        chan<- string
-	eventQueue    chan termbox.Event
+	eventQueue    chan *tcell.EventKey
 	screen        *Screen
 }
 
@@ -30,8 +30,7 @@ type InputBox struct {
 func (eb *InputBox) Draw(x, y, w, h int) {
 	eb.AdjustVOffset(w)
 
-	fill(x, y, w, h, termbox.Cell{Ch: ' '})
-
+	eb.screen.Fill(x, y, w, h, ' ')
 	t := eb.text
 	lx := 0
 	tabstop := 0
@@ -46,8 +45,7 @@ func (eb *InputBox) Draw(x, y, w, h int) {
 		}
 
 		if rx >= w {
-			termbox.SetCell(x+w-1, y, '→',
-				coldef, coldef)
+			eb.screen.RenderRune(x+w-1, y, '→')
 			break
 		}
 
@@ -60,12 +58,12 @@ func (eb *InputBox) Draw(x, y, w, h int) {
 				}
 
 				if rx >= 0 {
-					termbox.SetCell(x+rx, y, ' ', coldef, coldef)
+					eb.screen.RenderRune(x+rx, y, ' ')
 				}
 			}
 		} else {
 			if rx >= 0 {
-				termbox.SetCell(x+rx, y, r, coldef, coldef)
+				eb.screen.RenderRune(x+rx, y, r)
 			}
 			lx++
 		}
@@ -74,7 +72,7 @@ func (eb *InputBox) Draw(x, y, w, h int) {
 	}
 
 	if eb.lineVOffset != 0 {
-		termbox.SetCell(x, y, '←', coldef, coldef)
+		eb.screen.RenderRune(x, y, '←')
 	}
 }
 
@@ -202,7 +200,7 @@ func (eb *InputBox) String() string {
 func (eb *InputBox) redrawAll() {
 
 	eb.Draw(eb.x, eb.y, editBoxWidth, 1)
-	termbox.SetCursor(eb.x+eb.CursorX(), eb.y)
+	eb.screen.ShowCursor(eb.x+eb.CursorX(), eb.y)
 
 	eb.screen.Flush()
 }
@@ -210,41 +208,38 @@ func (eb *InputBox) redrawAll() {
 //Focus is set on the inputbox, it starts handling terminal events and responding
 //to user actions.
 func (eb *InputBox) Focus() {
-	termbox.SetInputMode(termbox.InputEsc)
+	//TODO eb.screen.SetInputMode(termbox.InputEsc)
 
 	eb.redrawAll()
 mainloop:
 	for ev := range eb.eventQueue {
-		switch ev.Type {
-		case termbox.EventKey:
-			switch ev.Key {
-			case termbox.KeyEnter:
-				break mainloop
-			case termbox.KeyEsc:
-				eb.Delete()
-				break mainloop
-			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
-				eb.MoveCursorOneRuneBackward()
-			case termbox.KeyArrowRight, termbox.KeyCtrlF:
-				eb.MoveCursorOneRuneForward()
-			case termbox.KeyBackspace, termbox.KeyBackspace2:
-				eb.DeleteRuneBackward()
-			case termbox.KeyDelete, termbox.KeyCtrlD:
-				eb.DeleteRuneForward()
-			case termbox.KeyTab:
-				eb.InsertRune('\t')
-			case termbox.KeySpace:
-				eb.InsertRune(' ')
-			case termbox.KeyCtrlK:
-				eb.DeleteTheRestOfTheLine()
-			case termbox.KeyHome, termbox.KeyCtrlA:
-				eb.MoveCursorToBeginningOfTheLine()
-			case termbox.KeyEnd, termbox.KeyCtrlE:
-				eb.MoveCursorToEndOfTheLine()
-			default:
-				if ev.Ch != 0 {
-					eb.InsertRune(ev.Ch)
-				}
+		switch ev.Key() {
+		case tcell.KeyEnter:
+			break mainloop
+		case tcell.KeyEsc:
+			eb.Delete()
+			break mainloop
+		case tcell.KeyLeft, tcell.KeyCtrlB:
+			eb.MoveCursorOneRuneBackward()
+		case tcell.KeyRight, tcell.KeyCtrlF:
+			eb.MoveCursorOneRuneForward()
+		case tcell.KeyBackspace, tcell.KeyBackspace2:
+			eb.DeleteRuneBackward()
+		case tcell.KeyDelete, tcell.KeyCtrlD:
+			eb.DeleteRuneForward()
+		case tcell.KeyTab:
+			eb.InsertRune('\t')
+		//TODO case tcell.KeySpace:
+		//eb.InsertRune(' ')
+		case tcell.KeyCtrlK:
+			eb.DeleteTheRestOfTheLine()
+		case tcell.KeyHome, tcell.KeyCtrlA:
+			eb.MoveCursorToBeginningOfTheLine()
+		case tcell.KeyEnd, tcell.KeyCtrlE:
+			eb.MoveCursorToEndOfTheLine()
+		default:
+			if ev.Rune() != 0 {
+				eb.InsertRune(ev.Rune())
 			}
 		}
 		eb.redrawAll()
@@ -253,10 +248,37 @@ mainloop:
 }
 
 //NewInputBox creates an input box, located at position x,y in the screen.
-func NewInputBox(x, y int, prompt string, output chan<- string, keyboardQueue chan termbox.Event, theme *ColorTheme, screen *Screen) *InputBox {
-	width, _ := termbox.Size()
+func NewInputBox(x, y int, prompt string, output chan<- string, keyboardQueue chan *tcell.EventKey, theme *ColorTheme, screen *Screen) *InputBox {
+	width := screen.Dimensions().Width
 	//TODO use color from the theme for the prompt
-	renderString(x, y, width, prompt, termbox.ColorYellow, termbox.Attribute(theme.Bg))
+	r := NewRenderer(screenStyledRuneRenderer{screen}).On(x, y).WithWidth(width).WithStyle(
+		mkStyle(termbox.ColorYellow, termbox.Attribute(theme.Bg)))
+	r.Render(prompt)
 	screen.Flush()
 	return &InputBox{x: x + len(prompt), y: y, output: output, eventQueue: keyboardQueue, screen: screen}
+}
+
+func byteSliceGrow(s []byte, desiredCap int) []byte {
+	if cap(s) < desiredCap {
+		ns := make([]byte, len(s), desiredCap)
+		copy(ns, s)
+		return ns
+	}
+	return s
+}
+
+func byteSliceRemove(text []byte, from, to int) []byte {
+	size := to - from
+	copy(text[from:], text[to:])
+	text = text[:len(text)-size]
+	return text
+}
+
+func byteSliceInsert(text []byte, offset int, what []byte) []byte {
+	n := len(text) + len(what)
+	text = byteSliceGrow(text, n)
+	text = text[:n]
+	copy(text[offset+len(what):], text[offset:])
+	copy(text[offset:], what)
+	return text
 }

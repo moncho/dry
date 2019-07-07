@@ -8,7 +8,6 @@ import (
 
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
 
 	gizaktermui "github.com/gizak/termui"
@@ -36,14 +35,16 @@ type StacksWidget struct {
 	offset               int
 	x, y                 int
 	height, width        int
+	screen               appui.Screen
 	startIndex, endIndex int
-	mounted              bool
 	sortMode             docker.SortMode
+
 	sync.RWMutex
+	mounted bool
 }
 
 //NewStacksWidget creates a StacksWidget
-func NewStacksWidget(swarmClient docker.SwarmAPI, y int) *StacksWidget {
+func NewStacksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *StacksWidget {
 	return &StacksWidget{
 		swarmClient:   swarmClient,
 		header:        defaultStackTableHeader,
@@ -51,9 +52,10 @@ func NewStacksWidget(swarmClient docker.SwarmAPI, y int) *StacksWidget {
 		offset:        0,
 		x:             0,
 		y:             y,
-		height:        appui.MainScreenAvailableHeight(),
+		height:        appui.MainScreenAvailableHeight(s),
+		screen:        s,
 		sortMode:      docker.SortByServiceName,
-		width:         ui.ActiveScreen.Dimensions.Width}
+		width:         s.Dimensions().Width}
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
@@ -231,7 +233,7 @@ func (s *StacksWidget) calculateVisibleRows() {
 func (s *StacksWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()
-	index := ui.ActiveScreen.Cursor.Position()
+	index := s.screen.Cursor().Position()
 	if index < 0 {
 		index = 0
 	} else if index > s.RowCount() {

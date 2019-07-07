@@ -54,23 +54,27 @@ type NodesWidget struct {
 	x, y                 int
 	height, width        int
 	startIndex, endIndex int
-	mounted              bool
+	screen               appui.Screen
 	sortMode             docker.SortMode
 	title                *termui.MarkupPar
 	totalMemory          int64
 	totalCPU             int
+
 	sync.RWMutex
+	mounted bool
 }
 
 //NewNodesWidget creates a NodesWidget
-func NewNodesWidget(swarmClient docker.SwarmAPI, y int) *NodesWidget {
+func NewNodesWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *NodesWidget {
 	return &NodesWidget{
 		swarmClient: swarmClient,
 		header:      defaultNodeTableHeader,
 		y:           y,
-		height:      appui.MainScreenAvailableHeight(),
-		width:       ui.ActiveScreen.Dimensions.Width,
-		sortMode:    docker.SortByNodeName}
+		height:      appui.MainScreenAvailableHeight(s),
+		screen:      s,
+		width:       s.Dimensions().Width,
+
+		sortMode: docker.SortByNodeName}
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
@@ -275,7 +279,7 @@ func (s *NodesWidget) calculateVisibleRows() {
 func (s *NodesWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()
-	index := ui.ActiveScreen.Cursor.Position()
+	index := s.screen.Cursor().Position()
 	if index < 0 {
 		index = 0
 	} else if index > s.RowCount() {

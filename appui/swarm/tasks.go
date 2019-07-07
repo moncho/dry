@@ -8,7 +8,6 @@ import (
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
 )
 
@@ -19,15 +18,17 @@ type TasksWidget struct {
 	totalRows            []*TaskRow
 	filterPattern        string
 	height, width        int
-	mounted              bool
 	offset               int
+	screen               appui.Screen
 	selectedIndex        int
 	sortMode             docker.SortMode
 	startIndex, endIndex int
 	swarmClient          docker.SwarmAPI
 	tableTitle           *termui.MarkupPar
 	x, y                 int
+
 	sync.RWMutex
+	mounted bool
 }
 
 //Filter applies the given filter to the container list
@@ -152,7 +153,7 @@ func (s *TasksWidget) calculateVisibleRows() {
 func (s *TasksWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()
-	index := ui.ActiveScreen.Cursor.Position()
+	index := s.screen.Cursor().Position()
 	if index < 0 {
 		index = 0
 	} else if index > s.RowCount() {

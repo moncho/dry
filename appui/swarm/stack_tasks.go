@@ -6,7 +6,6 @@ import (
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 )
 
 //StacksTasksWidget shows a service's task information
@@ -16,12 +15,12 @@ type StacksTasksWidget struct {
 }
 
 //NewStacksTasksWidget creates a StacksTasksWidget
-func NewStacksTasksWidget(swarmClient docker.SwarmAPI, y int) *StacksTasksWidget {
+func NewStacksTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *StacksTasksWidget {
 	w := StacksTasksWidget{
 		TasksWidget: TasksWidget{
 			swarmClient:   swarmClient,
 			header:        defaultTasksTableHeader,
-			height:        appui.MainScreenAvailableHeight(),
+			height:        appui.MainScreenAvailableHeight(s),
 			mounted:       false,
 			offset:        0,
 			selectedIndex: 0,
@@ -29,7 +28,7 @@ func NewStacksTasksWidget(swarmClient docker.SwarmAPI, y int) *StacksTasksWidget
 			y:             y,
 			sortMode:      docker.SortByTaskService,
 			tableTitle:    createStackTableTitle(),
-			width:         ui.ActiveScreen.Dimensions.Width},
+			width:         s.Dimensions().Width},
 	}
 	return &w
 }

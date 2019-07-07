@@ -1,20 +1,21 @@
 package app
 
 import (
+	"strings"
+
+	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
-	"strings"
 )
 
 func logsPrompt() *appui.Prompt {
 	return appui.NewPrompt("Show logs since timestamp (e.g. 2013-01-02T13:23:37) or relative (e.g. 42m for 42 minutes) or leave empty")
 }
 
-func newEventSource(events <-chan termbox.Event) ui.EventSource {
+func newEventSource(events <-chan *tcell.EventKey) ui.EventSource {
 	return ui.EventSource{
 		Events: events,
-		EventHandledCallback: func(e termbox.Event) error {
+		EventHandledCallback: func(e *tcell.EventKey) error {
 			return refreshScreen()
 		},
 	}
@@ -22,7 +23,7 @@ func newEventSource(events <-chan termbox.Event) ui.EventSource {
 
 func inspect(
 	screen *ui.Screen,
-	events <-chan termbox.Event,
+	events <-chan *tcell.EventKey,
 	inspect func(id string) (interface{}, error),
 	onClose func()) func(id string) error {
 	return func(id string) error {
@@ -31,7 +32,7 @@ func inspect(
 			return err
 		}
 		renderer := appui.NewJSONRenderer(inspected)
-		go appui.Less(renderer, screen, events, onClose)
+		go appui.Less(renderer.String(), screen, events, onClose)
 		return nil
 	}
 }

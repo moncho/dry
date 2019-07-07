@@ -11,7 +11,6 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
 
 	gizaktermui "github.com/gizak/termui"
@@ -29,31 +28,34 @@ var serviceTableHeaders = []appui.SortableColumnHeader{
 
 //ServicesWidget shows information about services running on the Swarm
 type ServicesWidget struct {
-	swarmClient          docker.SwarmAPI
+	height, width        int
 	filteredRows         []*ServiceRow
-	totalRows            []*ServiceRow
 	filterPattern        string
 	header               *termui.TableHeader
+	screen               appui.Screen
 	selectedIndex        int
-	x, y                 int
-	height, width        int
 	startIndex, endIndex int
-	mounted              bool
 	sortMode             docker.SortMode
+	swarmClient          docker.SwarmAPI
+	totalRows            []*ServiceRow
+	x, y                 int
+
 	sync.RWMutex
+	mounted bool
 }
 
 //NewServicesWidget creates a ServicesWidget
-func NewServicesWidget(swarmClient docker.SwarmAPI, y int) *ServicesWidget {
+func NewServicesWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *ServicesWidget {
 	return &ServicesWidget{
 		swarmClient:   swarmClient,
 		header:        defaultServiceTableHeader,
 		selectedIndex: 0,
 		x:             0,
 		y:             y,
-		height:        appui.MainScreenAvailableHeight(),
+		height:        appui.MainScreenAvailableHeight(s),
+		screen:        s,
 		sortMode:      docker.SortByServiceName,
-		width:         ui.ActiveScreen.Dimensions.Width}
+		width:         s.Dimensions().Width}
 
 }
 
@@ -236,7 +238,7 @@ func (s *ServicesWidget) calculateVisibleRows() {
 func (s *ServicesWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()
-	index := ui.ActiveScreen.Cursor.Position()
+	index := s.screen.Cursor().Position()
 	if index < 0 {
 		index = 0
 	} else if index > s.RowCount() {

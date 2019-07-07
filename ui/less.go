@@ -4,8 +4,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/termbox"
+
 	"github.com/moncho/dry/search"
-	"github.com/nsf/termbox-go"
 )
 
 const (
@@ -19,31 +21,37 @@ const (
 // * Basic search is supported.
 type Less struct {
 	*View
-	searchResult *search.Result
-	filtering    bool
-	following    bool
-	refresh      chan struct{}
-	screen       *Screen
+	searchResult   *search.Result
+	filtering      bool
+	following      bool
+	refresh        chan struct{}
+	screen         *Screen
+	renderer       ScreenTextRenderer
+	searchHitStyle tcell.Style
+	defaultStyle   tcell.Style
 
 	sync.Mutex
 }
 
 //NewLess creates a view that partially simulates less.
-func NewLess(screen *Screen, theme *ColorTheme) *Less {
-	width, height := termbox.Size()
-	view := NewView("", 0, 0, width, height, true, theme)
-	view.cursorY = height - 1 //Last line is at height -1
+func NewLess(theme *ColorTheme) *Less {
+	sd := ActiveScreen.Dimensions()
+
+	view := NewView("", 0, 0, sd.Width, sd.Height, true, theme)
+	view.cursorY = sd.Height - 1 //Last line is at height -1
 	less := &Less{
 		View:   view,
-		screen: screen,
+		screen: ActiveScreen,
 	}
-
+	less.renderer = NewRenderer(screenStyledRuneRenderer{ActiveScreen}).WithWidth(sd.Width)
+	less.searchHitStyle = mkStyle(termbox.ColorYellow, termbox.Attribute(less.View.theme.Bg))
+	less.defaultStyle = mkStyle(termbox.ColorWhite, termbox.Attribute(less.View.theme.Bg))
 	return less
 }
 
 //Focus sets the view as active, so it starts handling terminal events
 //and user actions
-func (less *Less) Focus(events <-chan termbox.Event) error {
+func (less *Less) Focus(events <-chan *tcell.EventKey) error {
 	refreshChan := make(chan struct{}, 1)
 
 	less.refresh = refreshChan
@@ -62,7 +70,7 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 
 	go func(inputMode *bool) {
 
-		inputBoxEventChan := make(chan termbox.Event)
+		inputBoxEventChan := make(chan *tcell.EventKey)
 		inputBoxOutput := make(chan string, 1)
 		defer close(inputBoxOutput)
 		defer close(inputBoxEventChan)
@@ -75,46 +83,42 @@ func (less *Less) Focus(events <-chan termbox.Event) error {
 				less.search(input)
 				less.refreshBuffer()
 			case event := <-events:
-				switch event.Type {
-				case termbox.EventKey:
-					if !*inputMode {
-						if event.Key == termbox.KeyEsc {
-
-							less.newLineCallback = func() {}
-							close(refreshChan)
-							return
-
-						} else if event.Key == termbox.KeyArrowDown { //cursor down
-							less.ScrollDown()
-						} else if event.Key == termbox.KeyArrowUp { // cursor up
-							less.ScrollUp()
-						} else if event.Key == termbox.KeyPgdn { //cursor one page down
-							less.ScrollPageDown()
-						} else if event.Key == termbox.KeyPgup { // cursor one page up
-							less.ScrollPageUp()
-						} else if event.Ch == 'f' { //toggle follow
-							less.flipFollow()
-						} else if event.Ch == 'F' {
-							*inputMode = true
-							less.filtering = true
-							go less.readInput(inputBoxEventChan, inputBoxOutput)
-						} else if event.Ch == 'g' { //to the top of the view
-							less.ScrollToTop()
-						} else if event.Ch == 'G' { //to the bottom of the view
-							less.ScrollToBottom()
-						} else if event.Ch == 'N' { //to the top of the view
-							less.gotoPreviousSearchHit()
-						} else if event.Ch == 'n' { //to the bottom of the view
-							less.gotoNextSearchHit()
-						} else if event.Ch == '/' {
-							*inputMode = true
-							less.filtering = false
-							go less.readInput(inputBoxEventChan, inputBoxOutput)
-						}
-					} else {
-						inputBoxEventChan <- event
+				if !*inputMode {
+					if event.Key() == tcell.KeyEsc {
+						less.newLineCallback = func() {}
+						close(refreshChan)
+						return
+					} else if event.Key() == tcell.KeyDown { //cursor down
+						less.ScrollDown()
+					} else if event.Key() == tcell.KeyUp { // cursor up
+						less.ScrollUp()
+					} else if event.Key() == tcell.KeyPgDn { //cursor one page down
+						less.ScrollPageDown()
+					} else if event.Key() == tcell.KeyPgUp { // cursor one page up
+						less.ScrollPageUp()
+					} else if event.Rune() == 'f' { //toggle follow
+						less.flipFollow()
+					} else if event.Rune() == 'F' {
+						*inputMode = true
+						less.filtering = true
+						go less.readInput(inputBoxEventChan, inputBoxOutput)
+					} else if event.Rune() == 'g' { //to the top of the view
+						less.ScrollToTop()
+					} else if event.Rune() == 'G' { //to the bottom of the view
+						less.ScrollToBottom()
+					} else if event.Rune() == 'N' { //to the top of the view
+						less.gotoPreviousSearchHit()
+					} else if event.Rune() == 'n' { //to the bottom of the view
+						less.gotoNextSearchHit()
+					} else if event.Rune() == '/' {
+						*inputMode = true
+						less.filtering = false
+						go less.readInput(inputBoxEventChan, inputBoxOutput)
 					}
+				} else {
+					inputBoxEventChan <- event
 				}
+
 			}
 		}
 	}(&inputMode)
@@ -152,7 +156,7 @@ func (less *Less) search(pattern string) error {
 	return nil
 }
 
-func (less *Less) readInput(inputBoxEventChan chan termbox.Event, inputBoxOutput chan string) error {
+func (less *Less) readInput(inputBoxEventChan chan *tcell.EventKey, inputBoxOutput chan string) error {
 	_, height := less.ViewSize()
 	eb := NewInputBox(0, height, ">>> ", inputBoxOutput, inputBoxEventChan, less.theme, less.screen)
 	eb.Focus()
@@ -206,7 +210,7 @@ func (less *Less) ScrollUp() {
 //at the end of buffer it also moves the cursor position to the bottom
 //of the screen
 func (less *Less) ScrollPageDown() {
-	_, height := less.ViewSize()
+	_, height := less.renderableArea()
 	less.scrollDown(height)
 
 }
@@ -215,7 +219,7 @@ func (less *Less) ScrollPageDown() {
 //at the beginning of buffer it also moves the cursor position to the beginning
 //of the screen
 func (less *Less) ScrollPageUp() {
-	_, height := less.ViewSize()
+	_, height := less.renderableArea()
 	less.scrollUp(height)
 
 }
@@ -295,22 +299,17 @@ func (less *Less) renderLine(x int, y int, line string) (int, error) {
 		//decided here.
 		if strings.Contains(line, less.searchResult.Pattern) {
 			if less.markup != nil {
-				start, column := 0, 0
+				var builder strings.Builder
 				for _, token := range Tokenize(line, SupportedTags) {
 					if less.markup.IsTag(token) {
-
 						continue
 					}
-					// Here comes the actual text: display it one character at a time.
-					for _, char := range token {
-						start = x + column
-						column++
-						termbox.SetCell(start, y, char, termbox.ColorYellow, termbox.Attribute(less.View.theme.Bg))
-					}
+					builder.WriteString(token)
 				}
-			} else {
-				_, lines = renderString(x, y, maxWidth, line, termbox.ColorYellow, termbox.Attribute(less.View.theme.Bg))
+				line = builder.String()
 			}
+			lines = less.renderer.On(x, y).WithStyle(less.searchHitStyle).WithWidth(maxWidth).Render(line)
+
 		} else if !less.filtering {
 			return less.View.renderLine(x, y, line)
 		}
@@ -363,7 +362,8 @@ func (less *Less) renderStatusLine() {
 	} else if less.atTheStartOfBuffer() {
 		cursorX = len(starttext)
 	}
-	renderString(0, maxLength, maxWidth, status, termbox.ColorWhite, termbox.Attribute(less.View.theme.Bg))
+	less.renderer.On(0, maxLength).WithStyle(
+		less.defaultStyle).WithWidth(maxWidth).Render(status)
 	less.cursorX = cursorX
 }
 
@@ -399,7 +399,5 @@ func (less *Less) statusLine() string {
 }
 
 func (less *Less) drawCursor() {
-	x, y := less.Cursor()
-
-	termbox.SetCursor(x, y)
+	less.screen.ShowCursor(less.Cursor())
 }

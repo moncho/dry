@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
@@ -15,7 +17,7 @@ func render(d *Dry, screen *ui.Screen) {
 
 	var count int
 	var keymap string
-	var viewRenderer ui.Renderer
+	var viewRenderer fmt.Stringer
 
 	switch d.viewMode() {
 	case ContainerMenu:
@@ -138,16 +140,16 @@ func render(d *Dry, screen *ui.Screen) {
 		}
 	}
 
-	updateCursorPosition(screen.Cursor, count)
+	updateCursorPosition(screen.Cursor(), count)
 	bufferers = append(bufferers, footer(keymap))
 
 	widgets.MessageBar.Render()
 	screen.RenderBufferer(bufferers...)
 	if viewRenderer != nil {
-		screen.RenderRenderer(appui.MainScreenHeaderSize, viewRenderer)
+		screen.Render(appui.MainScreenHeaderSize, viewRenderer.String())
 	}
 
-	for _, widget := range widgets.activeWidgets {
+	for _, widget := range widgets.activeWidgets() {
 		screen.RenderBufferer(widget)
 	}
 
@@ -156,11 +158,12 @@ func render(d *Dry, screen *ui.Screen) {
 
 func footer(mapping string) *termui.MarkupPar {
 
+	d := ui.ActiveScreen.Dimensions()
 	par := termui.NewParFromMarkupText(appui.DryTheme, mapping)
 	par.SetX(0)
-	par.SetY(ui.ActiveScreen.Dimensions.Height - 1)
+	par.SetY(d.Height - 1)
 	par.Border = false
-	par.Width = ui.ActiveScreen.Dimensions.Width
+	par.Width = d.Width
 	par.TextBgColor = gizaktermui.Attribute(appui.DryTheme.Footer)
 	par.Bg = gizaktermui.Attribute(appui.DryTheme.Footer)
 

@@ -91,8 +91,8 @@ func config(opts options) (app.Config, error) {
 
 func showLoadingScreen(screen *ui.Screen, cfg app.Config) chan<- struct{} {
 	screen.Clear()
-	midscreen := screen.Dimensions.Width / 2
-	height := screen.Dimensions.Height
+	midscreen := screen.Dimensions().Width / 2
+	height := screen.Dimensions().Height
 	screen.RenderAtColumn(midscreen-len(connecting)/2, 1, ui.White(connecting))
 	screen.RenderLine(2, height-2, fmt.Sprintf("<blue>Dry Version:</> %s", ui.White(version.VERSION)))
 	if cfg.DockerHost != "" {
@@ -104,7 +104,7 @@ func showLoadingScreen(screen *ui.Screen, cfg app.Config) chan<- struct{} {
 	stop := make(chan struct{})
 
 	//20 is a safe aproximation for the length of interpreted characters from the message
-	screen.RenderLine(ui.ActiveScreen.Dimensions.Width-len(cheese)+20, height-1, cheese)
+	screen.RenderLine(ui.ActiveScreen.Dimensions().Width-len(cheese)+20, height-1, cheese)
 	screen.Flush()
 	go func() {
 		rotorPos := 0
@@ -139,7 +139,7 @@ func main() {
 	running := false
 	defer func() {
 		if r := recover(); r != nil {
-			log.Fatalf(
+			log.Printf(
 				"Dry panicked: %v", r)
 			log.Error(string(debug.Stack()))
 			log.Print("Bye")

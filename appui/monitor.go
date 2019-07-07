@@ -43,26 +43,28 @@ var defaultRefreshRate = 500 * time.Millisecond
 //Monitor is a self-refreshing ui component that shows monitoring information about docker
 //containers.
 type Monitor struct {
-	header               *MonitorTableHeader
+	sync.RWMutex
+
+	cancel               context.CancelFunc
 	daemon               docker.ContainerDaemon
+	header               *MonitorTableHeader
+	height, width        int
+	offset               int
+	openChannels         []*docker.StatsChannel
+	refreshRate          time.Duration
 	rowChannels          map[*ContainerStatsRow]*docker.StatsChannel
 	rows                 []*ContainerStatsRow
-	openChannels         []*docker.StatsChannel
-	selectedIndex        int
-	offset               int
-	x, y                 int
-	height, width        int
 	startIndex, endIndex int
-	refreshRate          time.Duration
-	cancel               context.CancelFunc
+	screen               ScreenBuffererRender
+	selectedIndex        int
 	sortMode             sortMode
-	sync.RWMutex
+	x, y                 int
 }
 
 //NewMonitor creates a new Monitor component that will render itself on the given screen
 //at the given position and with the given width.
-func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
-	height := MainScreenAvailableHeight()
+func NewMonitor(daemon docker.ContainerDaemon, s ScreenBuffererRender, y int) *Monitor {
+	height := MainScreenAvailableHeight(s)
 	m := Monitor{
 		header:        defaultMonitorTableHeader,
 		daemon:        daemon,
@@ -71,8 +73,9 @@ func NewMonitor(daemon docker.ContainerDaemon, y int) *Monitor {
 		x:             0,
 		y:             y,
 		height:        height,
-		width:         ui.ActiveScreen.Dimensions.Width,
+		width:         ui.ActiveScreen.Dimensions().Width,
 		refreshRate:   defaultRefreshRate,
+		screen:        s,
 		sortMode:      id,
 	}
 	return &m
@@ -259,7 +262,7 @@ func (m *Monitor) highlightSelectedRow() {
 	if m.RowCount() == 0 {
 		return
 	}
-	index := ui.ActiveScreen.Cursor.Position()
+	index := m.screen.Cursor().Position()
 	if index > m.RowCount() {
 		index = m.RowCount() - 1
 	}
@@ -274,8 +277,8 @@ func (m *Monitor) highlightSelectedRow() {
 	}
 }
 func (m *Monitor) refresh() {
-	ui.ActiveScreen.RenderBufferer(m)
-	ui.ActiveScreen.Flush()
+	m.screen.RenderBufferer(m)
+	m.screen.Flush()
 }
 
 func (m *Monitor) sortRows() {
@@ -343,7 +346,7 @@ func (m *Monitor) visibleRows() []*ContainerStatsRow {
 	}
 	rows := m.rows
 	count := len(rows)
-	cursor := ui.ActiveScreen.Cursor
+	cursor := m.screen.Cursor()
 	selected := cursor.Position()
 	//everything fits
 	if count <= m.height {

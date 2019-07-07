@@ -7,7 +7,6 @@ import (
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 )
 
 const cMenuWidth = 30
@@ -21,6 +20,7 @@ type ContainerMenuWidget struct {
 	height, width int
 	selectedIndex int
 	x, y          int
+	screen        Screen
 	OnUnmount     func() error
 
 	sync.RWMutex
@@ -28,11 +28,12 @@ type ContainerMenuWidget struct {
 }
 
 //NewContainerMenuWidget creates a TasksWidget
-func NewContainerMenuWidget(dockerDaemon docker.ContainerAPI, y int) *ContainerMenuWidget {
+func NewContainerMenuWidget(dockerDaemon docker.ContainerAPI, s Screen, y int) *ContainerMenuWidget {
 	w := ContainerMenuWidget{
 		dockerDaemon: dockerDaemon,
-		height:       MainScreenAvailableHeight(),
-		width:        ui.ActiveScreen.Dimensions.Width,
+		height:       MainScreenAvailableHeight(s),
+		width:        s.Dimensions().Width,
+		screen:       s,
 		y:            y,
 	}
 
@@ -146,7 +147,7 @@ func (s *ContainerMenuWidget) align() {
 		s.cInfo.SetWidth(s.width)
 		s.cInfo.SetX(s.x)
 	}
-	rowsX := (ui.ActiveScreen.Dimensions.Width - cMenuWidth) / 2
+	rowsX := (s.screen.Dimensions().Width - cMenuWidth) / 2
 	for _, row := range s.rows {
 		row.SetX(rowsX)
 		row.SetWidth(cMenuWidth)
@@ -154,7 +155,7 @@ func (s *ContainerMenuWidget) align() {
 }
 
 func (s *ContainerMenuWidget) prepareForRendering() {
-	index := ui.ActiveScreen.Cursor.Position()
+	index := s.screen.Cursor().Position()
 	if index < 0 {
 		index = 0
 	} else if index > len(s.rows) {

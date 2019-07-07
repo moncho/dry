@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/appui/swarm"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
 )
 
 type servicesScreenEventHandler struct {
@@ -15,22 +15,22 @@ type servicesScreenEventHandler struct {
 	widget *swarm.ServicesWidget
 }
 
-func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+func (h *servicesScreenEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 	handled := true
 	dry := h.dry
 
-	switch event.Key {
-	case termbox.KeyF1: // sort
+	switch event.Key() {
+	case tcell.KeyF1: // sort
 		widgets.ServiceList.Sort()
-	case termbox.KeyF5: // refresh
+	case tcell.KeyF5: // refresh
 		h.dry.message("Refreshing the service list")
 		if err := h.widget.Unmount(); err != nil {
 			h.dry.message("There was an error refreshing the service list: " + err.Error())
 		}
-	case termbox.KeyCtrlL:
+	case tcell.KeyCtrlL:
 		h.showLogs(true, f)
 
-	case termbox.KeyCtrlR:
+	case tcell.KeyCtrlR:
 		rw := appui.NewPrompt("The selected service will be removed. Do you want to proceed? y/N")
 		widgets.add(rw)
 		forwarder := newEventForwarder()
@@ -39,7 +39,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -60,7 +60,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 			refreshScreen()
 		}()
 
-	case termbox.KeyCtrlS:
+	case tcell.KeyCtrlS:
 
 		rw := appui.NewPrompt("Scale service. Number of replicas?")
 		widgets.add(rw)
@@ -70,7 +70,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -101,7 +101,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 			}
 			refreshScreen()
 		}()
-	case termbox.KeyCtrlU: //Update service
+	case tcell.KeyCtrlU: //Update service
 		rw := appui.NewPrompt("The selected service will be updated. Do you want to proceed? y/N")
 		widgets.add(rw)
 		forwarder := newEventForwarder()
@@ -110,7 +110,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -130,9 +130,9 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 			}
 			refreshScreen()
 		}()
-	case termbox.KeyEnter:
+	case tcell.KeyEnter:
 		showTasks := func(serviceID string) error {
-			h.screen.Cursor.Reset()
+			h.screen.Cursor().Reset()
 			widgets.ServiceTasks.ForService(serviceID)
 			f(viewsToHandlers[ServiceTasks])
 			dry.changeView(ServiceTasks)
@@ -142,7 +142,7 @@ func (h *servicesScreenEventHandler) handle(event termbox.Event, f func(eventHan
 	default:
 		handled = false
 	}
-	switch event.Ch {
+	switch event.Rune() {
 	case '%':
 		handled = true
 		forwarder := newEventForwarder()

@@ -3,8 +3,7 @@ package appui
 import (
 	"bytes"
 	"encoding/json"
-
-	"github.com/moncho/dry/ui"
+	"fmt"
 )
 
 type jsonRenderer struct {
@@ -12,14 +11,14 @@ type jsonRenderer struct {
 }
 
 //NewJSONRenderer creates a renderer that renders the given data as a JSON
-func NewJSONRenderer(data interface{}) ui.Renderer {
+func NewJSONRenderer(data interface{}) fmt.Stringer {
 	return &jsonRenderer{
 		data: data,
 	}
 }
 
 //Render low-level information on a network
-func (r *jsonRenderer) Render() string {
+func (r *jsonRenderer) String() string {
 	c, _ := json.Marshal(r.data)
 
 	buf := new(bytes.Buffer)

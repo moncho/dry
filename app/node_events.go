@@ -3,11 +3,11 @@ package app
 import (
 	"fmt"
 
+	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/appui/swarm"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
 )
 
 type nodesScreenEventHandler struct {
@@ -15,18 +15,18 @@ type nodesScreenEventHandler struct {
 	widget *swarm.NodesWidget
 }
 
-func (h *nodesScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+func (h *nodesScreenEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 
 	handled := false
 
-	switch event.Key {
-	case termbox.KeyF1: //sort
+	switch event.Key() {
+	case tcell.KeyF1: //sort
 		handled = true
 		widgets.Nodes.Sort()
-	case termbox.KeyF5: // refresh
+	case tcell.KeyF5: // refresh
 		h.widget.Unmount()
 		handled = true
-	case termbox.KeyCtrlA:
+	case tcell.KeyCtrlA:
 		dry := h.dry
 		rw := appui.NewPrompt("Changing node availability, please type one of ('active'|'pause'|'drain')")
 		forwarder := newEventForwarder()
@@ -37,7 +37,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event, f func(eventHandle
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -69,9 +69,9 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event, f func(eventHandle
 			h.widget.OnEvent(changeNode)
 		}()
 
-	case termbox.KeyEnter:
+	case tcell.KeyEnter:
 		showServices := func(nodeID string) error {
-			h.screen.Cursor.Reset()
+			h.screen.Cursor().Reset()
 			widgets.NodeTasks.ForNode(nodeID)
 			h.dry.changeView(Tasks)
 			f(viewsToHandlers[Tasks])
@@ -81,7 +81,7 @@ func (h *nodesScreenEventHandler) handle(event termbox.Event, f func(eventHandle
 		handled = true
 	}
 	if !handled {
-		switch event.Ch {
+		switch event.Rune() {
 		case '%':
 			handled = true
 			forwarder := newEventForwarder()

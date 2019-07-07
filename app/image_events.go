@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/docker/docker/api/types"
+	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/appui"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
 )
 
 type imagesScreenEventHandler struct {
@@ -15,11 +15,11 @@ type imagesScreenEventHandler struct {
 	widget *appui.DockerImagesWidget
 }
 
-func (h *imagesScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
-	handled := h.handleKeyEvent(event.Key, f)
+func (h *imagesScreenEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
+	handled := h.handleKeyEvent(event.Key(), f)
 
 	if !handled {
-		handled = h.handleChEvent(event.Ch, f)
+		handled = h.handleChEvent(event.Rune(), f)
 	}
 	if handled {
 		refreshScreen()
@@ -28,14 +28,14 @@ func (h *imagesScreenEventHandler) handle(event termbox.Event, f func(eventHandl
 	}
 }
 
-func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventHandler)) bool {
+func (h *imagesScreenEventHandler) handleKeyEvent(key tcell.Key, f func(eventHandler)) bool {
 	handled := true
 	switch key {
-	case termbox.KeyF1: //sort
+	case tcell.KeyF1: //sort
 		h.widget.Sort()
-	case termbox.KeyF5: // refresh
+	case tcell.KeyF5: // refresh
 		h.widget.Unmount()
-	case termbox.KeyCtrlD: //remove dangling images
+	case tcell.KeyCtrlD: //remove dangling images
 		prompt := appui.NewPrompt("Do you want to remove dangling images? (y/N)")
 		widgets.add(prompt)
 		forwarder := newEventForwarder()
@@ -44,7 +44,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -68,7 +68,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 
 		}()
 
-	case termbox.KeyCtrlE: //remove image
+	case tcell.KeyCtrlE: //remove image
 
 		prompt := appui.NewPrompt("Do you want to remove the selected image? (y/N)")
 		widgets.add(prompt)
@@ -78,7 +78,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -107,7 +107,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 
 		}()
 
-	case termbox.KeyCtrlF: //force remove image
+	case tcell.KeyCtrlF: //force remove image
 		prompt := appui.NewPrompt("Do you want to remove the selected image? (y/N)")
 		widgets.add(prompt)
 		forwarder := newEventForwarder()
@@ -116,7 +116,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -145,7 +145,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 
 		}()
 
-	case termbox.KeyCtrlU: //remove unused images
+	case tcell.KeyCtrlU: //remove unused images
 		prompt := appui.NewPrompt("Do you want to remove all unused images? (y/N)")
 		widgets.add(prompt)
 		forwarder := newEventForwarder()
@@ -154,7 +154,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -178,7 +178,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key termbox.Key, f func(eventH
 
 		}()
 
-	case termbox.KeyEnter: //inspect image
+	case tcell.KeyEnter: //inspect image
 		forwarder := newEventForwarder()
 		f(forwarder)
 		inspectImage := inspect(
@@ -220,7 +220,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 				f(forwarder)
 				renderer := appui.NewDockerImageHistoryRenderer(history)
 
-				go appui.Less(renderer, h.screen, forwarder.events(), func() {
+				go appui.Less(renderer.String(), h.screen, forwarder.events(), func() {
 					h.dry.changeView(Images)
 					f(h)
 					refreshScreen()
@@ -246,7 +246,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 				defer f(h)
 				events := ui.EventSource{
 					Events: forwarder.events(),
-					EventHandledCallback: func(e termbox.Event) error {
+					EventHandledCallback: func(e *tcell.EventKey) error {
 						return refreshScreen()
 					},
 				}

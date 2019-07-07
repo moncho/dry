@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/moncho/dry/appui/swarm"
-	termbox "github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell"
 )
 
 type serviceTasksScreenEventHandler struct {
@@ -12,19 +12,19 @@ type serviceTasksScreenEventHandler struct {
 	widget *swarm.ServiceTasksWidget
 }
 
-func (h *serviceTasksScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+func (h *serviceTasksScreenEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 	handled := true
 
-	switch event.Key {
-	case termbox.KeyEsc:
+	switch event.Key() {
+	case tcell.KeyEsc:
 		f(viewsToHandlers[Services])
 		h.dry.changeView(Services)
 		refreshScreen()
-	case termbox.KeyF1: //sort
+	case tcell.KeyF1: //sort
 		widgets.ServiceTasks.Sort()
-	case termbox.KeyF5: // refresh
+	case tcell.KeyF5: // refresh
 		h.widget.Unmount()
-	case termbox.KeyEnter:
+	case tcell.KeyEnter:
 		forwarder := newEventForwarder()
 		f(forwarder)
 		if err := h.widget.OnEvent(
@@ -47,7 +47,7 @@ func (h *serviceTasksScreenEventHandler) handle(event termbox.Event, f func(even
 		handled = false
 	}
 	if !handled {
-		switch event.Ch {
+		switch event.Rune() {
 		case '%':
 			handled = true
 			forwarder := newEventForwarder()

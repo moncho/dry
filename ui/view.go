@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/gdamore/tcell/termbox"
 	"github.com/moncho/dry/terminal"
-	"github.com/nsf/termbox-go"
 )
 
 type eventCallback func()
@@ -26,8 +26,9 @@ type View struct {
 
 	newLineCallback eventCallback
 
-	theme  *ColorTheme
-	markup *Markup
+	markup   *Markup
+	theme    *ColorTheme
+	renderer ScreenTextRenderer
 }
 
 // ViewSize returns the width and the height of the View.
@@ -145,7 +146,7 @@ func (v *View) renderLine(x int, y int, line string) (int, error) {
 		// Methods receives a single line, so just the first element
 		// returned by the cleaner is considered
 		if len(ansiClean) > 0 {
-			_, lines = renderString(x, y, maxWidth, string(ansiClean[0]), termbox.Attribute(v.theme.Fg), termbox.Attribute(v.theme.Bg))
+			lines = v.renderer.On(x, y).Render(string(ansiClean[0]))
 		}
 	}
 	return lines, nil
@@ -160,12 +161,8 @@ func (v *View) Clear() {
 // clearRunes erases all the cells in the view.
 func (v *View) clearRunes() {
 	maxX, maxY := v.ViewSize()
-	for x := 0; x < maxX; x++ {
-		for y := 0; y < maxY; y++ {
-			termbox.SetCell(v.x0+x+1, v.y0+y+1, ' ',
-				termbox.Attribute(v.theme.Fg), termbox.Attribute(v.theme.Bg))
-		}
-	}
+
+	ActiveScreen.Fill(0, 0, maxX, maxY, ' ')
 }
 
 // Line returns a string with the line of the view's internal buffer
@@ -287,9 +284,18 @@ func (v *View) MarkupSupport() {
 	v.markup = NewMarkup(v.theme)
 }
 
+// NewMarkupView returns a new View with markup support
+func NewMarkupView(name string, x0, y0, x1, y1 int, showCursor bool, theme *ColorTheme) *View {
+	v := NewView(name, x0, y0, x1, y1, showCursor, theme)
+	v.markup = NewMarkup(theme)
+
+	return v
+}
+
 // NewView returns a new View
 func NewView(name string, x0, y0, x1, y1 int, showCursor bool, theme *ColorTheme) *View {
-	v := &View{
+
+	v := View{
 		name:  name,
 		x0:    x0,
 		y0:    y0,
@@ -304,15 +310,10 @@ func NewView(name string, x0, y0, x1, y1 int, showCursor bool, theme *ColorTheme
 		newLineCallback: func() {},
 	}
 
-	return v
-}
+	v.renderer = NewRenderer(screenStyledRuneRenderer{ActiveScreen}).WithWidth(v.width).WithStyle(
+		mkStyle(termbox.Attribute(theme.Fg), termbox.Attribute(theme.Bg)))
 
-// NewMarkupView returns a new View with markup support
-func NewMarkupView(name string, x0, y0, x1, y1 int, showCursor bool, theme *ColorTheme) *View {
-	v := NewView(name, x0, y0, x1, y1, showCursor, theme)
-	v.markup = NewMarkup(theme)
-
-	return v
+	return &v
 }
 
 // indexFunc allows to split lines by words taking into account spaces
