@@ -1,8 +1,6 @@
 package app
 
 import (
-	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -78,7 +76,6 @@ func RenderLoop(dry *Dry) {
 		}
 	}()
 
-	count := 0
 	handler := viewsToHandlers[dry.viewMode()]
 	//main loop that handles termui events
 loop:
@@ -96,9 +93,6 @@ loop:
 			})
 
 		case *tcell.EventResize:
-			fmt.Fprintf(os.Stderr, "Resizing event %d\n", count)
-			count++
-
 			screen.Resize()
 			//Reload dry ui elements
 			//TODO widgets.reload()
