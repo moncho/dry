@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -89,7 +90,7 @@ func config(opts options) (app.Config, error) {
 	return cfg, nil
 }
 
-func showLoadingScreen(screen *ui.Screen, cfg app.Config) chan<- struct{} {
+func showLoadingScreen(ctx context.Context, screen *ui.Screen, cfg app.Config) {
 	screen.Clear()
 	midscreen := screen.Dimensions().Width / 2
 	height := screen.Dimensions().Height
@@ -100,8 +101,6 @@ func showLoadingScreen(screen *ui.Screen, cfg app.Config) chan<- struct{} {
 	} else {
 		screen.RenderLine(2, height-1, ui.White("No Docker host"))
 	}
-
-	stop := make(chan struct{})
 
 	//20 is a safe aproximation for the length of interpreted characters from the message
 	screen.RenderLine(ui.ActiveScreen.Dimensions().Width-len(cheese)+20, height-1, cheese)
@@ -128,12 +127,11 @@ func showLoadingScreen(screen *ui.Screen, cfg app.Config) chan<- struct{} {
 					rotorPos--
 				}
 
-			case <-stop:
+			case <-ctx.Done():
 				return
 			}
 		}
 	}()
-	return stop
 }
 func main() {
 	running := false
@@ -192,7 +190,8 @@ func main() {
 	}
 
 	start := time.Now()
-	doneLoading := showLoadingScreen(screen, cfg)
+	ctx, cancel := context.WithCancel(context.Background())
+	showLoadingScreen(ctx, screen, cfg)
 
 	dry, err := app.NewDry(screen, cfg)
 
@@ -202,7 +201,7 @@ func main() {
 		time.Sleep(showWale - time.Since(start))
 	}
 	//dry has loaded, stopping the loading screen
-	close(doneLoading)
+	cancel()
 	if err != nil {
 		screen.Close()
 		log.Printf("Dry could not start: %s", err)
