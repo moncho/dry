@@ -1,10 +1,11 @@
 package termui
 
 import (
-	"github.com/gizak/termui"
 	"image"
 	"sort"
 	"strings"
+
+	"github.com/gizak/termui"
 )
 
 type bufferer interface {
