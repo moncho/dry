@@ -77,9 +77,7 @@ func (d *Dry) actionMessage(cid interface{}, action string) {
 }
 
 func (d *Dry) errorMessage(cid interface{}, action string, err error) {
-	d.message(
-		fmt.Sprintf(
-			"%s", err.Error()))
+	d.message(err.Error())
 }
 
 func (d *Dry) viewMode() viewMode {
