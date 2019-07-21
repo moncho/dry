@@ -127,7 +127,7 @@ func Test_notifyCallbacks(t *testing.T) {
 			i.Lock()
 			defer i.Unlock()
 			t := SourceType(event.Type)
-			i.m[t] = i.m[t] + 1
+			i.m[t] += 1
 			return nil
 		}
 	}

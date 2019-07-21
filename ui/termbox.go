@@ -70,7 +70,7 @@ func renderLineWithMarkup(x, y, maxWidth int, str string, markup *Markup) int {
 			//Check if a new line is going to be needed
 			if stringWidth > availableWidth {
 				//A new line is going to be used, the screen width has doubled
-				availableWidth = availableWidth * 2
+				availableWidth *= 2
 				additionalLines++
 				y += additionalLines
 			}
