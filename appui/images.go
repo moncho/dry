@@ -1,11 +1,12 @@
 package appui
 
 import (
-	"github.com/docker/docker/api/types"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/docker/docker/api/types"
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"

@@ -3,9 +3,10 @@ package docker
 import (
 	"context"
 	"errors"
-	"github.com/docker/docker/api/types/filters"
 	"testing"
 	"time"
+
+	"github.com/docker/docker/api/types/filters"
 
 	dockerTypes "github.com/docker/docker/api/types"
 	dockerAPI "github.com/docker/docker/client"

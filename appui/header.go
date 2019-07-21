@@ -2,8 +2,9 @@ package appui
 
 import (
 	"fmt"
-	"github.com/moncho/dry/docker"
 	"strings"
+
+	"github.com/moncho/dry/docker"
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/ui/termui"

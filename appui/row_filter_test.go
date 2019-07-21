@@ -1,9 +1,10 @@
 package appui
 
 import (
+	"testing"
+
 	gizak "github.com/gizak/termui"
 	"github.com/moncho/dry/ui/termui"
-	"testing"
 )
 
 func TestRowFilter_ByPattern(t *testing.T) {
