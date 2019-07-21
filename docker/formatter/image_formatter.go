@@ -89,7 +89,7 @@ func (formatter *ImageFormatter) Digest() string {
 func (formatter *ImageFormatter) CreatedSince() string {
 	formatter.addHeader(createdSince)
 
-	return docker.DurationForHumans(int64(formatter.image.Created))
+	return docker.DurationForHumans(formatter.image.Created)
 }
 
 //Size prettifies the image size
