@@ -47,8 +47,8 @@ func RenderLoop(dry *Dry) {
 	dryOutputChan := dry.OuputChannel()
 
 	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 
 		for range renderChan {
