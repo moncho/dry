@@ -364,7 +364,7 @@ func (m *Monitor) visibleRows() []*ContainerStatsRow {
 		m.endIndex = selected
 	}
 	if selected <= m.startIndex {
-		m.startIndex = m.startIndex - 1
+		m.startIndex -= 1
 		if selected+m.height < count {
 			m.endIndex = m.startIndex + m.height
 		}

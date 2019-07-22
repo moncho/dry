@@ -1,10 +1,11 @@
 package app
 
 import (
+	"strings"
+
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
 	termbox "github.com/nsf/termbox-go"
-	"strings"
 )
 
 func logsPrompt() *appui.Prompt {
