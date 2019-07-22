@@ -388,9 +388,9 @@ func (less *Less) statusLine() string {
 	}
 
 	if less.following {
-		end = end + " Follow: On"
+		end += " Follow: On"
 	} else {
-		end = end + " Follow: Off"
+		end += " Follow: Off"
 	}
 
 	return strings.Join(
