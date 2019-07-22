@@ -1,9 +1,10 @@
 package appui
 
 import (
-	"github.com/moncho/dry/ui/termui"
 	"strings"
 	"testing"
+
+	"github.com/moncho/dry/ui/termui"
 )
 
 func TestWidgetHeader(t *testing.T) {
