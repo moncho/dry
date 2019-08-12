@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/events"
-	"github.com/moncho/dry/ui"
 )
 
 const (
@@ -25,13 +24,13 @@ type eventsRenderer struct {
 }
 
 //NewDockerEventsRenderer creates a renderer for docker events
-func NewDockerEventsRenderer(events []events.Message) ui.Renderer {
+func NewDockerEventsRenderer(events []events.Message) fmt.Stringer {
 	return &eventsRenderer{
 		events: events,
 	}
 }
 
-func (r *eventsRenderer) Render() string {
+func (r *eventsRenderer) String() string {
 	buf := bytes.NewBufferString("")
 
 	w := tabwriter.NewWriter(buf, 20, 1, 3, ' ', 0)

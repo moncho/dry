@@ -2,6 +2,7 @@ package appui
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 
 	"github.com/docker/docker/api/types/image"
@@ -18,14 +19,12 @@ type DockerImageHistoryRenderer struct {
 }
 
 //NewDockerImageHistoryRenderer creates a renderer for the history of an image
-func NewDockerImageHistoryRenderer(imageHistory []image.HistoryResponseItem) ui.Renderer {
-	r := &DockerImageHistoryRenderer{imageHistory: imageHistory}
-
-	return r
+func NewDockerImageHistoryRenderer(imageHistory []image.HistoryResponseItem) fmt.Stringer {
+	return &DockerImageHistoryRenderer{imageHistory: imageHistory}
 }
 
 //Render docker ps
-func (r *DockerImageHistoryRenderer) Render() string {
+func (r *DockerImageHistoryRenderer) String() string {
 
 	buffer := new(bytes.Buffer)
 

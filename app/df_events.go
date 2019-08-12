@@ -5,7 +5,7 @@ import (
 
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell"
 )
 
 const (
@@ -16,15 +16,15 @@ type diskUsageScreenEventHandler struct {
 	baseEventHandler
 }
 
-func (h *diskUsageScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+func (h *diskUsageScreenEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 
 	handled := false
-	switch event.Key {
-	case termbox.KeyArrowUp | termbox.KeyArrowDown:
+	switch event.Key() {
+	case tcell.KeyUp | tcell.KeyDown:
 		//To avoid the base handler handling this
 		handled = true
 	}
-	switch event.Ch {
+	switch event.Rune() {
 	case 'p', 'P':
 		handled = true
 
@@ -36,7 +36,7 @@ func (h *diskUsageScreenEventHandler) handle(event termbox.Event, f func(eventHa
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}

@@ -10,7 +10,6 @@ import (
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
 )
 
@@ -36,20 +35,22 @@ type DockerImagesWidget struct {
 	height, width        int
 	startIndex, endIndex int
 	sortMode             docker.SortMode
-	mounted              bool
+	screen               Screen
 
 	sync.RWMutex
+	mounted bool
 }
 
-//NewDockerImagesWidget creates a renderer for a container list
-func NewDockerImagesWidget(images func() ([]types.ImageSummary, error), y int) *DockerImagesWidget {
+//NewDockerImagesWidget creates a widget to show Docker images.
+func NewDockerImagesWidget(images func() ([]types.ImageSummary, error), s Screen, y int) *DockerImagesWidget {
 	return &DockerImagesWidget{
 		y:        y,
 		images:   images,
 		header:   defaultImageTableHeader,
-		height:   MainScreenAvailableHeight(),
+		height:   MainScreenAvailableHeight(s),
+		screen:   s,
 		sortMode: docker.SortImagesByRepo,
-		width:    ui.ActiveScreen.Dimensions.Width}
+		width:    s.Dimensions().Width}
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
@@ -237,7 +238,7 @@ func (s *DockerImagesWidget) calculateVisibleRows() {
 func (s *DockerImagesWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()
-	index := ui.ActiveScreen.Cursor.Position()
+	index := s.screen.Cursor().Position()
 	if index < 0 {
 		index = 0
 	} else if index > s.RowCount() {

@@ -1,11 +1,11 @@
 package ui
 
-import tb "github.com/nsf/termbox-go"
+import "github.com/gdamore/tcell"
 
 //Key represents a keyboard key
 //Not in use.
 type Key struct {
 	KeyCodes []rune
-	Keys     []tb.Key
+	Keys     []tcell.Key
 	HelpText string
 }

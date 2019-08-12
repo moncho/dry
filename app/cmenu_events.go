@@ -5,26 +5,26 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
 )
 
 type cMenuEventHandler struct {
 	baseEventHandler
 }
 
-func (h *cMenuEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+func (h *cMenuEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 
 	handled := true
-	switch event.Key {
+	switch event.Key() {
 
-	case termbox.KeyEsc:
+	case tcell.KeyEsc:
 		widgets.ContainerMenu.Unmount()
 		refreshScreen()
 
-	case termbox.KeyEnter:
+	case tcell.KeyEnter:
 		err := widgets.ContainerMenu.OnEvent(func(s string) error {
 			//s is a string made of two parts: an Id and a description
 			//separated by ":"
@@ -70,7 +70,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -103,7 +103,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -137,7 +137,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -169,7 +169,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -205,7 +205,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -275,7 +275,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			forwarder := newEventForwarder()
 			f(forwarder)
 			refreshScreen()
-			go appui.Less(renderer, screen, forwarder.events(), func() {
+			go appui.Less(renderer.String(), screen, forwarder.events(), func() {
 				h.dry.changeView(ContainerMenu)
 				f(h)
 				refreshScreen()

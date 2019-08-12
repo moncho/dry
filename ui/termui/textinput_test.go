@@ -5,10 +5,19 @@ import (
 	"image"
 	"testing"
 
+	"github.com/gdamore/tcell"
 	"github.com/gizak/termui"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
 )
+
+type cursorMock struct{}
+
+func (c cursorMock) HideCursor() {
+
+}
+func (c cursorMock) ShowCursor(x, y int) {
+
+}
 
 func Test_TextInput_Build(t *testing.T) {
 	type arg struct {
@@ -26,7 +35,7 @@ func Test_TextInput_Build(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		input := NewTextInput(tt.arg.text)
+		input := NewTextInput(cursorMock{}, tt.arg.text)
 		text, _ := input.Text()
 
 		if text != tt.want {
@@ -37,9 +46,8 @@ func Test_TextInput_Build(t *testing.T) {
 }
 
 func Test_TextInput_Focus(t *testing.T) {
-
 	type arg struct {
-		events []termbox.Event
+		events []*tcell.EventKey
 	}
 	tests := []struct {
 		name string
@@ -48,40 +56,30 @@ func Test_TextInput_Focus(t *testing.T) {
 	}{
 		{"no initial value, no multi, no input",
 			arg{
-				[]termbox.Event{
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			""},
 		{"no initial value, no multi, input send with events",
 			arg{
-				[]termbox.Event{
-					{
-						Ch: 'h',
-					},
-					{
-						Ch: 'e',
-					},
-					{
-						Ch: 'y',
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyRune, 'h', tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyRune, 'e', tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyRune, 'y', tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			"hey"},
 	}
 
 	for _, tt := range tests {
-		c := make(chan termbox.Event)
+		c := make(chan *tcell.EventKey)
 		events := ui.EventSource{
 			Events:               c,
-			EventHandledCallback: func(e termbox.Event) error { return nil },
+			EventHandledCallback: func(e *tcell.EventKey) error { return nil },
 		}
-		input := NewTextInput("")
+		input := NewTextInput(cursorMock{}, "")
 		go func() {
 			for _, e := range tt.arg.events {
 				c <- e
@@ -105,7 +103,7 @@ func Test_TextInput_Focus(t *testing.T) {
 func Test_TextInput_FocusReleaseWithEvent(t *testing.T) {
 
 	type arg struct {
-		events []termbox.Event
+		events []*tcell.EventKey
 	}
 	tests := []struct {
 		name         string
@@ -115,43 +113,37 @@ func Test_TextInput_FocusReleaseWithEvent(t *testing.T) {
 	}{
 		{"Enter key releases Focus on single line input",
 			arg{
-				[]termbox.Event{
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			"",
 			false},
 		{"Esc key releases Focus on single line input",
 			arg{
-				[]termbox.Event{
-					{
-						Key: termbox.KeyEsc,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyEsc, 0, tcell.ModNone),
 				},
 			},
 			"",
 			true},
 		{"Esc key releases Focus on multi line input",
 			arg{
-				[]termbox.Event{
-					{
-						Key: termbox.KeyEsc,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyEsc, 0, tcell.ModNone),
 				},
 			},
 			"", true},
 	}
 
 	for _, tt := range tests {
-		c := make(chan termbox.Event)
+		c := make(chan *tcell.EventKey)
 		events := ui.EventSource{
 			Events:               c,
-			EventHandledCallback: func(e termbox.Event) error { return nil },
+			EventHandledCallback: func(e *tcell.EventKey) error { return nil },
 		}
 
-		input := NewTextInput("")
+		input := NewTextInput(cursorMock{}, "")
 		go func() {
 			for _, e := range tt.arg.events {
 				c <- e
@@ -175,12 +167,12 @@ func Test_TextInput_FocusReleaseWithEvent(t *testing.T) {
 }
 
 func Test_TextInput_FocusReleaseByClosingChan(t *testing.T) {
-	c := make(chan termbox.Event)
+	c := make(chan *tcell.EventKey)
 	events := ui.EventSource{
 		Events:               c,
-		EventHandledCallback: func(e termbox.Event) error { return nil },
+		EventHandledCallback: func(e *tcell.EventKey) error { return nil },
 	}
-	input := NewTextInput("")
+	input := NewTextInput(cursorMock{}, "")
 
 	go close(c)
 	err := input.OnFocus(events)
@@ -191,15 +183,15 @@ func Test_TextInput_FocusReleaseByClosingChan(t *testing.T) {
 }
 
 func Test_TextInput_ErrorOnCallbackReleasesFocus(t *testing.T) {
-	c := make(chan termbox.Event)
+	c := make(chan *tcell.EventKey)
 	events := ui.EventSource{
 		Events:               c,
-		EventHandledCallback: func(e termbox.Event) error { return errors.New("Everything is wrong") },
+		EventHandledCallback: func(e *tcell.EventKey) error { return errors.New("Everything is wrong") },
 	}
-	input := NewTextInput("")
+	input := NewTextInput(cursorMock{}, "")
 
 	go func() {
-		c <- termbox.Event{}
+		c <- &tcell.EventKey{}
 	}()
 
 	err := input.OnFocus(events)
@@ -285,7 +277,7 @@ func Test_TextInput_Buffer(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		input := NewTextInput(tt.arg.text)
+		input := NewTextInput(cursorMock{}, tt.arg.text)
 		input.Width = 5
 		input.Height = 3
 		if !equal(input.Buffer().CellMap, tt.want) {
@@ -300,7 +292,7 @@ func Test_TextInput_RemoveCharsFromInput(t *testing.T) {
 
 	type arg struct {
 		text   string
-		events []termbox.Event
+		events []*tcell.EventKey
 	}
 	tests := []struct {
 		name string
@@ -310,82 +302,54 @@ func Test_TextInput_RemoveCharsFromInput(t *testing.T) {
 		{"move to the end, remove last character",
 			arg{
 				"here we are",
-				[]termbox.Event{
-					{
-						Key: termbox.KeyCtrlE,
-					},
-					{
-						Key: termbox.KeyBackspace,
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyCtrlE, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyBackspace, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			"here we ar"},
 		{"move to the start, remove first character",
 			arg{
 				"here we are",
-				[]termbox.Event{
-					{
-						Key: termbox.KeyCtrlA,
-					},
-					{
-						Key: termbox.KeyCtrlD,
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyCtrlA, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			"ere we are"},
 		{"move to the start, remove until the end",
 			arg{
 				"here we are",
-				[]termbox.Event{
-					{
-						Key: termbox.KeyCtrlA,
-					},
-					{
-						Key: termbox.KeyCtrlK,
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyCtrlA, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyCtrlK, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			""},
 		{"move to the end, then back two characters, remove until the end",
 			arg{
 				"here we are",
-				[]termbox.Event{
-					{
-						Key: termbox.KeyCtrlE,
-					},
-					{
-						Key: termbox.KeyArrowLeft,
-					},
-					{
-						Key: termbox.KeyArrowLeft,
-					},
-					{
-						Key: termbox.KeyCtrlK,
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyCtrlE, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyCtrlK, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			"here we a"},
 	}
 
 	for _, tt := range tests {
-		c := make(chan termbox.Event)
+		c := make(chan *tcell.EventKey)
 		events := ui.EventSource{
 			Events:               c,
-			EventHandledCallback: func(e termbox.Event) error { return nil },
+			EventHandledCallback: func(e *tcell.EventKey) error { return nil },
 		}
-		input := NewTextInput(tt.arg.text)
+		input := NewTextInput(cursorMock{}, tt.arg.text)
 		go func() {
 			for _, e := range tt.arg.events {
 				c <- e
@@ -409,7 +373,7 @@ func Test_TextInput_RemoveCharsFromInput(t *testing.T) {
 func Test_TextInput_NonAsciiChars(t *testing.T) {
 	type arg struct {
 		text   string
-		events []termbox.Event
+		events []*tcell.EventKey
 	}
 	tests := []struct {
 		name string
@@ -420,16 +384,10 @@ func Test_TextInput_NonAsciiChars(t *testing.T) {
 			"add non-ascii char",
 			arg{
 				"lets try with",
-				[]termbox.Event{
-					{
-						Key: termbox.KeySpace,
-					},
-					{
-						Ch: 'ñ',
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyRune, ' ', tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyRune, 'ñ', tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			"lets try with ñ"},
@@ -437,13 +395,9 @@ func Test_TextInput_NonAsciiChars(t *testing.T) {
 			"remove non-ascii char",
 			arg{
 				"lets try with ñ",
-				[]termbox.Event{
-					{
-						Key: termbox.KeyBackspace,
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyBackspace, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			"lets try with "},
@@ -451,13 +405,9 @@ func Test_TextInput_NonAsciiChars(t *testing.T) {
 			"lets try some Chinese",
 			arg{
 				"世界",
-				[]termbox.Event{
-					{
-						Key: termbox.KeyBackspace,
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyBackspace, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			"世"},
@@ -465,28 +415,22 @@ func Test_TextInput_NonAsciiChars(t *testing.T) {
 			"Chinese seems like fun",
 			arg{
 				"Hello, ",
-				[]termbox.Event{
-					{
-						Ch: '世',
-					},
-					{
-						Ch: '界',
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyRune, '世', tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyRune, '界', tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			"Hello, 世界"},
 	}
 
 	for _, tt := range tests {
-		c := make(chan termbox.Event)
+		c := make(chan *tcell.EventKey)
 		events := ui.EventSource{
 			Events:               c,
-			EventHandledCallback: func(e termbox.Event) error { return nil },
+			EventHandledCallback: func(e *tcell.EventKey) error { return nil },
 		}
-		input := NewTextInput(tt.arg.text)
+		input := NewTextInput(cursorMock{}, tt.arg.text)
 		go func() {
 			for _, e := range tt.arg.events {
 				c <- e
@@ -513,7 +457,7 @@ func Test_TextInput_CursorPosition(t *testing.T) {
 
 	type arg struct {
 		text   string
-		events []termbox.Event
+		events []*tcell.EventKey
 	}
 	tests := []struct {
 		name   string
@@ -523,10 +467,8 @@ func Test_TextInput_CursorPosition(t *testing.T) {
 		{"at the end already",
 			arg{
 				text,
-				[]termbox.Event{
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			textLength,
@@ -534,13 +476,9 @@ func Test_TextInput_CursorPosition(t *testing.T) {
 		{"move to the end",
 			arg{
 				text,
-				[]termbox.Event{
-					{
-						Key: termbox.KeyCtrlE,
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyCtrlE, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			textLength,
@@ -548,13 +486,9 @@ func Test_TextInput_CursorPosition(t *testing.T) {
 		{"move to the start",
 			arg{
 				text,
-				[]termbox.Event{
-					{
-						Key: termbox.KeyCtrlA,
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyCtrlA, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			0,
@@ -562,16 +496,10 @@ func Test_TextInput_CursorPosition(t *testing.T) {
 		{"move backwards twice",
 			arg{
 				text,
-				[]termbox.Event{
-					{
-						Key: termbox.KeyArrowLeft,
-					},
-					{
-						Key: termbox.KeyArrowLeft,
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			textLength - 2,
@@ -579,19 +507,11 @@ func Test_TextInput_CursorPosition(t *testing.T) {
 		{"move backwards twice, then forward",
 			arg{
 				text,
-				[]termbox.Event{
-					{
-						Key: termbox.KeyArrowLeft,
-					},
-					{
-						Key: termbox.KeyArrowLeft,
-					},
-					{
-						Key: termbox.KeyArrowRight,
-					},
-					{
-						Key: termbox.KeyEnter,
-					},
+				[]*tcell.EventKey{
+					tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone),
+					tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone),
 				},
 			},
 			textLength - 1,
@@ -599,12 +519,12 @@ func Test_TextInput_CursorPosition(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		c := make(chan termbox.Event)
+		c := make(chan *tcell.EventKey)
 		events := ui.EventSource{
 			Events:               c,
-			EventHandledCallback: func(e termbox.Event) error { return nil },
+			EventHandledCallback: func(e *tcell.EventKey) error { return nil },
 		}
-		input := NewTextInput(tt.arg.text)
+		input := NewTextInput(cursorMock{}, tt.arg.text)
 		go func() {
 			for _, e := range tt.arg.events {
 				c <- e

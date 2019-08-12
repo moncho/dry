@@ -1,6 +1,6 @@
 package ui
 
-//Dimensions is a representation of the dimensions of an ui widget
+//Dimensions is the width and height of a ui element.
 type Dimensions struct {
 	Height, Width int
 }

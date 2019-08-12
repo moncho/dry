@@ -6,7 +6,6 @@ import (
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 )
 
 var defaultTasksTableHeader = taskTableHeader()
@@ -19,7 +18,7 @@ type NodeTasksWidget struct {
 }
 
 //NewNodeTasksWidget creates a TasksWidget
-func NewNodeTasksWidget(swarmClient docker.SwarmAPI, y int) *NodeTasksWidget {
+func NewNodeTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *NodeTasksWidget {
 
 	w := NodeTasksWidget{
 		TasksWidget: TasksWidget{
@@ -32,8 +31,8 @@ func NewNodeTasksWidget(swarmClient docker.SwarmAPI, y int) *NodeTasksWidget {
 			x:             0,
 			y:             y,
 			tableTitle:    createStackTableTitle(),
-			height:        appui.MainScreenAvailableHeight(),
-			width:         ui.ActiveScreen.Dimensions.Width},
+			height:        appui.MainScreenAvailableHeight(s),
+			width:         s.Dimensions().Width},
 	}
 
 	return &w

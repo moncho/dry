@@ -6,7 +6,7 @@ import (
 )
 
 func TestCursorScrolling(t *testing.T) {
-	view := NewView("test", 0, 0, 10, 10, true, nil)
+	view := view(10, 10)
 	testCursor(t, view, 0, 0)
 	//
 	view.CursorToBottom()
@@ -29,7 +29,7 @@ func TestCursorScrolling(t *testing.T) {
 }
 
 func TestViewBufferPosition(t *testing.T) {
-	view := NewView("test", 0, 0, 10, 10, true, nil)
+	view := view(10, 10)
 	numberOfLinesToWrite := 20
 
 	for i := 0; i < numberOfLinesToWrite; i++ {
@@ -41,7 +41,6 @@ func TestViewBufferPosition(t *testing.T) {
 			"Line 0",
 			firstLine)
 	}
-	//view.prepareViewForRender()
 	view.PageDown()
 	testCursor(t, view, 0, 0)
 	testViewPosition(t, view, 0, 9)
@@ -64,6 +63,7 @@ func testViewBufferSize(t *testing.T, view *View, expected int) {
 }
 
 func testCursor(t *testing.T, view *View, expectedX int, expectedY int) {
+	t.Helper()
 	x, y := view.Cursor()
 	if x != expectedX || y != expectedY {
 		t.Errorf("Cursor is not at the right position, expected: (%d, %d) got: (%d, %d)",
@@ -75,6 +75,8 @@ func testCursor(t *testing.T, view *View, expectedX int, expectedY int) {
 }
 
 func testViewPosition(t *testing.T, view *View, expectedX int, expectedY int) {
+	t.Helper()
+
 	x, y := view.Position()
 	if x != expectedX || y != expectedY {
 		t.Errorf("View buffer is not at the right position, expected: (%d, %d) got: (%d, %d)",
@@ -84,4 +86,25 @@ func testViewPosition(t *testing.T, view *View, expectedX int, expectedY int) {
 			y)
 	}
 
+}
+
+func view(width, height int) *View {
+
+	view := View{
+		name:            "",
+		x0:              0,
+		y0:              0,
+		x1:              width,
+		y1:              height,
+		width:           width,
+		height:          height - 1,
+		showCursor:      true,
+		theme:           nil,
+		newLineCallback: func() {},
+	}
+
+	view.renderer = NewRenderer(screenMock{}).WithWidth(view.width)
+
+	//view.cursorY = height - 1 //Last line i
+	return &view
 }

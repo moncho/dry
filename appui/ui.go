@@ -2,7 +2,6 @@ package appui
 
 import (
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 )
 
 const (
@@ -30,6 +29,6 @@ func CalcItemWidth(width, items int) int {
 }
 
 //MainScreenAvailableHeight returns how many lines in the main screen are available for rendering
-func MainScreenAvailableHeight() int {
-	return ui.ActiveScreen.Dimensions.Height - MainScreenHeaderSize - MainScreenFooterSize - 5
+func MainScreenAvailableHeight(s Screen) int {
+	return s.Dimensions().Height - MainScreenHeaderSize - MainScreenFooterSize - 5
 }

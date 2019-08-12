@@ -3,10 +3,10 @@ package app
 import (
 	"fmt"
 
+	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/appui/swarm"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
 )
 
 type stacksScreenEventHandler struct {
@@ -14,15 +14,15 @@ type stacksScreenEventHandler struct {
 	widget *swarm.StacksWidget
 }
 
-func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+func (h *stacksScreenEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 	handled := true
-	switch event.Key {
-	case termbox.KeyF1: //sort
+	switch event.Key() {
+	case tcell.KeyF1: //sort
 		widgets.Stacks.Sort()
-	case termbox.KeyF5: // refresh
+	case tcell.KeyF5: // refresh
 		h.dry.message("Refreshing stack list")
 		h.widget.Unmount()
-	case termbox.KeyEnter: //inspect
+	case tcell.KeyEnter: //inspect
 		showTasks := func(stack string) error {
 			widgets.StackTasks.ForStack(stack)
 			h.dry.changeView(StackTasks)
@@ -30,7 +30,7 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandl
 			return refreshScreen()
 		}
 		h.widget.OnEvent(showTasks)
-	case termbox.KeyCtrlR: //remove stack
+	case tcell.KeyCtrlR: //remove stack
 		rw := appui.NewPrompt("The selected stack will be removed. Do you want to proceed? y/N")
 		widgets.add(rw)
 		forwarder := newEventForwarder()
@@ -39,7 +39,7 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandl
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -66,7 +66,7 @@ func (h *stacksScreenEventHandler) handle(event termbox.Event, f func(eventHandl
 		handled = false
 	}
 	if !handled {
-		switch event.Ch {
+		switch event.Rune() {
 		case '6':
 			//already in stack screen
 			handled = true

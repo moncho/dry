@@ -10,18 +10,29 @@ import (
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
+type testScreen struct {
+	cursor     *ui.Cursor
+	dimensions ui.Dimensions
+}
+
+func (ts *testScreen) Cursor() *ui.Cursor {
+	return ts.cursor
+}
+func (ts *testScreen) Dimensions() *ui.Dimensions {
+	return &ts.dimensions
+}
+
 func TestContainerListVisibleRows(t *testing.T) {
 
 	daemon := &mocks.DockerDaemonMock{}
-	screen := &ui.Screen{
-		Cursor:     &ui.Cursor{},
-		Dimensions: &ui.Dimensions{Height: 16, Width: 40},
+	screen := &testScreen{
+		cursor:     &ui.Cursor{},
+		dimensions: ui.Dimensions{Height: 16, Width: 40},
 	}
 	//DockerDaemonMock returns 10 running 1containers
-	screen.Cursor.Max(10 - 1)
-	ui.ActiveScreen = screen
+	screen.Cursor().Max(10 - 1)
 
-	w := NewContainersWidget(daemon, 0)
+	w := NewContainersWidget(daemon, screen, 0)
 
 	if err := w.Mount(); err != nil {
 		t.Errorf("There was an error mounting the widget %v", err)
@@ -35,7 +46,7 @@ func TestContainerListVisibleRows(t *testing.T) {
 		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
 	}
 
-	ui.ActiveScreen.Cursor.ScrollCursorDown()
+	screen.Cursor().ScrollCursorDown()
 	w.prepareForRendering()
 	rows = w.visibleRows()
 	if len(rows) != w.height {
@@ -45,7 +56,7 @@ func TestContainerListVisibleRows(t *testing.T) {
 		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
 	}
 
-	ui.ActiveScreen.Cursor.ScrollTo(10)
+	screen.Cursor().ScrollTo(10)
 	w.prepareForRendering()
 	rows = w.visibleRows()
 	if len(rows) != w.height {
@@ -55,7 +66,7 @@ func TestContainerListVisibleRows(t *testing.T) {
 		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
 	}
 
-	ui.ActiveScreen.Cursor.ScrollCursorUp()
+	screen.Cursor().ScrollCursorUp()
 	w.prepareForRendering()
 	rows = w.visibleRows()
 	if len(rows) != w.height {
@@ -65,7 +76,7 @@ func TestContainerListVisibleRows(t *testing.T) {
 		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
 	}
 
-	ui.ActiveScreen.Cursor.ScrollTo(0)
+	screen.Cursor().ScrollTo(0)
 	w.prepareForRendering()
 	rows = w.visibleRows()
 	if len(rows) != w.height {
@@ -75,11 +86,11 @@ func TestContainerListVisibleRows(t *testing.T) {
 		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
 	}
 
-	ui.ActiveScreen.Cursor.ScrollCursorDown()
-	ui.ActiveScreen.Cursor.ScrollCursorDown()
-	ui.ActiveScreen.Cursor.ScrollCursorDown()
-	ui.ActiveScreen.Cursor.ScrollCursorDown()
-	ui.ActiveScreen.Cursor.ScrollCursorDown()
+	screen.Cursor().ScrollCursorDown()
+	screen.Cursor().ScrollCursorDown()
+	screen.Cursor().ScrollCursorDown()
+	screen.Cursor().ScrollCursorDown()
+	screen.Cursor().ScrollCursorDown()
 
 	w.prepareForRendering()
 	rows = w.visibleRows()

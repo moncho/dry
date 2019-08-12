@@ -14,12 +14,12 @@ type Prompt struct {
 //NewPrompt creates a new Prompt with the given title
 func NewPrompt(title string) *Prompt {
 	w := &Prompt{
-		TextInput: *termui.NewTextInput(""),
+		TextInput: *termui.NewTextInput(ui.ActiveScreen, ""),
 	}
 	w.Height = 3
 	w.Width = len(title) + 4
-	w.X = (ui.ActiveScreen.Dimensions.Width - w.Width) / 2
-	w.Y = ui.ActiveScreen.Dimensions.Height / 2
+	w.X = (ui.ActiveScreen.Dimensions().Width - w.Width) / 2
+	w.Y = ui.ActiveScreen.Dimensions().Height / 2
 	w.Bg = gtermui.Attribute(DryTheme.Bg)
 	w.TextBgColor = gtermui.Attribute(DryTheme.Bg)
 	w.TextFgColor = gtermui.ColorWhite

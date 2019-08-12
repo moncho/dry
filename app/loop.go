@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/ui"
-	"github.com/nsf/termbox-go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -80,22 +80,22 @@ func RenderLoop(dry *Dry) {
 	//main loop that handles termui events
 loop:
 	for event := range termuiEvents {
-		switch event.Type {
-		case termbox.EventInterrupt:
+		switch ev := event.(type) {
+		case *tcell.EventInterrupt:
 			break loop
-		case termbox.EventKey:
+		case *tcell.EventKey:
 			//Ctrl+C breaks the loop (and exits dry) no matter what
-			if event.Key == termbox.KeyCtrlC || event.Ch == 'Q' {
+			if ev.Key() == tcell.KeyCtrlC || ev.Rune() == 'Q' {
 				break loop
 			}
-			handler.handle(event, func(eh eventHandler) {
+			handler.handle(ev, func(eh eventHandler) {
 				handler = eh
 			})
 
-		case termbox.EventResize:
-			ui.Resize()
+		case *tcell.EventResize:
+			screen.Resize()
 			//Reload dry ui elements
-			widgets = initRegistry(dry.dockerDaemon)
+			//TODO widgets.reload()
 		}
 	}
 

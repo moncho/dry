@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
 )
 
 type commandRunner struct {
@@ -20,11 +20,11 @@ type containersScreenEventHandler struct {
 	widget appui.AppWidget
 }
 
-func (h *containersScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
-	handled := h.handleKey(event.Key, f)
+func (h *containersScreenEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
+	handled := h.handleKey(event.Key(), f)
 
 	if !handled {
-		handled = h.handleCharacter(event.Ch, f)
+		handled = h.handleCharacter(event.Rune(), f)
 	}
 	if !handled {
 		h.baseEventHandler.handle(event, f)
@@ -48,7 +48,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -82,7 +82,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -113,7 +113,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -146,7 +146,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -218,7 +218,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 			f(forwarder)
 			renderer := appui.NewDockerImageHistoryRenderer(history)
 
-			go appui.Less(renderer, screen, forwarder.events(), func() {
+			go appui.Less(renderer.String(), screen, forwarder.events(), func() {
 				h.dry.changeView(Main)
 				f(h)
 			})
@@ -315,18 +315,18 @@ func (h *containersScreenEventHandler) handleCharacter(key rune, f func(eventHan
 	return handled
 }
 
-func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHandler)) bool {
+func (h *containersScreenEventHandler) handleKey(key tcell.Key, f func(eventHandler)) bool {
 	handled := true
-	cursor := h.screen.Cursor
+	cursor := h.screen.Cursor()
 	switch key {
-	case termbox.KeyF1: //sort
+	case tcell.KeyF1: //sort
 		h.widget.Sort()
 		refreshScreen()
-	case termbox.KeyF2: //show all containers
+	case tcell.KeyF2: //show all containers
 		cursor.Reset()
 		widgets.ContainerList.ToggleShowAllContainers()
 		refreshScreen()
-	case termbox.KeyF5: // refresh
+	case tcell.KeyF5: // refresh
 		h.dry.message("Refreshing container list")
 		h.dry.dockerDaemon.Refresh(func(e error) {
 			if e == nil {
@@ -336,7 +336,7 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 				h.dry.message("There was an error refreshing: " + e.Error())
 			}
 		})
-	case termbox.KeyCtrlE: //remove all stopped
+	case tcell.KeyCtrlE: //remove all stopped
 		prompt := appui.NewPrompt(
 			"All stopped containers will be removed. Do you want to continue? (y/N) ")
 		widgets.add(prompt)
@@ -347,7 +347,7 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -371,7 +371,7 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 			}()
 		}()
 
-	case termbox.KeyCtrlK: //kill
+	case tcell.KeyCtrlK: //kill
 		if err := h.widget.OnEvent(
 			func(id string) error {
 				container := h.dry.dockerDaemon.ContainerByID(id)
@@ -386,7 +386,7 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 			}); err != nil {
 			h.dry.message("There was an error killing container: " + err.Error())
 		}
-	case termbox.KeyCtrlL: //Logs with timestamp
+	case tcell.KeyCtrlL: //Logs with timestamp
 		if err := h.widget.OnEvent(
 			func(id string) error {
 				container := h.dry.dockerDaemon.ContainerByID(id)
@@ -398,7 +398,7 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 			}); err != nil {
 			h.dry.message("There was an error showing logs: " + err.Error())
 		}
-	case termbox.KeyCtrlR: //start
+	case tcell.KeyCtrlR: //start
 		if err := h.widget.OnEvent(
 			func(id string) error {
 				container := h.dry.dockerDaemon.ContainerByID(id)
@@ -413,7 +413,7 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 			}); err != nil {
 			h.dry.message("There was an error restarting: " + err.Error())
 		}
-	case termbox.KeyCtrlT: //stop
+	case tcell.KeyCtrlT: //stop
 		if err := h.widget.OnEvent(
 			func(id string) error {
 				container := h.dry.dockerDaemon.ContainerByID(id)
@@ -428,12 +428,12 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 			}); err != nil {
 			h.dry.message("There was an error stopping container: " + err.Error())
 		}
-	case termbox.KeyEnter: //Container menu
+	case tcell.KeyEnter: //Container menu
 		showMenu := func(id string) error {
-			h.screen.Cursor.Reset()
+			h.screen.Cursor().Reset()
 			widgets.ContainerMenu.ForContainer(id)
 			widgets.ContainerMenu.OnUnmount = func() error {
-				h.screen.Cursor.Reset()
+				h.screen.Cursor().Reset()
 				h.dry.changeView(Main)
 				f(viewsToHandlers[Main])
 				return refreshScreen()
@@ -455,7 +455,7 @@ func (h *containersScreenEventHandler) handleKey(key termbox.Key, f func(eventHa
 
 //statsScreen shows container stats on the screen
 //TODO move to appui
-func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen *ui.Screen, events <-chan termbox.Event, closeCallback func()) {
+func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen *ui.Screen, events <-chan *tcell.EventKey, closeCallback func()) {
 	defer closeCallback()
 
 	if !docker.IsContainerRunning(container) {
@@ -465,16 +465,18 @@ func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen
 
 	info, infoLines := appui.NewContainerInfo(container)
 	screen.Render(1, info)
+	d := ui.ActiveScreen.Dimensions()
 
+	h, w := d.Width, d.Height
 	header := appui.NewMonitorTableHeader()
 	header.SetX(0)
-	header.SetWidth(ui.ActiveScreen.Dimensions.Width)
+	header.SetWidth(w)
 	header.SetY(infoLines + 3)
 
 	statsRow := appui.NewContainerStatsRow(container, header)
 	statsRow.SetX(0)
 	statsRow.SetY(header.Y + header.Height + 1)
-	statsRow.SetWidth(ui.ActiveScreen.Dimensions.Width)
+	statsRow.SetWidth(w)
 
 	t := time.NewTicker(1 * time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -484,7 +486,7 @@ loop:
 		select {
 
 		case event := <-events:
-			if event.Type == termbox.EventKey && event.Key == termbox.KeyEsc {
+			if event.Key() == tcell.KeyEsc {
 				break loop
 			}
 		case stat, ok := <-sChan:
@@ -496,8 +498,8 @@ loop:
 				top, _ := appui.NewDockerTop(
 					stat.ProcessList,
 					0, statsRow.Y+statsRow.Height+2,
-					ui.ActiveScreen.Dimensions.Height-infoLines-statsRow.GetHeight(),
-					ui.ActiveScreen.Dimensions.Width)
+					h-infoLines-statsRow.GetHeight(),
+					w)
 				screen.RenderBufferer(
 					header,
 					top,
@@ -522,7 +524,7 @@ func (h *containersScreenEventHandler) showLogs(id string, withTimestamp bool, f
 	go func() {
 		events := ui.EventSource{
 			Events: forwarder.events(),
-			EventHandledCallback: func(e termbox.Event) error {
+			EventHandledCallback: func(e *tcell.EventKey) error {
 				return refreshScreen()
 			},
 		}

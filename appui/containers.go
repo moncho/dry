@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
 
 	gizaktermui "github.com/gizak/termui"
@@ -30,6 +29,7 @@ var containerTableHeaders = []SortableColumnHeader{
 //ContainersWidget shows information containers
 type ContainersWidget struct {
 	dockerDaemon         docker.ContainerAPI
+	screen               Screen
 	totalRows            []*ContainerRow
 	filteredRows         []*ContainerRow
 	header               *termui.TableHeader
@@ -45,15 +45,16 @@ type ContainersWidget struct {
 }
 
 //NewContainersWidget creates a ContainersWidget
-func NewContainersWidget(dockerDaemon docker.ContainerAPI, y int) *ContainersWidget {
+func NewContainersWidget(dockerDaemon docker.ContainerAPI, s Screen, y int) *ContainersWidget {
 	return &ContainersWidget{
 		dockerDaemon:      dockerDaemon,
-		y:                 y,
 		header:            defaultContainerTableHeader,
-		height:            MainScreenAvailableHeight(),
+		height:            MainScreenAvailableHeight(s),
+		screen:            s,
 		showAllContainers: false,
 		sortMode:          docker.SortByContainerID,
-		width:             ui.ActiveScreen.Dimensions.Width}
+		width:             s.Dimensions().Width,
+		y:                 y}
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
@@ -224,7 +225,7 @@ func (s *ContainersWidget) filterRows() {
 func (s *ContainersWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()
-	index := ui.ActiveScreen.Cursor.Position()
+	index := s.screen.Cursor().Position()
 	if index < 0 {
 		index = 0
 	} else if index > s.RowCount() {

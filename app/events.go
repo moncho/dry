@@ -3,18 +3,18 @@ package app
 import (
 	"fmt"
 
+	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
 )
 
 var viewsToHandlers map[viewMode]eventHandler
 
 //eventHandler interface to handle termbox events
 type eventHandler interface {
-	//handle handles the given termbox event, the given func can be
+	//handle handles the given event key, the given func can be
 	//used to set the handler of the next event
-	handle(event termbox.Event, nextHandler func(eventHandler))
+	handle(event *tcell.EventKey, nextHandler func(eventHandler))
 }
 
 type baseEventHandler struct {
@@ -22,23 +22,23 @@ type baseEventHandler struct {
 	screen *ui.Screen
 }
 
-func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+func (b *baseEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 	dry := b.dry
 	screen := b.screen
-	cursor := screen.Cursor
+	cursor := screen.Cursor()
 	refresh := true
-	switch event.Key {
-	case termbox.KeyArrowUp, termbox.KeyCtrlP: //cursor up
+	switch event.Key() {
+	case tcell.KeyUp, tcell.KeyCtrlP: //cursor up
 		cursor.ScrollCursorUp()
-	case termbox.KeyArrowDown, termbox.KeyCtrlN: // cursor down
+	case tcell.KeyDown, tcell.KeyCtrlN: // cursor down
 		cursor.ScrollCursorDown()
-	case termbox.KeyF8: // disk usage
+	case tcell.KeyF8: // disk usage
 		f(viewsToHandlers[DiskUsage])
 		dry.changeView(DiskUsage)
 		if du, err := b.dry.dockerDaemon.DiskUsage(); err == nil {
 			widgets.DiskUsage.PrepareToRender(&du, nil)
 		}
-	case termbox.KeyF9: // docker events
+	case tcell.KeyF9: // docker events
 		refresh = false
 		view := dry.viewMode()
 		dry.changeView(EventsMode)
@@ -47,12 +47,12 @@ func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 
 		renderer := appui.NewDockerEventsRenderer(dry.dockerDaemon.EventLog().Events())
 
-		go appui.Less(renderer, screen, eh.events(), func() {
+		go appui.Less(renderer.String(), screen, eh.events(), func() {
 			dry.changeView(view)
 			f(viewsToHandlers[view])
 			refreshScreen()
 		})
-	case termbox.KeyF10: // docker info
+	case tcell.KeyF10: // docker info
 		refresh = false
 
 		view := dry.viewMode()
@@ -65,7 +65,7 @@ func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 
 			renderer := appui.NewDockerInfoRenderer(info)
 
-			go appui.Less(renderer, screen, eh.events(), func() {
+			go appui.Less(renderer.String(), screen, eh.events(), func() {
 				dry.changeView(view)
 				f(viewsToHandlers[view])
 				refreshScreen()
@@ -76,7 +76,7 @@ func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 					"There was an error retrieving Docker information: %s", err.Error()))
 		}
 	}
-	switch event.Ch {
+	switch event.Rune() {
 	case 'k':
 		cursor.ScrollCursorUp()
 	case 'j':
@@ -87,7 +87,7 @@ func (b *baseEventHandler) handle(event termbox.Event, f func(eventHandler)) {
 		view := dry.viewMode()
 		eh := newEventForwarder()
 		f(eh)
-		go appui.Less(ui.StringRenderer(help), screen, eh.events(), func() {
+		go appui.Less(help, screen, eh.events(), func() {
 			dry.changeView(view)
 			f(viewsToHandlers[view])
 			refreshScreen()
@@ -220,24 +220,24 @@ func initHandlers(dry *Dry, screen *ui.Screen) map[viewMode]eventHandler {
 }
 
 type eventHandlerForwarder interface {
-	events() chan termbox.Event
-	handle(event termbox.Event, nextHandler func(eventHandler))
+	events() <-chan *tcell.EventKey
+	handle(event *tcell.EventKey, nextHandler func(eventHandler))
 }
 
 func newEventForwarder() eventHandlerForwarder {
 	return &eventHandlerForwarderImpl{
-		eventChan: make(chan termbox.Event),
+		eventChan: make(chan *tcell.EventKey),
 	}
 }
 
 type eventHandlerForwarderImpl struct {
-	eventChan chan termbox.Event
+	eventChan chan *tcell.EventKey
 }
 
-func (b *eventHandlerForwarderImpl) events() chan termbox.Event {
+func (b *eventHandlerForwarderImpl) events() <-chan *tcell.EventKey {
 	return b.eventChan
 }
 
-func (b *eventHandlerForwarderImpl) handle(event termbox.Event, f func(eventHandler)) {
+func (b *eventHandlerForwarderImpl) handle(event *tcell.EventKey, _ func(eventHandler)) {
 	b.eventChan <- event
 }

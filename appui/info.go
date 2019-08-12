@@ -9,7 +9,6 @@ import (
 	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/go-units"
-	"github.com/moncho/dry/ui"
 )
 
 type infoRenderer struct {
@@ -17,14 +16,14 @@ type infoRenderer struct {
 }
 
 //NewDockerInfoRenderer creates renderer for for docker info
-func NewDockerInfoRenderer(env dockerTypes.Info) ui.Renderer {
+func NewDockerInfoRenderer(env dockerTypes.Info) fmt.Stringer {
 	return &infoRenderer{
 		env: env,
 	}
 }
 
 //Render system-wide information
-func (r *infoRenderer) Render() string {
+func (r *infoRenderer) String() string {
 
 	buffer := new(bytes.Buffer)
 	info := r.env

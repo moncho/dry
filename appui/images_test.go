@@ -18,16 +18,16 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 	}
 
 	cursor := ui.NewCursor()
-	ui.ActiveScreen = &ui.Screen{
-		Dimensions: &ui.Dimensions{Height: 15, Width: 100},
-		Cursor:     cursor}
+	screen := &testScreen{
+		dimensions: ui.Dimensions{Height: 15, Width: 100},
+		cursor:     cursor}
 
-	renderer := NewDockerImagesWidget(daemon.Images, 0)
+	renderer := NewDockerImagesWidget(daemon.Images, screen, 0)
 
 	if err := renderer.Mount(); err != nil {
 		t.Errorf("There was an error mounting the widget %v", err)
 	}
-	ui.ActiveScreen.Cursor.ScrollTo(0)
+	screen.Cursor().ScrollTo(0)
 	renderer.prepareForRendering()
 
 	images := renderer.visibleRows()
@@ -67,9 +67,10 @@ func TestImagesToShow(t *testing.T) {
 
 	cursor := ui.NewCursor()
 
-	ui.ActiveScreen = &ui.Screen{Dimensions: &ui.Dimensions{Height: 20, Width: 100},
-		Cursor: cursor}
-	renderer := NewDockerImagesWidget(daemon.Images, 0)
+	screen := &testScreen{
+		dimensions: ui.Dimensions{Height: 20, Width: 100},
+		cursor:     cursor}
+	renderer := NewDockerImagesWidget(daemon.Images, screen, 0)
 	if err := renderer.Mount(); err != nil {
 		t.Errorf("There was an error mounting the widget %v", err)
 	}
@@ -101,7 +102,7 @@ func TestImagesToShowNoImages(t *testing.T) {
 	imageFunc := func() ([]types.ImageSummary, error) {
 		return []types.ImageSummary{}, nil
 	}
-	renderer := NewDockerImagesWidget(imageFunc, 0)
+	renderer := NewDockerImagesWidget(imageFunc, &testScreen{}, 0)
 
 	renderer.Mount()
 

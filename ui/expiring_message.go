@@ -1,11 +1,8 @@
 package ui
 
 import (
-	"strings"
 	"sync"
 	"time"
-
-	"github.com/nsf/termbox-go"
 )
 
 // ExpiringMessageWidget shows some text for an amount time then clears itself
@@ -13,19 +10,18 @@ type ExpiringMessageWidget struct {
 	y           int
 	screenWidth int
 	clearTimer  *time.Timer
-	markup      *Markup
+	screen      *Screen
 
 	sync.RWMutex
 	message string
 }
 
 // NewExpiringMessageWidget creates a new ExpiringMessageWidget struct
-func NewExpiringMessageWidget(y, screenWidth int, theme *ColorTheme) *ExpiringMessageWidget {
+func NewExpiringMessageWidget(y int, screen *Screen) *ExpiringMessageWidget {
 	return &ExpiringMessageWidget{
-		y:           y,
-		screenWidth: screenWidth,
-		clearTimer:  nil,
-		markup:      NewMarkup(theme),
+		y:          y,
+		screen:     screen,
+		clearTimer: nil,
 	}
 
 }
@@ -59,19 +55,17 @@ func (s *ExpiringMessageWidget) Message(msg string, clearDelay time.Duration) {
 		s.Lock()
 		s.message = ""
 		s.Unlock()
-		clearMessage := strings.Repeat(" ", len(msg))
-		renderString(0, s.y, s.screenWidth, clearMessage, termbox.Attribute(s.markup.theme.Fg), termbox.Attribute(s.markup.theme.Bg))
+		ActiveScreen.Fill(0, s.y, len(msg), 1, ' ')
 	})
 
 }
 
 //Render renders the status message
 func (s *ExpiringMessageWidget) Render() {
+	s.RLock()
+	s.RUnlock()
 	if s.message == "" {
 		return
 	}
-	s.RLock()
-	defer s.RUnlock()
-	w, _ := termbox.Size()
-	renderLineWithMarkup(0, s.y, w, s.message, s.markup)
+	s.screen.RenderLine(0, s.y, s.message)
 }

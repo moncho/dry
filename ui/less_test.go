@@ -3,7 +3,22 @@ package ui
 import (
 	"fmt"
 	"testing"
+
+	"github.com/gdamore/tcell"
 )
+
+type screenMock struct {
+}
+
+func (s screenMock) Dimensions() *Dimensions {
+	return nil
+}
+func (s screenMock) Render(x int, y int, r rune, style tcell.Style) {
+
+}
+func (s screenMock) Style() tcell.Style {
+	return tcell.StyleDefault
+}
 
 //TestLessScrolling tests cursor position in less when scrolling, the cursor has to stay
 //all the time at the bottom.
@@ -37,7 +52,7 @@ func TestLessScrolling(t *testing.T) {
 //   available to render the buffer content (rows 0-8).
 // * The cursor stays at the bottom ( row 9, counting from 0).
 //It is expected that, the internal buffer marker, at most goes down until
-//line 12 = 20 (buffer size) - 8 (last row position)
+//line 11 (counting from 0) = 20 (buffer size) - 8 (last row position counting from 0)
 func TestLessBufferPosition(t *testing.T) {
 	less := newLess(10, 10)
 
@@ -68,12 +83,12 @@ func TestLessBufferPosition(t *testing.T) {
 
 	less.ScrollPageDown()
 	testLessCursor(t, less, 0, 9)
-	testLessBufferPosition(t, less, 0, 12)
+	testLessBufferPosition(t, less, 0, 11)
 	testEndOfBufferReached(t, less, true)
 
 	less.ScrollPageDown()
 	testLessCursor(t, less, 0, 9)
-	testLessBufferPosition(t, less, 0, 12)
+	testLessBufferPosition(t, less, 0, 11)
 	testEndOfBufferReached(t, less, true)
 
 }
@@ -101,9 +116,10 @@ func TestLessSearch(t *testing.T) {
 }
 
 func testLessCursor(t *testing.T, less *Less, expectedX int, expectedY int) {
+	t.Helper()
 	x, y := less.Cursor()
 	if x != expectedX || y != expectedY {
-		t.Errorf("Cursor is not at the right position, expected: (%d, %d) got: (%d, %d)",
+		t.Errorf("Cursor osition, expected: (%d, %d) got: (%d, %d)",
 			expectedX,
 			expectedY,
 			x,
@@ -112,9 +128,11 @@ func testLessCursor(t *testing.T, less *Less, expectedX int, expectedY int) {
 }
 
 func testLessBufferPosition(t *testing.T, less *Less, expectedX int, expectedY int) {
+	t.Helper()
+
 	x, y := less.Position()
 	if x != expectedX || y != expectedY {
-		t.Errorf("View buffer is not at the right position, expected: (%d, %d) got: (%d, %d)",
+		t.Errorf("Less buffer position, expected: (%d, %d) got: (%d, %d)",
 			expectedX,
 			expectedY,
 			x,
@@ -123,16 +141,16 @@ func testLessBufferPosition(t *testing.T, less *Less, expectedX int, expectedY i
 }
 
 func testEndOfBufferReached(t *testing.T, less *Less, expected bool) {
+	t.Helper()
 	if less.atTheEndOfBuffer() != expected {
 		t.Errorf("Less end-of-buffer status is: %t, expected %t.", less.atTheEndOfBuffer(), expected)
 	}
 }
 
 func newLess(width int, height int) *Less {
-	view := NewView("", 0, 0, width, height-1, true, nil)
-	view.cursorY = height - 1 //Last line i
-	//The refresh channel must hold all refresh events sent during the test
-	//TODO consume events during testing and do not rely on a buffered channel
+	view := view(width, height)
+	view.cursorY = height - 1 //Last line is at height -1
+
 	return &Less{
 		View:    view,
 		refresh: make(chan struct{}, 10),

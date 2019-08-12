@@ -4,9 +4,10 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/gdamore/tcell"
+
 	"github.com/gizak/termui"
 	"github.com/moncho/dry/ui"
-	"github.com/nsf/termbox-go"
 )
 
 // TextInput is a widget to capture user input
@@ -20,17 +21,19 @@ type TextInput struct {
 	TextFgColor   termui.Attribute
 	TextBgColor   termui.Attribute
 	TextBuilder   termui.TextBuilder
+	c             cursor
 
 	sync.RWMutex
 	isCapturing bool
 }
 
-//NewTextInput creates a new TextInput with the given initial text
-func NewTextInput(s string) *TextInput {
+//NewTextInput creates a new TextInput showing the text provided
+func NewTextInput(c cursor, s string) *TextInput {
 	textInput := &TextInput{
 		Block:         *termui.NewBlock(),
 		TextBuilder:   termui.NewMarkdownTxBuilder(),
 		cursorLinePos: 0,
+		c:             c,
 	}
 
 	if s != "" {
@@ -49,53 +52,51 @@ func (i *TextInput) OnFocus(event ui.EventSource) error {
 		return errors.New("This text input is already capturing events")
 	}
 	i.isCapturing = true
-	i.Unlock()
 	i.escaped = false
+	i.Unlock()
+
 	var err error
 mainloop:
 	for ev := range event.Events {
+		switch ev.Key() {
+		case tcell.KeyEnter:
+			err = event.EventHandledCallback(ev)
+			break mainloop
+		case tcell.KeyEsc:
+			err = event.EventHandledCallback(ev)
+			i.escaped = true
+			break mainloop
+		case tcell.KeyLeft, tcell.KeyCtrlB:
+			i.moveLeft()
+		case tcell.KeyRight, tcell.KeyCtrlF:
+			i.moveRight()
+		case tcell.KeyBackspace, tcell.KeyBackspace2:
+			i.backspace()
+		case tcell.KeyDelete, tcell.KeyCtrlD:
+			i.deleteRuneForward()
+		case tcell.KeyTab:
+			i.addRune('\t')
+			/*		case tcell.KeySpace:
+					i.addRune(' ')*/
+		case tcell.KeyCtrlK:
+			i.deleteTheRestOfTheLine()
+		case tcell.KeyHome, tcell.KeyCtrlA:
+			i.moveCursorToBeginningOfTheLine()
+		case tcell.KeyEnd, tcell.KeyCtrlE:
+			i.moveCursorToEndOfTheLine()
 
-		switch ev.Type {
-		case termbox.EventKey:
-			switch ev.Key {
-			case termbox.KeyEnter:
-				err = event.EventHandledCallback(ev)
-				break mainloop
-			case termbox.KeyEsc:
-				err = event.EventHandledCallback(ev)
-				i.escaped = true
-				break mainloop
-			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
-				i.moveLeft()
-			case termbox.KeyArrowRight, termbox.KeyCtrlF:
-				i.moveRight()
-			case termbox.KeyBackspace, termbox.KeyBackspace2:
-				i.backspace()
-			case termbox.KeyDelete, termbox.KeyCtrlD:
-				i.deleteRuneForward()
-			case termbox.KeyTab:
-				i.addRune('\t')
-			case termbox.KeySpace:
-				i.addRune(' ')
-			case termbox.KeyCtrlK:
-				i.deleteTheRestOfTheLine()
-			case termbox.KeyHome, termbox.KeyCtrlA:
-				i.moveCursorToBeginningOfTheLine()
-			case termbox.KeyEnd, termbox.KeyCtrlE:
-				i.moveCursorToEndOfTheLine()
-
-			default:
-				if ev.Ch != 0 {
-					i.addRune(ev.Ch)
-				}
+		default:
+			if ev.Rune() != 0 {
+				i.addRune(ev.Rune())
 			}
+
 		}
 		err = event.EventHandledCallback(ev)
 		if err != nil {
 			break mainloop
 		}
 	}
-	termbox.HideCursor()
+	i.c.HideCursor()
 	i.Lock()
 	i.isCapturing = false
 	i.Unlock()
@@ -227,7 +228,7 @@ func (i *TextInput) Buffer() termui.Buffer {
 	if i.isCapturing {
 		i.cursorX = i.cursorLinePos + cursorXOffset - textXOffset
 		i.cursorY = cursorYOffset
-		termbox.SetCursor(i.cursorX, i.cursorY)
+		i.c.ShowCursor(i.cursorX, i.cursorY)
 	}
 	i.RUnlock()
 

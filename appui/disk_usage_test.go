@@ -64,7 +64,7 @@ func TestDockerDiskUsageRenderer_Render(t *testing.T) {
 			//Last prune timestamp is manually set for testing
 			timeStamp, _ := time.Parse("2006-Jan-02", tt.args.timeStamp)
 			r.lastPrune = timeStamp
-			actual := r.Render()
+			actual := r.String()
 
 			golden := filepath.Join("testdata", tt.name+".golden")
 			if *update {

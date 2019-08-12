@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
 )
 
 type monitorScreenEventHandler struct {
@@ -15,29 +15,29 @@ type monitorScreenEventHandler struct {
 	widget *appui.Monitor
 }
 
-func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHandler)) {
+func (h *monitorScreenEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 	handled := false
-	cursor := h.screen.Cursor
-	switch event.Key {
-	case termbox.KeyF1:
+	cursor := h.screen.Cursor()
+	switch event.Key() {
+	case tcell.KeyF1:
 		handled = true
 		h.widget.Sort()
 		h.widget.OnEvent(nil)
-	case termbox.KeyArrowUp: //cursor up
+	case tcell.KeyUp: //cursor up
 		handled = true
 		cursor.ScrollCursorUp()
 		h.widget.OnEvent(nil)
-	case termbox.KeyArrowDown: // cursor down
+	case tcell.KeyDown: // cursor down
 		handled = true
 		cursor.ScrollCursorDown()
 		h.widget.OnEvent(nil)
-	case termbox.KeyEnter: //Container menu
+	case tcell.KeyEnter: //Container menu
 		showMenu := func(id string) error {
 			h.widget.Unmount()
-			h.screen.Cursor.Reset()
+			h.screen.Cursor().Reset()
 			widgets.ContainerMenu.ForContainer(id)
 			widgets.ContainerMenu.OnUnmount = func() error {
-				h.screen.Cursor.Reset()
+				h.screen.Cursor().Reset()
 				h.dry.changeView(Monitor)
 				f(h)
 				return refreshScreen()
@@ -51,7 +51,7 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 		}
 	}
 	if !handled {
-		switch event.Ch {
+		switch event.Rune() {
 		case 'g': //Cursor to the top
 			handled = true
 			cursor.Reset()
@@ -75,7 +75,7 @@ func (h *monitorScreenEventHandler) handle(event termbox.Event, f func(eventHand
 				defer f(h)
 				events := ui.EventSource{
 					Events: forwarder.events(),
-					EventHandledCallback: func(e termbox.Event) error {
+					EventHandledCallback: func(e *tcell.EventKey) error {
 						return refreshScreen()
 					},
 				}

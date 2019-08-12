@@ -6,7 +6,6 @@ import (
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 )
 
 //ServiceTasksWidget shows a service's task information
@@ -17,7 +16,7 @@ type ServiceTasksWidget struct {
 }
 
 //NewServiceTasksWidget creates a TasksWidget
-func NewServiceTasksWidget(swarmClient docker.SwarmAPI, y int) *ServiceTasksWidget {
+func NewServiceTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *ServiceTasksWidget {
 	w := &ServiceTasksWidget{
 		TasksWidget: TasksWidget{
 			swarmClient:   swarmClient,
@@ -27,9 +26,10 @@ func NewServiceTasksWidget(swarmClient docker.SwarmAPI, y int) *ServiceTasksWidg
 			selectedIndex: 0,
 			x:             0,
 			y:             y,
+			screen:        s,
 			sortMode:      docker.SortByTaskService,
 			tableTitle:    createStackTableTitle(),
-			width:         ui.ActiveScreen.Dimensions.Width},
+			width:         s.Dimensions().Width},
 	}
 	return w
 }
@@ -97,8 +97,8 @@ func (s *ServiceTasksWidget) Mount() error {
 		if err != nil {
 			return err
 		}
-		serviceInfo := NewServiceInfoWidget(s.swarmClient, service, s.y)
-		s.height = appui.MainScreenAvailableHeight() - serviceInfo.GetHeight()
+		serviceInfo := NewServiceInfoWidget(s.swarmClient, service, s.screen, s.y)
+		s.height = appui.MainScreenAvailableHeight(s.screen) - serviceInfo.GetHeight()
 		s.info = serviceInfo
 
 		tasks, err := s.swarmClient.ServiceTasks(s.serviceID)

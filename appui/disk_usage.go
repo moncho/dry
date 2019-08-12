@@ -59,7 +59,7 @@ func (r *DockerDiskUsageRenderer) PrepareToRender(diskUsage *types.DiskUsage, re
 }
 
 //Render returns the result of docker system df
-func (r *DockerDiskUsageRenderer) Render() string {
+func (r *DockerDiskUsageRenderer) String() string {
 	r.RLock()
 	defer r.RUnlock()
 	timeStamp := ""

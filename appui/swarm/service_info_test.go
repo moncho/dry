@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/mocks"
+	"github.com/moncho/dry/ui"
 )
 
 var update = flag.Bool("update", false, "update .golden files")
@@ -29,7 +30,10 @@ var testService = &swarm.Service{
 
 func TestServiceInfo(t *testing.T) {
 	daemon := &mocks.SwarmDockerDaemon{}
-	di := NewServiceInfoWidget(daemon, testService, 0)
+	screen := &testScreen{
+		dimensions: ui.Dimensions{Height: 14, Width: 100},
+		cursor:     ui.NewCursor()}
+	di := NewServiceInfoWidget(daemon, testService, screen, 0)
 
 	if di == nil {
 		t.Error("Service info widget is nil")

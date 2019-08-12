@@ -3,10 +3,10 @@ package app
 import (
 	"fmt"
 
+	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/appui"
 	drydocker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
-	termbox "github.com/nsf/termbox-go"
 )
 
 type networksScreenEventHandler struct {
@@ -14,19 +14,19 @@ type networksScreenEventHandler struct {
 	widget *appui.DockerNetworksWidget
 }
 
-func (h *networksScreenEventHandler) handle(event termbox.Event, f func(eh eventHandler)) {
+func (h *networksScreenEventHandler) handle(event *tcell.EventKey, f func(eh eventHandler)) {
 	dry := h.dry
 	screen := h.screen
 	handled := true
-	switch event.Key {
-	case termbox.KeyF1: //sort
+	switch event.Key() {
+	case tcell.KeyF1: //sort
 		h.widget.Sort()
 		refreshScreen()
-	case termbox.KeyF5: // refresh
+	case tcell.KeyF5: // refresh
 		h.dry.message("Refreshing network list")
 		h.widget.Unmount()
 		refreshScreen()
-	case termbox.KeyEnter: //inspect
+	case tcell.KeyEnter: //inspect
 		forwarder := newEventForwarder()
 		f(forwarder)
 		inspectNetwork := inspect(screen, forwarder.events(),
@@ -44,7 +44,7 @@ func (h *networksScreenEventHandler) handle(event termbox.Event, f func(eh event
 				fmt.Sprintf("Error inspecting image: %s", err.Error()))
 		}
 
-	case termbox.KeyCtrlE: //remove network
+	case tcell.KeyCtrlE: //remove network
 
 		prompt := appui.NewPrompt("Do you want to remove the selected network? (y/N)")
 		widgets.add(prompt)
@@ -54,7 +54,7 @@ func (h *networksScreenEventHandler) handle(event termbox.Event, f func(eh event
 		go func() {
 			events := ui.EventSource{
 				Events: forwarder.events(),
-				EventHandledCallback: func(e termbox.Event) error {
+				EventHandledCallback: func(e *tcell.EventKey) error {
 					return refreshScreen()
 				},
 			}
@@ -88,7 +88,7 @@ func (h *networksScreenEventHandler) handle(event termbox.Event, f func(eh event
 		handled = false
 	}
 	if !handled {
-		switch event.Ch {
+		switch event.Rune() {
 		case '3':
 			//already in network screen
 			handled = true

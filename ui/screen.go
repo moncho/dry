@@ -4,68 +4,99 @@ import (
 	"strings"
 	"sync"
 
-	termui "github.com/gizak/termui"
-	"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/termbox"
+
+	"github.com/gizak/termui"
 	"github.com/pkg/errors"
 )
 
 //ActiveScreen is the currently active screen
 var ActiveScreen *Screen
 
-// Screen is thin wrapper aroung Termbox library to provide basic display
-// capabilities as required by dry.
+// Screen is where text is rendered
 type Screen struct {
-	markup *Markup // Pointer to markup processor (gets created by screen).
-	Cursor *Cursor // Pointer to cursor (gets created by screen).
-	sync.RWMutex
+	markup     *Markup
+	cursor     *Cursor
 	theme      *ColorTheme
-	Dimensions *Dimensions
+	screen     tcell.Screen
+	themeStyle tcell.Style
+
+	sync.RWMutex
 	closing    bool
+	dimensions *Dimensions
 }
 
-//NewScreen initializes Termbox, creates screen along with layout and markup, and
-//calculates current screen dimensions. Once created, the screen is
-//ready for display.
+//NewScreen creates a new Screen and sets the ActiveScreen
 func NewScreen(theme *ColorTheme) (*Screen, error) {
-	if err := termbox.Init(); err != nil {
-		return nil, errors.Wrap(err, "Error initializing termbox")
+	s, err := initScreen()
+	if err != nil {
+		return nil, errors.Wrap(err, "error initializing tcell")
 	}
-	sd := screenDimensions()
-
-	termbox.SetOutputMode(termbox.Output256)
 	screen := &Screen{}
 	screen.markup = NewMarkup(theme)
-	screen.Cursor = &Cursor{pos: 0, downwards: true}
+	screen.cursor = &Cursor{pos: 0, downwards: true}
 	screen.theme = theme
-	screen.Dimensions = sd
+	screen.dimensions = screenDimensions(s)
+	screen.screen = s
+	screen.themeStyle = mkStyle(
+		screen.markup.Foreground,
+		screen.markup.Background)
 	ActiveScreen = screen
 
 	return screen, nil
 }
 
-// Close gets called upon program termination to close the Termbox.
+// Close gets called upon program termination to close
 func (screen *Screen) Close() *Screen {
-	screen.closing = true
-
 	screen.Lock()
-	defer screen.Unlock()
-	if termbox.IsInit {
-		termbox.Close()
-	}
+	screen.closing = true
+	screen.Unlock()
+	screen.screen.Fini()
 	return screen
 }
 
 // Closing returns true if this this screen is closing
 func (screen *Screen) Closing() bool {
+	screen.RLock()
+	defer screen.RUnlock()
 	return screen.closing
 }
 
-// Resize recalculates active screen dimensions.
-func Resize() {
-	termbox.Sync()
-	w, h := termbox.Size()
+//Cursor returns the screen cursor
+func (screen *Screen) Cursor() *Cursor {
+	return screen.cursor
+}
+
+//Dimensions returns the screen dimensions
+func (screen *Screen) Dimensions() *Dimensions {
+	return screen.dimensions
+}
+
+//Fill fills the squared portion of the screen delimited by the given
+//positions with the provided rune. It uses this screen style.
+func (screen *Screen) Fill(x, y, w, h int, r rune) {
+	for ly := 0; ly < h; ly++ {
+		for lx := 0; lx < w; lx++ {
+			screen.RenderRune(x+lx, y+ly, r)
+		}
+	}
+}
+
+//RenderRune renders the given rune on the given pos
+func (screen *Screen) RenderRune(x, y int, r rune) {
+	screen.screen.SetCell(x, y, screen.themeStyle, r)
+
+}
+
+// Resize resizes this screen
+func (screen *Screen) Resize() {
+	w, h := screen.screen.Size()
+
 	if w > 0 && h > 0 {
-		ActiveScreen.Dimensions.Width, ActiveScreen.Dimensions.Height = termbox.Size()
+		screen.Lock()
+		screen.dimensions.Width, screen.dimensions.Height = w, h
+		screen.Unlock()
 	}
 }
 
@@ -73,7 +104,9 @@ func Resize() {
 func (screen *Screen) Clear() *Screen {
 	screen.Lock()
 	defer screen.Unlock()
-	termbox.Clear(termbox.Attribute(screen.theme.Fg), termbox.Attribute(screen.theme.Bg))
+	st := mkStyle(
+		termbox.Attribute(screen.theme.Fg), termbox.Attribute(screen.theme.Bg))
+	screen.screen.Fill(' ', st)
 	return screen
 }
 
@@ -84,11 +117,12 @@ func (screen *Screen) ClearAndFlush() *Screen {
 	return screen
 }
 
-// Sync forces a complete resync between the termbox and a terminal.
+// Sync is like flsuh but it ensures that whatever internal states are
+// synchronized before flushing content to the screen.
 func (screen *Screen) Sync() *Screen {
 	screen.Lock()
 	defer screen.Unlock()
-	termbox.Sync()
+	screen.screen.Sync()
 	return screen
 }
 
@@ -100,11 +134,16 @@ func (screen *Screen) ColorTheme(theme *ColorTheme) *Screen {
 	return screen
 }
 
-//Flush synchronizes the internal buffer with the terminal.
+//HideCursor hides the cursor.
+func (screen *Screen) HideCursor() {
+	screen.screen.HideCursor()
+}
+
+// Flush makes all the content visible on the display.
 func (screen *Screen) Flush() *Screen {
 	screen.Lock()
 	defer screen.Unlock()
-	termbox.Flush()
+	screen.screen.Show()
 	return screen
 }
 
@@ -119,7 +158,8 @@ func (screen *Screen) RenderBufferer(bs ...termui.Bufferer) {
 		// set cels in buf
 		for p, c := range buf.CellMap {
 			if p.In(buf.Area) {
-				termbox.SetCell(p.X, p.Y, c.Ch, toTmAttr(c.Fg), toTmAttr(c.Bg))
+				s := mkStyle(toTmAttr(c.Fg), toTmAttr(c.Bg))
+				screen.screen.SetCell(p.X, p.Y, s, c.Ch)
 			}
 		}
 	}
@@ -132,14 +172,17 @@ func (screen *Screen) RenderLine(x int, y int, str string) {
 
 	column := x
 	for _, token := range Tokenize(str, SupportedTags) {
-		// First check if it's a tag. Tags are eaten up and not displayed.
+		//Tags are not rendered
 		if screen.markup.IsTag(token) {
 			continue
 		}
 
-		// Here comes the actual text: displays it one character at a time.
+		//Render one character at a time
 		for _, char := range token {
-			termbox.SetCell(column, y, char, screen.markup.Foreground, screen.markup.Background)
+			s := mkStyle(
+				screen.markup.Foreground,
+				screen.markup.Background)
+			screen.screen.SetCell(column, y, s, char)
 			column++
 		}
 	}
@@ -158,16 +201,11 @@ func (screen *Screen) RenderAtColumn(column, initialRow int, str string) {
 	}
 }
 
-//RenderRenderer renders the given renderer starting from the given row
-func (screen *Screen) RenderRenderer(row int, renderer Renderer) {
-	screen.Render(row, renderer.Render())
+//ShowCursor shows the cursor on the given position
+func (screen *Screen) ShowCursor(x, y int) {
+	screen.screen.ShowCursor(x, y)
 }
 
 func toTmAttr(x termui.Attribute) termbox.Attribute {
 	return termbox.Attribute(x)
-}
-
-func screenDimensions() *Dimensions {
-	w, h := termbox.Size()
-	return &Dimensions{Width: w, Height: h}
 }
