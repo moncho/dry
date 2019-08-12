@@ -16,7 +16,7 @@ type ServiceTasksWidget struct {
 }
 
 //NewServiceTasksWidget creates a TasksWidget
-func NewServiceTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *ServiceTasksWidget {
+func NewServiceTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen) *ServiceTasksWidget {
 	w := &ServiceTasksWidget{
 		TasksWidget: TasksWidget{
 			swarmClient:   swarmClient,
@@ -24,12 +24,9 @@ func NewServiceTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *
 			mounted:       false,
 			offset:        0,
 			selectedIndex: 0,
-			x:             0,
-			y:             y,
 			screen:        s,
 			sortMode:      docker.SortByTaskService,
-			tableTitle:    createStackTableTitle(),
-			width:         s.Dimensions().Width},
+			tableTitle:    createStackTableTitle()},
 	}
 	return w
 }
@@ -38,41 +35,42 @@ func NewServiceTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *
 func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-	y := s.y
 	buf := gizaktermui.NewBuffer()
-	if s.mounted {
-		s.prepareForRendering()
-		buf.Merge(s.info.Buffer())
-		y += s.info.GetHeight()
-		var filter string
-		if s.filterPattern != "" {
-			filter = fmt.Sprintf(
-				"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
+	if !s.mounted {
+		return buf
+	}
+	y := s.screen.Bounds().Min.Y
+	s.prepareForRendering()
+	buf.Merge(s.info.Buffer())
+	y += s.info.GetHeight()
+	var filter string
+	if s.filterPattern != "" {
+		filter = fmt.Sprintf(
+			"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
+	}
+	s.tableTitle.Content(fmt.Sprintf(
+		"<b><blue>Service %s tasks: </><yellow>%d</></>", s.info.serviceName, s.RowCount()) + " " + filter)
+
+	s.tableTitle.Y = y
+	buf.Merge(s.tableTitle.Buffer())
+	y += s.tableTitle.GetHeight()
+
+	s.updateHeader()
+	s.header.SetY(y)
+	buf.Merge(s.header.Buffer())
+	y += s.header.GetHeight()
+
+	selected := s.selectedIndex - s.startIndex
+
+	for i, serviceRow := range s.visibleRows() {
+		serviceRow.SetY(y)
+		y += serviceRow.GetHeight()
+		if i != selected {
+			serviceRow.NotHighlighted()
+		} else {
+			serviceRow.Highlighted()
 		}
-		s.tableTitle.Content(fmt.Sprintf(
-			"<b><blue>Service %s tasks: </><yellow>%d</></>", s.info.serviceName, s.RowCount()) + " " + filter)
-
-		s.tableTitle.Y = y
-		buf.Merge(s.tableTitle.Buffer())
-		y += s.tableTitle.GetHeight()
-
-		s.updateHeader()
-		s.header.SetY(y)
-		buf.Merge(s.header.Buffer())
-		y += s.header.GetHeight()
-
-		selected := s.selectedIndex - s.startIndex
-
-		for i, serviceRow := range s.visibleRows() {
-			serviceRow.SetY(y)
-			y += serviceRow.GetHeight()
-			if i != selected {
-				serviceRow.NotHighlighted()
-			} else {
-				serviceRow.Highlighted()
-			}
-			buf.Merge(serviceRow.Buffer())
-		}
+		buf.Merge(serviceRow.Buffer())
 	}
 	return buf
 }
@@ -92,29 +90,29 @@ func (s *ServiceTasksWidget) ForService(serviceID string) {
 func (s *ServiceTasksWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
-	if !s.mounted {
-		service, err := s.swarmClient.Service(s.serviceID)
-		if err != nil {
-			return err
-		}
-		serviceInfo := NewServiceInfoWidget(s.swarmClient, service, s.screen, s.y)
-		s.height = appui.MainScreenAvailableHeight(s.screen) - serviceInfo.GetHeight()
-		s.info = serviceInfo
-
-		tasks, err := s.swarmClient.ServiceTasks(s.serviceID)
-		if err != nil {
-			return err
-		}
-
-		rows := make([]*TaskRow, len(tasks))
-		for i, task := range tasks {
-			rows[i] = NewTaskRow(s.swarmClient, task, s.header)
-		}
-		s.totalRows = rows
-
-		s.align()
-		s.mounted = true
+	if s.mounted {
+		return nil
 	}
+	service, err := s.swarmClient.Service(s.serviceID)
+	if err != nil {
+		return err
+	}
+	serviceInfo := NewServiceInfoWidget(s.swarmClient, service, s.screen)
+	s.info = serviceInfo
+
+	tasks, err := s.swarmClient.ServiceTasks(s.serviceID)
+	if err != nil {
+		return err
+	}
+
+	rows := make([]*TaskRow, len(tasks))
+	for i, task := range tasks {
+		rows[i] = NewTaskRow(s.swarmClient, task, s.header)
+	}
+	s.totalRows = rows
+
+	s.align()
+	s.mounted = true
 	return nil
 }
 

@@ -18,7 +18,7 @@ type NodeTasksWidget struct {
 }
 
 //NewNodeTasksWidget creates a TasksWidget
-func NewNodeTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *NodeTasksWidget {
+func NewNodeTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen) *NodeTasksWidget {
 
 	w := NodeTasksWidget{
 		TasksWidget: TasksWidget{
@@ -28,11 +28,7 @@ func NewNodeTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *Nod
 			sortMode:      docker.SortByTaskService,
 			selectedIndex: 0,
 			offset:        0,
-			x:             0,
-			y:             y,
-			tableTitle:    createStackTableTitle(),
-			height:        appui.MainScreenAvailableHeight(s),
-			width:         s.Dimensions().Width},
+			tableTitle:    createStackTableTitle()},
 	}
 
 	return &w
@@ -43,39 +39,40 @@ func NewNodeTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *Nod
 func (s *NodeTasksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-	y := s.y
 	buf := gizaktermui.NewBuffer()
-	if s.mounted {
-		s.prepareForRendering()
-		var filter string
-		if s.filterPattern != "" {
-			filter = fmt.Sprintf(
-				"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
+	if !s.mounted {
+		return buf
+	}
+	y := s.screen.Bounds().Min.Y
+	s.prepareForRendering()
+	var filter string
+	if s.filterPattern != "" {
+		filter = fmt.Sprintf(
+			"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
+	}
+	s.tableTitle.Content(fmt.Sprintf(
+		"<b><blue>Node %s tasks: </><yellow>%d</></>", s.nodeName, s.RowCount()) + " " + filter)
+
+	s.tableTitle.Y = y
+	buf.Merge(s.tableTitle.Buffer())
+	y += s.tableTitle.GetHeight()
+
+	s.updateHeader()
+	s.header.SetY(y)
+	buf.Merge(s.header.Buffer())
+	y += s.header.GetHeight()
+
+	selected := s.selectedIndex - s.startIndex
+
+	for i, serviceRow := range s.visibleRows() {
+		serviceRow.SetY(y)
+		y += serviceRow.GetHeight()
+		if i != selected {
+			serviceRow.NotHighlighted()
+		} else {
+			serviceRow.Highlighted()
 		}
-		s.tableTitle.Content(fmt.Sprintf(
-			"<b><blue>Node %s tasks: </><yellow>%d</></>", s.nodeName, s.RowCount()) + " " + filter)
-
-		s.tableTitle.Y = y
-		buf.Merge(s.tableTitle.Buffer())
-		y += s.tableTitle.GetHeight()
-
-		s.updateHeader()
-		s.header.SetY(y)
-		buf.Merge(s.header.Buffer())
-		y += s.header.GetHeight()
-
-		selected := s.selectedIndex - s.startIndex
-
-		for i, serviceRow := range s.visibleRows() {
-			serviceRow.SetY(y)
-			y += serviceRow.GetHeight()
-			if i != selected {
-				serviceRow.NotHighlighted()
-			} else {
-				serviceRow.Highlighted()
-			}
-			buf.Merge(serviceRow.Buffer())
-		}
+		buf.Merge(serviceRow.Buffer())
 	}
 	return buf
 }
@@ -93,35 +90,36 @@ func (s *NodeTasksWidget) ForNode(nodeID string) {
 func (s *NodeTasksWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
-	if !s.mounted {
-		node, err := s.swarmClient.Node(s.nodeID)
-		if err != nil {
-			return err
-		}
-		nodeName, _ := s.swarmClient.ResolveNode(node.ID)
-
-		s.nodeName = nodeName
-
-		tasks, err := s.swarmClient.NodeTasks(node.ID)
-		if err != nil {
-
-			return err
-		}
-
-		var tasksRows []*TaskRow
-		for _, task := range tasks {
-			tasksRows = append(tasksRows, NewTaskRow(s.swarmClient, task, s.header))
-		}
-		s.totalRows = tasksRows
-		s.align()
-		s.mounted = true
+	if s.mounted {
+		return nil
 
 	}
+	node, err := s.swarmClient.Node(s.nodeID)
+	if err != nil {
+		return err
+	}
+	nodeName, _ := s.swarmClient.ResolveNode(node.ID)
+
+	s.nodeName = nodeName
+
+	tasks, err := s.swarmClient.NodeTasks(node.ID)
+	if err != nil {
+
+		return err
+	}
+
+	var tasksRows []*TaskRow
+	for _, task := range tasks {
+		tasksRows = append(tasksRows, NewTaskRow(s.swarmClient, task, s.header))
+	}
+	s.totalRows = tasksRows
+	s.align()
+	s.mounted = true
+
 	return nil
 }
 
 //Name returns this widget name
 func (s *NodeTasksWidget) Name() string {
 	return "NodeTasksWidget"
-
 }

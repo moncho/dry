@@ -17,9 +17,7 @@ type ContainerMenuWidget struct {
 	rows          []*Row
 	cInfo         *ContainerDetailsWidget
 	cID           string
-	height, width int
 	selectedIndex int
-	x, y          int
 	screen        Screen
 	OnUnmount     func() error
 
@@ -28,13 +26,10 @@ type ContainerMenuWidget struct {
 }
 
 //NewContainerMenuWidget creates a TasksWidget
-func NewContainerMenuWidget(dockerDaemon docker.ContainerAPI, s Screen, y int) *ContainerMenuWidget {
+func NewContainerMenuWidget(dockerDaemon docker.ContainerAPI, s Screen) *ContainerMenuWidget {
 	w := ContainerMenuWidget{
 		dockerDaemon: dockerDaemon,
-		height:       MainScreenAvailableHeight(s),
-		width:        s.Dimensions().Width,
 		screen:       s,
-		y:            y,
 	}
 
 	return &w
@@ -42,14 +37,15 @@ func NewContainerMenuWidget(dockerDaemon docker.ContainerAPI, s Screen, y int) *
 
 //Buffer returns the content of this widget as a termui.Buffer
 func (s *ContainerMenuWidget) Buffer() gizaktermui.Buffer {
+	s.RLock()
+	defer s.RUnlock()
+
 	buf := gizaktermui.NewBuffer()
 	if !s.mounted {
 		return buf
 	}
-	s.RLock()
-	defer s.RUnlock()
 
-	y := s.y
+	y := s.screen.Bounds().Min.Y
 	s.prepareForRendering()
 	if s.cInfo != nil {
 		buf.Merge(s.cInfo.Buffer())
@@ -86,14 +82,15 @@ func (s *ContainerMenuWidget) ForContainer(cID string) {
 
 //Mount prepares this widget for rendering
 func (s *ContainerMenuWidget) Mount() error {
+	s.Lock()
+	defer s.Unlock()
 	if s.mounted {
 		return nil
 	}
-	s.Lock()
-	defer s.Unlock()
+
 	c := s.dockerDaemon.ContainerByID(s.cID)
 	if c != nil {
-		s.cInfo = NewContainerDetailsWidget(c, s.y)
+		s.cInfo = NewContainerDetailsWidget(c, s.screen.Bounds().Min.Y)
 	}
 	rows := make([]*Row, len(docker.CommandDescriptions))
 	for i, command := range docker.CommandDescriptions {
@@ -143,11 +140,12 @@ func (s *ContainerMenuWidget) Unmount() error {
 }
 
 func (s *ContainerMenuWidget) align() {
+	width := s.screen.Bounds().Dx()
 	if s.cInfo != nil {
-		s.cInfo.SetWidth(s.width)
-		s.cInfo.SetX(s.x)
+		s.cInfo.SetWidth(width)
+		s.cInfo.SetX(s.screen.Bounds().Min.X)
 	}
-	rowsX := (s.screen.Dimensions().Width - cMenuWidth) / 2
+	rowsX := (width - cMenuWidth) / 2
 	for _, row := range s.rows {
 		row.SetX(rowsX)
 		row.SetWidth(cMenuWidth)

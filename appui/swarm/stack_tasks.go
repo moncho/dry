@@ -15,20 +15,16 @@ type StacksTasksWidget struct {
 }
 
 //NewStacksTasksWidget creates a StacksTasksWidget
-func NewStacksTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *StacksTasksWidget {
+func NewStacksTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen) *StacksTasksWidget {
 	w := StacksTasksWidget{
 		TasksWidget: TasksWidget{
 			swarmClient:   swarmClient,
 			header:        defaultTasksTableHeader,
-			height:        appui.MainScreenAvailableHeight(s),
 			mounted:       false,
 			offset:        0,
 			selectedIndex: 0,
-			x:             0,
-			y:             y,
 			sortMode:      docker.SortByTaskService,
-			tableTitle:    createStackTableTitle(),
-			width:         s.Dimensions().Width},
+			tableTitle:    createStackTableTitle()},
 	}
 	return &w
 }
@@ -37,39 +33,41 @@ func NewStacksTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *S
 func (s *StacksTasksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-	y := s.y
 	buf := gizaktermui.NewBuffer()
-	if s.mounted {
-		s.prepareForRendering()
-		var filter string
-		if s.filterPattern != "" {
-			filter = fmt.Sprintf(
-				"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
+	if !s.mounted {
+		return buf
+	}
+	y := s.screen.Bounds().Min.Y
+
+	s.prepareForRendering()
+	var filter string
+	if s.filterPattern != "" {
+		filter = fmt.Sprintf(
+			"<b><blue> | Active filter: </><yellow>%s</></> ", s.filterPattern)
+	}
+	s.tableTitle.Content(fmt.Sprintf(
+		"<b><blue>Stack %s tasks: </><yellow>%d</></>", s.stack, s.RowCount()) + " " + filter)
+
+	s.tableTitle.Y = y
+	buf.Merge(s.tableTitle.Buffer())
+	y += s.tableTitle.GetHeight()
+
+	s.updateHeader()
+	s.header.SetY(y)
+	buf.Merge(s.header.Buffer())
+	y += s.header.GetHeight()
+
+	selected := s.selectedIndex - s.startIndex
+
+	for i, serviceRow := range s.visibleRows() {
+		serviceRow.SetY(y)
+		y += serviceRow.GetHeight()
+		if i != selected {
+			serviceRow.NotHighlighted()
+		} else {
+			serviceRow.Highlighted()
 		}
-		s.tableTitle.Content(fmt.Sprintf(
-			"<b><blue>Stack %s tasks: </><yellow>%d</></>", s.stack, s.RowCount()) + " " + filter)
-
-		s.tableTitle.Y = y
-		buf.Merge(s.tableTitle.Buffer())
-		y += s.tableTitle.GetHeight()
-
-		s.updateHeader()
-		s.header.SetY(y)
-		buf.Merge(s.header.Buffer())
-		y += s.header.GetHeight()
-
-		selected := s.selectedIndex - s.startIndex
-
-		for i, serviceRow := range s.visibleRows() {
-			serviceRow.SetY(y)
-			y += serviceRow.GetHeight()
-			if i != selected {
-				serviceRow.NotHighlighted()
-			} else {
-				serviceRow.Highlighted()
-			}
-			buf.Merge(serviceRow.Buffer())
-		}
+		buf.Merge(serviceRow.Buffer())
 	}
 	return buf
 }

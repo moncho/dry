@@ -467,7 +467,7 @@ func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen
 	screen.Render(1, info)
 	d := ui.ActiveScreen.Dimensions()
 
-	h, w := d.Width, d.Height
+	w, h := d.Width, d.Height
 	header := appui.NewMonitorTableHeader()
 	header.SetX(0)
 	header.SetWidth(w)

@@ -27,8 +27,3 @@ func CalcItemWidth(width, items int) int {
 	spacing := DefaultColumnSpacing * items
 	return (width - spacing) / items
 }
-
-//MainScreenAvailableHeight returns how many lines in the main screen are available for rendering
-func MainScreenAvailableHeight(s Screen) int {
-	return s.Dimensions().Height - MainScreenHeaderSize - MainScreenFooterSize - 5
-}

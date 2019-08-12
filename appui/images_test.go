@@ -10,7 +10,6 @@ import (
 )
 
 func TestImagesToShowSmallScreen(t *testing.T) {
-	_ = "breakpoint"
 	daemon := &mocks.DockerDaemonMock{}
 	imagesLen := daemon.ImagesCount()
 	if imagesLen != 5 {
@@ -19,10 +18,10 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 
 	cursor := ui.NewCursor()
 	screen := &testScreen{
-		dimensions: ui.Dimensions{Height: 15, Width: 100},
+		dimensions: ui.Dimensions{Height: 4, Width: 100},
 		cursor:     cursor}
 
-	renderer := NewDockerImagesWidget(daemon.Images, screen, 0)
+	renderer := NewDockerImagesWidget(daemon.Images, screen)
 
 	if err := renderer.Mount(); err != nil {
 		t.Errorf("There was an error mounting the widget %v", err)
@@ -70,7 +69,7 @@ func TestImagesToShow(t *testing.T) {
 	screen := &testScreen{
 		dimensions: ui.Dimensions{Height: 20, Width: 100},
 		cursor:     cursor}
-	renderer := NewDockerImagesWidget(daemon.Images, screen, 0)
+	renderer := NewDockerImagesWidget(daemon.Images, screen)
 	if err := renderer.Mount(); err != nil {
 		t.Errorf("There was an error mounting the widget %v", err)
 	}
@@ -102,7 +101,7 @@ func TestImagesToShowNoImages(t *testing.T) {
 	imageFunc := func() ([]types.ImageSummary, error) {
 		return []types.ImageSummary{}, nil
 	}
-	renderer := NewDockerImagesWidget(imageFunc, &testScreen{}, 0)
+	renderer := NewDockerImagesWidget(imageFunc, &testScreen{})
 
 	renderer.Mount()
 

@@ -33,7 +33,7 @@ func TestServiceInfo(t *testing.T) {
 	screen := &testScreen{
 		dimensions: ui.Dimensions{Height: 14, Width: 100},
 		cursor:     ui.NewCursor()}
-	di := NewServiceInfoWidget(daemon, testService, screen, 0)
+	di := NewServiceInfoWidget(daemon, testService, screen)
 
 	if di == nil {
 		t.Error("Service info widget is nil")

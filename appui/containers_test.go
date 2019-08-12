@@ -1,6 +1,7 @@
 package appui
 
 import (
+	"image"
 	"sort"
 	"testing"
 
@@ -18,8 +19,9 @@ type testScreen struct {
 func (ts *testScreen) Cursor() *ui.Cursor {
 	return ts.cursor
 }
-func (ts *testScreen) Dimensions() *ui.Dimensions {
-	return &ts.dimensions
+
+func (ts *testScreen) Bounds() image.Rectangle {
+	return image.Rect(0, 0, ts.dimensions.Width, ts.dimensions.Height)
 }
 
 func TestContainerListVisibleRows(t *testing.T) {
@@ -27,20 +29,20 @@ func TestContainerListVisibleRows(t *testing.T) {
 	daemon := &mocks.DockerDaemonMock{}
 	screen := &testScreen{
 		cursor:     &ui.Cursor{},
-		dimensions: ui.Dimensions{Height: 16, Width: 40},
+		dimensions: ui.Dimensions{Height: 5, Width: 40},
 	}
-	//DockerDaemonMock returns 10 running 1containers
+	//DockerDaemonMock returns 10 running containers
 	screen.Cursor().Max(10 - 1)
-
-	w := NewContainersWidget(daemon, screen, 0)
+	height := screen.Bounds().Dy()
+	w := NewContainersWidget(daemon, screen)
 
 	if err := w.Mount(); err != nil {
 		t.Errorf("There was an error mounting the widget %v", err)
 	}
 	w.prepareForRendering()
 	rows := w.visibleRows()
-	if len(rows) != w.height {
-		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
+	if len(rows) != height {
+		t.Errorf("There is room for %d rows but found %d", height, len(rows))
 	}
 	if rows[0].container.ID != "0" || rows[4].container.ID != "4" {
 		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
@@ -49,8 +51,8 @@ func TestContainerListVisibleRows(t *testing.T) {
 	screen.Cursor().ScrollCursorDown()
 	w.prepareForRendering()
 	rows = w.visibleRows()
-	if len(rows) != w.height {
-		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
+	if len(rows) != height {
+		t.Errorf("There is room for %d rows but found %d", height, len(rows))
 	}
 	if rows[0].container.ID != "0" || rows[4].container.ID != "4" {
 		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
@@ -59,8 +61,8 @@ func TestContainerListVisibleRows(t *testing.T) {
 	screen.Cursor().ScrollTo(10)
 	w.prepareForRendering()
 	rows = w.visibleRows()
-	if len(rows) != w.height {
-		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
+	if len(rows) != height {
+		t.Errorf("There is room for %d rows but found %d", height, len(rows))
 	}
 	if rows[0].container.ID != "5" || rows[4].container.ID != "9" {
 		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
@@ -69,8 +71,8 @@ func TestContainerListVisibleRows(t *testing.T) {
 	screen.Cursor().ScrollCursorUp()
 	w.prepareForRendering()
 	rows = w.visibleRows()
-	if len(rows) != w.height {
-		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
+	if len(rows) != height {
+		t.Errorf("There is room for %d rows but found %d", height, len(rows))
 	}
 	if rows[0].container.ID != "5" || rows[4].container.ID != "9" {
 		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
@@ -79,8 +81,8 @@ func TestContainerListVisibleRows(t *testing.T) {
 	screen.Cursor().ScrollTo(0)
 	w.prepareForRendering()
 	rows = w.visibleRows()
-	if len(rows) != w.height {
-		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
+	if len(rows) != height {
+		t.Errorf("There is room for %d rows but found %d", height, len(rows))
 	}
 	if rows[0].container.ID != "0" || rows[4].container.ID != "4" {
 		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)
@@ -94,8 +96,8 @@ func TestContainerListVisibleRows(t *testing.T) {
 
 	w.prepareForRendering()
 	rows = w.visibleRows()
-	if len(rows) != w.height {
-		t.Errorf("There is room for %d rows but found %d", w.height, len(rows))
+	if len(rows) != height {
+		t.Errorf("There is room for %d rows but found %d", height, len(rows))
 	}
 	if rows[0].container.ID != "1" || rows[4].container.ID != "5" {
 		t.Errorf("First or last container row are not correct. First ID: %s, Last Id: %s", rows[0].container.ID, rows[4].container.ID)

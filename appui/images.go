@@ -31,8 +31,6 @@ type DockerImagesWidget struct {
 	filterPattern        string
 	header               *termui.TableHeader
 	selectedIndex        int
-	x, y                 int
-	height, width        int
 	startIndex, endIndex int
 	sortMode             docker.SortMode
 	screen               Screen
@@ -42,22 +40,19 @@ type DockerImagesWidget struct {
 }
 
 //NewDockerImagesWidget creates a widget to show Docker images.
-func NewDockerImagesWidget(images func() ([]types.ImageSummary, error), s Screen, y int) *DockerImagesWidget {
+func NewDockerImagesWidget(images func() ([]types.ImageSummary, error), s Screen) *DockerImagesWidget {
 	return &DockerImagesWidget{
-		y:        y,
 		images:   images,
 		header:   defaultImageTableHeader,
-		height:   MainScreenAvailableHeight(s),
 		screen:   s,
-		sortMode: docker.SortImagesByRepo,
-		width:    s.Dimensions().Width}
+		sortMode: docker.SortImagesByRepo}
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
 func (s *DockerImagesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-	y := s.y
+	y := s.screen.Bounds().Min.Y
 	buf := gizaktermui.NewBuffer()
 	if s.mounted {
 		s.prepareForRendering()
@@ -168,8 +163,8 @@ func (s *DockerImagesWidget) Unmount() error {
 
 //Align aligns rows
 func (s *DockerImagesWidget) align() {
-	x := s.x
-	width := s.width
+	x := s.screen.Bounds().Min.X
+	width := s.screen.Bounds().Dx()
 
 	s.header.SetWidth(width)
 	s.header.SetX(x)
@@ -200,16 +195,16 @@ func (s *DockerImagesWidget) filterRows() {
 func (s *DockerImagesWidget) calculateVisibleRows() {
 
 	count := s.RowCount()
-
+	height := s.screen.Bounds().Dy()
 	//no screen
-	if s.height < 0 || count == 0 {
+	if height < 0 || count == 0 {
 		s.startIndex = 0
 		s.endIndex = 0
 		return
 	}
 	selected := s.selectedIndex
 	//everything fits
-	if count <= s.height {
+	if count <= height {
 		s.startIndex = 0
 		s.endIndex = count
 		return
@@ -217,9 +212,9 @@ func (s *DockerImagesWidget) calculateVisibleRows() {
 	//at the the start
 	if selected == 0 {
 		s.startIndex = 0
-		s.endIndex = s.height
+		s.endIndex = height
 	} else if selected >= count-1 { //at the end
-		s.startIndex = count - s.height
+		s.startIndex = count - height
 		s.endIndex = count
 	} else if selected == s.endIndex { //scroll down by one
 		s.startIndex++
@@ -228,7 +223,7 @@ func (s *DockerImagesWidget) calculateVisibleRows() {
 		s.startIndex--
 		s.endIndex--
 	} else if selected > s.endIndex { // scroll
-		s.startIndex = selected - s.height
+		s.startIndex = selected - height
 		s.endIndex = selected
 	}
 }

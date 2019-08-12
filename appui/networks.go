@@ -31,11 +31,9 @@ type DockerNetworksWidget struct {
 	filteredRows         []*NetworkRow
 	totalRows            []*NetworkRow
 	filterPattern        string
-	height, width        int
 	screen               Screen
 	selectedIndex        int
 	startIndex, endIndex int
-	x, y                 int
 	sortMode             docker.SortMode
 
 	sync.RWMutex
@@ -43,15 +41,12 @@ type DockerNetworksWidget struct {
 }
 
 //NewDockerNetworksWidget creates a renderer for a network list
-func NewDockerNetworksWidget(dockerDaemon docker.NetworkAPI, s Screen, y int) *DockerNetworksWidget {
+func NewDockerNetworksWidget(dockerDaemon docker.NetworkAPI, s Screen) *DockerNetworksWidget {
 	return &DockerNetworksWidget{
 		dockerDaemon: dockerDaemon,
-		y:            y,
 		header:       defaultNetworkTableHeader,
-		height:       MainScreenAvailableHeight(s),
 		sortMode:     docker.SortNetworksByID,
-		screen:       s,
-		width:        s.Dimensions().Width}
+		screen:       s}
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
@@ -62,7 +57,8 @@ func (s *DockerNetworksWidget) Buffer() gizaktermui.Buffer {
 	if !s.mounted {
 		return buf
 	}
-	y := s.y
+
+	y := s.screen.Bounds().Min.Y
 
 	s.prepareForRendering()
 	widgetHeader := NewWidgetHeader()
@@ -177,8 +173,8 @@ func (s *DockerNetworksWidget) Unmount() error {
 
 //Align aligns rows
 func (s *DockerNetworksWidget) align() {
-	x := s.x
-	width := s.width
+	x := s.screen.Bounds().Min.X
+	width := s.screen.Bounds().Dx()
 
 	s.header.SetWidth(width)
 	s.header.SetX(x)
@@ -209,16 +205,17 @@ func (s *DockerNetworksWidget) filterRows() {
 func (s *DockerNetworksWidget) calculateVisibleRows() {
 
 	count := s.RowCount()
+	height := s.screen.Bounds().Dy()
 
 	//no screen
-	if s.height < 0 || count == 0 {
+	if height < 0 || count == 0 {
 		s.startIndex = 0
 		s.endIndex = 0
 		return
 	}
 	selected := s.selectedIndex
 	//everything fits
-	if count <= s.height {
+	if count <= height {
 		s.startIndex = 0
 		s.endIndex = count
 		return
@@ -226,9 +223,9 @@ func (s *DockerNetworksWidget) calculateVisibleRows() {
 	//at the the start
 	if selected == 0 {
 		s.startIndex = 0
-		s.endIndex = s.height
+		s.endIndex = height
 	} else if selected >= count-1 { //at the end
-		s.startIndex = count - s.height
+		s.startIndex = count - height
 		s.endIndex = count
 	} else if selected == s.endIndex { //scroll down by one
 		s.startIndex++
@@ -237,7 +234,7 @@ func (s *DockerNetworksWidget) calculateVisibleRows() {
 		s.startIndex--
 		s.endIndex--
 	} else if selected > s.endIndex { // scroll
-		s.startIndex = selected - s.height
+		s.startIndex = selected - height
 		s.endIndex = selected
 	}
 }

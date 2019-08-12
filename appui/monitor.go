@@ -13,7 +13,6 @@ import (
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
-	"github.com/moncho/dry/ui"
 )
 
 const (
@@ -48,34 +47,27 @@ type Monitor struct {
 	cancel               context.CancelFunc
 	daemon               docker.ContainerDaemon
 	header               *MonitorTableHeader
-	height, width        int
 	offset               int
 	openChannels         []*docker.StatsChannel
 	refreshRate          time.Duration
 	rowChannels          map[*ContainerStatsRow]*docker.StatsChannel
 	rows                 []*ContainerStatsRow
 	startIndex, endIndex int
-	screen               ScreenBuffererRender
+	renderer             ScreenBuffererRender
 	selectedIndex        int
 	sortMode             sortMode
-	x, y                 int
 }
 
 //NewMonitor creates a new Monitor component that will render itself on the given screen
 //at the given position and with the given width.
-func NewMonitor(daemon docker.ContainerDaemon, s ScreenBuffererRender, y int) *Monitor {
-	height := MainScreenAvailableHeight(s)
+func NewMonitor(daemon docker.ContainerDaemon, s ScreenBuffererRender) *Monitor {
 	m := Monitor{
 		header:        defaultMonitorTableHeader,
 		daemon:        daemon,
 		selectedIndex: 0,
 		offset:        0,
-		x:             0,
-		y:             y,
-		height:        height,
-		width:         ui.ActiveScreen.Dimensions().Width,
 		refreshRate:   defaultRefreshRate,
-		screen:        s,
+		renderer:      s,
 		sortMode:      id,
 	}
 	return &m
@@ -85,7 +77,7 @@ func NewMonitor(daemon docker.ContainerDaemon, s ScreenBuffererRender, y int) *M
 func (m *Monitor) Buffer() gizaktermui.Buffer {
 	m.RLock()
 	defer m.RUnlock()
-	y := m.y
+	y := m.renderer.Bounds().Min.Y
 	buf := gizaktermui.NewBuffer()
 	widgetHeader := NewWidgetHeader()
 	widgetHeader.HeaderEntry("Running Containers", strconv.Itoa(m.RowCount()))
@@ -246,8 +238,8 @@ func (m *Monitor) Unmount() error {
 
 //Align aligns rows
 func (m *Monitor) align() {
-	x := m.x
-	width := m.width
+	x := m.renderer.Bounds().Min.X
+	width := m.renderer.Bounds().Dx()
 
 	m.header.SetWidth(width)
 	m.header.SetX(x)
@@ -262,7 +254,7 @@ func (m *Monitor) highlightSelectedRow() {
 	if m.RowCount() == 0 {
 		return
 	}
-	index := m.screen.Cursor().Position()
+	index := m.renderer.Cursor().Position()
 	if index > m.RowCount() {
 		index = m.RowCount() - 1
 	}
@@ -277,8 +269,8 @@ func (m *Monitor) highlightSelectedRow() {
 	}
 }
 func (m *Monitor) refresh() {
-	m.screen.RenderBufferer(m)
-	m.screen.Flush()
+	m.renderer.RenderBufferer(m)
+	m.renderer.Flush()
 }
 
 func (m *Monitor) sortRows() {
@@ -340,36 +332,37 @@ func (m *Monitor) updateTableHeader() {
 
 func (m *Monitor) visibleRows() []*ContainerStatsRow {
 
+	height := m.renderer.Bounds().Dy()
 	//no screen
-	if m.height < 0 {
+	if height < 0 {
 		return nil
 	}
 	rows := m.rows
 	count := len(rows)
-	cursor := m.screen.Cursor()
+	cursor := m.renderer.Cursor()
 	selected := cursor.Position()
 	//everything fits
-	if count <= m.height {
+	if count <= height {
 		return rows
 	}
 	//at the the start
 	if selected == 0 {
 		//internal state is reset
 		m.startIndex = 0
-		m.endIndex = m.height
+		m.endIndex = height
 		return rows[m.startIndex : m.endIndex+1]
 	}
 
 	if selected >= m.endIndex {
-		if selected-m.height >= 0 {
-			m.startIndex = selected - m.height
+		if selected-height >= 0 {
+			m.startIndex = selected - height
 		}
 		m.endIndex = selected
 	}
 	if selected <= m.startIndex {
-		m.startIndex -= 1
-		if selected+m.height < count {
-			m.endIndex = m.startIndex + m.height
+		m.startIndex--
+		if selected+height < count {
+			m.endIndex = m.startIndex + height
 		}
 	}
 	start := m.startIndex

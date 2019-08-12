@@ -17,7 +17,6 @@ type TasksWidget struct {
 	filteredRows         []*TaskRow
 	totalRows            []*TaskRow
 	filterPattern        string
-	height, width        int
 	offset               int
 	screen               appui.Screen
 	selectedIndex        int
@@ -25,7 +24,6 @@ type TasksWidget struct {
 	startIndex, endIndex int
 	swarmClient          docker.SwarmAPI
 	tableTitle           *termui.MarkupPar
-	x, y                 int
 
 	sync.RWMutex
 	mounted bool
@@ -80,8 +78,8 @@ func (s *TasksWidget) Unmount() error {
 
 //Align aligns rows
 func (s *TasksWidget) align() {
-	x := s.x
-	width := s.width
+	x := s.screen.Bounds().Min.X
+	width := s.screen.Bounds().Dy()
 
 	s.tableTitle.SetX(x)
 	s.tableTitle.SetWidth(width)
@@ -114,17 +112,18 @@ func (s *TasksWidget) filterRows() {
 
 func (s *TasksWidget) calculateVisibleRows() {
 
+	height := s.screen.Bounds().Dy()
 	count := s.RowCount()
 
 	//no screen
-	if s.height < 0 || count == 0 {
+	if height < 0 || count == 0 {
 		s.startIndex = 0
 		s.endIndex = 0
 		return
 	}
 	selected := s.selectedIndex
 	//everything fits
-	if count <= s.height {
+	if count <= height {
 		s.startIndex = 0
 		s.endIndex = count
 		return
@@ -132,9 +131,9 @@ func (s *TasksWidget) calculateVisibleRows() {
 	//at the the start
 	if selected == 0 {
 		s.startIndex = 0
-		s.endIndex = s.height
+		s.endIndex = height
 	} else if selected >= count-1 { //at the end
-		s.startIndex = count - s.height
+		s.startIndex = count - height
 		s.endIndex = count
 	} else if selected == s.endIndex { //scroll down by one
 		s.startIndex++
@@ -143,7 +142,7 @@ func (s *TasksWidget) calculateVisibleRows() {
 		s.startIndex--
 		s.endIndex--
 	} else if selected > s.endIndex { // scroll
-		s.startIndex = selected - s.height
+		s.startIndex = selected - height
 		s.endIndex = selected
 	}
 }

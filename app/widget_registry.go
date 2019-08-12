@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"image"
 	"sync"
 	"time"
 
@@ -48,20 +49,21 @@ func initRegistry(daemon docker.ContainerDaemon) *widgetRegistry {
 	di.SetX(0)
 	di.SetY(1)
 	di.SetWidth(width)
+	screen := screen{ui.ActiveScreen}
 	w := widgetRegistry{
 		DockerInfo:    di,
-		ContainerList: appui.NewContainersWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
-		ContainerMenu: appui.NewContainerMenuWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
-		ImageList:     appui.NewDockerImagesWidget(daemon.Images, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		ContainerList: appui.NewContainersWidget(daemon, screen),
+		ContainerMenu: appui.NewContainerMenuWidget(daemon, screen),
+		ImageList:     appui.NewDockerImagesWidget(daemon.Images, screen),
 		DiskUsage:     appui.NewDockerDiskUsageRenderer(height),
-		Monitor:       appui.NewMonitor(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
-		Networks:      appui.NewDockerNetworksWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
-		Nodes:         swarm.NewNodesWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
-		NodeTasks:     swarm.NewNodeTasksWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
-		ServiceTasks:  swarm.NewServiceTasksWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
-		ServiceList:   swarm.NewServicesWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
-		Stacks:        swarm.NewStacksWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
-		StackTasks:    swarm.NewStacksTasksWidget(daemon, ui.ActiveScreen, appui.MainScreenHeaderSize),
+		Monitor:       appui.NewMonitor(daemon, screen),
+		Networks:      appui.NewDockerNetworksWidget(daemon, screen),
+		Nodes:         swarm.NewNodesWidget(daemon, screen),
+		NodeTasks:     swarm.NewNodeTasksWidget(daemon, screen),
+		ServiceTasks:  swarm.NewServiceTasksWidget(daemon, screen),
+		ServiceList:   swarm.NewServicesWidget(daemon, screen),
+		Stacks:        swarm.NewStacksWidget(daemon, screen),
+		StackTasks:    swarm.NewStacksTasksWidget(daemon, screen),
 		widgets:       make(map[string]termui.Widget),
 		MessageBar:    ui.NewExpiringMessageWidget(0, ui.ActiveScreen),
 	}
@@ -151,4 +153,18 @@ func refreshOnContainerEvent(w termui.Widget, daemon docker.ContainerDaemon) {
 			})
 			return nil
 		})
+}
+
+type screen struct {
+	*ui.Screen
+}
+
+func (s screen) Bounds() image.Rectangle {
+	dim := s.Screen.Dimensions()
+	y := appui.MainScreenHeaderSize
+	return image.Rect(0, y, dim.Width, dim.Height-y)
+}
+
+func (s screen) Cursor() *ui.Cursor {
+	return s.Screen.Cursor()
 }

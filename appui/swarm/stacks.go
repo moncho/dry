@@ -33,8 +33,6 @@ type StacksWidget struct {
 	header               *termui.TableHeader
 	selectedIndex        int
 	offset               int
-	x, y                 int
-	height, width        int
 	screen               appui.Screen
 	startIndex, endIndex int
 	sortMode             docker.SortMode
@@ -44,55 +42,54 @@ type StacksWidget struct {
 }
 
 //NewStacksWidget creates a StacksWidget
-func NewStacksWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *StacksWidget {
+func NewStacksWidget(swarmClient docker.SwarmAPI, s appui.Screen) *StacksWidget {
 	return &StacksWidget{
 		swarmClient:   swarmClient,
 		header:        defaultStackTableHeader,
 		selectedIndex: 0,
 		offset:        0,
-		x:             0,
-		y:             y,
-		height:        appui.MainScreenAvailableHeight(s),
 		screen:        s,
-		sortMode:      docker.SortByServiceName,
-		width:         s.Dimensions().Width}
+		sortMode:      docker.SortByServiceName}
 }
 
 //Buffer returns the content of this widget as a termui.Buffer
 func (s *StacksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-	y := s.y
+
 	buf := gizaktermui.NewBuffer()
-	if s.mounted {
-		s.prepareForRendering()
-		widgetHeader := appui.NewWidgetHeader()
-		widgetHeader.HeaderEntry("Stacks", strconv.Itoa(s.RowCount()))
-		if s.filterPattern != "" {
-			widgetHeader.HeaderEntry("Active filter", s.filterPattern)
-		}
-		widgetHeader.Y = y
-		buf.Merge(widgetHeader.Buffer())
-		y += widgetHeader.GetHeight()
-		//Empty line between the header and the rest of the content
-		y++
-		s.updateHeader()
-		s.header.SetY(y)
-		buf.Merge(s.header.Buffer())
-		y += s.header.GetHeight()
+	if !s.mounted {
+		return buf
+	}
+	y := s.screen.Bounds().Min.Y
 
-		selected := s.selectedIndex - s.startIndex
+	s.prepareForRendering()
+	widgetHeader := appui.NewWidgetHeader()
+	widgetHeader.HeaderEntry("Stacks", strconv.Itoa(s.RowCount()))
+	if s.filterPattern != "" {
+		widgetHeader.HeaderEntry("Active filter", s.filterPattern)
+	}
+	widgetHeader.Y = y
+	buf.Merge(widgetHeader.Buffer())
+	y += widgetHeader.GetHeight()
+	//Empty line between the header and the rest of the content
+	y++
+	s.updateHeader()
+	s.header.SetY(y)
+	buf.Merge(s.header.Buffer())
+	y += s.header.GetHeight()
 
-		for i, stackRow := range s.visibleRows() {
-			stackRow.SetY(y)
-			y += stackRow.GetHeight()
-			if i != selected {
-				stackRow.NotHighlighted()
-			} else {
-				stackRow.Highlighted()
-			}
-			buf.Merge(stackRow.Buffer())
+	selected := s.selectedIndex - s.startIndex
+
+	for i, stackRow := range s.visibleRows() {
+		stackRow.SetY(y)
+		y += stackRow.GetHeight()
+		if i != selected {
+			stackRow.NotHighlighted()
+		} else {
+			stackRow.Highlighted()
 		}
+		buf.Merge(stackRow.Buffer())
 	}
 	return buf
 }
@@ -163,8 +160,8 @@ func (s *StacksWidget) Unmount() error {
 
 //Align aligns rows
 func (s *StacksWidget) align() {
-	x := s.x
-	width := s.width
+	x := s.screen.Bounds().Min.X
+	width := s.screen.Bounds().Dx()
 
 	s.header.SetWidth(width)
 	s.header.SetX(x)
@@ -195,16 +192,17 @@ func (s *StacksWidget) filterRows() {
 func (s *StacksWidget) calculateVisibleRows() {
 
 	count := s.RowCount()
+	height := s.screen.Bounds().Dy()
 
 	//no screen
-	if s.height < 0 || count == 0 {
+	if height < 0 || count == 0 {
 		s.startIndex = 0
 		s.endIndex = 0
 		return
 	}
 	selected := s.selectedIndex
 	//everything fits
-	if count <= s.height {
+	if count <= height {
 		s.startIndex = 0
 		s.endIndex = count
 		return
@@ -212,9 +210,9 @@ func (s *StacksWidget) calculateVisibleRows() {
 	//at the the start
 	if selected == 0 {
 		s.startIndex = 0
-		s.endIndex = s.height
+		s.endIndex = height
 	} else if selected >= count-1 { //at the end
-		s.startIndex = count - s.height
+		s.startIndex = count - height
 		s.endIndex = count
 	} else if selected == s.endIndex { //scroll down by one
 		s.startIndex++
@@ -223,7 +221,7 @@ func (s *StacksWidget) calculateVisibleRows() {
 		s.startIndex--
 		s.endIndex--
 	} else if selected > s.endIndex { // scroll
-		s.startIndex = selected - s.height
+		s.startIndex = selected - height
 		s.endIndex = selected
 	}
 }

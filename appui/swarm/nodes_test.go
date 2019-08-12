@@ -1,6 +1,7 @@
 package swarm
 
 import (
+	"image"
 	"testing"
 
 	"github.com/moncho/dry/mocks"
@@ -15,15 +16,16 @@ type testScreen struct {
 func (ts *testScreen) Cursor() *ui.Cursor {
 	return ts.cursor
 }
-func (ts *testScreen) Dimensions() *ui.Dimensions {
-	return &ts.dimensions
+func (ts *testScreen) Bounds() image.Rectangle {
+	y := 1
+	return image.Rect(0, y, ts.dimensions.Width, y+ts.dimensions.Height)
 }
 
 func TestNodesWidgetCreation(t *testing.T) {
 	screen := &testScreen{
 		dimensions: ui.Dimensions{Height: 14, Width: 100},
 		cursor:     ui.NewCursor()}
-	w := NewNodesWidget(&mocks.SwarmDockerDaemon{}, screen, 1)
+	w := NewNodesWidget(&mocks.SwarmDockerDaemon{}, screen)
 	if w == nil {
 		t.Error("Swarm widget is nil")
 	}
@@ -41,7 +43,7 @@ func TestNodesWidgetMount(t *testing.T) {
 	screen := &testScreen{
 		dimensions: ui.Dimensions{Height: 14, Width: 100},
 		cursor:     ui.NewCursor()}
-	w := NewNodesWidget(&mocks.SwarmDockerDaemon{}, screen, 1)
+	w := NewNodesWidget(&mocks.SwarmDockerDaemon{}, screen)
 
 	if len(w.totalRows) != 0 {
 		t.Errorf("Swarm widget is not showing the expected number of totalRows. Got: %d", len(w.totalRows))

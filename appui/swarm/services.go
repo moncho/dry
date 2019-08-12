@@ -28,7 +28,6 @@ var serviceTableHeaders = []appui.SortableColumnHeader{
 
 //ServicesWidget shows information about services running on the Swarm
 type ServicesWidget struct {
-	height, width        int
 	filteredRows         []*ServiceRow
 	filterPattern        string
 	header               *termui.TableHeader
@@ -38,24 +37,19 @@ type ServicesWidget struct {
 	sortMode             docker.SortMode
 	swarmClient          docker.SwarmAPI
 	totalRows            []*ServiceRow
-	x, y                 int
 
 	sync.RWMutex
 	mounted bool
 }
 
 //NewServicesWidget creates a ServicesWidget
-func NewServicesWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *ServicesWidget {
+func NewServicesWidget(swarmClient docker.SwarmAPI, s appui.Screen) *ServicesWidget {
 	return &ServicesWidget{
 		swarmClient:   swarmClient,
 		header:        defaultServiceTableHeader,
 		selectedIndex: 0,
-		x:             0,
-		y:             y,
-		height:        appui.MainScreenAvailableHeight(s),
 		screen:        s,
-		sortMode:      docker.SortByServiceName,
-		width:         s.Dimensions().Width}
+		sortMode:      docker.SortByServiceName}
 
 }
 
@@ -63,37 +57,39 @@ func NewServicesWidget(swarmClient docker.SwarmAPI, s appui.Screen, y int) *Serv
 func (s *ServicesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
-	y := s.y
 	buf := gizaktermui.NewBuffer()
-	if s.mounted {
-		s.prepareForRendering()
-		widgetHeader := appui.NewWidgetHeader()
-		widgetHeader.HeaderEntry("Services", strconv.Itoa(s.RowCount()))
-		if s.filterPattern != "" {
-			widgetHeader.HeaderEntry("Active filter", s.filterPattern)
-		}
-		widgetHeader.Y = y
-		buf.Merge(widgetHeader.Buffer())
-		y += widgetHeader.GetHeight()
-		//Empty line between the header and the rest of the content
-		y++
-		s.updateHeader()
-		s.header.SetY(y)
-		buf.Merge(s.header.Buffer())
-		y += s.header.GetHeight()
+	if !s.mounted {
+		return buf
+	}
+	y := s.screen.Bounds().Min.Y
 
-		selected := s.selectedIndex - s.startIndex
+	s.prepareForRendering()
+	widgetHeader := appui.NewWidgetHeader()
+	widgetHeader.HeaderEntry("Services", strconv.Itoa(s.RowCount()))
+	if s.filterPattern != "" {
+		widgetHeader.HeaderEntry("Active filter", s.filterPattern)
+	}
+	widgetHeader.Y = y
+	buf.Merge(widgetHeader.Buffer())
+	y += widgetHeader.GetHeight()
+	//Empty line between the header and the rest of the content
+	y++
+	s.updateHeader()
+	s.header.SetY(y)
+	buf.Merge(s.header.Buffer())
+	y += s.header.GetHeight()
 
-		for i, serviceRow := range s.visibleRows() {
-			serviceRow.SetY(y)
-			y += serviceRow.GetHeight()
-			if i != selected {
-				serviceRow.NotHighlighted()
-			} else {
-				serviceRow.Highlighted()
-			}
-			buf.Merge(serviceRow.Buffer())
+	selected := s.selectedIndex - s.startIndex
+
+	for i, serviceRow := range s.visibleRows() {
+		serviceRow.SetY(y)
+		y += serviceRow.GetHeight()
+		if i != selected {
+			serviceRow.NotHighlighted()
+		} else {
+			serviceRow.Highlighted()
 		}
+		buf.Merge(serviceRow.Buffer())
 	}
 	return buf
 }
@@ -168,8 +164,8 @@ func (s *ServicesWidget) Unmount() error {
 
 //Align aligns rows
 func (s *ServicesWidget) align() {
-	x := s.x
-	width := s.width
+	x := s.screen.Bounds().Min.X
+	width := s.screen.Bounds().Dx()
 
 	s.header.SetWidth(width)
 	s.header.SetX(x)
@@ -200,16 +196,17 @@ func (s *ServicesWidget) filterRows() {
 func (s *ServicesWidget) calculateVisibleRows() {
 
 	count := s.RowCount()
+	height := s.screen.Bounds().Dy()
 
 	//no screen
-	if s.height < 0 || count == 0 {
+	if height < 0 || count == 0 {
 		s.startIndex = 0
 		s.endIndex = 0
 		return
 	}
 	selected := s.selectedIndex
 	//everything fits
-	if count <= s.height {
+	if count <= height {
 		s.startIndex = 0
 		s.endIndex = count
 		return
@@ -217,9 +214,9 @@ func (s *ServicesWidget) calculateVisibleRows() {
 	//at the the start
 	if selected == 0 {
 		s.startIndex = 0
-		s.endIndex = s.height
+		s.endIndex = height
 	} else if selected >= count-1 { //at the end
-		s.startIndex = count - s.height
+		s.startIndex = count - height
 		s.endIndex = count
 	} else if selected == s.endIndex { //scroll down by one
 		s.startIndex++
@@ -228,7 +225,7 @@ func (s *ServicesWidget) calculateVisibleRows() {
 		s.startIndex--
 		s.endIndex--
 	} else if selected > s.endIndex { // scroll
-		s.startIndex = selected - s.height
+		s.startIndex = selected - height
 		s.endIndex = selected
 	}
 }
