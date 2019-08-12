@@ -1,13 +1,19 @@
 package app
 
 import (
+	"context"
 	"fmt"
+	"image"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/docker/docker/api/types/events"
+	"github.com/moncho/dry/appui"
+	"github.com/moncho/dry/appui/swarm"
 	docker "github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
+	"github.com/moncho/dry/ui/termui"
 )
 
 //Dry resources and state
@@ -17,9 +23,18 @@ type Dry struct {
 	dockerEventsDone chan<- struct{}
 	output           chan string
 	screen           *ui.Screen
+	showHeader       bool
 
 	sync.RWMutex
 	view viewMode
+}
+
+func (d *Dry) showingHeader() bool {
+	return d.showHeader
+}
+
+func (d *Dry) toggleShowHeader() {
+	d.showHeader = !d.showHeader
 }
 
 //Close closes dry, releasing any resources held by it
@@ -86,6 +101,46 @@ func (d *Dry) viewMode() viewMode {
 	return d.view
 }
 
+//initRegistry creates a widget registry with its widget ready to be used
+func initRegistry(dry *Dry) *widgetRegistry {
+	daemon := dry.dockerDaemon
+	mainScreen := dry.screen
+
+	d := mainScreen.Dimensions()
+	height, width := d.Height, d.Width
+	di := appui.NewDockerInfo(daemon)
+	di.SetX(0)
+	di.SetY(1)
+	di.SetWidth(width)
+	widgetScreen := &screen{mainScreen, dry}
+	w := widgetRegistry{
+		DockerInfo:    di,
+		ContainerList: appui.NewContainersWidget(daemon, widgetScreen),
+		ContainerMenu: appui.NewContainerMenuWidget(daemon, widgetScreen),
+		ImageList:     appui.NewDockerImagesWidget(daemon.Images, widgetScreen),
+		DiskUsage:     appui.NewDockerDiskUsageRenderer(height),
+		Monitor:       appui.NewMonitor(daemon, widgetScreen),
+		Networks:      appui.NewDockerNetworksWidget(daemon, widgetScreen),
+		Nodes:         swarm.NewNodesWidget(daemon, widgetScreen),
+		NodeTasks:     swarm.NewNodeTasksWidget(daemon, widgetScreen),
+		ServiceTasks:  swarm.NewServiceTasksWidget(daemon, widgetScreen),
+		ServiceList:   swarm.NewServicesWidget(daemon, widgetScreen),
+		Stacks:        swarm.NewStacksWidget(daemon, widgetScreen),
+		StackTasks:    swarm.NewStacksTasksWidget(daemon, widgetScreen),
+		widgets:       make(map[string]termui.Widget),
+		MessageBar:    ui.NewExpiringMessageWidget(0, mainScreen),
+	}
+
+	refreshOnContainerEvent(w.ContainerList, daemon)
+	refreshOnDockerEvent(docker.ImageSource, w.ImageList, Images)
+	refreshOnDockerEvent(docker.NetworkSource, w.Networks, Networks)
+	refreshOnDockerEvent(docker.NodeSource, w.Nodes, Nodes)
+	refreshOnDockerEvent(docker.ServiceSource, w.ServiceList, Services)
+	refreshOnDockerEvent(docker.ServiceSource, w.Stacks, Stacks)
+
+	return &w
+}
+
 func newDry(screen *ui.Screen, d *docker.DockerDaemon) (*Dry, error) {
 	dockerEvents, dockerEventsDone, err := d.Events()
 	if err != nil {
@@ -93,13 +148,15 @@ func newDry(screen *ui.Screen, d *docker.DockerDaemon) (*Dry, error) {
 	}
 
 	dry := &Dry{}
-	widgets = initRegistry(d)
-	viewsToHandlers = initHandlers(dry, screen)
+	dry.showHeader = true
 	dry.dockerDaemon = d
 	dry.output = make(chan string)
 	dry.dockerEvents = dockerEvents
 	dry.dockerEventsDone = dockerEventsDone
 	dry.screen = screen
+
+	widgets = initRegistry(dry)
+	viewsToHandlers = initHandlers(dry, screen)
 	dry.showDockerEvents()
 	return dry, nil
 
@@ -121,4 +178,68 @@ func NewDry(screen *ui.Screen, cfg Config) (*Dry, error) {
 		widgets.Monitor.RefreshRate(cfg.MonitorRefreshRate)
 	}
 	return dry, nil
+}
+
+var refreshInterval = 250 * time.Millisecond // time to wait before next refresh
+
+func refreshOnDockerEvent(source docker.SourceType, w termui.Widget, view viewMode) {
+	last := time.Now()
+	var lock sync.Mutex
+	docker.GlobalRegistry.Register(
+		source,
+		func(ctx context.Context, m events.Message) error {
+			lock.Lock()
+			defer lock.Unlock()
+			if time.Since(last) < refreshInterval {
+				return nil
+			}
+			last = time.Now()
+			err := w.Unmount()
+			if err != nil {
+				return err
+			}
+			return refreshIfView(view)
+		})
+}
+func refreshOnContainerEvent(w termui.Widget, daemon docker.ContainerDaemon) {
+	last := time.Now()
+	var lock sync.Mutex
+	docker.GlobalRegistry.Register(
+		docker.ContainerSource,
+		func(ctx context.Context, m events.Message) error {
+			lock.Lock()
+			defer lock.Unlock()
+			if time.Since(last) < refreshInterval {
+				return nil
+			}
+			last = time.Now()
+			daemon.Refresh(func(e error) {
+				err := w.Unmount()
+				if err != nil {
+					return
+				}
+
+				refreshIfView(Main)
+			})
+			return nil
+		})
+}
+
+type screen struct {
+	*ui.Screen
+	dry *Dry
+}
+
+func (s *screen) Bounds() image.Rectangle {
+	dim := s.Screen.Dimensions()
+	var y int
+	if s.dry.showingHeader() {
+		y = appui.MainScreenHeaderSize
+	}
+
+	return image.Rect(0, y, dim.Width, dim.Height-y)
+}
+
+func (s *screen) Cursor() *ui.Cursor {
+	return s.Screen.Cursor()
 }

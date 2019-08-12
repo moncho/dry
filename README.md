@@ -33,6 +33,7 @@ Keybinding           | Description
 <kbd>%</kbd>         | filter list
 <kbd>F1</kbd>        | sort list
 <kbd>F5</kbd>        | refresh list
+<kbd>F7</kbd>        | toggle showing Docker daemon information
 <kbd>F8</kbd>        | show docker disk usage
 <kbd>F9</kbd>        | show last 10 docker events
 <kbd>F10</kbd>       | show docker info

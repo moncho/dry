@@ -11,8 +11,11 @@ import (
 
 //render renders dry on the given screen
 func render(d *Dry, screen *ui.Screen) {
-	bufferers := []gizaktermui.Bufferer{
-		widgets.DockerInfo,
+
+	var bufferers []gizaktermui.Bufferer
+
+	if d.showingHeader() {
+		bufferers = append(bufferers, widgets.DockerInfo)
 	}
 
 	var count int

@@ -21,6 +21,7 @@ A tool to interact with a Docker Daemon from the terminal.
 Visit <blue>http://moncho.github.io/dry/</> for more information.
 
 <yellow>Global keybinds</>
+	<white>F7</>        Toggles showing Docker daemon information
 	<white>F8</>        Shows Docker disk usage
 	<white>F9</>        Shows the last 10 events reported by Docker
 	<white>F10</>       Inspects Docker
