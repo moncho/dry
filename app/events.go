@@ -28,10 +28,13 @@ func (b *baseEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 	cursor := screen.Cursor()
 	refresh := true
 	switch event.Key() {
+
 	case tcell.KeyUp, tcell.KeyCtrlP: //cursor up
 		cursor.ScrollCursorUp()
 	case tcell.KeyDown, tcell.KeyCtrlN: // cursor down
 		cursor.ScrollCursorDown()
+	case tcell.KeyF7: // toggle show header
+		dry.toggleShowHeader()
 	case tcell.KeyF8: // disk usage
 		f(viewsToHandlers[DiskUsage])
 		dry.changeView(DiskUsage)
