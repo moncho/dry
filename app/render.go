@@ -18,7 +18,6 @@ func render(d *Dry, screen *ui.Screen) {
 		bufferers = append(bufferers, widgets.DockerInfo)
 	}
 
-	var count int
 	var keymap string
 	var viewRenderer fmt.Stringer
 
@@ -30,7 +29,6 @@ func render(d *Dry, screen *ui.Screen) {
 				screen.Render(1, err.Error())
 			}
 			bufferers = append(bufferers, cMenu)
-			count = cMenu.RowCount()
 
 			keymap = commandsMenuBar
 
@@ -41,7 +39,6 @@ func render(d *Dry, screen *ui.Screen) {
 			if err := containersWidget.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
-			count = containersWidget.RowCount()
 			bufferers = append(bufferers, containersWidget)
 			keymap = keyMappings
 
@@ -53,7 +50,6 @@ func render(d *Dry, screen *ui.Screen) {
 			if err := widget.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
-			count = widget.RowCount()
 			bufferers = append(bufferers, widget)
 
 			keymap = imagesKeyMappings
@@ -65,7 +61,6 @@ func render(d *Dry, screen *ui.Screen) {
 			if err := widget.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
-			count = widget.RowCount()
 			bufferers = append(bufferers, widget)
 			keymap = networkKeyMappings
 		}
@@ -76,7 +71,6 @@ func render(d *Dry, screen *ui.Screen) {
 				screen.Render(1, err.Error())
 			}
 			bufferers = append(bufferers, nodes)
-			count = nodes.RowCount()
 			keymap = nodeKeyMappings
 		}
 	case Services:
@@ -86,7 +80,6 @@ func render(d *Dry, screen *ui.Screen) {
 				screen.Render(1, err.Error())
 			}
 			bufferers = append(bufferers, servicesWidget)
-			count = servicesWidget.RowCount()
 			keymap = serviceKeyMappings
 		}
 	case Tasks:
@@ -96,7 +89,6 @@ func render(d *Dry, screen *ui.Screen) {
 				screen.Render(1, err.Error())
 			}
 			bufferers = append(bufferers, tasks)
-			count = tasks.RowCount()
 			keymap = swarmMapping
 		}
 	case ServiceTasks:
@@ -106,7 +98,6 @@ func render(d *Dry, screen *ui.Screen) {
 				screen.Render(1, err.Error())
 			}
 			bufferers = append(bufferers, tasks)
-			count = tasks.RowCount()
 			keymap = swarmMapping
 		}
 	case Stacks:
@@ -116,7 +107,6 @@ func render(d *Dry, screen *ui.Screen) {
 				screen.Render(1, err.Error())
 			}
 			bufferers = append(bufferers, stacks)
-			count = stacks.RowCount()
 			keymap = stackKeyMappings
 		}
 	case StackTasks:
@@ -126,7 +116,6 @@ func render(d *Dry, screen *ui.Screen) {
 				screen.Render(1, err.Error())
 			}
 			bufferers = append(bufferers, tasks)
-			count = tasks.RowCount()
 			keymap = swarmMapping
 		}
 	case DiskUsage:
@@ -139,11 +128,8 @@ func render(d *Dry, screen *ui.Screen) {
 			monitor := widgets.Monitor
 			monitor.Mount()
 			keymap = monitorMapping
-			count = monitor.RowCount()
 		}
 	}
-
-	updateCursorPosition(screen.Cursor(), count)
 	bufferers = append(bufferers, footer(keymap))
 
 	widgets.MessageBar.Render()

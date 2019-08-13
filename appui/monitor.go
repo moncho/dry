@@ -143,6 +143,8 @@ func (m *Monitor) Mount() error {
 	m.align()
 	m.updateTableHeader()
 	ctx, cancel := context.WithCancel(context.Background())
+	m.renderer.Cursor().Max(m.RowCount() - 1)
+
 	m.refreshLoop(ctx)
 	m.cancel = cancel
 	return nil

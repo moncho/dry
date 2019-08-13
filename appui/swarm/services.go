@@ -235,6 +235,8 @@ func (s *ServicesWidget) calculateVisibleRows() {
 func (s *ServicesWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()
+	s.screen.Cursor().Max(s.RowCount() - 1)
+
 	index := s.screen.Cursor().Position()
 	if index < 0 {
 		index = 0

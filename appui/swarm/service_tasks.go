@@ -41,6 +41,7 @@ func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
 	}
 	y := s.screen.Bounds().Min.Y
 	s.prepareForRendering()
+	s.info.SetY(y)
 	buf.Merge(s.info.Buffer())
 	y += s.info.GetHeight()
 	var filter string
@@ -79,11 +80,9 @@ func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
 func (s *ServiceTasksWidget) ForService(serviceID string) {
 	s.Lock()
 	defer s.Unlock()
-
 	s.serviceID = serviceID
 	s.mounted = false
 	s.sortMode = docker.SortByTaskService
-
 }
 
 //Mount prepares this widget for rendering

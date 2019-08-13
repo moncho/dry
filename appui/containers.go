@@ -216,11 +216,13 @@ func (s *ContainersWidget) filterRows() {
 	}
 }
 
-//prepareForRendering sets the internal state of this widget so it is ready for
-//rendering(i.e. Buffer()).
+// prepareForRendering sets the internal state of this widget so it is ready for
+// rendering(i.e. Buffer()).
 func (s *ContainersWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()
+	s.screen.Cursor().Max(s.RowCount() - 1)
+
 	index := s.screen.Cursor().Position()
 	if index < 0 {
 		index = 0

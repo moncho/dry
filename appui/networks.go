@@ -244,6 +244,8 @@ func (s *DockerNetworksWidget) calculateVisibleRows() {
 func (s *DockerNetworksWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()
+	s.screen.Cursor().Max(s.RowCount() - 1)
+
 	index := s.screen.Cursor().Position()
 	if index < 0 {
 		index = 0

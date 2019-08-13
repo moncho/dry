@@ -276,6 +276,7 @@ func (s *NodesWidget) calculateVisibleRows() {
 func (s *NodesWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()
+	s.screen.Cursor().Max(s.RowCount() - 1)
 	index := s.screen.Cursor().Position()
 	if index < 0 {
 		index = 0
