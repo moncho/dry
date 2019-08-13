@@ -79,7 +79,7 @@ func (s *TasksWidget) Unmount() error {
 //Align aligns rows
 func (s *TasksWidget) align() {
 	x := s.screen.Bounds().Min.X
-	width := s.screen.Bounds().Dy()
+	width := s.screen.Bounds().Dx()
 
 	s.tableTitle.SetX(x)
 	s.tableTitle.SetWidth(width)

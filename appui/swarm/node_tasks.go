@@ -28,6 +28,7 @@ func NewNodeTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen) *NodeTasksW
 			sortMode:      docker.SortByTaskService,
 			selectedIndex: 0,
 			offset:        0,
+			screen:        s,
 			tableTitle:    createStackTableTitle()},
 	}
 
