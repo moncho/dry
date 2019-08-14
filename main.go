@@ -134,16 +134,12 @@ func showLoadingScreen(ctx context.Context, screen *ui.Screen, cfg app.Config) {
 	}()
 }
 func main() {
-	running := false
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf(
 				"Dry panicked: %v", r)
 			log.Error(string(debug.Stack()))
-			log.Print("Bye")
 			os.Exit(1)
-		} else if running {
-			log.Print("Bye")
 		}
 	}()
 	// parse flags
@@ -170,7 +166,6 @@ func main() {
 		fmt.Printf("dry version %s, build %s", version.VERSION, version.GITCOMMIT)
 		return
 	}
-	log.Print("Starting dry")
 	// Start profiling (if required)
 	if opts.Profile {
 		go func() {
@@ -182,7 +177,6 @@ func main() {
 		log.Printf("Dry could not start: %s", err)
 		return
 	}
-	running = true
 	cfg, err := config(opts)
 	if err != nil {
 		log.Println(err.Error())
