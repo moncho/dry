@@ -205,7 +205,7 @@ func (s *DockerNetworksWidget) filterRows() {
 func (s *DockerNetworksWidget) calculateVisibleRows() {
 
 	count := s.RowCount()
-	height := s.screen.Bounds().Dy()
+	height := s.screen.Bounds().Dy() - widgetHeaderLength
 
 	//no screen
 	if height < 0 || count == 0 {

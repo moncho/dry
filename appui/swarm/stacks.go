@@ -192,7 +192,7 @@ func (s *StacksWidget) filterRows() {
 func (s *StacksWidget) calculateVisibleRows() {
 
 	count := s.RowCount()
-	height := s.screen.Bounds().Dy()
+	height := s.screen.Bounds().Dy() - widgetHeaderLength
 
 	//no screen
 	if height < 0 || count == 0 {

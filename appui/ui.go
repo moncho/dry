@@ -14,8 +14,8 @@ const (
 
 	//MainScreenHeaderSize is the number of lines the header of the main screen uses
 	MainScreenHeaderSize = 5
-	//MainScreenFooterSize is the number of lines the footer of the main screen uses
-	MainScreenFooterSize = 1
+	//MainScreenFooterLength is the number of lines the footer of the main screen uses
+	MainScreenFooterLength = 1
 	//DefaultColumnSpacing defines the minimun space between columns in pixels
 	DefaultColumnSpacing = 1
 	//IDColumnWidth defines a fixed width for ID columns

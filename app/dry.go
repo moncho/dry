@@ -225,6 +225,7 @@ func refreshOnContainerEvent(w termui.Widget, daemon docker.ContainerDaemon) {
 		})
 }
 
+// available screen for widgets
 type screen struct {
 	*ui.Screen
 	dry *Dry
@@ -232,12 +233,12 @@ type screen struct {
 
 func (s *screen) Bounds() image.Rectangle {
 	dim := s.Screen.Dimensions()
-	var y int
+	y := 0
 	if s.dry.showingHeader() {
 		y = appui.MainScreenHeaderSize
 	}
 
-	return image.Rect(0, y, dim.Width, dim.Height-y)
+	return image.Rect(0, y, dim.Width, dim.Height-appui.MainScreenFooterLength)
 }
 
 func (s *screen) Cursor() *ui.Cursor {

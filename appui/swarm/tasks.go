@@ -112,7 +112,7 @@ func (s *TasksWidget) filterRows() {
 
 func (s *TasksWidget) calculateVisibleRows() {
 
-	height := s.screen.Bounds().Dy()
+	height := s.screen.Bounds().Dy() - widgetHeaderLength
 	count := s.RowCount()
 
 	//no screen

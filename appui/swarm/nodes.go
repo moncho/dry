@@ -15,6 +15,9 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
+// the default length of a widget header
+const widgetHeaderLength = 4
+
 var defaultNodeTableHeader = nodeTableHeader()
 
 var nodeTableFieldWidths = map[string]int{
@@ -236,7 +239,7 @@ func (s *NodesWidget) filterRows() {
 
 func (s *NodesWidget) calculateVisibleRows() {
 
-	height := s.screen.Bounds().Dy()
+	height := s.screen.Bounds().Dy() - widgetHeaderLength
 	count := s.RowCount()
 
 	//no screen

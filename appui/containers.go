@@ -14,6 +14,9 @@ import (
 	gizaktermui "github.com/gizak/termui"
 )
 
+// the default length of a widget header
+const widgetHeaderLength = 4
+
 var defaultContainerTableHeader = containerTableHeader()
 
 var containerTableHeaders = []SortableColumnHeader{
@@ -294,7 +297,7 @@ func (s *ContainersWidget) visibleRows() []*ContainerRow {
 
 func (s *ContainersWidget) calculateVisibleRows() {
 
-	height := s.screen.Bounds().Dy()
+	height := s.screen.Bounds().Dy() - widgetHeaderLength
 
 	count := s.RowCount()
 	//no screen
