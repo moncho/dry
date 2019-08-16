@@ -8,14 +8,14 @@ import (
 
 // VolumeRow is a Grid row showing information about a Docker volume.
 type VolumeRow struct {
-	volume types.Volume
+	volume *types.Volume
 	Driver *drytermui.ParColumn
 	Name   *drytermui.ParColumn
 	Row
 }
 
 //NewVolumeRow creates VolumeRow widgets.
-func NewVolumeRow(volume types.Volume, table drytermui.Table) *VolumeRow {
+func NewVolumeRow(volume *types.Volume, table drytermui.Table) *VolumeRow {
 
 	row := &VolumeRow{
 		volume: volume,

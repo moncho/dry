@@ -1,6 +1,7 @@
 package appui
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sort"
@@ -15,7 +16,7 @@ import (
 )
 
 type volumesService interface {
-	Volumes() ([]types.Volume, error)
+	VolumeList(ctx context.Context) ([]*types.Volume, error)
 }
 
 const (
@@ -116,7 +117,7 @@ func (s *VolumesWidget) Mount() error {
 	}
 	s.mounted = true
 	var rows []*VolumeRow
-	vv, err := s.service.Volumes()
+	vv, err := s.service.VolumeList(context.Background())
 	if err != nil {
 		return fmt.Errorf("could not retrieve volumes: %s", err.Error())
 	}
@@ -225,7 +226,7 @@ func (s *VolumesWidget) updateTableHeader() {
 		if strings.Contains(colTitle, DownArrow) {
 			colTitle = colTitle[DownArrowLength:]
 		}
-		for _, h := range containerTableHeaders {
+		for _, h := range volumesTableHeaders {
 			if colTitle == h.Title {
 				header = h
 				break
