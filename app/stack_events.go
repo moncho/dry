@@ -67,7 +67,7 @@ func (h *stacksScreenEventHandler) handle(event *tcell.EventKey, f func(eventHan
 	}
 	if !handled {
 		switch event.Rune() {
-		case '6':
+		case '7':
 			//already in stack screen
 			handled = true
 		case '%':

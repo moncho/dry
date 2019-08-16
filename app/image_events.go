@@ -208,7 +208,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 	dry := h.dry
 	handled := true
 	switch ch {
-	case '2': //Ignore since dry is already on the images screen
+	case '2': //  already on the images screen
 
 	case 'i', 'I': //image history
 
