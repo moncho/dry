@@ -151,7 +151,8 @@ func TestStatsChannel_errorOpeningStream_goroutineExits(t *testing.T) {
 		client: statsClientMock{
 			statsErr: errors.New("No stats for you, my friend"),
 		}}
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	sc.Start(ctx)
 }
 
