@@ -8,6 +8,9 @@ func TestStringer(t *testing.T) {
 	type args struct {
 		b bufferer
 	}
+	par := NewParColumn("bla")
+	par.Height = 1
+	par.Width = 3
 	tests := []struct {
 		name    string
 		args    args
@@ -17,9 +20,9 @@ func TestStringer(t *testing.T) {
 		{
 			"",
 			args{
-				NewParColumn("bla"),
+				par,
 			},
-			"bla ",
+			`bla`,
 			false,
 		},
 	}
