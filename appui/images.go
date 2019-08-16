@@ -16,11 +16,11 @@ import (
 var defaultImageTableHeader = imageTableHeader()
 
 var imageTableHeaders = []SortableColumnHeader{
-	{`REPOSITORY`, docker.SortImagesByRepo},
-	{`TAG`, docker.NoSortImages},
-	{`ID`, docker.SortImagesByID},
-	{`Created`, docker.SortImagesByCreationDate},
-	{`Size`, docker.SortImagesBySize},
+	{`REPOSITORY`, SortMode(docker.SortImagesByRepo)},
+	{`TAG`, SortMode(docker.NoSortImages)},
+	{`ID`, SortMode(docker.SortImagesByID)},
+	{`Created`, SortMode(docker.SortImagesByCreationDate)},
+	{`Size`, SortMode(docker.SortImagesBySize)},
 }
 
 //DockerImagesWidget knows how render a container list
@@ -245,7 +245,7 @@ func (s *DockerImagesWidget) prepareForRendering() {
 }
 
 func (s *DockerImagesWidget) updateHeader() {
-	sortMode := s.sortMode
+	sortMode := SortMode(s.sortMode)
 
 	for _, c := range s.header.Columns {
 		colTitle := c.Text

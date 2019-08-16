@@ -4,18 +4,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/moncho/dry/docker"
-
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/ui/termui"
 )
 
-type sortMode = docker.SortMode
+// SortMode sort mode for widgets
+type SortMode int
 
 //SortableColumnHeader is a column header associated to a sort mode
 type SortableColumnHeader struct {
 	Title string // Title to display in the tableHeader.
-	Mode  sortMode
+	Mode  SortMode
 }
 
 //WidgetHeader is a widget for the header of a widget

@@ -34,16 +34,16 @@ var nodeTableFieldWidths = map[string]int{
 }
 
 var nodeTableHeaders = []appui.SortableColumnHeader{
-	{Title: "NAME", Mode: docker.SortByNodeName},
-	{Title: "ROLE", Mode: docker.SortByNodeRole},
-	{Title: "LABELS", Mode: docker.NoSortNode},
-	{Title: "CPU", Mode: docker.SortByNodeCPU},
-	{Title: "MEMORY", Mode: docker.SortByNodeMem},
-	{Title: "DOCKER ENGINE", Mode: docker.NoSortNode},
-	{Title: "IP ADDRESS", Mode: docker.NoSortNode},
-	{Title: "STATUS", Mode: docker.SortByNodeStatus},
-	{Title: "AVAILABILITY", Mode: docker.NoSortNode},
-	{Title: "MANAGER STATUS", Mode: docker.NoSortNode},
+	{Title: "NAME", Mode: appui.SortMode(docker.SortByNodeName)},
+	{Title: "ROLE", Mode: appui.SortMode(docker.SortByNodeRole)},
+	{Title: "LABELS", Mode: appui.SortMode(docker.NoSortNode)},
+	{Title: "CPU", Mode: appui.SortMode(docker.SortByNodeCPU)},
+	{Title: "MEMORY", Mode: appui.SortMode(docker.SortByNodeMem)},
+	{Title: "DOCKER ENGINE", Mode: appui.SortMode(docker.NoSortNode)},
+	{Title: "IP ADDRESS", Mode: appui.SortMode(docker.NoSortNode)},
+	{Title: "STATUS", Mode: appui.SortMode(docker.SortByNodeStatus)},
+	{Title: "AVAILABILITY", Mode: appui.SortMode(docker.NoSortNode)},
+	{Title: "MANAGER STATUS", Mode: appui.SortMode(docker.NoSortNode)},
 }
 
 //NodesWidget presents Docker swarm information
@@ -338,7 +338,7 @@ func (s *NodesWidget) updateHeader() {
 				break
 			}
 		}
-		if header.Mode == sortMode {
+		if header.Mode == appui.SortMode(sortMode) {
 			c.Text = appui.DownArrow + colTitle
 		} else {
 			c.Text = colTitle

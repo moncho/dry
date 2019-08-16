@@ -1,7 +1,6 @@
 package appui
 
 import (
-	"flag"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -14,8 +13,6 @@ import (
 const (
 	screenHeight = 20
 )
-
-var update = flag.Bool("update", false, "update .golden files")
 
 func TestDiskUsageRendererCreation(t *testing.T) {
 

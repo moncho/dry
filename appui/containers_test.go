@@ -1,7 +1,6 @@
 package appui
 
 import (
-	"image"
 	"sort"
 	"testing"
 
@@ -11,29 +10,16 @@ import (
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
-type testScreen struct {
-	cursor     *ui.Cursor
-	dimensions ui.Dimensions
-}
-
-func (ts *testScreen) Cursor() *ui.Cursor {
-	return ts.cursor
-}
-
-func (ts *testScreen) Bounds() image.Rectangle {
-	return image.Rect(0, 0, ts.dimensions.Width, ts.dimensions.Height)
-}
-
 func TestContainerListVisibleRows(t *testing.T) {
 
 	daemon := &mocks.DockerDaemonMock{}
 	screen := &testScreen{
-		cursor:     &ui.Cursor{},
-		dimensions: ui.Dimensions{Height: 5, Width: 40},
+		cursor: &ui.Cursor{},
+		y1:     9, x1: 40,
 	}
 	//DockerDaemonMock returns 10 running containers
-	screen.Cursor().Max(10 - 1)
-	height := screen.Bounds().Dy()
+	screen.Cursor().Max(9)
+	height := screen.Bounds().Dy() - widgetHeaderLength
 	w := NewContainersWidget(daemon, screen)
 
 	if err := w.Mount(); err != nil {
