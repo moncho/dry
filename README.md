@@ -40,8 +40,10 @@ Keybinding           | Description
 <kbd>1</kbd>         | show container list
 <kbd>2</kbd>         | show image list
 <kbd>3</kbd>         | show network list
-<kbd>4</kbd>         | show node list (on Swarm mode)
-<kbd>5</kbd>         | show service list (on Swarm mode)
+<kbd>4</kbd>         | show volumes list
+<kbd>5</kbd>         | show node list (on Swarm mode)
+<kbd>6</kbd>         | show service list (on Swarm mode)
+<kbd>7</kbd>         | show stacks list (on Swarm mode)
 <kbd>ArrowUp</kbd>   | move the cursor one line up
 <kbd>ArrowDown</kbd> | move the cursor one line down
 <kbd>g</kbd>         | move the cursor to the top
@@ -83,6 +85,16 @@ Keybinding           | Description
 Keybinding           | Description
 ---------------------|---------------------------------------
 <kbd>Ctrl+e</kbd>    | remove network
+<kbd>Enter</kbd>     | inspect
+
+#### Volume commands
+
+Keybinding           | Description
+---------------------|---------------------------------------
+<kbd>Ctrl+a</kbd>    | remove all volumes
+<kbd>Ctrl+e</kbd>    | remove volume
+<kbd>Ctrl+f</kbd>    | remove volume (force)
+<kbd>Ctrl+u</kbd>    | remove unused volumes
 <kbd>Enter</kbd>     | inspect
 
 #### Service commands
