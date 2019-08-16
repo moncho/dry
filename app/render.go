@@ -129,6 +129,16 @@ func render(d *Dry, screen *ui.Screen) {
 			monitor.Mount()
 			keymap = monitorMapping
 		}
+	case Volumes:
+		{
+			volumes := widgets.Volumes
+			if err := volumes.Mount(); err != nil {
+				screen.Render(1, err.Error())
+			}
+			bufferers = append(bufferers, volumes)
+			keymap = volumesKeyMappings
+		}
+
 	}
 	bufferers = append(bufferers, footer(keymap))
 

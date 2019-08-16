@@ -21,6 +21,7 @@ type widgetRegistry struct {
 	DiskUsage     *appui.DockerDiskUsageRenderer
 	DockerInfo    *appui.DockerInfo
 	ImageList     *appui.DockerImagesWidget
+	MessageBar    *ui.ExpiringMessageWidget
 	Monitor       *appui.Monitor
 	Networks      *appui.DockerNetworksWidget
 	Nodes         *swarm.NodesWidget
@@ -29,8 +30,7 @@ type widgetRegistry struct {
 	ServiceList   *swarm.ServicesWidget
 	Stacks        *swarm.StacksWidget
 	StackTasks    *swarm.StacksTasksWidget
-	MessageBar    *ui.ExpiringMessageWidget
-
+	Volumes       *appui.VolumesWidget
 	sync.RWMutex
 	widgets map[string]termui.Widget
 }
