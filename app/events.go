@@ -109,13 +109,17 @@ func (b *baseEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 		dry.changeView(Networks)
 	case '4':
 		cursor.Reset()
+		f(viewsToHandlers[Volumes])
+		dry.changeView(Volumes)
+	case '5':
+		cursor.Reset()
 		f(viewsToHandlers[Nodes])
 		dry.changeView(Nodes)
-	case '5':
+	case '6':
 		cursor.Reset()
 		f(viewsToHandlers[Services])
 		dry.changeView(Services)
-	case '6':
+	case '7':
 		cursor.Reset()
 		f(viewsToHandlers[Stacks])
 		dry.changeView(Stacks)
@@ -217,6 +221,13 @@ func initHandlers(dry *Dry, screen *ui.Screen) map[viewMode]eventHandler {
 				screen: screen,
 			},
 			widgets.StackTasks,
+		},
+		Volumes: &volumesScreenEventHandler{
+			baseEventHandler{
+				dry:    dry,
+				screen: screen,
+			},
+			widgets.Volumes,
 		},
 	}
 

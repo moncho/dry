@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	id sortMode = iota
+	id SortMode = iota
 	name
 	cpu
 	mem
@@ -26,7 +26,7 @@ const (
 	uptime
 )
 
-var monitorTableHeaders = map[string]sortMode{
+var monitorTableHeaders = map[string]SortMode{
 	"CONTAINER": id,
 	"NAME":      name,
 	"CPU":       cpu,
@@ -55,7 +55,7 @@ type Monitor struct {
 	startIndex, endIndex int
 	renderer             ScreenBuffererRender
 	selectedIndex        int
-	sortMode             sortMode
+	sortMode             SortMode
 }
 
 //NewMonitor creates a new Monitor component that will render itself on the given screen

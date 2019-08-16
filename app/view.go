@@ -20,5 +20,6 @@ const (
 	StackTasks
 	Tasks
 	ContainerMenu
+	Volumes
 	NoView
 )

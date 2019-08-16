@@ -17,9 +17,10 @@ func TestImagesToShowSmallScreen(t *testing.T) {
 	}
 
 	cursor := ui.NewCursor()
+	// to test scrolling all images but one fit on the screen
 	screen := &testScreen{
-		dimensions: ui.Dimensions{Height: 4, Width: 100},
-		cursor:     cursor}
+		y1: imagesLen + widgetHeaderLength - 1, x1: 40,
+		cursor: cursor}
 
 	renderer := NewDockerImagesWidget(daemon.Images, screen)
 
@@ -67,8 +68,8 @@ func TestImagesToShow(t *testing.T) {
 	cursor := ui.NewCursor()
 
 	screen := &testScreen{
-		dimensions: ui.Dimensions{Height: 20, Width: 100},
-		cursor:     cursor}
+		y1: 20, x1: 100,
+		cursor: cursor}
 	renderer := NewDockerImagesWidget(daemon.Images, screen)
 	if err := renderer.Mount(); err != nil {
 		t.Errorf("There was an error mounting the widget %v", err)

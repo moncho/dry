@@ -16,12 +16,12 @@ import (
 var defaultStackTableHeader = stackTableHeader()
 
 var stackTableHeaders = []appui.SortableColumnHeader{
-	{Title: "NAME", Mode: docker.SortByStackName},
-	{Title: "SERVICES", Mode: docker.NoSortStack},
-	{Title: "ORCHESTRATOR", Mode: docker.NoSortStack},
-	{Title: "NETWORKS", Mode: docker.NoSortStack},
-	{Title: "CONFIGS", Mode: docker.NoSortStack},
-	{Title: "SECRETS", Mode: docker.NoSortStack},
+	{Title: "NAME", Mode: appui.SortMode(docker.SortByStackName)},
+	{Title: "SERVICES", Mode: appui.SortMode(docker.NoSortStack)},
+	{Title: "ORCHESTRATOR", Mode: appui.SortMode(docker.NoSortStack)},
+	{Title: "NETWORKS", Mode: appui.SortMode(docker.NoSortStack)},
+	{Title: "CONFIGS", Mode: appui.SortMode(docker.NoSortStack)},
+	{Title: "SECRETS", Mode: appui.SortMode(docker.NoSortStack)},
 }
 
 //StacksWidget shows information about services running on the Swarm
@@ -257,7 +257,7 @@ func (s *StacksWidget) updateHeader() {
 				break
 			}
 		}
-		if header.Mode == sortMode {
+		if header.Mode == appui.SortMode(sortMode) {
 			c.Text = appui.DownArrow + colTitle
 		} else {
 			c.Text = colTitle

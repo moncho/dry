@@ -45,7 +45,8 @@ func TestWidgetHeader(t *testing.T) {
 			//Trimming the string to ignore whitespaces caused by the length
 			//of the widget being the length of the markup tags +
 			//the length of the header entries.
-			if strings.Trim(got, " ") != tt.want {
+			got = strings.TrimSpace(got)
+			if got != tt.want {
 				t.Errorf("WidgetHeader got = '%s', want '%s'", got, tt.want)
 			}
 		})

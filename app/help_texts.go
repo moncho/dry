@@ -28,9 +28,10 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>1</>         To container list
 	<white>2</>         To image list
 	<white>3</>         To network list
-	<white>4</>         To node list (in Swarm mode)
-	<white>5</>         To service list (in Swarm mode)
-	<white>6</>         To stack list (in Swarm mode)
+	<white>4</>         To volumes list
+	<white>5</>         To node list (in Swarm mode)
+	<white>6</>         To service list (in Swarm mode)
+	<white>7</>         To stack list (in Swarm mode)
 	<white>m</>         Show container monitor mode
 	<white>h</>         Shows this help screen
 	<white>Ctrl+c</>    Quits <white>dry</> immediately
@@ -101,26 +102,31 @@ const (
 	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "
 	keyMappings    = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> " +
-		"<b>[m]:<darkgrey>Monitor mode</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <b>[6]:<darkgrey>Stacks</> <blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
+		"<b>[m]:<darkgrey>Monitor mode</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
 
 	monitorMapping = commonMappings +
-		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <b>[6]:<darkgrey>Stacks</> <blue>|</> <b>[s]:<darkgrey>Set refresh rate</></>"
+		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</> <b>[s]:<darkgrey>Set refresh rate</></>"
 
 	swarmMapping = commonMappings +
-		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <b>[6]:<darkgrey>Stacks</>"
+		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</>"
 
 	imagesKeyMappings = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
-		"<b>[1]:<darkgrey>Containers</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <b>[6]:<darkgrey>Stacks</> <blue>|</>" +
+		"<b>[1]:<darkgrey>Containers</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</>" +
 		"<b>[Ctrl+D]:<darkgrey>Remove Dangling</> <b>[Ctrl+E]:<darkgrey>Remove</> <b>[Ctrl+F]:<darkgrey>Force Remove</> <b>[Ctrl+U]:<darkgrey>Remove Unused</> <b>[I]:<darkgrey>History</>"
 
 	networkKeyMappings = commonMappings +
 		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
-		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <b>[6]:<darkgrey>Stacks</> <blue>|</>" +
+		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</>" +
 		"<b>[Ctrl+E]:<darkgrey>Remove</> <b>[Enter]:<darkgrey>Inspect</>"
 
+	volumesKeyMappings = commonMappings +
+		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
+		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</>" +
+		"<b>[Ctrl+A]:<darkgrey>Remove All</> <b>[Ctrl+E]:<darkgrey>Remove</> <b>[Ctrl+F]:<darkgrey>Force Remove</> <b>[Ctrl+U]:<darkgrey>Remove Unused</> <b>[Enter]:<darkgrey>Inspect</>"
+
 	diskUsageKeyMappings = commonMappings +
-		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Nodes</> <b>[5]:<darkgrey>Services</> <b>[6]:<darkgrey>Stacks</> <blue>|</>" +
+		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</>" +
 		"<b>[p]:<darkgrey>Prune</>"
 
 	serviceKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> <b>[l]:<darkgrey>Service logs</> <b>[Ctrl+R]:<darkgrey>Remove Service</> <b>[Ctrl+S]:<darkgrey>Scale service</><b>[Ctrl+K]:<darkgrey>Update service</>"

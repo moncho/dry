@@ -178,7 +178,7 @@ func (s *TasksWidget) updateHeader() {
 				break
 			}
 		}
-		if header.Mode == sortMode {
+		if header.Mode == appui.SortMode(sortMode) {
 			c.Text = appui.DownArrow + colTitle
 		} else {
 			c.Text = colTitle
@@ -222,13 +222,13 @@ func (s *TasksWidget) sortRows() {
 }
 
 var taskTableHeaders = []appui.SortableColumnHeader{
-	{Title: "NAME", Mode: docker.SortByTaskService},
-	{Title: "IMAGE", Mode: docker.SortByTaskImage},
-	{Title: "NODE", Mode: docker.NoSortTask},
-	{Title: "DESIRED STATE", Mode: docker.SortByTaskDesiredState},
-	{Title: "CURRENT STATE", Mode: docker.SortByTaskState},
-	{Title: "ERROR", Mode: docker.NoSortTask},
-	{Title: "PORTS", Mode: docker.NoSortTask},
+	{Title: "NAME", Mode: appui.SortMode(docker.SortByTaskService)},
+	{Title: "IMAGE", Mode: appui.SortMode(docker.SortByTaskImage)},
+	{Title: "NODE", Mode: appui.SortMode(docker.NoSortTask)},
+	{Title: "DESIRED STATE", Mode: appui.SortMode(docker.SortByTaskDesiredState)},
+	{Title: "CURRENT STATE", Mode: appui.SortMode(docker.SortByTaskState)},
+	{Title: "ERROR", Mode: appui.SortMode(docker.NoSortTask)},
+	{Title: "PORTS", Mode: appui.SortMode(docker.NoSortTask)},
 }
 
 func taskTableHeader() *termui.TableHeader {

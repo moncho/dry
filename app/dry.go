@@ -129,6 +129,7 @@ func initRegistry(dry *Dry) *widgetRegistry {
 		StackTasks:    swarm.NewStacksTasksWidget(daemon, widgetScreen),
 		widgets:       make(map[string]termui.Widget),
 		MessageBar:    ui.NewExpiringMessageWidget(0, mainScreen),
+		Volumes:       appui.NewVolumesWidget(daemon, widgetScreen),
 	}
 
 	refreshOnContainerEvent(w.ContainerList, daemon)
@@ -137,6 +138,7 @@ func initRegistry(dry *Dry) *widgetRegistry {
 	refreshOnDockerEvent(docker.NodeSource, w.Nodes, Nodes)
 	refreshOnDockerEvent(docker.ServiceSource, w.ServiceList, Services)
 	refreshOnDockerEvent(docker.ServiceSource, w.Stacks, Stacks)
+	refreshOnDockerEvent(docker.VolumeSource, w.Volumes, Volumes)
 
 	return &w
 }

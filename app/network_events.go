@@ -41,7 +41,7 @@ func (h *networksScreenEventHandler) handle(event *tcell.EventKey, f func(eh eve
 
 		if err := h.widget.OnEvent(inspectNetwork); err != nil {
 			dry.message(
-				fmt.Sprintf("Error inspecting image: %s", err.Error()))
+				fmt.Sprintf("Error inspecting network: %s", err.Error()))
 		}
 
 	case tcell.KeyCtrlE: //remove network
@@ -71,7 +71,7 @@ func (h *networksScreenEventHandler) handle(event *tcell.EventKey, f func(eh eve
 				if err := h.dry.dockerDaemon.RemoveNetwork(id); err == nil {
 					h.dry.message(fmt.Sprintf("<red>Removed network:</> <white>%s</>", shortID))
 				} else {
-					h.dry.message(fmt.Sprintf("<red>Error network image </><white>%s: %s</>", shortID, err.Error()))
+					h.dry.message(fmt.Sprintf("<red>Error removing network </><white>%s: %s</>", shortID, err.Error()))
 				}
 
 				return nil

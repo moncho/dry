@@ -404,3 +404,28 @@ func (_m *DockerDaemonMock) Version() (*types.Version, error) {
 		KernelVersion: "42",
 	}, nil
 }
+
+// VolumeInspect mock
+func (_m *DockerDaemonMock) VolumeInspect(ctx context.Context, volumeID string) (types.Volume, error) {
+	return types.Volume{}, nil
+}
+
+// VolumeList mock
+func (_m *DockerDaemonMock) VolumeList(ctx context.Context) ([]*types.Volume, error) {
+	return nil, nil
+}
+
+// VolumePrune mock
+func (_m *DockerDaemonMock) VolumePrune(ctx context.Context) (int, error) {
+	return 0, nil
+}
+
+// VolumeRemove mock
+func (_m *DockerDaemonMock) VolumeRemove(ctx context.Context, volumeID string, force bool) error {
+	return nil
+}
+
+// VolumeRemoveAll mock
+func (_m *DockerDaemonMock) VolumeRemoveAll(ctx context.Context) (int, error) {
+	return 0, nil
+}

@@ -16,7 +16,13 @@ type bufferer interface {
 func String(b bufferer) (string, error) {
 	cellMap := b.Buffer().CellMap
 	var builder strings.Builder
+	curLine := 0
 	for _, k := range sortedKeys(cellMap) {
+		if curLine != k.Y {
+			builder.WriteByte('\n')
+			curLine = k.Y
+		}
+
 		_, err := builder.WriteRune(cellMap[k].Ch)
 		if err != nil {
 			return "", err

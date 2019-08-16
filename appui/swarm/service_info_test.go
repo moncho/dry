@@ -12,7 +12,7 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
-var update = flag.Bool("update", false, "update .golden files")
+var updateGoldenFiles = flag.Bool("updateGoldenFiles", false, "update .golden files")
 
 var testService = &swarm.Service{
 	Spec: swarm.ServiceSpec{
@@ -73,7 +73,7 @@ func Test_serviceInfo(t *testing.T) {
 			got := serviceInfo(tt.args.swarmClient, tt.args.name, tt.args.service)
 
 			golden := filepath.Join("testdata", tt.name+".golden")
-			if *update {
+			if *updateGoldenFiles {
 				ioutil.WriteFile(golden, []byte(got), 0644)
 			}
 			expected, _ := ioutil.ReadFile(golden)

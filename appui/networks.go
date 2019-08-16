@@ -14,14 +14,14 @@ import (
 var defaultNetworkTableHeader = networkTableHeader()
 
 var networkTableHeaders = []SortableColumnHeader{
-	{`NETWORK ID`, docker.SortNetworksByID},
-	{`NAME`, docker.SortNetworksByName},
-	{`DRIVER`, docker.SortNetworksByDriver},
-	{`CONTAINERS`, docker.SortNetworksByContainerCount},
-	{`SERVICES`, docker.SortNetworksByServiceCount},
-	{`SCOPE`, docker.NoSortNetworks},
-	{`SUBNET`, docker.SortNetworksBySubnet},
-	{`GATEWAY`, docker.NoSortNetworks},
+	{`NETWORK ID`, SortMode(docker.SortNetworksByID)},
+	{`NAME`, SortMode(docker.SortNetworksByName)},
+	{`DRIVER`, SortMode(docker.SortNetworksByDriver)},
+	{`CONTAINERS`, SortMode(docker.SortNetworksByContainerCount)},
+	{`SERVICES`, SortMode(docker.SortNetworksByServiceCount)},
+	{`SCOPE`, SortMode(docker.NoSortNetworks)},
+	{`SUBNET`, SortMode(docker.SortNetworksBySubnet)},
+	{`GATEWAY`, SortMode(docker.NoSortNetworks)},
 }
 
 //DockerNetworksWidget knows how render a container list
@@ -256,7 +256,7 @@ func (s *DockerNetworksWidget) prepareForRendering() {
 	s.calculateVisibleRows()
 }
 func (s *DockerNetworksWidget) updateHeader() {
-	sortMode := s.sortMode
+	sortMode := SortMode(s.sortMode)
 
 	for _, c := range s.header.Columns {
 		colTitle := c.Text

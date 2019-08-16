@@ -20,13 +20,13 @@ const widgetHeaderLength = 4
 var defaultContainerTableHeader = containerTableHeader()
 
 var containerTableHeaders = []SortableColumnHeader{
-	{``, docker.NoSort},
-	{`CONTAINER`, docker.SortByContainerID},
-	{`IMAGE`, docker.SortByImage},
-	{`COMMAND`, docker.NoSort},
-	{`STATUS`, docker.SortByStatus},
-	{`PORTS`, docker.NoSort},
-	{`NAMES`, docker.SortByName},
+	{``, SortMode(docker.NoSort)},
+	{`CONTAINER`, SortMode(docker.SortByContainerID)},
+	{`IMAGE`, SortMode(docker.SortByImage)},
+	{`COMMAND`, SortMode(docker.NoSort)},
+	{`STATUS`, SortMode(docker.SortByStatus)},
+	{`PORTS`, SortMode(docker.NoSort)},
+	{`NAMES`, SortMode(docker.SortByName)},
 }
 
 //ContainersWidget shows information containers
@@ -237,7 +237,7 @@ func (s *ContainersWidget) prepareForRendering() {
 }
 
 func (s *ContainersWidget) updateTableHeader() {
-	sortMode := s.sortMode
+	sortMode := SortMode(s.sortMode)
 
 	for _, c := range s.header.Columns {
 		colTitle := c.Text

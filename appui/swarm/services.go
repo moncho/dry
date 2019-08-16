@@ -19,11 +19,11 @@ import (
 var defaultServiceTableHeader = serviceTableHeader()
 
 var serviceTableHeaders = []appui.SortableColumnHeader{
-	{Title: "NAME", Mode: docker.SortByServiceName},
-	{Title: "MODE", Mode: docker.NoSortService},
-	{Title: "REPLICAS", Mode: docker.NoSortService},
-	{Title: "SERVICE PORT(S)", Mode: docker.NoSortService},
-	{Title: "IMAGE", Mode: docker.SortByServiceImage},
+	{Title: "NAME", Mode: appui.SortMode(docker.SortByServiceName)},
+	{Title: "MODE", Mode: appui.SortMode(docker.NoSortService)},
+	{Title: "REPLICAS", Mode: appui.SortMode(docker.NoSortService)},
+	{Title: "SERVICE PORT(S)", Mode: appui.SortMode(docker.NoSortService)},
+	{Title: "IMAGE", Mode: appui.SortMode(docker.SortByServiceImage)},
 }
 
 //ServicesWidget shows information about services running on the Swarm
@@ -262,7 +262,7 @@ func (s *ServicesWidget) updateHeader() {
 				break
 			}
 		}
-		if header.Mode == sortMode {
+		if header.Mode == appui.SortMode(sortMode) {
 			c.Text = appui.DownArrow + colTitle
 		} else {
 			c.Text = colTitle
