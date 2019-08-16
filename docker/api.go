@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/docker/docker/api/types"
+	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/image"
@@ -119,4 +120,13 @@ type Stats struct {
 //Resolver defines the interface for ID to name resolution
 type Resolver interface {
 	Resolve(ctx context.Context, t interface{}, id string) (string, error)
+}
+
+// VolumesAPI defines the API for Docker volumes.
+type VolumesAPI interface {
+	VolumeInspect(ctx context.Context, volumeID string) (dockerTypes.Volume, error)
+	VolumeList(ctx context.Context) ([]*dockerTypes.Volume, error)
+	VolumePrune(ctx context.Context) error
+	VolumeRemove(ctx context.Context, volumeID string, force bool) error
+	VolumeRemoveAll(ctx context.Context) error
 }

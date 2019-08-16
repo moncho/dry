@@ -453,6 +453,53 @@ func (daemon *DockerDaemon) Top(ctx context.Context, id string) (container.Conta
 	return daemon.client.ContainerTop(ctx, id, nil)
 }
 
+// VolumeInspect returns the details of the given volume.
+func (daemon *DockerDaemon) VolumeInspect(ctx context.Context, volumeID string) (dockerTypes.Volume, error) {
+	volume, err := daemon.client.VolumeInspect(ctx, volumeID)
+
+	if err != nil {
+		return dockerTypes.Volume{}, err
+	}
+	return volume, nil
+}
+
+// VolumeList returns the list of volumes.
+func (daemon *DockerDaemon) VolumeList(ctx context.Context) ([]*dockerTypes.Volume, error) {
+	volumeOkBody, err := daemon.client.VolumeList(ctx, filters.Args{})
+
+	if err != nil {
+		return nil, err
+	}
+	return volumeOkBody.Volumes, nil
+}
+
+// VolumePrune removes unused volumes.
+func (daemon *DockerDaemon) VolumePrune(ctx context.Context) error {
+	_, err := daemon.client.VolumesPrune(ctx, filters.Args{})
+	return err
+}
+
+// VolumeRemove removes the given volume.
+func (daemon *DockerDaemon) VolumeRemove(ctx context.Context, volumeID string, force bool) error {
+	return daemon.client.VolumeRemove(ctx, volumeID, force)
+}
+
+// VolumeRemoveAll removes all the volumes.
+func (daemon *DockerDaemon) VolumeRemoveAll(ctx context.Context) error {
+	volumes, err := daemon.VolumeList(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, vol := range volumes {
+		err := daemon.VolumeRemove(ctx, vol.Name, true)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 //Version returns version information about the Docker Engine
 func (daemon *DockerDaemon) Version() (*dockerTypes.Version, error) {
 	if daemon.version == nil {
