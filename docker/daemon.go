@@ -474,9 +474,10 @@ func (daemon *DockerDaemon) VolumeList(ctx context.Context) ([]*dockerTypes.Volu
 }
 
 // VolumePrune removes unused volumes.
-func (daemon *DockerDaemon) VolumePrune(ctx context.Context) error {
-	_, err := daemon.client.VolumesPrune(ctx, filters.Args{})
-	return err
+func (daemon *DockerDaemon) VolumePrune(ctx context.Context) (int, error) {
+	pruneReport, err := daemon.client.VolumesPrune(ctx, filters.Args{})
+
+	return len(pruneReport.VolumesDeleted), err
 }
 
 // VolumeRemove removes the given volume.
@@ -485,19 +486,20 @@ func (daemon *DockerDaemon) VolumeRemove(ctx context.Context, volumeID string, f
 }
 
 // VolumeRemoveAll removes all the volumes.
-func (daemon *DockerDaemon) VolumeRemoveAll(ctx context.Context) error {
+func (daemon *DockerDaemon) VolumeRemoveAll(ctx context.Context) (int, error) {
 	volumes, err := daemon.VolumeList(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
-
+	removed := 0
 	for _, vol := range volumes {
 		err := daemon.VolumeRemove(ctx, vol.Name, true)
 		if err != nil {
-			return err
+			return removed, err
 		}
+		removed++
 	}
-	return nil
+	return removed, nil
 }
 
 //Version returns version information about the Docker Engine

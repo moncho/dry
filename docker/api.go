@@ -23,6 +23,7 @@ type ContainerDaemon interface {
 	ContainerAPI
 	ImageAPI
 	NetworkAPI
+	VolumesAPI
 	SwarmAPI
 	ContainerRuntime
 	DiskUsage() (types.DiskUsage, error)
@@ -126,7 +127,7 @@ type Resolver interface {
 type VolumesAPI interface {
 	VolumeInspect(ctx context.Context, volumeID string) (dockerTypes.Volume, error)
 	VolumeList(ctx context.Context) ([]*dockerTypes.Volume, error)
-	VolumePrune(ctx context.Context) error
+	VolumePrune(ctx context.Context) (int, error)
 	VolumeRemove(ctx context.Context, volumeID string, force bool) error
-	VolumeRemoveAll(ctx context.Context) error
+	VolumeRemoveAll(ctx context.Context) (int, error)
 }
