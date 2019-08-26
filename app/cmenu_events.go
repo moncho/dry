@@ -191,6 +191,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 						refreshScreen()
 					})
 			} else {
+				f(h)
 				h.dry.message("Error showing container logs: " + err.Error())
 			}
 		}()

@@ -547,7 +547,6 @@ func (h *containersScreenEventHandler) showLogs(id string, withTimestamp bool, f
 		} else {
 			f(h)
 			h.dry.message("Error showing container logs: " + err.Error())
-
 		}
 	}()
 }
