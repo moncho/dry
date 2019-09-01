@@ -10,7 +10,7 @@ import (
 
 var viewsToHandlers map[viewMode]eventHandler
 
-//eventHandler interface to handle termbox events
+// eventHandler interface to handle terminal events.
 type eventHandler interface {
 	//handle handles the given event key, the given func can be
 	//used to set the handler of the next event

@@ -90,7 +90,7 @@ func (markup *Markup) IsTag(str string) bool {
 func (markup *Markup) process(tag string, open bool) bool {
 	if attribute, ok := tagsToAttributeMap[tag]; ok {
 		if open {
-			markup.Foreground = attribute // Set the Termbox color.
+			markup.Foreground = attribute
 		} else {
 			markup.Foreground = termbox.Attribute(markup.theme.Fg)
 		}

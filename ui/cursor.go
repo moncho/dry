@@ -45,7 +45,7 @@ func (cursor *Cursor) ScrollCursorDown() {
 	cursor.Lock()
 	defer cursor.Unlock()
 	if cursor.unlimited || cursor.pos < cursor.max {
-		cursor.pos += 1
+		cursor.pos++
 	}
 	cursor.downwards = true
 }
@@ -55,7 +55,7 @@ func (cursor *Cursor) ScrollCursorUp() {
 	cursor.Lock()
 	defer cursor.Unlock()
 	if cursor.pos > 0 {
-		cursor.pos -= 1
+		cursor.pos--
 	} else {
 		cursor.pos = 0
 	}

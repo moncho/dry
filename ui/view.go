@@ -195,7 +195,7 @@ func (v *View) Word(x, y int) (string, error) {
 	if nl == -1 {
 		nl = 0
 	} else {
-		nl += 1
+		nl++
 	}
 	nr := strings.IndexFunc(l[x:], indexFunc)
 	if nr == -1 {
