@@ -2,14 +2,13 @@ package appui
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/pkg/errors"
 
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
@@ -39,13 +38,19 @@ var monitorTableHeaders = map[string]SortMode{
 
 var defaultRefreshRate = 500 * time.Millisecond
 
+//DockerMonitor interface.
+type DockerMonitor interface {
+	Containers(filters []docker.ContainerFilter, mode docker.SortMode) []*docker.Container
+	StatsChannel(container *docker.Container) (*docker.StatsChannel, error)
+}
+
 //Monitor is a self-refreshing ui component that shows monitoring information about docker
 //containers.
 type Monitor struct {
 	sync.RWMutex
 
-	cancel               context.CancelFunc
-	daemon               docker.ContainerDaemon
+	cancel               func()
+	daemon               DockerMonitor
 	header               *MonitorTableHeader
 	offset               int
 	openChannels         []*docker.StatsChannel
@@ -60,7 +65,7 @@ type Monitor struct {
 
 //NewMonitor creates a new Monitor component that will render itself on the given screen
 //at the given position and with the given width.
-func NewMonitor(daemon docker.ContainerDaemon, s ScreenBuffererRender) *Monitor {
+func NewMonitor(daemon DockerMonitor, s ScreenBuffererRender) *Monitor {
 	m := Monitor{
 		header:        defaultMonitorTableHeader,
 		daemon:        daemon,
@@ -119,16 +124,15 @@ func (m *Monitor) Mount() error {
 	}
 	m.Lock()
 	defer m.Unlock()
-	daemon := m.daemon
 	rowChannels := make(map[*ContainerStatsRow]*docker.StatsChannel)
-	containers := daemon.Containers(
+	containers := m.daemon.Containers(
 		[]docker.ContainerFilter{docker.ContainerFilters.Running()}, docker.SortByName)
 	var rows []*ContainerStatsRow
 	var channels []*docker.StatsChannel
 	for _, c := range containers {
-		statsChan, err := daemon.StatsChannel(c)
+		statsChan, err := m.daemon.StatsChannel(c)
 		if err != nil {
-			return errors.Wrap(err, "error mounting monitor widget")
+			return fmt.Errorf("error mounting monitor widget: %w", err)
 		}
 		row := NewContainerStatsRow(c, defaultMonitorTableHeader)
 		rows = append(rows, row)
@@ -186,7 +190,6 @@ func (m *Monitor) RefreshRate(millis int) {
 //refreshLoop signals this monitor to refresh itself until the given context is cancelled
 func (m *Monitor) refreshLoop(ctx context.Context) {
 	go func(rowChannels map[*ContainerStatsRow]*docker.StatsChannel) {
-
 		for row, ch := range rowChannels {
 			stats := ch.Start(ctx)
 			go func(row *ContainerStatsRow) {
@@ -232,9 +235,12 @@ func (m *Monitor) Sort() {
 //Unmount tells this widget that it will not be rendering anymore
 func (m *Monitor) Unmount() error {
 	m.Lock()
+	defer m.Unlock()
+	if m.cancel == nil {
+		return nil
+	}
 	m.cancel()
 	m.cancel = nil
-	defer m.Unlock()
 	return nil
 }
 
