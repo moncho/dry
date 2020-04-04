@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/docker/cli/opts"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/opts"
 	"github.com/docker/go-connections/sockets"
 	homedir "github.com/mitchellh/go-homedir"
 	drytls "github.com/moncho/dry/tls"
