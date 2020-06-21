@@ -1,9 +1,11 @@
-name: build dry Docker image
-
 on:
   push:
-    branches: master
+    branches:
+      - master
+    paths:
+      - 'APPVERSION'
 
+name: build dry Docker image
 jobs:
   build:
     runs-on: ubuntu-latest
