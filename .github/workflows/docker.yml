@@ -4,8 +4,7 @@ on:
       - master
     paths:
       - 'APPVERSION'
-
-name: build dry Docker image
+name: Build & Push Docker image
 jobs:
   build:
     runs-on: ubuntu-latest
