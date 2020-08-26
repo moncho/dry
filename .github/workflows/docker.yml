@@ -1,10 +1,10 @@
+name: Build & Push Docker image
 on:
   push:
     branches:
       - master
     paths:
       - 'APPVERSION'
-name: Build & Push Docker image
 jobs:
   build:
     runs-on: ubuntu-latest
