@@ -191,3 +191,6 @@ Built on top of:
 * [termui](https://github.com/gizak/termui)
 * [Docker](https://github.com/docker/docker)
 * [Docker CLI](github.com/docker/cli/cli)
+
+## Alternatives
+See [Awesome Docker list](https://github.com/veggiemonk/awesome-docker/blob/master/README.md#terminal) for similar tools to work with Docker.
