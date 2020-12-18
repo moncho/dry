@@ -2,10 +2,12 @@ name: Build & Push Docker image
 
 on:
   push:
-    # branches:
-    #   - master
-    # paths:
-    #   - 'APPVERSION'
+    branches:
+      - master
+    paths:
+      - 'APPVERSION'
+  # Allow manual runs.
+  workflow_dispatch:
 
 jobs:
   build:
