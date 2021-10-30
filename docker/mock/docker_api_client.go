@@ -1,6 +1,7 @@
 package mock
 
 import (
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"strconv"
 
 	"golang.org/x/net/context"
@@ -55,7 +56,7 @@ func (m ContainerAPIClientMock) ContainerInspect(ctx context.Context, container 
 }
 
 //ContainerCreate mocks container creation
-func (mock ImageAPIClientMock) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, containerName string) (container.ContainerCreateCreatedBody, error) {
+func (mock ImageAPIClientMock) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, platform *v1.Platform, containerName string) (container.ContainerCreateCreatedBody, error) {
 	return container.ContainerCreateCreatedBody{ID: "NewContainer"}, nil
 }
 

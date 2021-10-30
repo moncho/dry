@@ -69,7 +69,7 @@ func (daemon *DockerDaemon) RunImage(image dockerTypes.ImageSummary, command str
 		return pkgError.Wrap(err, "Error configuring container")
 	}
 
-	cCreated, err := daemon.client.ContainerCreate(ctx, &cc, &hc, nil, "")
+	cCreated, err := daemon.client.ContainerCreate(ctx, &cc, &hc, nil, nil, "")
 
 	if err != nil {
 		return pkgError.Wrap(err, fmt.Sprintf("Cannot create container for image %s", imageName))
