@@ -17,7 +17,7 @@ GO_LDFLAGS=-ldflags "-w $(CTIMEVAR)"
 GO_LDFLAGS_STATIC=-ldflags "-w $(CTIMEVAR) -extldflags -static"
 GOOSES = darwin freebsd linux windows
 GOARCHS = amd64 386 arm arm64
-UNSUPPORTED = darwin_arm darwin_arm64 windows_arm windows_arm64 windows_386 freebsd_arm64
+UNSUPPORTED = darwin_arm darwin_386 windows_arm windows_arm64 windows_386 freebsd_arm64 
 print-%: ; @echo $*=$($*)
 
 run: ## Runs dry
