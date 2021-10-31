@@ -223,12 +223,12 @@ get_architecture() {
 	x86_64 | x86-64 | x64 | amd64)
             local _cputype=amd64
             ;;
-  	arm*)
+    aarch64 | arm64)
+            local _cputype=arm64
+            ;;
+    arm*)
             local _cputype=arm
             ;;
-    aarch64)
-            local _cputype=arm64
-            ;;         
 	*)
                err "unknown CPU type: $CFG_CPUTYPE"
 
