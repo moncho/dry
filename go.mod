@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/containerd/containerd v1.5.7 // indirect
-	github.com/docker/cli v0.0.0-20200331182946-6e98ebc89a68
+	github.com/docker/cli v20.10.10+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v20.10.9+incompatible
 	github.com/docker/go-connections v0.4.1-0.20180821093606-97c2040d34df
