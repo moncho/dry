@@ -93,7 +93,7 @@ func TestStatsChannel_statsArePublished(t *testing.T) {
 }
 
 func TestStatsChannel_noErrors_goroutineExitsOnCtxCancel(t *testing.T) {
-	defer goleak.VerifyNoLeaks(t)
+	defer goleak.VerifyNone(t)
 	sc := StatsChannel{
 		Container: &Container{
 			types.Container{
@@ -114,7 +114,7 @@ func TestStatsChannel_noErrors_goroutineExitsOnCtxCancel(t *testing.T) {
 }
 
 func TestStatsChannel_errorBuildingStats_goroutineExitsOnCtxCancel(t *testing.T) {
-	defer goleak.VerifyNoLeaks(t)
+	defer goleak.VerifyNone(t)
 	sc := StatsChannel{
 		Container: &Container{
 			types.Container{
@@ -136,7 +136,7 @@ func TestStatsChannel_errorBuildingStats_goroutineExitsOnCtxCancel(t *testing.T)
 }
 
 func TestStatsChannel_errorOpeningStream_goroutineExits(t *testing.T) {
-	defer goleak.VerifyNoLeaks(t)
+	defer goleak.VerifyNone(t)
 	sc := StatsChannel{
 		Container: &Container{
 			types.Container{
