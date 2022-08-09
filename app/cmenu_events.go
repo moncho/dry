@@ -53,7 +53,6 @@ func (h *cMenuEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) 
 }
 
 func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f func(eventHandler)) {
-
 	dry := h.dry
 	screen := h.screen
 
@@ -92,7 +91,6 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			refreshScreen()
 		}()
 	case docker.RESTART:
-
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to restart container %s? (y/N)", id))
 		widgets.add(prompt)
@@ -126,7 +124,6 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		}()
 
 	case docker.STOP:
-
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to stop container %s? (y/N)", id))
 		widgets.add(prompt)
@@ -160,7 +157,6 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 			refreshScreen()
 		}()
 	case docker.LOGS:
-
 		prompt := logsPrompt()
 		widgets.add(prompt)
 		forwarder := newEventForwarder()

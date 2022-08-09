@@ -11,7 +11,6 @@ import (
 )
 
 func TestContainerListVisibleRows(t *testing.T) {
-
 	daemon := &mocks.DockerDaemonMock{}
 	screen := &testScreen{
 		cursor: &ui.Cursor{},
