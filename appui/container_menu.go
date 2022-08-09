@@ -9,11 +9,15 @@ import (
 	"github.com/moncho/dry/docker"
 )
 
+type ContainerAPI interface {
+	ContainerByID(string) *docker.Container
+}
+
 const cMenuWidth = 30
 
-//ContainerMenuWidget shows the actions menu of a container
+// ContainerMenuWidget shows the actions menu of a container
 type ContainerMenuWidget struct {
-	dockerDaemon  docker.ContainerAPI
+	containerAPI  ContainerAPI
 	rows          []*Row
 	cInfo         *ContainerDetailsWidget
 	cID           string
@@ -25,17 +29,17 @@ type ContainerMenuWidget struct {
 	mounted bool
 }
 
-//NewContainerMenuWidget creates a TasksWidget
-func NewContainerMenuWidget(dockerDaemon docker.ContainerAPI, s Screen) *ContainerMenuWidget {
+// NewContainerMenuWidget creates a TasksWidget
+func NewContainerMenuWidget(containerAPI ContainerAPI, s Screen) *ContainerMenuWidget {
 	w := ContainerMenuWidget{
-		dockerDaemon: dockerDaemon,
+		containerAPI: containerAPI,
 		screen:       s,
 	}
 
 	return &w
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
+// Buffer returns the content of this widget as a termui.Buffer
 func (s *ContainerMenuWidget) Buffer() gizaktermui.Buffer {
 	s.RLock()
 	defer s.RUnlock()
@@ -65,22 +69,20 @@ func (s *ContainerMenuWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
-//Filter is a noop for this widget
+// Filter is a noop for this widget
 func (s *ContainerMenuWidget) Filter(_ string) {
 
 }
 
-//ForContainer sets the container for which this widget is showing tasks
+// ForContainer sets the container for which this widget is showing tasks
 func (s *ContainerMenuWidget) ForContainer(cID string) {
 	s.Lock()
 	defer s.Unlock()
-
 	s.cID = cID
 	s.mounted = false
-
 }
 
-//Mount prepares this widget for rendering
+// Mount prepares this widget for rendering
 func (s *ContainerMenuWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -88,7 +90,7 @@ func (s *ContainerMenuWidget) Mount() error {
 		return nil
 	}
 
-	c := s.dockerDaemon.ContainerByID(s.cID)
+	c := s.containerAPI.ContainerByID(s.cID)
 	if c != nil {
 		s.cInfo = NewContainerDetailsWidget(c, s.screen.Bounds().Min.Y)
 	}
@@ -109,26 +111,29 @@ func (s *ContainerMenuWidget) Mount() error {
 	return nil
 }
 
-//Name returns this widget name
+// Name returns this widget name
 func (s *ContainerMenuWidget) Name() string {
 	return "ContainerMenuWidget"
 }
 
-//OnEvent runs the given command
+// OnEvent runs the given command
 func (s *ContainerMenuWidget) OnEvent(event EventCommand) error {
+	if s.RowCount() <= 0 || s.selectedIndex < 0 || s.selectedIndex >= s.RowCount() {
+		return invalidRow{selected: int(s.selectedIndex), max: s.RowCount()}
+	}
 	return event(s.cID + ":" + s.rows[s.selectedIndex].ParColumns[0].Text)
 }
 
-//RowCount returns the number of rows of this widget.
+// RowCount returns the number of rows of this widget.
 func (s *ContainerMenuWidget) RowCount() int {
 	return len(s.rows)
 }
 
-//Sort is a noop for this widget
+// Sort is a noop for this widget
 func (s *ContainerMenuWidget) Sort() {
 }
 
-//Unmount this widget
+// Unmount this widget
 func (s *ContainerMenuWidget) Unmount() error {
 	s.Lock()
 	defer s.Unlock()
