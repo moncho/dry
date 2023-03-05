@@ -1,7 +1,7 @@
 # dry
 
 [![MIT License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/moncho/dryblob/master/LICENSE)
-[![Build Status](https://travis-ci.org/moncho/dry.svg?branch=master)](https://travis-ci.org/moncho/dry)
+![Build Status](https://github.com/moncho/dry/actions/workflows/go.yml/badge.svg)]
 ![Docker Build](https://github.com/moncho/dry/workflows/.github/workflows/docker.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/moncho/dry)](https://goreportcard.com/report/github.com/moncho/dry)
 [![GoDoc](https://godoc.org/github.com/moncho/dry?status.svg)](https://godoc.org/github.com/moncho/dry)
