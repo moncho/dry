@@ -42,7 +42,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.0.2 // indirect
 	github.com/nsf/termbox-go v0.0.0-20180613055208-5c94acc5e6eb // indirect
 	golang.org/x/sys v0.0.0-20220808155132-1c4a2a72c664 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/text v0.3.8 // indirect
 	google.golang.org/genproto v0.0.0-20220808204814-fd01256a5276 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )
