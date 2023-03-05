@@ -2,17 +2,13 @@
 
 If you just run what you compile, use the source.
 
-Make sure that **$GOPATH** exists. Go get this project.
+Clone the repo:
 ```
-$ go get github.com/moncho/dry
-$ cd $GOPATH/src/github.com/moncho/dry
+$ git clone https://github.com/moncho/dry.git
+$ cd dry
 ```
-This project uses [godep](https://github.com/tools/godep) to handle its dependencies.
-```
-$ go get github.com/tools/godep
-$ godep restore
-```
-Build **dry**.
+
+Build **dry**:
 ```
 $ make install
 ```
