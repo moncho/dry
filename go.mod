@@ -14,7 +14,7 @@ require (
 	github.com/gizak/termui v0.0.0-20190118200331-b3075f731367
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gorilla/mux v1.7.3 // indirect
-	github.com/jessevdk/go-flags v1.4.0
+	github.com/jessevdk/go-flags v1.5.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kevinburke/ssh_config v1.1.0
 	github.com/mattn/go-runewidth v0.0.4
