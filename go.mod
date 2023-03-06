@@ -29,7 +29,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
-	go.uber.org/goleak v1.1.12
+	go.uber.org/goleak v1.2.1
 	golang.org/x/crypto v0.7.0
 	golang.org/x/net v0.8.0
 	google.golang.org/grpc v1.48.0 // indirect
@@ -46,5 +46,3 @@ require (
 	google.golang.org/genproto v0.0.0-20220808204814-fd01256a5276 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )
-
-require golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
