@@ -4,16 +4,14 @@ go 1.20
 
 require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect
-	github.com/containerd/containerd v1.6.18 // indirect
 	github.com/docker/cli v20.10.10+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
-	github.com/docker/docker v20.10.9+incompatible
+	github.com/docker/docker v23.0.6+incompatible
 	github.com/docker/go-connections v0.4.1-0.20180821093606-97c2040d34df
 	github.com/docker/go-units v0.4.0
 	github.com/gdamore/tcell v1.3.0
 	github.com/gizak/termui v0.0.0-20190118200331-b3075f731367
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kevinburke/ssh_config v1.1.0
@@ -32,19 +30,20 @@ require (
 	go.uber.org/goleak v1.1.12
 	golang.org/x/crypto v0.7.0
 	golang.org/x/net v0.8.0
-	google.golang.org/grpc v1.48.0 // indirect
 )
 
 require (
 	github.com/gdamore/encoding v1.0.0 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.8
 	github.com/lucasb-eyer/go-colorful v1.0.2 // indirect
 	github.com/nsf/termbox-go v0.0.0-20180613055208-5c94acc5e6eb // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
-	google.golang.org/genproto v0.0.0-20220808204814-fd01256a5276 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
 )
 
-require golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
+require (
+	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
+	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gotest.tools/v3 v3.0.3 // indirect
+)
