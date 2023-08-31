@@ -2,7 +2,7 @@ package appui
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -259,9 +259,9 @@ func TestVolumesWidget(t *testing.T) {
 
 			golden := filepath.Join("testdata", strings.ReplaceAll(tt.name, " ", "_")+".golden")
 			if *update {
-				ioutil.WriteFile(golden, []byte(got), 0644)
+				os.WriteFile(golden, []byte(got), 0644)
 			}
-			want, err := ioutil.ReadFile(golden)
+			want, err := os.ReadFile(golden)
 
 			if got != string(want) {
 				t.Errorf("NewVolumesWidget() = %v, want %v", got, string(want))

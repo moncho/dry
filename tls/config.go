@@ -9,7 +9,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/sirupsen/logrus"
 )
@@ -66,7 +66,7 @@ func clientDefault() *tls.Config {
 func certPool(caFile string) (*x509.CertPool, error) {
 	// If we should verify the server, we need to load a trusted ca
 	certPool := x509.NewCertPool()
-	pem, err := ioutil.ReadFile(caFile)
+	pem, err := os.ReadFile(caFile)
 	if err != nil {
 		return nil, fmt.Errorf("Could not read CA certificate %q: %v", caFile, err)
 	}

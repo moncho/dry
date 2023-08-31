@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"strings"
 	"sync"
 	"testing"
@@ -47,7 +46,7 @@ func TestStatsChannel_cancellingContextClosesResources(t *testing.T) {
 			Os: "Not windows",
 		},
 		client: statsClientMock{
-			statsBody: ioutil.NopCloser(strings.NewReader("")),
+			statsBody: io.NopCloser(strings.NewReader("")),
 		}}
 	ctx, cancel := context.WithCancel(context.Background())
 	stats := sc.Start(ctx)
@@ -75,7 +74,7 @@ func TestStatsChannel_statsArePublished(t *testing.T) {
 			Os: "Not windows",
 		},
 		client: statsClientMock{
-			statsBody: ioutil.NopCloser(strings.NewReader(asJSON(types.StatsJSON{}))),
+			statsBody: io.NopCloser(strings.NewReader(asJSON(types.StatsJSON{}))),
 		}}
 	ctx, cancel := context.WithCancel(context.Background())
 	stats := sc.Start(ctx)
@@ -106,7 +105,7 @@ func TestStatsChannel_noErrors_goroutineExitsOnCtxCancel(t *testing.T) {
 			Os: "Not windows",
 		},
 		client: statsClientMock{
-			statsBody: ioutil.NopCloser(strings.NewReader(asJSON(types.StatsJSON{}))),
+			statsBody: io.NopCloser(strings.NewReader(asJSON(types.StatsJSON{}))),
 		}}
 	ctx, cancel := context.WithCancel(context.Background())
 	sc.Start(ctx)
@@ -128,7 +127,7 @@ func TestStatsChannel_errorBuildingStats_goroutineExitsOnCtxCancel(t *testing.T)
 		},
 		client: statsClientMock{
 			//Empty reader results in EOF error
-			statsBody: ioutil.NopCloser(strings.NewReader("")),
+			statsBody: io.NopCloser(strings.NewReader("")),
 		}}
 	ctx, cancel := context.WithCancel(context.Background())
 	sc.Start(ctx)
