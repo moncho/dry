@@ -1,7 +1,7 @@
 package appui
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -65,9 +65,9 @@ func TestDockerDiskUsageRenderer_Render(t *testing.T) {
 
 			golden := filepath.Join("testdata", tt.name+".golden")
 			if *update {
-				ioutil.WriteFile(golden, []byte(actual), 0644)
+				os.WriteFile(golden, []byte(actual), 0644)
 			}
-			expected, _ := ioutil.ReadFile(golden)
+			expected, _ := os.ReadFile(golden)
 			if string(expected) != actual {
 				t.Errorf("DockerDiskUsageRenderer.Render(), got: \n%v\nWant: \n%s", actual, expected)
 			}

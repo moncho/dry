@@ -2,7 +2,7 @@ package swarm
 
 import (
 	"flag"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -74,9 +74,9 @@ func Test_serviceInfo(t *testing.T) {
 
 			golden := filepath.Join("testdata", tt.name+".golden")
 			if *updateGoldenFiles {
-				ioutil.WriteFile(golden, []byte(got), 0644)
+				os.WriteFile(golden, []byte(got), 0644)
 			}
-			expected, _ := ioutil.ReadFile(golden)
+			expected, _ := os.ReadFile(golden)
 
 			if got != string(expected) {
 				t.Errorf("serviceInfo() = %v, want %v", got, expected)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"golang.org/x/crypto/ssh"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -180,7 +179,7 @@ func configureSshTransport(host string, user string, pass string) (*ssh.ClientCo
 	}
 
 	if !foundIdentityFile {
-		pkFilenames, err := ioutil.ReadDir(dirname + "/.ssh/")
+		pkFilenames, err := os.ReadDir(dirname + "/.ssh/")
 		if err != nil {
 			return nil, err
 		}
@@ -206,7 +205,7 @@ func configureSshTransport(host string, user string, pass string) (*ssh.ClientCo
 }
 
 func readPk(pkFilename string, auth []ssh.AuthMethod, dirname string) ([]ssh.AuthMethod, error) {
-	pk, err := ioutil.ReadFile(dirname + pkFilename)
+	pk, err := os.ReadFile(dirname + pkFilename)
 	if err != nil {
 		return nil, nil
 	}
