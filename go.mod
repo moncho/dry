@@ -36,7 +36,7 @@ require (
 require (
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/lucasb-eyer/go-colorful v1.0.2 // indirect
 	github.com/nsf/termbox-go v0.0.0-20180613055208-5c94acc5e6eb // indirect
 	golang.org/x/sys v0.13.0 // indirect
