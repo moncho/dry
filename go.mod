@@ -31,20 +31,20 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	go.uber.org/goleak v1.1.12
 	golang.org/x/crypto v0.7.0
-	golang.org/x/net v0.8.0
-	google.golang.org/grpc v1.48.0 // indirect
+	golang.org/x/net v0.9.0
+	google.golang.org/grpc v1.56.3 // indirect
 )
 
 require (
 	github.com/gdamore/encoding v1.0.0 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.8
+	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/google/go-cmp v0.5.9
 	github.com/lucasb-eyer/go-colorful v1.0.2 // indirect
 	github.com/nsf/termbox-go v0.0.0-20180613055208-5c94acc5e6eb // indirect
-	golang.org/x/sys v0.6.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
-	google.golang.org/genproto v0.0.0-20220808204814-fd01256a5276 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
+	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
+	google.golang.org/protobuf v1.30.0 // indirect
 )
 
 require golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
