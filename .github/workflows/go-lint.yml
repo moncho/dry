@@ -1,0 +1,34 @@
+name: go-lint
+concurrency:
+  # Run only for most recent commit in PRs but for all tags and commits on main
+  # Ref: https://docs.github.com/en/actions/using-jobs/using-concurrency
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+on:
+  pull_request:
+    paths:
+      - '**.go'
+      - '.github/workflows/go-lint.yml' # This file
+  schedule:
+    - cron: 0 0 * * 1
+  workflow_dispatch:
+    
+permissions:
+  contents: read
+  pull-requests: read # required for `on: pull_request` with `only_new_issues: true`
+jobs:
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps: 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - uses: actions/checkout@v4
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
+          version: v1.56.1
+          only-new-issues: true
