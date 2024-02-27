@@ -14,7 +14,7 @@ import (
 type eventCallback func()
 
 // A View is a region of the screen where text can be rendered. It maintains
-//its own internal buffer and cursor position.
+// its own internal buffer and cursor position.
 type View struct {
 	name             string
 	x0, y0, x1, y1   int      //view position in the screen
@@ -134,7 +134,7 @@ func (v *View) realPosition(vx, vy int) (x, y int, err error) {
 	return x, y, nil
 }
 
-//renderLine renders the given line, returns the number of screen lines used
+// renderLine renders the given line, returns the number of screen lines used
 func (v *View) renderLine(x int, y int, line string) (int, error) {
 	lines := 1
 	maxWidth, _ := v.ViewSize()
@@ -206,7 +206,7 @@ func (v *View) Word(x, y int) (string, error) {
 	return l[nl:nr], nil
 }
 
-//CursorDown moves the cursor down one line
+// CursorDown moves the cursor down one line
 func (v *View) CursorDown() {
 	cursorX, cursorY := v.Cursor()
 	ox, bufferY := v.Position()
@@ -217,7 +217,7 @@ func (v *View) CursorDown() {
 	}
 }
 
-//CursorUp moves the cursor up one line
+// CursorUp moves the cursor up one line
 func (v *View) CursorUp() {
 	ox, bufferY := v.Position()
 	cursorX, cursorY := v.Cursor()
@@ -226,9 +226,9 @@ func (v *View) CursorUp() {
 	}
 }
 
-//PageDown moves the buffer position down by the length of the screen,
-//at the end of buffer it also moves the cursor position to the bottom
-//of the screen
+// PageDown moves the buffer position down by the length of the screen,
+// at the end of buffer it also moves the cursor position to the bottom
+// of the screen
 func (v *View) PageDown() {
 	_, cursorY := v.Cursor()
 	bufferX, bufferY := v.Position()
@@ -250,9 +250,9 @@ func (v *View) PageDown() {
 	}
 }
 
-//PageUp moves the buffer position up by the length of the screen,
-//at the beginning of buffer it also moves the cursor position to the beginning
-//of the screen
+// PageUp moves the buffer position up by the length of the screen,
+// at the beginning of buffer it also moves the cursor position to the beginning
+// of the screen
 func (v *View) PageUp() {
 	bufferX, bufferY := v.Position()
 	cursorX, cursorY := v.Cursor()
@@ -267,19 +267,19 @@ func (v *View) PageUp() {
 	}
 }
 
-//CursorToBottom moves the cursor to the bottom of the view buffer
+// CursorToBottom moves the cursor to the bottom of the view buffer
 func (v *View) CursorToBottom() {
 	v.bufferY = len(v.lines) - v.y1
 	v.cursorY = v.y1
 }
 
-//CursorToTop moves the cursor to the top of the view buffer
+// CursorToTop moves the cursor to the top of the view buffer
 func (v *View) CursorToTop() {
 	v.bufferY = 0
 	v.cursorY = 0
 }
 
-//MarkupSupport sets markup support in the view
+// MarkupSupport sets markup support in the view
 func (v *View) MarkupSupport() {
 	v.markup = NewMarkup(v.theme)
 }

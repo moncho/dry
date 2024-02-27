@@ -12,7 +12,7 @@ const (
 	NotRunning = termui.Attribute(ui.Color161)
 )
 
-//Default16 default theme for 16-color mode
+// Default16 default theme for 16-color mode
 var Default16 = &ui.ColorTheme{
 	Fg:           ui.ColorWhite,
 	Bg:           ui.ColorBlack,
@@ -28,7 +28,7 @@ var Default16 = &ui.ColorTheme{
 	Header:       ui.ColorLime,
 	Footer:       ui.ColorLime}
 
-//Black256 black bg theme for 256-color mode
+// Black256 black bg theme for 256-color mode
 var Black256 = &ui.ColorTheme{
 	Fg:           ui.Color255,
 	Bg:           ui.ColorBlack,
@@ -44,7 +44,7 @@ var Black256 = &ui.ColorTheme{
 	Header:       ui.Color25,
 	Footer:       ui.Color25}
 
-//Dark256 dark theme for 256-color mode
+// Dark256 dark theme for 256-color mode
 var Dark256 = &ui.ColorTheme{
 	Fg:           ui.Color255,
 	Bg:           ui.Color234,
@@ -62,7 +62,7 @@ var Dark256 = &ui.ColorTheme{
 	ListItem:     ui.Color181,
 	CursorLineBg: ui.Color25}
 
-//Light256 light theme for 256-color mode
+// Light256 light theme for 256-color mode
 var Light256 = &ui.ColorTheme{
 	Fg:           ui.Color241,
 	Bg:           ui.Color231,
@@ -78,14 +78,14 @@ var Light256 = &ui.ColorTheme{
 	Header:       ui.Color31,
 	Footer:       ui.Color31}
 
-//DryTheme is the active theme for dry
+// DryTheme is the active theme for dry
 var DryTheme = Dark256
 
-//ColorThemes holds the list of dry color themes
+// ColorThemes holds the list of dry color themes
 var ColorThemes = []*ui.ColorTheme{Black256, Dark256}
 
-//RotateColorTheme changes the color theme to the next one in the
-//rotation order.
+// RotateColorTheme changes the color theme to the next one in the
+// rotation order.
 func RotateColorTheme() {
 	if DryTheme == ColorThemes[0] {
 		DryTheme = ColorThemes[1]

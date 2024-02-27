@@ -6,12 +6,12 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
-//Prompt is a prompt widget
+// Prompt is a prompt widget
 type Prompt struct {
 	termui.TextInput
 }
 
-//NewPrompt creates a new Prompt with the given title
+// NewPrompt creates a new Prompt with the given title
 func NewPrompt(title string) *Prompt {
 	w := &Prompt{
 		TextInput: *termui.NewTextInput(ui.ActiveScreen, ""),
@@ -29,17 +29,17 @@ func NewPrompt(title string) *Prompt {
 	return w
 }
 
-//Mount callback
+// Mount callback
 func (w *Prompt) Mount() error {
 	return nil
 }
 
-//Unmount callback
+// Unmount callback
 func (w *Prompt) Unmount() error {
 	return nil
 }
 
-//Name returns the widget name
+// Name returns the widget name
 func (w *Prompt) Name() string {
 	return "Prompt"
 }

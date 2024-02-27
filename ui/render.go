@@ -5,12 +5,12 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
-//TextRenderer renders text
+// TextRenderer renders text
 type TextRenderer interface {
 	Render(string) int
 }
 
-//ScreenTextRenderer renders text on a screen
+// ScreenTextRenderer renders text on a screen
 type ScreenTextRenderer struct {
 	renderer  styledRuneRenderer
 	style     tcell.Style
@@ -19,14 +19,14 @@ type ScreenTextRenderer struct {
 	width     int
 }
 
-//NewRenderer creates ScreenTextRenderer
+// NewRenderer creates ScreenTextRenderer
 func NewRenderer(s styledRuneRenderer) ScreenTextRenderer {
 	return ScreenTextRenderer{
 		renderer: s,
 	}
 }
 
-//WithStyle returns a renderer that will use the provided style on rendering
+// WithStyle returns a renderer that will use the provided style on rendering
 func (renderer ScreenTextRenderer) WithStyle(style tcell.Style) ScreenTextRenderer {
 	return ScreenTextRenderer{
 		renderer:  renderer.renderer,
@@ -38,8 +38,8 @@ func (renderer ScreenTextRenderer) WithStyle(style tcell.Style) ScreenTextRender
 	}
 }
 
-//On returns a renderer that will start rendering on the given positions of the
-//screen.
+// On returns a renderer that will start rendering on the given positions of the
+// screen.
 func (renderer ScreenTextRenderer) On(x, y int) ScreenTextRenderer {
 	return ScreenTextRenderer{
 		renderer:  renderer.renderer,
@@ -51,7 +51,7 @@ func (renderer ScreenTextRenderer) On(x, y int) ScreenTextRenderer {
 	}
 }
 
-//WithWidth returns a renderer with its width set
+// WithWidth returns a renderer with its width set
 func (renderer ScreenTextRenderer) WithWidth(w int) ScreenTextRenderer {
 	return ScreenTextRenderer{
 		renderer:  renderer.renderer,
@@ -63,7 +63,7 @@ func (renderer ScreenTextRenderer) WithWidth(w int) ScreenTextRenderer {
 	}
 }
 
-//Render renders the given text on this renderer screen
+// Render renders the given text on this renderer screen
 func (renderer ScreenTextRenderer) Render(s string) int {
 	stringWidth := 0
 	maxWidth := renderer.renderer.Dimensions().Width

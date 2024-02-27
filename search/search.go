@@ -2,12 +2,11 @@ package search
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
-import "fmt"
-
-//Result describes the results of a search
+// Result describes the results of a search
 type Result struct {
 	Hits    int
 	Lines   []int
@@ -15,10 +14,10 @@ type Result struct {
 	index   int //the current index i to iterate Lines
 }
 
-//NewSearch searches in a multiline string for lines that match the given pattern,
-//it returns:
-//* the number of hits (lines)
-//* the line index
+// NewSearch searches in a multiline string for lines that match the given pattern,
+// it returns:
+// * the number of hits (lines)
+// * the line index
 func NewSearch(text [][]rune, pattern string) (*Result, error) {
 	if text != nil {
 		sr := &Result{Pattern: pattern, index: -1}
@@ -41,9 +40,9 @@ func (result *Result) String() string {
 	return fmt.Sprintf("Pattern %s not found", result.Pattern)
 }
 
-//InitialLine sets the position for iterating the search results on the first line
-//that is either has the same value or is the closest from 0 to the given line number.
-//So, for a result that found that lines (1, 3, 5) were a hit:
+// InitialLine sets the position for iterating the search results on the first line
+// that is either has the same value or is the closest from 0 to the given line number.
+// So, for a result that found that lines (1, 3, 5) were a hit:
 // * InitialLine(-1) will set the internal iteration index at 0 (the default starting index)
 // * InitialLine(3) will set the internal iteration index at 1.
 // * InitialLine(4) will set the internal iteration index at 1.
@@ -64,8 +63,8 @@ func (result *Result) InitialLine(lineNumber int) (int, error) {
 	return candidate, nil
 }
 
-//NextLine returns the previous line while iterating the search results.
-//So, for a result that found that lines (1, 3, 5) were a hit:
+// NextLine returns the previous line while iterating the search results.
+// So, for a result that found that lines (1, 3, 5) were a hit:
 // *NextLine() should give 1
 // *NextLine() should give 3
 // *NextLine() should give 5
@@ -80,8 +79,8 @@ func (result *Result) NextLine() (int, error) {
 	return result.Lines[result.index], nil
 }
 
-//PreviousLine returns the previous line while iterating the search results.
-//So, for a result that found that lines (1, 3, 5) were a hit:
+// PreviousLine returns the previous line while iterating the search results.
+// So, for a result that found that lines (1, 3, 5) were a hit:
 // * NextLine() should give 1
 // * NextLine() should give 3
 // * PreviousLine() should give 1

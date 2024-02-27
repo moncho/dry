@@ -20,8 +20,8 @@ func (s screenMock) Style() tcell.Style {
 	return tcell.StyleDefault
 }
 
-//TestLessScrolling tests cursor position in less when scrolling, the cursor has to stay
-//all the time at the bottom.
+// TestLessScrolling tests cursor position in less when scrolling, the cursor has to stay
+// all the time at the bottom.
 func TestLessScrolling(t *testing.T) {
 	less := newLess(10, 10)
 	testLessCursor(t, less, 0, 9)
@@ -45,13 +45,15 @@ func TestLessScrolling(t *testing.T) {
 	testLessCursor(t, less, 0, 9)
 }
 
-//TestLessBufferPosition tests less internal buffer positioning
-//when scrolling.
-//In a 10x10 screen with 20 lines added to the buffer, the following rules apply:
-// * The last row is reserved for the cursor, hence there are 9 rows
-//   available to render the buffer content (rows 0-8).
-// * The cursor stays at the bottom ( row 9, counting from 0).
-//It is expected that, the internal buffer marker, at most goes down until
+// TestLessBufferPosition tests less internal buffer positioning
+// when scrolling.
+// In a 10x10 screen with 20 lines added to the buffer, the following rules apply:
+//   - The last row is reserved for the cursor, hence there are 9 rows
+//     available to render the buffer content (rows 0-8).
+//   - The cursor stays at the bottom ( row 9, counting from 0).
+//
+// It is expected that, the internal buffer marker, at most goes down until
+//
 //line 11 (counting from 0) = 20 (buffer size) - 8 (last row position counting from 0)
 func TestLessBufferPosition(t *testing.T) {
 	less := newLess(10, 10)

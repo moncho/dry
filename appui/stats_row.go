@@ -18,7 +18,7 @@ import (
 const inactiveRowColor = termui.Attribute(ui.Color244)
 const inactiveRowText = "-"
 
-//ContainerStatsRow is a Grid row showing runtime information about a container
+// ContainerStatsRow is a Grid row showing runtime information about a container
 type ContainerStatsRow struct {
 	container *docker.Container
 	Status    *drytermui.ParColumn
@@ -37,7 +37,7 @@ type ContainerStatsRow struct {
 	sync.RWMutex
 }
 
-//NewContainerStatsRow creats a new ContainerStatsRow widget
+// NewContainerStatsRow creats a new ContainerStatsRow widget
 func NewContainerStatsRow(container *docker.Container, table drytermui.Table) *ContainerStatsRow {
 	cf := formatter.NewContainerFormatter(container, true)
 	row := ContainerStatsRow{
@@ -75,21 +75,21 @@ func NewContainerStatsRow(container *docker.Container, table drytermui.Table) *C
 
 }
 
-//Highlighted marks this rows as being highlighted
+// Highlighted marks this rows as being highlighted
 func (row *ContainerStatsRow) Highlighted() {
 	row.changeTextColor(
 		termui.Attribute(DryTheme.Fg),
 		termui.Attribute(DryTheme.CursorLineBg))
 }
 
-//NotHighlighted marks this rows as being not highlighted
+// NotHighlighted marks this rows as being not highlighted
 func (row *ContainerStatsRow) NotHighlighted() {
 	row.changeTextColor(
 		termui.Attribute(DryTheme.ListItem),
 		termui.Attribute(DryTheme.Bg))
 }
 
-//Buffer returns this Row data as a termui.Buffer
+// Buffer returns this Row data as a termui.Buffer
 func (row *ContainerStatsRow) Buffer() termui.Buffer {
 	row.RLock()
 	defer row.RUnlock()
@@ -121,7 +121,7 @@ func (row *ContainerStatsRow) changeTextColor(fg, bg termui.Attribute) {
 	row.Uptime.TextBgColor = bg
 }
 
-//Reset resets row content
+// Reset resets row content
 func (row *ContainerStatsRow) Reset() {
 	row.CPU.Reset()
 	row.Memory.Reset()
@@ -131,7 +131,7 @@ func (row *ContainerStatsRow) Reset() {
 	row.Uptime.Reset()
 }
 
-//Update updates the content of this row with the given stats
+// Update updates the content of this row with the given stats
 func (row *ContainerStatsRow) Update(stat *docker.Stats) {
 	if stat == nil {
 		return
@@ -191,7 +191,7 @@ func (row *ContainerStatsRow) setUptime(startedAt string) {
 	}
 }
 
-//markAsNotRunning
+// markAsNotRunning
 func (row *ContainerStatsRow) markAsNotRunning() {
 	row.Status.TextFgColor = NotRunning
 	row.Name.TextFgColor = inactiveRowColor

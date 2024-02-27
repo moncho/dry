@@ -21,7 +21,7 @@ type ansiParser struct {
 	buffer               buffer
 }
 
-//RemoveANSIEscapeCharacters removes from the given string ANSI escape codes
+// RemoveANSIEscapeCharacters removes from the given string ANSI escape codes
 func RemoveANSIEscapeCharacters(s string) [][]rune {
 	p := ansiParser{mode: modeNormal} //, ansi: ansi}
 	text := []byte(s)

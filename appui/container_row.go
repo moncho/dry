@@ -13,7 +13,7 @@ const (
 	statusSymbol = string('\u25A3')
 )
 
-//ContainerRow is a Grid row showing runtime information about a container
+// ContainerRow is a Grid row showing runtime information about a container
 type ContainerRow struct {
 	container *docker.Container
 	Indicator *drytermui.ParColumn
@@ -27,7 +27,7 @@ type ContainerRow struct {
 	drytermui.Row
 }
 
-//NewContainerRow creates a new ContainerRow widget
+// NewContainerRow creates a new ContainerRow widget
 func NewContainerRow(container *docker.Container, table drytermui.Table) *ContainerRow {
 	cf := formatter.NewContainerFormatter(container, true)
 
@@ -63,7 +63,7 @@ func NewContainerRow(container *docker.Container, table drytermui.Table) *Contai
 
 }
 
-//Buffer returns this Row data as a termui.Buffer
+// Buffer returns this Row data as a termui.Buffer
 func (row *ContainerRow) Buffer() termui.Buffer {
 	buf := termui.NewBuffer()
 	//This set the background of the whole row
@@ -77,19 +77,19 @@ func (row *ContainerRow) Buffer() termui.Buffer {
 	return buf
 }
 
-//ColumnsForFilter returns the columns that are used to filter
+// ColumnsForFilter returns the columns that are used to filter
 func (row *ContainerRow) ColumnsForFilter() []*drytermui.ParColumn {
 	return []*drytermui.ParColumn{row.ID, row.Image, row.Names, row.Command}
 }
 
-//Highlighted marks this rows as being highlighted
+// Highlighted marks this rows as being highlighted
 func (row *ContainerRow) Highlighted() {
 	row.changeTextColor(
 		termui.Attribute(DryTheme.Fg),
 		termui.Attribute(DryTheme.CursorLineBg))
 }
 
-//NotHighlighted marks this rows as being not highlighted
+// NotHighlighted marks this rows as being not highlighted
 func (row *ContainerRow) NotHighlighted() {
 	var fg termui.Attribute
 	if !docker.IsContainerRunning(row.container) {
@@ -119,7 +119,7 @@ func (row *ContainerRow) changeTextColor(fg, bg termui.Attribute) {
 	row.Names.TextBgColor = bg
 }
 
-//markAsNotRunning
+// markAsNotRunning
 func (row *ContainerRow) markAsNotRunning() {
 	row.Indicator.TextFgColor = NotRunning
 	row.ID.TextFgColor = inactiveRowColor
@@ -131,7 +131,7 @@ func (row *ContainerRow) markAsNotRunning() {
 	row.running = false
 }
 
-//markAsRunning
+// markAsRunning
 func (row *ContainerRow) markAsRunning() {
 	row.Indicator.TextFgColor = Running
 	row.running = true

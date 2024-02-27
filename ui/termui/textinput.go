@@ -27,7 +27,7 @@ type TextInput struct {
 	isCapturing bool
 }
 
-//NewTextInput creates a new TextInput showing the text provided
+// NewTextInput creates a new TextInput showing the text provided
 func NewTextInput(c cursor, s string) *TextInput {
 	textInput := &TextInput{
 		Block:         *termui.NewBlock(),
@@ -43,9 +43,9 @@ func NewTextInput(c cursor, s string) *TextInput {
 	return textInput
 }
 
-//OnFocus starts handling events sent to the given channel. It is a
-//blocking call, to return from it, either close the channel or
-//send a closing event (i.e. KeyEnter on single line mode, KeyEsc on any mode).
+// OnFocus starts handling events sent to the given channel. It is a
+// blocking call, to return from it, either close the channel or
+// send a closing event (i.e. KeyEnter on single line mode, KeyEsc on any mode).
 func (i *TextInput) OnFocus(event ui.EventSource) error {
 	i.Lock()
 	if i.isCapturing {
@@ -196,7 +196,7 @@ func (i *TextInput) moveRight() {
 	i.cursorLinePos++
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
+// Buffer returns the content of this widget as a termui.Buffer
 func (i *TextInput) Buffer() termui.Buffer {
 	buffer := i.Block.Buffer()
 	innerArea := i.InnerBounds()

@@ -8,22 +8,21 @@ import (
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/go-units"
 	drydocker "github.com/moncho/dry/docker"
-
 	"github.com/moncho/dry/ui"
 	"github.com/olekukonko/tablewriter"
 )
 
-//DockerImageHistoryRenderer knows how render history image
+// DockerImageHistoryRenderer knows how render history image
 type DockerImageHistoryRenderer struct {
 	imageHistory []image.HistoryResponseItem
 }
 
-//NewDockerImageHistoryRenderer creates a renderer for the history of an image
+// NewDockerImageHistoryRenderer creates a renderer for the history of an image
 func NewDockerImageHistoryRenderer(imageHistory []image.HistoryResponseItem) fmt.Stringer {
 	return &DockerImageHistoryRenderer{imageHistory: imageHistory}
 }
 
-//Render docker ps
+// Render docker ps
 func (r *DockerImageHistoryRenderer) String() string {
 
 	buffer := new(bytes.Buffer)

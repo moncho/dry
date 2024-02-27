@@ -22,7 +22,7 @@ type topRenderer struct {
 	processList *container.ContainerTopOKBody
 }
 
-//NewDockerTopRenderer creates renderer for docker top result
+// NewDockerTopRenderer creates renderer for docker top result
 func NewDockerTopRenderer(processList *container.ContainerTopOKBody) fmt.Stringer {
 	return &topRenderer{
 		processList: processList,
@@ -51,7 +51,7 @@ func (r *topRenderer) String() string {
 	return buf.String()
 }
 
-//NewDockerTop creates termui bufferer for docker top
+// NewDockerTop creates termui bufferer for docker top
 func NewDockerTop(processList *container.ContainerTopOKBody, x, y, height, width int) (termui.Bufferer, int) {
 
 	if processList != nil {

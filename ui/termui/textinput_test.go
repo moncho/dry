@@ -198,7 +198,7 @@ func Test_TextInput_ErrorOnCallbackReleasesFocus(t *testing.T) {
 	close(c)
 
 	if err == nil {
-		t.Error("Was expecting an error on Focus")
+		t.Error("Was expecting an error on OnFocus")
 	}
 }
 

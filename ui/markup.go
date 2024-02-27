@@ -7,7 +7,7 @@ import (
 	"github.com/gdamore/tcell/termbox"
 )
 
-//SupportedTags maps supported tags to a tcell.Attribute
+// SupportedTags maps supported tags to a tcell.Attribute
 var SupportedTags = supportedTagsRegexp()
 var tagsToAttributeMap = tags()
 
@@ -64,8 +64,8 @@ type Markup struct {
 	theme      *ColorTheme
 }
 
-//NewMarkup creates a markup processor that uses the given theme for default
-//colors.
+// NewMarkup creates a markup processor that uses the given theme for default
+// colors.
 func NewMarkup(theme *ColorTheme) *Markup {
 	markup := &Markup{}
 	markup.Foreground = termbox.Attribute(theme.Fg)
@@ -124,12 +124,11 @@ func extractTagName(str string) string {
 // the delimiters. For example, the "<green>Hello, <red>world!</>" string when
 // tokenized by tags produces the following:
 //
-//   [0] "<green>"
-//   [1] "Hello, "
-//   [2] "<red>"
-//   [3] "world!"
-//   [4] "</>"
-//
+//	[0] "<green>"
+//	[1] "Hello, "
+//	[2] "<red>"
+//	[3] "world!"
+//	[4] "</>"
 func Tokenize(str string, regex *regexp.Regexp) []string {
 	matches := regex.FindAllStringIndex(str, -1)
 	strings := make([]string, 0, len(matches))

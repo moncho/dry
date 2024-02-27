@@ -7,13 +7,13 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
-//ImageRunWidget is an input widget to run images
+// ImageRunWidget is an input widget to run images
 type ImageRunWidget struct {
 	image types.ImageSummary
 	termui.TextInput
 }
 
-//NewImageRunWidget creates a new ImageRunWidget for the given image
+// NewImageRunWidget creates a new ImageRunWidget for the given image
 func NewImageRunWidget(image types.ImageSummary) *ImageRunWidget {
 	w := &ImageRunWidget{
 		image:     image,
@@ -32,17 +32,17 @@ func NewImageRunWidget(image types.ImageSummary) *ImageRunWidget {
 	return w
 }
 
-//Mount callback
+// Mount callback
 func (w *ImageRunWidget) Mount() error {
 	return nil
 }
 
-//Unmount callback
+// Unmount callback
 func (w *ImageRunWidget) Unmount() error {
 	return nil
 }
 
-//Name returns the widget name
+// Name returns the widget name
 func (w *ImageRunWidget) Name() string {
 	return "ImageRunWidget." + w.image.ID
 }

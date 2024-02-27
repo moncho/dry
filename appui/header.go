@@ -11,33 +11,33 @@ import (
 // SortMode sort mode for widgets
 type SortMode int
 
-//SortableColumnHeader is a column header associated to a sort mode
+// SortableColumnHeader is a column header associated to a sort mode
 type SortableColumnHeader struct {
 	Title string // Title to display in the tableHeader.
 	Mode  SortMode
 }
 
-//WidgetHeader is a widget for the header of a widget
+// WidgetHeader is a widget for the header of a widget
 type WidgetHeader struct {
 	elements map[string]string
 	keys     []string
 	Y        int
 }
 
-//NewWidgetHeader creates WidgetHeader
+// NewWidgetHeader creates WidgetHeader
 func NewWidgetHeader() *WidgetHeader {
 	return &WidgetHeader{
 		elements: make(map[string]string),
 	}
 }
 
-//HeaderEntry adds a new key-value entry to this header
+// HeaderEntry adds a new key-value entry to this header
 func (header *WidgetHeader) HeaderEntry(key, value string) {
 	header.keys = append(header.keys, key)
 	header.elements[key] = value
 }
 
-//GetHeight returns the widget height
+// GetHeight returns the widget height
 func (header *WidgetHeader) GetHeight() int {
 	return 1
 }

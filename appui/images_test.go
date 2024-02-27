@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/docker/docker/api/types"
-
 	"github.com/moncho/dry/mocks"
 	"github.com/moncho/dry/ui"
 )

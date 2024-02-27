@@ -7,7 +7,7 @@ import (
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
-//ImageRow is a Grid row showing information about a Docker image
+// ImageRow is a Grid row showing information about a Docker image
 type ImageRow struct {
 	image             types.ImageSummary
 	Repository        *drytermui.ParColumn
@@ -21,7 +21,7 @@ type ImageRow struct {
 	Row
 }
 
-//NewImageRow creates a new ImageRow widget
+// NewImageRow creates a new ImageRow widget
 func NewImageRow(image types.ImageSummary, table drytermui.Table) *ImageRow {
 	iformatter := formatter.NewImageFormatter(image, true)
 
@@ -57,7 +57,7 @@ func NewImageRow(image types.ImageSummary, table drytermui.Table) *ImageRow {
 
 }
 
-//ColumnsForFilter returns the columns that are used to filter
+// ColumnsForFilter returns the columns that are used to filter
 func (row *ImageRow) ColumnsForFilter() []*drytermui.ParColumn {
 	return []*drytermui.ParColumn{row.Repository, row.Tag, row.ID}
 }

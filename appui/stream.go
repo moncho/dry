@@ -8,7 +8,7 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
-//Stream shows the content of the given stream on screen
+// Stream shows the content of the given stream on screen
 func Stream(stream io.ReadCloser, keyboardQueue <-chan *tcell.EventKey, done func()) {
 	defer done()
 	ui.ActiveScreen.ClearAndFlush()

@@ -13,16 +13,16 @@ const (
 	ShortLen = 12
 )
 
-//DurationForHumans returns a human-readable approximation of a duration
-//represented as an int64 nanosecond count.
+// DurationForHumans returns a human-readable approximation of a duration
+// represented as an int64 nanosecond count.
 func DurationForHumans(duration int64) string {
 	return units.HumanDuration(time.Now().UTC().Sub(
 		time.Unix(duration, 0)))
 
 }
 
-//ImageID removes anything that is not part of the ID but is being added
-//by the docker library
+// ImageID removes anything that is not part of the ID but is being added
+// by the docker library
 func ImageID(uglyID string) string {
 	id := uglyID
 	if strings.HasPrefix(uglyID, imagePrefixForV10) {
@@ -31,7 +31,7 @@ func ImageID(uglyID string) string {
 	return id
 }
 
-//ShortImageID shortens and beutifies an id
+// ShortImageID shortens and beutifies an id
 func ShortImageID(uglyID string) string {
 	return TruncateID(ImageID(uglyID))
 }

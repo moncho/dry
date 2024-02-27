@@ -10,14 +10,14 @@ type jsonRenderer struct {
 	data interface{}
 }
 
-//NewJSONRenderer creates a renderer that renders the given data as a JSON
+// NewJSONRenderer creates a renderer that renders the given data as a JSON
 func NewJSONRenderer(data interface{}) fmt.Stringer {
 	return &jsonRenderer{
 		data: data,
 	}
 }
 
-//Render low-level information on a network
+// Render low-level information on a network
 func (r *jsonRenderer) String() string {
 	c, _ := json.Marshal(r.data)
 

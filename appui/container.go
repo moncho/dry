@@ -12,8 +12,8 @@ import (
 
 var newLine = []byte{'\n'}
 
-//NewContainerInfo returns detailed container information. Returned int value
-//is the number of lines.
+// NewContainerInfo returns detailed container information. Returned int value
+// is the number of lines.
 func NewContainerInfo(container *docker.Container) (string, int) {
 	var buffer bytes.Buffer
 	var status string

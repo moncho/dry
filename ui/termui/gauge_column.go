@@ -5,20 +5,20 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
-//GaugeColumn is a termui.Gauge to be used as a Grid column. It is
-//borderless, has a height of 1 and its label is left-aligned.
+// GaugeColumn is a termui.Gauge to be used as a Grid column. It is
+// borderless, has a height of 1 and its label is left-aligned.
 type GaugeColumn struct {
 	termui.Gauge
 }
 
-//NewThemedGaugeColumn creates a new GaugeColumn using the given theme
+// NewThemedGaugeColumn creates a new GaugeColumn using the given theme
 func NewThemedGaugeColumn(theme *ui.ColorTheme) *GaugeColumn {
 	c := NewGaugeColumn()
 	c.Bg = termui.Attribute(theme.Bg)
 	return c
 }
 
-//NewGaugeColumn creates a new GaugeColumn
+// NewGaugeColumn creates a new GaugeColumn
 func NewGaugeColumn() *GaugeColumn {
 	g := termui.NewGauge()
 	g.Height = 1
@@ -29,7 +29,7 @@ func NewGaugeColumn() *GaugeColumn {
 	return &GaugeColumn{*g}
 }
 
-//Reset resets this GaugeColumn
+// Reset resets this GaugeColumn
 func (w *GaugeColumn) Reset() {
 	w.Percent = 0
 }

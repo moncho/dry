@@ -3,10 +3,9 @@ package appui
 import (
 	"sync"
 
-	drytermui "github.com/moncho/dry/ui/termui"
-
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
+	drytermui "github.com/moncho/dry/ui/termui"
 )
 
 type ContainerAPI interface {

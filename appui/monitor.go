@@ -38,14 +38,14 @@ var monitorTableHeaders = map[string]SortMode{
 
 var defaultRefreshRate = 500 * time.Millisecond
 
-//DockerMonitor interface.
+// DockerMonitor interface.
 type DockerMonitor interface {
 	Containers(filters []docker.ContainerFilter, mode docker.SortMode) []*docker.Container
 	StatsChannel(container *docker.Container) (*docker.StatsChannel, error)
 }
 
-//Monitor is a self-refreshing ui component that shows monitoring information about docker
-//containers.
+// Monitor is a self-refreshing ui component that shows monitoring information about docker
+// containers.
 type Monitor struct {
 	sync.RWMutex
 
@@ -63,8 +63,8 @@ type Monitor struct {
 	sortMode             SortMode
 }
 
-//NewMonitor creates a new Monitor component that will render itself on the given screen
-//at the given position and with the given width.
+// NewMonitor creates a new Monitor component that will render itself on the given screen
+// at the given position and with the given width.
 func NewMonitor(daemon DockerMonitor, s ScreenBuffererRender) *Monitor {
 	m := Monitor{
 		header:        defaultMonitorTableHeader,
@@ -78,7 +78,7 @@ func NewMonitor(daemon DockerMonitor, s ScreenBuffererRender) *Monitor {
 	return &m
 }
 
-//Buffer returns the content of this monitor as a termui.Buffer
+// Buffer returns the content of this monitor as a termui.Buffer
 func (m *Monitor) Buffer() gizaktermui.Buffer {
 	m.RLock()
 	defer m.RUnlock()
@@ -111,12 +111,12 @@ func (m *Monitor) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
-//Filter filters the container list by the given filter
+// Filter filters the container list by the given filter
 func (m *Monitor) Filter(_ string) {
 
 }
 
-//Mount prepares this widget for rendering
+// Mount prepares this widget for rendering
 func (m *Monitor) Mount() error {
 
 	if m.cancel != nil {
@@ -154,14 +154,14 @@ func (m *Monitor) Mount() error {
 	return nil
 }
 
-//Name returns the name of this widget
+// Name returns the name of this widget
 func (m *Monitor) Name() string {
 	return "Monitor"
 }
 
-//OnEvent refreshes the monitor widget and runs the given
-//command on the highlighted row.
-//It can be used to refresh the widget.
+// OnEvent refreshes the monitor widget and runs the given
+// command on the highlighted row.
+// It can be used to refresh the widget.
 func (m *Monitor) OnEvent(event EventCommand) error {
 	m.refresh()
 	if event == nil {
@@ -179,15 +179,15 @@ func (m *Monitor) OnEvent(event EventCommand) error {
 	return event(m.visibleRows()[m.selectedIndex].container.ID)
 }
 
-//RefreshRate sets the refresh rate of this monitor to the given amount in
-//milliseconds.
+// RefreshRate sets the refresh rate of this monitor to the given amount in
+// milliseconds.
 func (m *Monitor) RefreshRate(millis int) {
 	m.Lock()
 	defer m.Unlock()
 	m.refreshRate = time.Duration(millis) * time.Millisecond
 }
 
-//refreshLoop signals this monitor to refresh itself until the given context is cancelled
+// refreshLoop signals this monitor to refresh itself until the given context is cancelled
 func (m *Monitor) refreshLoop(ctx context.Context) {
 	go func(rowChannels map[*ContainerStatsRow]*docker.StatsChannel) {
 		for row, ch := range rowChannels {
@@ -214,12 +214,12 @@ func (m *Monitor) refreshLoop(ctx context.Context) {
 	}(m.rowChannels)
 }
 
-//RowCount returns the number of rows of this Monitor.
+// RowCount returns the number of rows of this Monitor.
 func (m *Monitor) RowCount() int {
 	return len(m.rows)
 }
 
-//Sort sorts the container list
+// Sort sorts the container list
 func (m *Monitor) Sort() {
 	m.Lock()
 	defer m.Unlock()
@@ -232,7 +232,7 @@ func (m *Monitor) Sort() {
 	m.updateTableHeader()
 }
 
-//Unmount tells this widget that it will not be rendering anymore
+// Unmount tells this widget that it will not be rendering anymore
 func (m *Monitor) Unmount() error {
 	m.Lock()
 	defer m.Unlock()
@@ -244,7 +244,7 @@ func (m *Monitor) Unmount() error {
 	return nil
 }
 
-//Align aligns rows
+// Align aligns rows
 func (m *Monitor) align() {
 	x := m.renderer.Bounds().Min.X
 	width := m.renderer.Bounds().Dx()
