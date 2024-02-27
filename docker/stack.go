@@ -1,6 +1,6 @@
 package docker
 
-//Stack contains information about a Docker Swarm stack
+// Stack contains information about a Docker Swarm stack
 type Stack struct {
 	Name         string
 	Orchestrator string

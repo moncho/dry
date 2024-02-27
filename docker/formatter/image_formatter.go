@@ -17,14 +17,14 @@ const (
 	size          = "SIZE"
 )
 
-//ImageFormatter knows how to pretty-print the information of an image
+// ImageFormatter knows how to pretty-print the information of an image
 type ImageFormatter struct {
 	trunc  bool
 	header []string
 	image  types.ImageSummary
 }
 
-//NewImageFormatter creates an image formatter
+// NewImageFormatter creates an image formatter
 func NewImageFormatter(image types.ImageSummary, trunc bool) *ImageFormatter {
 	return &ImageFormatter{trunc: trunc, image: image}
 }
@@ -36,7 +36,7 @@ func (formatter *ImageFormatter) addHeader(header string) {
 	formatter.header = append(formatter.header, strings.ToUpper(header))
 }
 
-//ID prettifies the id
+// ID prettifies the id
 func (formatter *ImageFormatter) ID() string {
 	formatter.addHeader(imageIDHeader)
 	if formatter.trunc {
@@ -45,7 +45,7 @@ func (formatter *ImageFormatter) ID() string {
 	return docker.ImageID(formatter.image.ID)
 }
 
-//Repository prettifies the repository
+// Repository prettifies the repository
 func (formatter *ImageFormatter) Repository() string {
 	formatter.addHeader(repository)
 	if len(formatter.image.RepoTags) > 0 {
@@ -65,7 +65,7 @@ func (formatter *ImageFormatter) Repository() string {
 	return "<none>"
 }
 
-//Tag prettifies the tag
+// Tag prettifies the tag
 func (formatter *ImageFormatter) Tag() string {
 	formatter.addHeader(tag)
 	if len(formatter.image.RepoTags) > 0 {
@@ -76,7 +76,7 @@ func (formatter *ImageFormatter) Tag() string {
 
 }
 
-//Digest prettifies the image digestv
+// Digest prettifies the image digestv
 func (formatter *ImageFormatter) Digest() string {
 	formatter.addHeader(digest)
 	if len(formatter.image.RepoDigests) == 0 {
@@ -85,14 +85,14 @@ func (formatter *ImageFormatter) Digest() string {
 	return formatter.image.RepoDigests[0]
 }
 
-//CreatedSince prettifies the image creation date
+// CreatedSince prettifies the image creation date
 func (formatter *ImageFormatter) CreatedSince() string {
 	formatter.addHeader(createdSince)
 
 	return docker.DurationForHumans(formatter.image.Created)
 }
 
-//Size prettifies the image size
+// Size prettifies the image size
 func (formatter *ImageFormatter) Size() string {
 
 	formatter.addHeader(size)

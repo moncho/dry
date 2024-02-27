@@ -6,7 +6,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 )
 
-//Allowed sort methods
+// Allowed sort methods
 const (
 	NoSortNode SortMode = iota
 	SortByNodeName
@@ -51,7 +51,7 @@ func (s nodesByStatus) Less(i, j int) bool {
 	return s.swarmNodes[i].Status.State < s.swarmNodes[j].Status.State
 }
 
-//SortNodes sorts the given nodes slice using the given mode
+// SortNodes sorts the given nodes slice using the given mode
 func SortNodes(nodes []swarm.Node, mode SortMode) {
 	switch mode {
 	case SortByNodeName:

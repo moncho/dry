@@ -2,7 +2,7 @@ package docker
 
 import "sort"
 
-//Allowed sort methods
+// Allowed sort methods
 const (
 	NoSort SortMode = iota
 	SortByContainerID
@@ -11,7 +11,7 @@ const (
 	SortByName
 )
 
-//SortMode represents allowed modes to sort a container slice
+// SortMode represents allowed modes to sort a container slice
 type SortMode uint16
 
 type apiContainers []*Container
@@ -55,7 +55,7 @@ func (a byName) Less(i, j int) bool {
 	return false
 }
 
-//SortContainers sorts the given containers slice using the given mode
+// SortContainers sorts the given containers slice using the given mode
 func SortContainers(containers []*Container, mode SortMode) {
 	switch mode {
 	case NoSort:

@@ -12,7 +12,7 @@ import (
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
-//NodeRow is a Grid row showing runtime information about a node
+// NodeRow is a Grid row showing runtime information about a node
 type NodeRow struct {
 	node          swarm.Node
 	Name          *drytermui.ParColumn
@@ -29,7 +29,7 @@ type NodeRow struct {
 	drytermui.Row
 }
 
-//NewNodeRow creats a new NodeRow widget
+// NewNodeRow creats a new NodeRow widget
 func NewNodeRow(node swarm.Node, table drytermui.Table) *NodeRow {
 	row := &NodeRow{
 		node:          node,
@@ -65,7 +65,7 @@ func NewNodeRow(node swarm.Node, table drytermui.Table) *NodeRow {
 
 }
 
-//Buffer returns this Row data as a termui.Buffer
+// Buffer returns this Row data as a termui.Buffer
 func (row *NodeRow) Buffer() termui.Buffer {
 	buf := termui.NewBuffer()
 	//This set the background of the whole row
@@ -79,19 +79,19 @@ func (row *NodeRow) Buffer() termui.Buffer {
 	return buf
 }
 
-//ColumnsForFilter returns the columns that are used to filter
+// ColumnsForFilter returns the columns that are used to filter
 func (row *NodeRow) ColumnsForFilter() []*drytermui.ParColumn {
 	return []*drytermui.ParColumn{row.Name, row.Role, row.Labels, row.Status, row.Availability}
 }
 
-//Highlighted marks this rows as being highlighted
+// Highlighted marks this rows as being highlighted
 func (row *NodeRow) Highlighted() {
 	row.changeTextColor(
 		termui.Attribute(appui.DryTheme.Fg),
 		termui.Attribute(appui.DryTheme.CursorLineBg))
 }
 
-//NotHighlighted marks this rows as being not highlighted
+// NotHighlighted marks this rows as being not highlighted
 func (row *NodeRow) NotHighlighted() {
 	row.changeTextColor(
 		termui.Attribute(appui.DryTheme.ListItem),

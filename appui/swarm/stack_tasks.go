@@ -8,13 +8,13 @@ import (
 	"github.com/moncho/dry/docker"
 )
 
-//StacksTasksWidget shows a service's task information
+// StacksTasksWidget shows a service's task information
 type StacksTasksWidget struct {
 	TasksWidget
 	stack string
 }
 
-//NewStacksTasksWidget creates a StacksTasksWidget
+// NewStacksTasksWidget creates a StacksTasksWidget
 func NewStacksTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen) *StacksTasksWidget {
 	w := StacksTasksWidget{
 		TasksWidget: TasksWidget{
@@ -30,7 +30,7 @@ func NewStacksTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen) *StacksTa
 	return &w
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
+// Buffer returns the content of this widget as a termui.Buffer
 func (s *StacksTasksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
@@ -73,7 +73,7 @@ func (s *StacksTasksWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
-//ForStack sets the stack for which this widget is showing tasks
+// ForStack sets the stack for which this widget is showing tasks
 func (s *StacksTasksWidget) ForStack(stack string) {
 	s.Lock()
 	defer s.Unlock()
@@ -84,7 +84,7 @@ func (s *StacksTasksWidget) ForStack(stack string) {
 
 }
 
-//Mount prepares this widget for rendering
+// Mount prepares this widget for rendering
 func (s *StacksTasksWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -104,7 +104,7 @@ func (s *StacksTasksWidget) Mount() error {
 	return nil
 }
 
-//Name returns this widget name
+// Name returns this widget name
 func (s *StacksTasksWidget) Name() string {
 	return "StacksTasksWidget"
 }

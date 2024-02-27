@@ -6,7 +6,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 )
 
-//Allowed sort methods
+// Allowed sort methods
 const (
 	NoSortService SortMode = iota
 	SortByServiceName
@@ -31,7 +31,7 @@ func (s servicesByImage) Less(i, j int) bool {
 	return s.swarmServices[i].Spec.TaskTemplate.ContainerSpec.Image < s.swarmServices[j].Spec.TaskTemplate.ContainerSpec.Image
 }
 
-//SortServices sorts the given service slice using the given mode
+// SortServices sorts the given service slice using the given mode
 func SortServices(services []swarm.Service, mode SortMode) {
 	switch mode {
 	case SortByServiceName:

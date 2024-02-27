@@ -8,14 +8,14 @@ import (
 	"github.com/moncho/dry/docker"
 )
 
-//ServiceTasksWidget shows a service's task information
+// ServiceTasksWidget shows a service's task information
 type ServiceTasksWidget struct {
 	serviceID string
 	info      *ServiceInfoWidget
 	TasksWidget
 }
 
-//NewServiceTasksWidget creates a TasksWidget
+// NewServiceTasksWidget creates a TasksWidget
 func NewServiceTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen) *ServiceTasksWidget {
 	w := &ServiceTasksWidget{
 		TasksWidget: TasksWidget{
@@ -31,7 +31,7 @@ func NewServiceTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen) *Service
 	return w
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
+// Buffer returns the content of this widget as a termui.Buffer
 func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
@@ -76,7 +76,7 @@ func (s *ServiceTasksWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
-//ForService sets the service for which this widget is showing tasks
+// ForService sets the service for which this widget is showing tasks
 func (s *ServiceTasksWidget) ForService(serviceID string) {
 	s.Lock()
 	defer s.Unlock()
@@ -85,7 +85,7 @@ func (s *ServiceTasksWidget) ForService(serviceID string) {
 	s.sortMode = docker.SortByTaskService
 }
 
-//Mount prepares this widget for rendering
+// Mount prepares this widget for rendering
 func (s *ServiceTasksWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -115,7 +115,7 @@ func (s *ServiceTasksWidget) Mount() error {
 	return nil
 }
 
-//Name returns this widget name
+// Name returns this widget name
 func (s *ServiceTasksWidget) Name() string {
 	return "ServiceTasksWidget"
 }

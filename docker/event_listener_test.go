@@ -97,7 +97,7 @@ func TestEventListeners_RegisterCallbacks(t *testing.T) {
 	}
 }
 
-//Checks if both map are equal, by checking the length, keys and number of actions per key
+// Checks if both map are equal, by checking the length, keys and number of actions per key
 func eq(a, b map[SourceType][]EventCallback) bool {
 	if len(a) != len(b) {
 		return false

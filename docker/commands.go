@@ -2,7 +2,7 @@ package docker
 
 import "errors"
 
-//Command represents a docker command
+// Command represents a docker command
 type Command int
 
 const (
@@ -24,7 +24,7 @@ const (
 	STOP
 )
 
-//ContainerCommands is the list of container commands
+// ContainerCommands is the list of container commands
 var ContainerCommands = []CommandDescription{
 	{LOGS, "Fetch logs"},
 	{INSPECT, "Inspect container"},
@@ -36,17 +36,17 @@ var ContainerCommands = []CommandDescription{
 	{STOP, "Stop"},
 }
 
-//CommandDescriptions lists command descriptions in the same order
-//as they are found in ContainerCommands
+// CommandDescriptions lists command descriptions in the same order
+// as they are found in ContainerCommands
 var CommandDescriptions = justDescriptions(ContainerCommands)
 
-//CommandDescription describes docker commands
+// CommandDescription describes docker commands
 type CommandDescription struct {
 	Command     Command
 	Description string
 }
 
-//CommandFromDescription returns the command with the given description, if any
+// CommandFromDescription returns the command with the given description, if any
 func CommandFromDescription(d string) (Command, error) {
 	for _, cc := range ContainerCommands {
 		if cc.Description == d {
@@ -57,8 +57,8 @@ func CommandFromDescription(d string) (Command, error) {
 	return -1, errors.New("Command for description not found")
 }
 
-//justDescriptions extract from the given list of commands a copy
-//of the descriptions
+// justDescriptions extract from the given list of commands a copy
+// of the descriptions
 func justDescriptions(commands []CommandDescription) []string {
 	commandsLen := len(commands)
 	descriptions := make([]string, commandsLen)

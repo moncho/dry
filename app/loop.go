@@ -15,7 +15,7 @@ var widgets *widgetRegistry
 
 type nextHandler func(eh eventHandler)
 
-//RenderLoop runs dry
+// RenderLoop runs dry
 // nolint: gocyclo
 func RenderLoop(dry *Dry) {
 	if ok, err := dry.Ok(); !ok {

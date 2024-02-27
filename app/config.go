@@ -4,7 +4,7 @@ import (
 	"github.com/moncho/dry/docker"
 )
 
-//Config dry initial configuration
+// Config dry initial configuration
 type Config struct {
 	DockerHost         string
 	DockerCertPath     string

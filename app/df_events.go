@@ -3,9 +3,9 @@ package app
 import (
 	"fmt"
 
+	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/ui"
-	"github.com/gdamore/tcell"
 )
 
 const (

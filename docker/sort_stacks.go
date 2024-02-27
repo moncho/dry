@@ -4,7 +4,7 @@ import (
 	"sort"
 )
 
-//Allowed sort methods
+// Allowed sort methods
 const (
 	NoSortStack SortMode = iota
 	SortByStackName
@@ -22,7 +22,7 @@ func (s stacksByName) Less(i, j int) bool {
 	return s.swarmStacks[i].Name < s.swarmStacks[j].Name
 }
 
-//SortStacks sorts the given stack slice using the given mode
+// SortStacks sorts the given stack slice using the given mode
 func SortStacks(stacks []Stack, mode SortMode) {
 	switch mode {
 	case SortByStackName:

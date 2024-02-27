@@ -1,9 +1,9 @@
 package app
 
-//viewMode represents dry possible views
+// viewMode represents dry possible views
 type viewMode uint16
 
-//existing view modes
+// existing view modes
 const (
 	Main viewMode = iota //This is the container list view
 	DiskUsage

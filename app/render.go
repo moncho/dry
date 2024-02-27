@@ -9,7 +9,7 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
-//render renders dry on the given screen
+// render renders dry on the given screen
 func render(d *Dry, screen *ui.Screen) {
 
 	var bufferers []gizaktermui.Bufferer
@@ -169,7 +169,7 @@ func footer(mapping string) *termui.MarkupPar {
 	return par
 }
 
-//Updates the cursor position in case it is out of bounds
+// Updates the cursor position in case it is out of bounds
 func updateCursorPosition(cursor *ui.Cursor, noOfElements int) {
 	cursor.Max(noOfElements - 1)
 }

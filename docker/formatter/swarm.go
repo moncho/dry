@@ -7,7 +7,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 )
 
-//FormatPorts returns the string representation of the given PortConfig
+// FormatPorts returns the string representation of the given PortConfig
 func FormatPorts(ports []swarm.PortConfig) string {
 	result := []string{}
 	for _, pConfig := range ports {
@@ -20,7 +20,7 @@ func FormatPorts(ports []swarm.PortConfig) string {
 	return strings.Join(result, ",")
 }
 
-//FormatSwarmNetworks returns the string representation of the given slice of NetworkAttachmentConfig
+// FormatSwarmNetworks returns the string representation of the given slice of NetworkAttachmentConfig
 func FormatSwarmNetworks(networks []swarm.NetworkAttachmentConfig) string {
 	result := []string{}
 	for _, network := range networks {
