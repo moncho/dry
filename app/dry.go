@@ -16,7 +16,7 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
-//Dry resources and state
+// Dry resources and state
 type Dry struct {
 	dockerDaemon     docker.ContainerDaemon
 	dockerEvents     <-chan events.Message
@@ -37,23 +37,23 @@ func (d *Dry) toggleShowHeader() {
 	d.showHeader = !d.showHeader
 }
 
-//Close closes dry, releasing any resources held by it
+// Close closes dry, releasing any resources held by it
 func (d *Dry) Close() {
 	close(d.dockerEventsDone)
 	close(d.output)
 }
 
-//OuputChannel returns the channel where dry messages are written
+// OuputChannel returns the channel where dry messages are written
 func (d *Dry) OuputChannel() <-chan string {
 	return d.output
 }
 
-//Ok returns the state of dry
+// Ok returns the state of dry
 func (d *Dry) Ok() (bool, error) {
 	return d.dockerDaemon.Ok()
 }
 
-//changeView changes the active view mode
+// changeView changes the active view mode
 func (d *Dry) changeView(v viewMode) {
 	d.Lock()
 	defer d.Unlock()
@@ -66,11 +66,11 @@ func (d *Dry) showDockerEvents() {
 		for event := range d.dockerEvents {
 			//exec_ messages are sent continuously if docker is checking
 			//a container's health, so they are ignored
-			if strings.Contains(event.Action, "exec_") {
+			if strings.Contains(string(event.Action), "exec_") {
 				continue
 			}
 			//top messages are sent continuously on monitor mode, ignored
-			if strings.Contains(event.Action, "top") {
+			if strings.Contains(string(event.Action), "top") {
 				continue
 			}
 			d.message(fmt.Sprintf("Docker: %s %s", event.Action, event.ID))
@@ -78,7 +78,7 @@ func (d *Dry) showDockerEvents() {
 	}()
 }
 
-//message publishes the given message
+// message publishes the given message
 func (d *Dry) message(message string) {
 	select {
 	case d.output <- message:
@@ -101,7 +101,7 @@ func (d *Dry) viewMode() viewMode {
 	return d.view
 }
 
-//initRegistry creates a widget registry with its widget ready to be used
+// initRegistry creates a widget registry with its widget ready to be used
 func initRegistry(dry *Dry) *widgetRegistry {
 	daemon := dry.dockerDaemon
 	mainScreen := dry.screen
@@ -164,7 +164,7 @@ func newDry(screen *ui.Screen, d *docker.DockerDaemon) (*Dry, error) {
 
 }
 
-//NewDry creates a new dry application
+// NewDry creates a new dry application
 func NewDry(screen *ui.Screen, cfg Config) (*Dry, error) {
 
 	d, err := docker.ConnectToDaemon(cfg.dockerEnv())

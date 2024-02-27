@@ -1,15 +1,15 @@
 package docker
 
 import (
+	"errors"
 	"fmt"
 
-	dockerTypes "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
-	pkgError "github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
 
-//History returns image history
+// History returns image history
 func (daemon *DockerDaemon) History(id string) ([]image.HistoryResponseItem, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
@@ -19,9 +19,9 @@ func (daemon *DockerDaemon) History(id string) ([]image.HistoryResponseItem, err
 		ctx, id)
 }
 
-//ImageByID returns the image with the given ID
-func (daemon *DockerDaemon) ImageByID(id string) (dockerTypes.ImageSummary, error) {
-	var result dockerTypes.ImageSummary
+// ImageByID returns the image with the given ID
+func (daemon *DockerDaemon) ImageByID(id string) (image.Summary, error) {
+	var result image.Summary
 	images, err := daemon.Images()
 	if err != nil {
 		return result, err
@@ -32,20 +32,20 @@ func (daemon *DockerDaemon) ImageByID(id string) (dockerTypes.ImageSummary, erro
 		}
 	}
 
-	return result, fmt.Errorf("Image %s not found", id)
+	return result, fmt.Errorf("image %s not found", id)
 
 }
 
-//Images returns the list of Docker images
-func (daemon *DockerDaemon) Images() ([]dockerTypes.ImageSummary, error) {
+// Images returns the list of Docker images
+func (daemon *DockerDaemon) Images() ([]image.Summary, error) {
 
 	return images(daemon.client, defaultImageListOptions)
 
 }
 
-//RunImage creates a container based on the given image and runs the given command
-//Kind of like running "docker run $image $command" from the command line.
-func (daemon *DockerDaemon) RunImage(image dockerTypes.ImageSummary, command string) error {
+// RunImage creates a container based on the given image and runs the given command
+// Kind of like running "docker run $image $command" from the command line.
+func (daemon *DockerDaemon) RunImage(image image.Summary, command string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
@@ -56,27 +56,27 @@ func (daemon *DockerDaemon) RunImage(image dockerTypes.ImageSummary, command str
 		imageName = image.RepoDigests[0]
 
 	} else {
-		return pkgError.New("Cannot run image, image has no tag or digest")
+		return errors.New("run image: image has no tag or digest")
 	}
 
 	imageDetails, err := daemon.InspectImage(imageName)
 	if err != nil {
-		return pkgError.Wrap(err, fmt.Sprintf("Cannot get image details %s", imageName))
+		return fmt.Errorf("run image: inspect image %s: %w", imageName, err)
 	}
 
 	cc, hc, err := newCCB().image(imageName).command(command).ports(imageDetails.ContainerConfig.ExposedPorts).build()
 	if err != nil {
-		return pkgError.Wrap(err, "Error configuring container")
+		return fmt.Errorf("run image: %w", err)
 	}
 
 	cCreated, err := daemon.client.ContainerCreate(ctx, &cc, &hc, nil, nil, "")
 
 	if err != nil {
-		return pkgError.Wrap(err, fmt.Sprintf("Cannot create container for image %s", imageName))
+		return fmt.Errorf("run image: create container for image %s: %w", imageName, err)
 	}
 
-	if err := daemon.client.ContainerStart(ctx, cCreated.ID, dockerTypes.ContainerStartOptions{}); err != nil {
-		return err /*pkgError.Wrap(err, fmt.Sprintf("Cannot start container %s for image %s", cCreated.ID, imageName))*/
+	if err := daemon.client.ContainerStart(ctx, cCreated.ID, container.StartOptions{}); err != nil {
+		return fmt.Errorf("run image: start container for image %s: %w", imageName, err)
 
 	}
 	return nil

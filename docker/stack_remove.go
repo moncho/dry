@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -9,11 +10,9 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/api/types/versions"
-
-	"github.com/pkg/errors"
 )
 
-//StackRemove removes the stack with the given in
+// StackRemove removes the stack with the given in
 func (daemon *DockerDaemon) StackRemove(stack string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
@@ -59,7 +58,7 @@ func (daemon *DockerDaemon) StackRemove(stack string) error {
 	}
 
 	if len(errs) > 0 {
-		return errors.Errorf(strings.Join(errs, "\n"))
+		return errors.New(strings.Join(errs, "\n"))
 	}
 	return nil
 }

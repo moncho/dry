@@ -1,28 +1,26 @@
 package docker
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
 
-	"github.com/docker/docker/client"
-	"github.com/pkg/errors"
-
-	"golang.org/x/net/context"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
 	jsoniter "github.com/json-iterator/go"
 )
 
-//StatsChannel manages the stats channel of a container
+// StatsChannel manages the stats channel of a container
 type StatsChannel struct {
 	Container *Container
 	version   *types.Version
 	client    client.ContainerAPIClient
 }
 
-//Start starts sending stats to the channel returned
+// Start starts sending stats to the channel returned
 func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 	stats := make(chan *Stats)
 
@@ -32,7 +30,7 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 
 		if err != nil {
 			nonBlockingSend(stats, &Stats{
-				Error: errors.Wrapf(err, "Error creating stats stream for container %s", s.Container.ID)})
+				Error: fmt.Errorf("create stats stream for container %s: %w", s.Container.ID, err)})
 			return
 		}
 
@@ -48,11 +46,10 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 				if err := dec.Decode(&statsJSON); err != nil {
 					if err == io.EOF {
 						nonBlockingSend(stats, &Stats{
-							Error: fmt.Errorf(
-								"End of stats stream reached for container %s", s.Container.ID)})
+							Error: fmt.Errorf("end of stats stream reached for container %s", s.Container.ID)})
 					} else {
 						nonBlockingSend(stats, &Stats{
-							Error: errors.Wrapf(err, "Error reading stats for container %s", s.Container.ID)})
+							Error: fmt.Errorf("read stats for container %s: %w", s.Container.ID, err)})
 					}
 					break loop
 				}
@@ -61,7 +58,7 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 
 				if err != nil {
 					nonBlockingSend(stats, &Stats{
-						Error: errors.Wrapf(err, "Error retrieving top info for container %s", s.Container.ID)})
+						Error: fmt.Errorf("retrieve top info for container %s: %w", s.Container.ID, err)})
 					break loop
 				}
 				nonBlockingSend(stats, buildStats(s.version, s.Container, &statsJSON, &top))
@@ -74,7 +71,7 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 	return stats
 }
 
-//newStatsChannel creates a ready to use stats channel
+// newStatsChannel creates a ready to use stats channel
 func newStatsChannel(version *types.Version, client client.ContainerAPIClient, container *Container) (*StatsChannel, error) {
 	if container == nil {
 		return nil, errors.New("Container cannot be null")
@@ -89,7 +86,7 @@ func newStatsChannel(version *types.Version, client client.ContainerAPIClient, c
 
 }
 
-//buildStats builds Stats with the given information
+// buildStats builds Stats with the given information
 func buildStats(version *types.Version, container *Container, stats *types.StatsJSON, topResult *container.ContainerTopOKBody) *Stats {
 	s := &Stats{
 		CID:         TruncateID(container.ID),

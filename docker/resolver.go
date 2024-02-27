@@ -2,11 +2,11 @@ package docker
 
 import (
 	"context"
+	"errors"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
-	"github.com/pkg/errors"
 )
 
 // idResolver provides ID to Name resolution.
@@ -46,7 +46,7 @@ func (r *idResolver) get(ctx context.Context, t interface{}, id string) (string,
 		}
 		return service.Spec.Annotations.Name, nil
 	default:
-		return "", errors.Errorf("unsupported type")
+		return "", errors.New("unsupported type")
 	}
 
 }

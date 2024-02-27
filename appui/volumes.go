@@ -9,14 +9,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/docker/api/types"
-	"github.com/moncho/dry/ui/termui"
-
+	"github.com/docker/docker/api/types/volume"
 	gizaktermui "github.com/gizak/termui"
+	"github.com/moncho/dry/ui/termui"
 )
 
 type volumesService interface {
-	VolumeList(ctx context.Context) ([]*types.Volume, error)
+	VolumeList(ctx context.Context) ([]*volume.Volume, error)
 }
 
 const (
@@ -30,7 +29,7 @@ var volumesTableHeaders = []SortableColumnHeader{
 	{`VOLUME NAME`, byName},
 }
 
-//VolumesWidget shows information containers
+// VolumesWidget shows information containers
 type VolumesWidget struct {
 	service              volumesService
 	totalRows            []*VolumeRow
@@ -46,7 +45,7 @@ type VolumesWidget struct {
 	mounted bool
 }
 
-//NewVolumesWidget creates a VolumesWidget
+// NewVolumesWidget creates a VolumesWidget
 func NewVolumesWidget(service volumesService, s Screen) *VolumesWidget {
 	return &VolumesWidget{
 		header:  volumesTableHeader(),
@@ -55,7 +54,7 @@ func NewVolumesWidget(service volumesService, s Screen) *VolumesWidget {
 		sortBy:  byDriver}
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
+// Buffer returns the content of this widget as a termui.Buffer
 func (s *VolumesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
@@ -99,7 +98,7 @@ func (s *VolumesWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
-//Filter applies the given filter to the container list
+// Filter applies the given filter to the container list
 func (s *VolumesWidget) Filter(filter string) {
 	s.Lock()
 	defer s.Unlock()
@@ -107,7 +106,7 @@ func (s *VolumesWidget) Filter(filter string) {
 
 }
 
-//Mount tells this widget to be ready for rendering
+// Mount tells this widget to be ready for rendering
 func (s *VolumesWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -130,12 +129,12 @@ func (s *VolumesWidget) Mount() error {
 	return nil
 }
 
-//Name returns this widget name
+// Name returns this widget name
 func (s *VolumesWidget) Name() string {
 	return "VolumesWidget"
 }
 
-//OnEvent runs the given command
+// OnEvent runs the given command
 func (s *VolumesWidget) OnEvent(event EventCommand) error {
 	if s.RowCount() <= 0 {
 		return errors.New("The volume list is empty")
@@ -145,12 +144,12 @@ func (s *VolumesWidget) OnEvent(event EventCommand) error {
 	return event(s.filteredRows[s.selectedIndex].Name.Text)
 }
 
-//RowCount returns the number of rows of this widget.
+// RowCount returns the number of rows of this widget.
 func (s *VolumesWidget) RowCount() int {
 	return len(s.filteredRows)
 }
 
-//Sort rotates to the next sort mode.
+// Sort rotates to the next sort mode.
 func (s *VolumesWidget) Sort() {
 	s.Lock()
 	defer s.Unlock()
@@ -169,7 +168,7 @@ func (s *VolumesWidget) Unmount() error {
 	return nil
 }
 
-//Align aligns rows
+// Align aligns rows
 func (s *VolumesWidget) align() {
 	x := s.screen.Bounds().Min.X
 	width := s.screen.Bounds().Dx()
