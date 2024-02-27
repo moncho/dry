@@ -1,21 +1,21 @@
 package appui
 
 import (
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/volume"
 	termui "github.com/gizak/termui"
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
 // VolumeRow is a Grid row showing information about a Docker volume.
 type VolumeRow struct {
-	volume *types.Volume
+	volume *volume.Volume
 	Driver *drytermui.ParColumn
 	Name   *drytermui.ParColumn
 	Row
 }
 
-//NewVolumeRow creates VolumeRow widgets.
-func NewVolumeRow(volume *types.Volume, table drytermui.Table) *VolumeRow {
+// NewVolumeRow creates VolumeRow widgets.
+func NewVolumeRow(volume *volume.Volume, table drytermui.Table) *VolumeRow {
 
 	row := &VolumeRow{
 		volume: volume,
@@ -38,7 +38,7 @@ func NewVolumeRow(volume *types.Volume, table drytermui.Table) *VolumeRow {
 
 }
 
-//ColumnsForFilter returns the columns that are used to filter
+// ColumnsForFilter returns the columns that are used to filter
 func (row *VolumeRow) ColumnsForFilter() []*drytermui.ParColumn {
 	return []*drytermui.ParColumn{row.Name, row.Driver}
 }

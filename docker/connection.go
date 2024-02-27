@@ -3,7 +3,7 @@ package docker
 import (
 	"context"
 	"crypto/tls"
-	"golang.org/x/crypto/ssh"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -19,7 +19,7 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	drytls "github.com/moncho/dry/tls"
 	"github.com/moncho/dry/version"
-	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
 )
 
 const (
@@ -91,12 +91,12 @@ func newHTTPClient(host string, config *tls.Config) (*http.Client, error) {
 	}, nil
 }
 
-//ConnectToDaemon connects to a Docker daemon using the given properties.
+// ConnectToDaemon connects to a Docker daemon using the given properties.
 func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 
 	host, err := getServerHost(env)
 	if err != nil {
-		return nil, errors.Wrap(err, "Invalid Host")
+		return nil, fmt.Errorf("invalid host: %w", err)
 	}
 	var options *drytls.Options
 	//If a path to certificates is given use the path to read certificates from
@@ -151,7 +151,7 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 
 	client, err := client.NewClientWithOpts(opt...)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error creating client")
+		return nil, fmt.Errorf("create Docker client: %w", err)
 	}
 	return connect(client, env)
 

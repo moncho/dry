@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"sort"
 	"testing"
@@ -9,7 +10,6 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	dockerAPI "github.com/docker/docker/client"
 	"github.com/moncho/dry/docker/mock"
-	"github.com/pkg/errors"
 )
 
 func TestSwarmNodeRetrieval(t *testing.T) {
@@ -69,7 +69,7 @@ func (r *resolverMock) Resolve(ctx context.Context, t interface{}, id string) (s
 	case swarm.Service:
 		return "Service" + id, nil
 	default:
-		return "", errors.Errorf("unsupported type")
+		return "", errors.New("unsupported type")
 	}
 }
 

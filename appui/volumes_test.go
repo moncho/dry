@@ -7,16 +7,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/ui/termui"
 )
 
 type testVolumesService struct {
-	volumes []*types.Volume
+	volumes []*volume.Volume
 }
 
-func (v testVolumesService) VolumeList(context.Context) ([]*types.Volume, error) {
+func (v testVolumesService) VolumeList(context.Context) ([]*volume.Volume, error) {
 	return v.volumes, nil
 }
 
@@ -59,12 +59,12 @@ func TestVolumesWidget(t *testing.T) {
 			"TestVolumesWidget mounted widget two volumes",
 			args{
 				testVolumesService{
-					volumes: []*types.Volume{
-						&types.Volume{
+					volumes: []*volume.Volume{
+						{
 							Driver: "local",
 							Name:   "volume1",
 						},
-						&types.Volume{
+						{
 							Driver: "local",
 							Name:   "volume2",
 						},
@@ -83,22 +83,22 @@ func TestVolumesWidget(t *testing.T) {
 			"TestVolumesWidget show first 4 volumes",
 			args{
 				testVolumesService{
-					volumes: []*types.Volume{
-						&types.Volume{
+					volumes: []*volume.Volume{
+						{
 							Driver: "local",
 							Name:   "volume1",
 						},
-						&types.Volume{
+						{
 							Driver: "local",
 							Name:   "volume2",
 						},
-						&types.Volume{
+						{
 							Driver: "local",
 							Name:   "volume3",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume4",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume5",
 						},
@@ -117,20 +117,20 @@ func TestVolumesWidget(t *testing.T) {
 			"TestVolumesWidget show last 4 volumes",
 			args{
 				testVolumesService{
-					volumes: []*types.Volume{
-						&types.Volume{
+					volumes: []*volume.Volume{
+						{
 							Driver: "local",
 							Name:   "volume1",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume2",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume3",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume4",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume5",
 						},
@@ -151,20 +151,20 @@ func TestVolumesWidget(t *testing.T) {
 			"TestVolumesWidget sort volumes",
 			args{
 				testVolumesService{
-					volumes: []*types.Volume{
-						&types.Volume{
+					volumes: []*volume.Volume{
+						{
 							Driver: "local",
 							Name:   "volume5",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume4",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume3",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume2",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume1",
 						},
@@ -184,20 +184,20 @@ func TestVolumesWidget(t *testing.T) {
 			"TestVolumesWidget double sort volumes",
 			args{
 				testVolumesService{
-					volumes: []*types.Volume{
-						&types.Volume{
+					volumes: []*volume.Volume{
+						{
 							Driver: "local1",
 							Name:   "volume5",
-						}, &types.Volume{
+						}, {
 							Driver: "local1",
 							Name:   "volume4",
-						}, &types.Volume{
+						}, {
 							Driver: "local2",
 							Name:   "volume3",
-						}, &types.Volume{
+						}, {
 							Driver: "local2",
 							Name:   "volume2",
-						}, &types.Volume{
+						}, {
 							Driver: "local2",
 							Name:   "volume1",
 						},
@@ -218,20 +218,20 @@ func TestVolumesWidget(t *testing.T) {
 			"TestVolumesWidget filter volumes",
 			args{
 				testVolumesService{
-					volumes: []*types.Volume{
-						&types.Volume{
+					volumes: []*volume.Volume{
+						{
 							Driver: "local",
 							Name:   "volume5",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume4",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume3",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume2",
-						}, &types.Volume{
+						}, {
 							Driver: "local",
 							Name:   "volume1",
 						},

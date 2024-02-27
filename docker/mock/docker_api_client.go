@@ -1,8 +1,9 @@
 package mock
 
 import (
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"strconv"
+
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"golang.org/x/net/context"
 
@@ -18,23 +19,23 @@ import (
 //directory of the vendor tool of dry, so:
 //rm -rf vendor/github.com/moby/moby/vendor/golang.org/x/net
 
-//ContainerAPIClientMock mocks docker ContainerAPIClient
+// ContainerAPIClientMock mocks docker ContainerAPIClient
 type ContainerAPIClientMock struct {
 	dockerAPI.ContainerAPIClient
 	Containers []types.Container
 }
 
-//NetworkAPIClientMock mocks docker NetworkAPIClient
+// NetworkAPIClientMock mocks docker NetworkAPIClient
 type NetworkAPIClientMock struct {
 	dockerAPI.NetworkAPIClient
 }
 
-//ImageAPIClientMock mocks docker ImageAPIClient
+// ImageAPIClientMock mocks docker ImageAPIClient
 type ImageAPIClientMock struct {
 	dockerAPI.APIClient
 }
 
-//ContainerList returns a list with 10 container with IDs from 0 to 9.
+// ContainerList returns a list with 10 container with IDs from 0 to 9.
 func (m ContainerAPIClientMock) ContainerList(ctx context.Context, options types.ContainerListOptions) ([]types.Container, error) {
 	if len(m.Containers) > 0 {
 		return m.Containers, nil
@@ -50,29 +51,29 @@ func (m ContainerAPIClientMock) ContainerList(ctx context.Context, options types
 	return containers, nil
 }
 
-//ContainerInspect returns an empty inspection result.
+// ContainerInspect returns an empty inspection result.
 func (m ContainerAPIClientMock) ContainerInspect(ctx context.Context, container string) (types.ContainerJSON, error) {
 	return types.ContainerJSON{}, nil
 }
 
-//ContainerCreate mocks container creation
-func (mock ImageAPIClientMock) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, platform *v1.Platform, containerName string) (container.ContainerCreateCreatedBody, error) {
-	return container.ContainerCreateCreatedBody{ID: "NewContainer"}, nil
+// ContainerCreate mocks container creation
+func (mock ImageAPIClientMock) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, platform *v1.Platform, containerName string) (container.CreateResponse, error) {
+	return container.CreateResponse{ID: "NewContainer"}, nil
 }
 
-//ContainerStart mock, accepts everything without complains
+// ContainerStart mock, accepts everything without complains
 func (mock ImageAPIClientMock) ContainerStart(ctx context.Context, container string, options types.ContainerStartOptions) error {
 	return nil
 }
 
-//InspectImage mock
+// InspectImage mock
 func (mock ImageAPIClientMock) InspectImage(ctx context.Context, image string) (types.ImageInspect, error) {
 	return types.ImageInspect{
 		ContainerConfig: &container.Config{},
 	}, nil
 }
 
-//ImageInspectWithRaw mock
+// ImageInspectWithRaw mock
 func (mock ImageAPIClientMock) ImageInspectWithRaw(ctx context.Context, image string) (types.ImageInspect, []byte, error) {
 	return types.ImageInspect{
 		ContainerConfig: &container.Config{},

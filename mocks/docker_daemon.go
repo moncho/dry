@@ -11,19 +11,20 @@ import (
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/api/types/volume"
 	drydocker "github.com/moncho/dry/docker"
 )
 
-//DockerDaemonMock mocks a DockerDaemon
+// DockerDaemonMock mocks a DockerDaemon
 type DockerDaemonMock struct {
 }
 
-//ContainerByID mock
+// ContainerByID mock
 func (_m *DockerDaemonMock) ContainerByID(id string) *drydocker.Container {
 	return nil
 }
 
-//Containers mock
+// Containers mock
 func (_m *DockerDaemonMock) Containers(filters []drydocker.ContainerFilter, mode drydocker.SortMode) []*drydocker.Container {
 
 	var containers []*drydocker.Container
@@ -45,7 +46,7 @@ func (_m *DockerDaemonMock) Containers(filters []drydocker.ContainerFilter, mode
 	return containers
 }
 
-//DiskUsage mock
+// DiskUsage mock
 func (_m *DockerDaemonMock) DiskUsage() (types.DiskUsage, error) {
 	return types.DiskUsage{}, nil
 }
@@ -61,22 +62,22 @@ func (_m *DockerDaemonMock) Events() (<-chan events.Message, chan<- struct{}, er
 	return nil, nil, nil
 }
 
-//EventLog mock
+// EventLog mock
 func (_m *DockerDaemonMock) EventLog() *drydocker.EventLog {
 	return nil
 }
 
-//History mock
+// History mock
 func (_m *DockerDaemonMock) History(id string) ([]image.HistoryResponseItem, error) {
 	return nil, nil
 }
 
-//ImageByID mock
+// ImageByID mock
 func (_m *DockerDaemonMock) ImageByID(id string) (types.ImageSummary, error) {
 	return types.ImageSummary{}, nil
 }
 
-//Images mock
+// Images mock
 func (_m *DockerDaemonMock) Images() ([]types.ImageSummary, error) {
 
 	imagesJSON := `[
@@ -131,7 +132,7 @@ func (_m *DockerDaemonMock) Images() ([]types.ImageSummary, error) {
 	return images, err
 }
 
-//ImagesCount mock
+// ImagesCount mock
 func (_m *DockerDaemonMock) ImagesCount() int {
 	i, _ := _m.Images()
 	return len(i)
@@ -172,42 +173,42 @@ func (_m *DockerDaemonMock) Logs(id, since string, ts bool) (io.ReadCloser, erro
 	return nil, nil
 }
 
-//Networks mock
+// Networks mock
 func (_m *DockerDaemonMock) Networks() ([]types.NetworkResource, error) {
 	return nil, nil
 }
 
-//NetworkAt mock
+// NetworkAt mock
 func (_m *DockerDaemonMock) NetworkAt(position int) (*types.NetworkResource, error) {
 	return nil, nil
 }
 
-//NetworksCount mock
+// NetworksCount mock
 func (_m *DockerDaemonMock) NetworksCount() int {
 	return 0
 }
 
-//NetworkInspect mock
+// NetworkInspect mock
 func (_m *DockerDaemonMock) NetworkInspect(id string) (types.NetworkResource, error) {
 	return types.NetworkResource{}, nil
 }
 
-//Node mock
+// Node mock
 func (_m *DockerDaemonMock) Node(id string) (*swarm.Node, error) {
 	return nil, nil
 }
 
-//NodeChangeAvailability mock
+// NodeChangeAvailability mock
 func (_m *DockerDaemonMock) NodeChangeAvailability(nodeID string, availability swarm.NodeAvailability) error {
 	return nil
 }
 
-//Nodes mock
+// Nodes mock
 func (_m *DockerDaemonMock) Nodes() ([]swarm.Node, error) {
 	return nil, nil
 }
 
-//NodeTasks mock
+// NodeTasks mock
 func (_m *DockerDaemonMock) NodeTasks(nodeID string) ([]swarm.Task, error) {
 	return nil, nil
 }
@@ -218,7 +219,7 @@ func (_m *DockerDaemonMock) Ok() (bool, error) {
 	return false, nil
 }
 
-//StatsChannel mocks StatsChannel
+// StatsChannel mocks StatsChannel
 func (_m *DockerDaemonMock) StatsChannel(container *drydocker.Container) (*drydocker.StatsChannel, error) {
 	return nil, nil
 }
@@ -249,12 +250,12 @@ func (_m *DockerDaemonMock) Refresh(notify func(err error)) {
 	notify(nil)
 }
 
-//RefreshImages mock
+// RefreshImages mock
 func (_m *DockerDaemonMock) RefreshImages() error {
 	return nil
 }
 
-//RefreshNetworks mock
+// RefreshNetworks mock
 func (_m *DockerDaemonMock) RefreshNetworks() error {
 	return nil
 }
@@ -265,67 +266,67 @@ func (_m *DockerDaemonMock) RemoveAllStoppedContainers() (int, error) {
 
 }
 
-//RemoveDanglingImages mock
+// RemoveDanglingImages mock
 func (_m *DockerDaemonMock) RemoveDanglingImages() (int, error) {
 	return 0, nil
 }
 
-//RemoveNetwork mock
+// RemoveNetwork mock
 func (_m *DockerDaemonMock) RemoveNetwork(id string) error {
 	return nil
 }
 
-//RemoveUnusedImages mock
+// RemoveUnusedImages mock
 func (_m *DockerDaemonMock) RemoveUnusedImages() (int, error) {
 	return 0, nil
 }
 
-//ResolveNode mock
+// ResolveNode mock
 func (_m *DockerDaemonMock) ResolveNode(id string) (string, error) {
 	return "", nil
 }
 
-//ResolveService mock
+// ResolveService mock
 func (_m *DockerDaemonMock) ResolveService(id string) (string, error) {
 	return "", nil
 }
 
-//RunImage mock
+// RunImage mock
 func (_m *DockerDaemonMock) RunImage(image types.ImageSummary, command string) error {
 	return nil
 }
 
-//Service mock
+// Service mock
 func (_m *DockerDaemonMock) Service(id string) (*swarm.Service, error) {
 	return nil, nil
 }
 
-//ServiceLogs mock
+// ServiceLogs mock
 func (_m *DockerDaemonMock) ServiceLogs(id, since string, ts bool) (io.ReadCloser, error) {
 	return nil, nil
 }
 
-//Services mock
+// Services mock
 func (_m *DockerDaemonMock) Services() ([]swarm.Service, error) {
 	return nil, nil
 }
 
-//ServiceRemove mock
+// ServiceRemove mock
 func (_m *DockerDaemonMock) ServiceRemove(id string) error {
 	return nil
 }
 
-//ServiceScale mock
+// ServiceScale mock
 func (_m *DockerDaemonMock) ServiceScale(id string, scale uint64) error {
 	return nil
 }
 
-//ServiceTasks mock
+// ServiceTasks mock
 func (_m *DockerDaemonMock) ServiceTasks(services ...string) ([]swarm.Task, error) {
 	return nil, nil
 }
 
-//ServiceUpdate forces an update of the given service
+// ServiceUpdate forces an update of the given service
 func (_m *DockerDaemonMock) ServiceUpdate(id string) error {
 	return nil
 }
@@ -340,55 +341,55 @@ func (_m *DockerDaemonMock) Sort(sortMode drydocker.SortMode) {
 
 }
 
-//SortImages mock
+// SortImages mock
 func (_m *DockerDaemonMock) SortImages(sortMode drydocker.SortMode) {
 }
 
-//SortNetworks mock
+// SortNetworks mock
 func (_m *DockerDaemonMock) SortNetworks(sortMode drydocker.SortMode) {
 }
 
-//Stacks mock
+// Stacks mock
 func (_m *DockerDaemonMock) Stacks() ([]drydocker.Stack, error) {
 	return nil, nil
 }
 
-//StackConfigs mock
+// StackConfigs mock
 func (_m *DockerDaemonMock) StackConfigs(stack string) ([]swarm.Config, error) {
 	return nil, nil
 }
 
-//StackNetworks mock
+// StackNetworks mock
 func (_m *DockerDaemonMock) StackNetworks(stack string) ([]types.NetworkResource, error) {
 	return nil, nil
 }
 
-//StackSecrets mock
+// StackSecrets mock
 func (_m *DockerDaemonMock) StackSecrets(stack string) ([]swarm.Secret, error) {
 	return nil, nil
 }
 
-//StackRemove mock
+// StackRemove mock
 func (_m *DockerDaemonMock) StackRemove(stack string) error {
 	return nil
 }
 
-//StackServices mock
+// StackServices mock
 func (_m *DockerDaemonMock) StackServices(stack string) ([]swarm.Service, error) {
 	return nil, nil
 }
 
-//StackTasks empty mock
+// StackTasks empty mock
 func (_m *DockerDaemonMock) StackTasks(stack string) ([]swarm.Task, error) {
 	return nil, nil
 }
 
-//Task empty mock
+// Task empty mock
 func (_m *DockerDaemonMock) Task(id string) (swarm.Task, error) {
 	return swarm.Task{}, nil
 }
 
-//Top function mock
+// Top function mock
 func (_m *DockerDaemonMock) Top(ctx context.Context, id string) (container.ContainerTopOKBody, error) {
 
 	return container.ContainerTopOKBody{}, nil
@@ -406,12 +407,12 @@ func (_m *DockerDaemonMock) Version() (*types.Version, error) {
 }
 
 // VolumeInspect mock
-func (_m *DockerDaemonMock) VolumeInspect(ctx context.Context, volumeID string) (types.Volume, error) {
-	return types.Volume{}, nil
+func (_m *DockerDaemonMock) VolumeInspect(ctx context.Context, volumeID string) (volume.Volume, error) {
+	return volume.Volume{}, nil
 }
 
 // VolumeList mock
-func (_m *DockerDaemonMock) VolumeList(ctx context.Context) ([]*types.Volume, error) {
+func (_m *DockerDaemonMock) VolumeList(ctx context.Context) ([]*volume.Volume, error) {
 	return nil, nil
 }
 

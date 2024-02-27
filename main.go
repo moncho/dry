@@ -17,7 +17,6 @@ import (
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 	"github.com/moncho/dry/version"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -45,7 +44,7 @@ var loadMessage = []string{docker.Whale0,
 	docker.Whale7,
 	docker.Whale}
 
-//options dry's flags
+// options dry's flags
 type options struct {
 	Description bool   `short:"d" long:"description" description:"Shows the description"`
 	MonitorMode string `short:"m" long:"monitor" description:"Starts in monitor mode, given value (if any) is the refresh rate" optional:"yes" optional-value:"500"`
@@ -83,7 +82,7 @@ func config(opts options) (app.Config, error) {
 		cfg.MonitorMode = true
 		refreshRate, err := strconv.Atoi(opts.MonitorMode)
 		if err != nil {
-			return cfg, errors.Wrap(err, "invalid refresh rate")
+			return cfg, fmt.Errorf("invalid refresh rate %s: %w", opts.MonitorMode, err)
 		}
 		cfg.MonitorRefreshRate = refreshRate
 	}

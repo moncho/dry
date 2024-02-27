@@ -16,18 +16,18 @@ CTIMEVAR=-X $(PKG)/version.GITCOMMIT=$(GITCOMMIT) -X $(PKG)/version.VERSION=$(VE
 GO_LDFLAGS=-ldflags "-w $(CTIMEVAR)"
 GO_LDFLAGS_STATIC=-ldflags "-w $(CTIMEVAR) -extldflags -static"
 GOOSES = darwin freebsd linux windows
-GOARCHS = amd64 386 arm arm64
+GOARCHS = amd64 386 arm arm64 
 UNSUPPORTED = darwin_arm darwin_386 windows_arm windows_arm64 windows_386 freebsd_arm64 
 print-%: ; @echo $*=$($*)
 
 run: ## Runs dry
-	GO111MODULE=on go run ./main.go
+	go run ./main.go
 
 build: ## Builds dry
-	GO111MODULE=on go build .
+	go build .
 
 install: ## Installs dry
-	GO111MODULE=on go install $(PKG)
+	go install $(PKG)
 
 lint: ## Runs linters
 	@echo ">> CODE QUALITY"
@@ -56,15 +56,15 @@ fmt: ## Runs fmt
 	@gofmt -s -l -w $(GOFILES_NOVENDOR)
 
 test: ## Run tests
-	GO111MODULE=on go test -v -cover $(shell go list ./... | grep -v /vendor/ | grep -v mock)
+	go test -v -cover $(shell go list ./... | grep -v /vendor/ | grep -v mock)
 
 benchmark: ## Run benchmarks
-	GO111MODULE=on go test -bench $(shell go list ./... | grep -v /vendor/ | grep -v mock) 
+	go test -bench $(shell go list ./... | grep -v /vendor/ | grep -v mock) 
 
 define buildpretty
 $(if $(and $(filter-out $(UNSUPPORTED),$(1)_$(2))), \
 	mkdir -p ${PREFIX}/cross/$(1)/$(2);
-	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 GO111MODULE=on go build -o ${PREFIX}/cross/$(1)/$(2)/dry -a ${GO_LDFLAGS} .;
+	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build -o ${PREFIX}/cross/$(1)/$(2)/dry -a ${GO_LDFLAGS} .;
 )
 endef
 
@@ -74,7 +74,7 @@ cross: *.go VERSION ## Cross compiles dry
 define buildrelease
 $(if $(and $(filter-out $(UNSUPPORTED),$(1)_$(2))), \
 	mkdir -p ${PREFIX}/cross/$(1)/$(2);
-	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 GO111MODULE=on go build -o ${PREFIX}/cross/dry-$(1)-$(2) -a ${GO_LDFLAGS} .;
+	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build -o ${PREFIX}/cross/dry-$(1)-$(2) -a ${GO_LDFLAGS} .;
 )
 endef
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/go-units"
 	"github.com/moncho/dry/docker"
@@ -15,19 +15,19 @@ const (
 	maxErrLength = 30
 )
 
-//NewTaskStringer creates a TaskStringer for the given task
+// NewTaskStringer creates a TaskStringer for the given task
 func NewTaskStringer(api docker.SwarmAPI, task swarm.Task, trunc bool) *TaskStringer {
 	return &TaskStringer{api, task, trunc}
 }
 
-//TaskStringer converts to it string representation Task attributes
+// TaskStringer converts to it string representation Task attributes
 type TaskStringer struct {
 	api   docker.SwarmAPI
 	task  swarm.Task
 	trunc bool
 }
 
-//ID Task id as a string
+// ID Task id as a string
 func (t *TaskStringer) ID() string {
 	if t.trunc {
 		return TruncateID(t.task.ID)
@@ -35,7 +35,7 @@ func (t *TaskStringer) ID() string {
 	return t.task.ID
 }
 
-//Name Task name as a string
+// Name Task name as a string
 func (t *TaskStringer) Name() string {
 
 	if serviceName, err := t.api.ResolveService(t.task.ServiceID); err == nil {
@@ -51,7 +51,7 @@ func (t *TaskStringer) Name() string {
 
 }
 
-//Image Task image as a string
+// Image Task image as a string
 func (t *TaskStringer) Image() string {
 	image := t.task.Spec.ContainerSpec.Image
 	if t.trunc {
@@ -68,7 +68,7 @@ func (t *TaskStringer) Image() string {
 	return image
 }
 
-//NodeID Task nodeID as a string
+// NodeID Task nodeID as a string
 func (t *TaskStringer) NodeID() string {
 	if name, err := t.api.ResolveNode(t.task.NodeID); err == nil {
 		return name
@@ -76,12 +76,12 @@ func (t *TaskStringer) NodeID() string {
 	return ""
 }
 
-//DesiredState Task desired state as a string
+// DesiredState Task desired state as a string
 func (t *TaskStringer) DesiredState() string {
 	return PrettyPrint(t.task.DesiredState)
 }
 
-//CurrentState Task current state as a string
+// CurrentState Task current state as a string
 func (t *TaskStringer) CurrentState() string {
 	return fmt.Sprintf("%s %s ago",
 		PrettyPrint(t.task.Status.State),
@@ -89,7 +89,7 @@ func (t *TaskStringer) CurrentState() string {
 	)
 }
 
-//Error Task status error as a string
+// Error Task status error as a string
 func (t *TaskStringer) Error() string {
 	// Trim and quote the error message.
 	taskErr := t.task.Status.Err
@@ -102,7 +102,7 @@ func (t *TaskStringer) Error() string {
 	return taskErr
 }
 
-//Ports Task ports as a string
+// Ports Task ports as a string
 func (t *TaskStringer) Ports() string {
 	if len(t.task.Status.PortStatus.Ports) == 0 {
 		return ""

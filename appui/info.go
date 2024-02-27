@@ -6,23 +6,23 @@ import (
 	"sort"
 	"strings"
 
-	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/api/types/system"
 	"github.com/docker/go-units"
 )
 
 type infoRenderer struct {
-	env dockerTypes.Info
+	env system.Info
 }
 
-//NewDockerInfoRenderer creates renderer for for docker info
-func NewDockerInfoRenderer(env dockerTypes.Info) fmt.Stringer {
+// NewDockerInfoRenderer creates renderer for for docker info
+func NewDockerInfoRenderer(env system.Info) fmt.Stringer {
 	return &infoRenderer{
 		env: env,
 	}
 }
 
-//Render system-wide information
+// Render system-wide information
 func (r *infoRenderer) String() string {
 
 	buffer := new(bytes.Buffer)
@@ -129,7 +129,7 @@ func (r *infoRenderer) String() string {
 
 		for _, ci := range []struct {
 			name   string
-			commit dockerTypes.Commit
+			commit system.Commit
 		}{
 			{"containerd", info.ContainerdCommit},
 			{"runc", info.RuncCommit},
@@ -142,7 +142,7 @@ func (r *infoRenderer) String() string {
 			buffer.WriteString("")
 		}
 		if len(info.SecurityOptions) != 0 {
-			kvs, err := dockerTypes.DecodeSecurityOptions(info.SecurityOptions)
+			kvs, err := system.DecodeSecurityOptions(info.SecurityOptions)
 			if err == nil {
 				buffer.WriteString("<white> Security Options:</>\n")
 				for _, so := range kvs {
@@ -257,14 +257,6 @@ func (r *infoRenderer) String() string {
 	}
 
 	writeKV(buffer, "Experimental", info.ExperimentalBuild)
-	if info.ClusterStore != "" {
-		writeKV(buffer, "Cluster Store", info.ClusterStore)
-	}
-
-	if info.ClusterAdvertise != "" {
-		writeKV(buffer, "Cluster Advertise", info.ClusterAdvertise)
-	}
-
 	if info.RegistryConfig != nil && (len(info.RegistryConfig.InsecureRegistryCIDRs) > 0 || len(info.RegistryConfig.IndexConfigs) > 0) {
 		buffer.WriteString("<white> Insecure Registries:</>\n")
 		for _, registry := range info.RegistryConfig.IndexConfigs {
@@ -293,7 +285,7 @@ func writeKVIfNotEmpty(buffer *bytes.Buffer, key string, value interface{}) {
 	}
 }
 
-//writeKV write into the given buffer "key: value"
+// writeKV write into the given buffer "key: value"
 func writeKV(buffer *bytes.Buffer, key string, value interface{}) {
 	buffer.WriteString(fmt.Sprintf("<white> %s </>: %v\n", key, value))
 }

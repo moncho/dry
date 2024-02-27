@@ -6,16 +6,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/api/types/filters"
-
 	dockerTypes "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
 	dockerAPI "github.com/docker/docker/client"
 )
 
 type imageAPIClientMock struct {
 	dockerAPI.APIClient
 	err           error
-	imagesDeleted []dockerTypes.ImageDeleteResponseItem
+	imagesDeleted []image.DeleteResponse
 }
 
 func (c imageAPIClientMock) ImagesPrune(ctx context.Context, f filters.Args) (dockerTypes.ImagesPruneReport, error) {
@@ -52,7 +52,7 @@ func TestDockerDaemon_RemoveUnusedImages(t *testing.T) {
 			"Remove unused images, 1 image deleted, no errors",
 			fields{
 				client: imageAPIClientMock{
-					imagesDeleted: []dockerTypes.ImageDeleteResponseItem{
+					imagesDeleted: []image.DeleteResponse{
 						{},
 					},
 				},
