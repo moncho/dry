@@ -26,8 +26,8 @@ func NewExpiringMessageWidget(y int, screen *Screen) *ExpiringMessageWidget {
 
 }
 
-//Pause pauses this widget from showing any output, setting a new status
-//message will activate it again
+// Pause pauses this widget from showing any output, setting a new status
+// message will activate it again
 func (s *ExpiringMessageWidget) Pause() {
 	s.Lock()
 	s.stopTimer()
@@ -60,7 +60,7 @@ func (s *ExpiringMessageWidget) Message(msg string, clearDelay time.Duration) {
 
 }
 
-//Render renders the status message
+// Render renders the status message
 func (s *ExpiringMessageWidget) Render() {
 	s.RLock()
 	s.RUnlock()

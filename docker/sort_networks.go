@@ -6,7 +6,7 @@ import (
 	"github.com/docker/docker/api/types"
 )
 
-//Allowed sort methods
+// Allowed sort methods
 const (
 	NoSortNetworks SortMode = iota
 	SortNetworksByID
@@ -68,7 +68,7 @@ func (s networksBySubnet) Less(i, j int) bool {
 	return false
 }
 
-//SortNetworks sorts the given network slice using the given mode
+// SortNetworks sorts the given network slice using the given mode
 func SortNetworks(networks []types.NetworkResource, mode SortMode) {
 	switch mode {
 	case SortNetworksByID:

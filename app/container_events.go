@@ -453,8 +453,8 @@ func (h *containersScreenEventHandler) handleKey(key tcell.Key, f func(eventHand
 	return handled
 }
 
-//statsScreen shows container stats on the screen
-//TODO move to appui
+// statsScreen shows container stats on the screen
+// TODO move to appui
 func statsScreen(container *docker.Container, stats *docker.StatsChannel, screen *ui.Screen, events <-chan *tcell.EventKey, closeCallback func()) {
 	defer closeCallback()
 

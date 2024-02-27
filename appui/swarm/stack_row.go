@@ -9,7 +9,7 @@ import (
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
-//StackRow is a Grid row showing stack information
+// StackRow is a Grid row showing stack information
 type StackRow struct {
 	stack        docker.Stack
 	Name         *drytermui.ParColumn
@@ -22,7 +22,7 @@ type StackRow struct {
 	appui.Row
 }
 
-//NewStackRow creats a new StackRow widget
+// NewStackRow creats a new StackRow widget
 func NewStackRow(stack docker.Stack, table drytermui.Table) *StackRow {
 	row := &StackRow{
 		stack:        stack,
@@ -56,7 +56,7 @@ func NewStackRow(stack docker.Stack, table drytermui.Table) *StackRow {
 
 }
 
-//ColumnsForFilter returns the columns that are used to filter
+// ColumnsForFilter returns the columns that are used to filter
 func (row *StackRow) ColumnsForFilter() []*drytermui.ParColumn {
 	return []*drytermui.ParColumn{row.Name, row.Orchestrator}
 }

@@ -29,7 +29,7 @@ var containerTableHeaders = []SortableColumnHeader{
 	{`NAMES`, SortMode(docker.SortByName)},
 }
 
-//ContainersWidget shows information containers
+// ContainersWidget shows information containers
 type ContainersWidget struct {
 	dockerDaemon         docker.ContainerAPI
 	totalRows            []*ContainerRow
@@ -46,7 +46,7 @@ type ContainersWidget struct {
 	mounted bool
 }
 
-//NewContainersWidget creates a ContainersWidget
+// NewContainersWidget creates a ContainersWidget
 func NewContainersWidget(dockerDaemon docker.ContainerAPI, s Screen) *ContainersWidget {
 	return &ContainersWidget{
 		dockerDaemon:      dockerDaemon,
@@ -56,7 +56,7 @@ func NewContainersWidget(dockerDaemon docker.ContainerAPI, s Screen) *Containers
 		sortMode:          docker.SortByContainerID}
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
+// Buffer returns the content of this widget as a termui.Buffer
 func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
@@ -98,7 +98,7 @@ func (s *ContainersWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
-//Filter applies the given filter to the container list
+// Filter applies the given filter to the container list
 func (s *ContainersWidget) Filter(filter string) {
 	s.Lock()
 	defer s.Unlock()
@@ -106,7 +106,7 @@ func (s *ContainersWidget) Filter(filter string) {
 
 }
 
-//Mount tells this widget to be ready for rendering
+// Mount tells this widget to be ready for rendering
 func (s *ContainersWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -133,12 +133,12 @@ func (s *ContainersWidget) Mount() error {
 	return nil
 }
 
-//Name returns this widget name
+// Name returns this widget name
 func (s *ContainersWidget) Name() string {
 	return "ContainersWidget"
 }
 
-//OnEvent runs the given command
+// OnEvent runs the given command
 func (s *ContainersWidget) OnEvent(event EventCommand) error {
 	if s.RowCount() <= 0 {
 		return errors.New("The container list is empty")
@@ -148,13 +148,13 @@ func (s *ContainersWidget) OnEvent(event EventCommand) error {
 	return event(s.filteredRows[s.selectedIndex].container.ID)
 }
 
-//RowCount returns the number of rows of this widget.
+// RowCount returns the number of rows of this widget.
 func (s *ContainersWidget) RowCount() int {
 	return len(s.filteredRows)
 }
 
-//Sort rotates to the next sort mode.
-//SortByContainerID -> SortByImage -> SortByStatus -> SortByName -> SortByContainerID
+// Sort rotates to the next sort mode.
+// SortByContainerID -> SortByImage -> SortByStatus -> SortByName -> SortByContainerID
 func (s *ContainersWidget) Sort() {
 	s.Lock()
 	defer s.Unlock()
@@ -171,7 +171,7 @@ func (s *ContainersWidget) Sort() {
 	}
 }
 
-//ToggleShowAllContainers toggles the show-all-containers state
+// ToggleShowAllContainers toggles the show-all-containers state
 func (s *ContainersWidget) ToggleShowAllContainers() {
 	s.Lock()
 	defer s.Unlock()
@@ -180,7 +180,7 @@ func (s *ContainersWidget) ToggleShowAllContainers() {
 	s.mounted = false
 }
 
-//Unmount this widget
+// Unmount this widget
 func (s *ContainersWidget) Unmount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -188,7 +188,7 @@ func (s *ContainersWidget) Unmount() error {
 	return nil
 }
 
-//Align aligns rows
+// Align aligns rows
 func (s *ContainersWidget) align() {
 	x := s.screen.Bounds().Min.X
 	width := s.screen.Bounds().Dx()

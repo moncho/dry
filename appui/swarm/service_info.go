@@ -16,14 +16,14 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-//ServiceInfoWidget shows service information
+// ServiceInfoWidget shows service information
 type ServiceInfoWidget struct {
 	service     *swarm.Service
 	serviceName string
 	drytermui.SizableBufferer
 }
 
-//NewServiceInfoWidget creates ServiceInfoWidget with information about the service with the given ID
+// NewServiceInfoWidget creates ServiceInfoWidget with information about the service with the given ID
 func NewServiceInfoWidget(swarmClient docker.SwarmAPI, service *swarm.Service, screen appui.Screen) *ServiceInfoWidget {
 	name, _ := swarmClient.ResolveService(service.ID)
 	info := serviceInfo(swarmClient, name, service)

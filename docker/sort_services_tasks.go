@@ -6,7 +6,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 )
 
-//Allowed sort methods
+// Allowed sort methods
 const (
 	NoSortTask SortMode = iota
 	SortByTaskImage
@@ -44,7 +44,7 @@ func (s tasksByDesiredState) Less(i, j int) bool {
 	return s.swarmTasks[i].DesiredState < s.swarmTasks[j].DesiredState
 }
 
-//SortTasks sorts the given Task slice using the given mode
+// SortTasks sorts the given Task slice using the given mode
 func SortTasks(tasks []swarm.Task, mode SortMode) {
 
 	switch mode {

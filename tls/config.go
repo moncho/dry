@@ -1,6 +1,7 @@
 // Package tls provides primitives to retrieve secure-enough TLS configurations for both clients and servers.
 // It is a copy https://github.com/docker/go-connections to avoid bringing dependencies.
 // As a reminder from https://golang.org/pkg/crypto/tls/#Config:
+//
 //	A Config structure is used to configure a TLS client or server. After one has been passed to a TLS function it must not be modified.
 //	A Config may be reused; the tls package will also not modify it.
 package tls

@@ -10,14 +10,14 @@ import (
 
 var defaultTasksTableHeader = taskTableHeader()
 
-//NodeTasksWidget shows a node's task information
+// NodeTasksWidget shows a node's task information
 type NodeTasksWidget struct {
 	TasksWidget
 	nodeID   string
 	nodeName string
 }
 
-//NewNodeTasksWidget creates a TasksWidget
+// NewNodeTasksWidget creates a TasksWidget
 func NewNodeTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen) *NodeTasksWidget {
 
 	w := NodeTasksWidget{
@@ -36,7 +36,7 @@ func NewNodeTasksWidget(swarmClient docker.SwarmAPI, s appui.Screen) *NodeTasksW
 
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
+// Buffer returns the content of this widget as a termui.Buffer
 func (s *NodeTasksWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
@@ -78,7 +78,7 @@ func (s *NodeTasksWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
-//ForNode sets the node for which this widget will render tasks
+// ForNode sets the node for which this widget will render tasks
 func (s *NodeTasksWidget) ForNode(nodeID string) {
 	s.Lock()
 	defer s.Unlock()
@@ -87,7 +87,7 @@ func (s *NodeTasksWidget) ForNode(nodeID string) {
 	s.sortMode = docker.SortByTaskService
 }
 
-//Mount prepares this widget for rendering
+// Mount prepares this widget for rendering
 func (s *NodeTasksWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -120,7 +120,7 @@ func (s *NodeTasksWidget) Mount() error {
 	return nil
 }
 
-//Name returns this widget name
+// Name returns this widget name
 func (s *NodeTasksWidget) Name() string {
 	return "NodeTasksWidget"
 }

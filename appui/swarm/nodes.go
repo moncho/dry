@@ -46,7 +46,7 @@ var nodeTableHeaders = []appui.SortableColumnHeader{
 	{Title: "MANAGER STATUS", Mode: appui.SortMode(docker.NoSortNode)},
 }
 
-//NodesWidget presents Docker swarm information
+// NodesWidget presents Docker swarm information
 type NodesWidget struct {
 	swarmClient          docker.SwarmAPI
 	filteredRows         []*NodeRow
@@ -65,7 +65,7 @@ type NodesWidget struct {
 	mounted bool
 }
 
-//NewNodesWidget creates a NodesWidget
+// NewNodesWidget creates a NodesWidget
 func NewNodesWidget(swarmClient docker.SwarmAPI, s appui.Screen) *NodesWidget {
 	return &NodesWidget{
 		swarmClient: swarmClient,
@@ -74,7 +74,7 @@ func NewNodesWidget(swarmClient docker.SwarmAPI, s appui.Screen) *NodesWidget {
 		sortMode:    docker.SortByNodeName}
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
+// Buffer returns the content of this widget as a termui.Buffer
 func (s *NodesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
@@ -119,14 +119,14 @@ func (s *NodesWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
-//Filter applies the given filter to the container list
+// Filter applies the given filter to the container list
 func (s *NodesWidget) Filter(filter string) {
 	s.Lock()
 	defer s.Unlock()
 	s.filterPattern = filter
 }
 
-//Mount prepares this widget for rendering
+// Mount prepares this widget for rendering
 func (s *NodesWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -157,12 +157,12 @@ func (s *NodesWidget) Mount() error {
 	return nil
 }
 
-//Name returns this widget name
+// Name returns this widget name
 func (s *NodesWidget) Name() string {
 	return "NodesWidget"
 }
 
-//OnEvent runs the given command
+// OnEvent runs the given command
 func (s *NodesWidget) OnEvent(event appui.EventCommand) error {
 	if s.RowCount() > 0 {
 		return event(s.filteredRows[s.selectedIndex].node.ID)
@@ -170,7 +170,7 @@ func (s *NodesWidget) OnEvent(event appui.EventCommand) error {
 	return errors.New("the node list is empty")
 }
 
-//Unmount tells this widge that in will not be rendered anymore
+// Unmount tells this widge that in will not be rendered anymore
 func (s *NodesWidget) Unmount() error {
 
 	s.Lock()
@@ -180,12 +180,12 @@ func (s *NodesWidget) Unmount() error {
 
 }
 
-//RowCount returns the number of rows of this widget.
+// RowCount returns the number of rows of this widget.
 func (s *NodesWidget) RowCount() int {
 	return len(s.filteredRows)
 }
 
-//Sort rotates to the next sort mode.
+// Sort rotates to the next sort mode.
 func (s *NodesWidget) Sort() {
 	s.RLock()
 	defer s.RUnlock()
@@ -204,7 +204,7 @@ func (s *NodesWidget) Sort() {
 	s.mounted = false
 }
 
-//Align aligns rows
+// Align aligns rows
 func (s *NodesWidget) align() {
 	x := s.screen.Bounds().Min.X
 	width := s.screen.Bounds().Dx()
@@ -274,8 +274,8 @@ func (s *NodesWidget) calculateVisibleRows() {
 	}
 }
 
-//prepareForRendering sets the internal state of this widget so it is ready for
-//rendering (i.e. Buffer()).
+// prepareForRendering sets the internal state of this widget so it is ready for
+// rendering (i.e. Buffer()).
 func (s *NodesWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()

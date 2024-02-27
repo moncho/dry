@@ -11,9 +11,9 @@ const (
 	DefaultCapacity = 50
 )
 
-//EventLog keeps track of docker events. It has a limited capacity and
-//behaves as a Circular Buffer - adding a new event removes the oldest one if
-//the buffer is at its max capacity.
+// EventLog keeps track of docker events. It has a limited capacity and
+// behaves as a Circular Buffer - adding a new event removes the oldest one if
+// the buffer is at its max capacity.
 type EventLog struct {
 	head     int // the most recent value written
 	tail     int // the least recent value written
@@ -22,7 +22,7 @@ type EventLog struct {
 	sync.RWMutex
 }
 
-//NewEventLog creates an event log with the default capacity
+// NewEventLog creates an event log with the default capacity
 func NewEventLog() *EventLog {
 	log := &EventLog{}
 	log.Init(DefaultCapacity)
@@ -30,17 +30,17 @@ func NewEventLog() *EventLog {
 	return log
 }
 
-//Capacity returns the capacity of the event log.
+// Capacity returns the capacity of the event log.
 func (el *EventLog) Capacity() int {
 	return el.capacity
 }
 
-//Count returns the number of events in the buffer
+// Count returns the number of events in the buffer
 func (el *EventLog) Count() int {
 	return el.tail - el.head
 }
 
-//Events returns a copy of the event buffer
+// Events returns a copy of the event buffer
 func (el *EventLog) Events() []events.Message {
 	el.RLock()
 	defer el.RUnlock()
@@ -54,21 +54,21 @@ func (el *EventLog) Events() []events.Message {
 	return messages
 }
 
-//Init sets the log in a working state. Must be
-//called before doing any other operation
+// Init sets the log in a working state. Must be
+// called before doing any other operation
 func (el *EventLog) Init(capacity int) {
 	el.messages = make([]*events.Message, capacity, capacity*2)
 	el.capacity = capacity
 }
 
-//Peek the latest event added
+// Peek the latest event added
 func (el *EventLog) Peek() *events.Message {
 	el.RLock()
 	defer el.RUnlock()
 	return el.messages[el.tail-1]
 }
 
-//Push the given event to this log
+// Push the given event to this log
 func (el *EventLog) Push(message *events.Message) {
 	el.Lock()
 	defer el.Unlock()

@@ -26,7 +26,7 @@ var serviceTableHeaders = []appui.SortableColumnHeader{
 	{Title: "IMAGE", Mode: appui.SortMode(docker.SortByServiceImage)},
 }
 
-//ServicesWidget shows information about services running on the Swarm
+// ServicesWidget shows information about services running on the Swarm
 type ServicesWidget struct {
 	filteredRows         []*ServiceRow
 	filterPattern        string
@@ -42,7 +42,7 @@ type ServicesWidget struct {
 	mounted bool
 }
 
-//NewServicesWidget creates a ServicesWidget
+// NewServicesWidget creates a ServicesWidget
 func NewServicesWidget(swarmClient docker.SwarmAPI, s appui.Screen) *ServicesWidget {
 	return &ServicesWidget{
 		swarmClient:   swarmClient,
@@ -53,7 +53,7 @@ func NewServicesWidget(swarmClient docker.SwarmAPI, s appui.Screen) *ServicesWid
 
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
+// Buffer returns the content of this widget as a termui.Buffer
 func (s *ServicesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
@@ -94,14 +94,14 @@ func (s *ServicesWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
-//Filter applies the given filter to the container list
+// Filter applies the given filter to the container list
 func (s *ServicesWidget) Filter(filter string) {
 	s.Lock()
 	defer s.Unlock()
 	s.filterPattern = filter
 }
 
-//Mount prepares this widget for rendering
+// Mount prepares this widget for rendering
 func (s *ServicesWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -121,12 +121,12 @@ func (s *ServicesWidget) Mount() error {
 	return nil
 }
 
-//Name returns this widget name
+// Name returns this widget name
 func (s *ServicesWidget) Name() string {
 	return "ServicesWidget"
 }
 
-//OnEvent runs the given command
+// OnEvent runs the given command
 func (s *ServicesWidget) OnEvent(event appui.EventCommand) error {
 	if s.RowCount() > 0 {
 		return event(s.filteredRows[s.selectedIndex].service.ID)
@@ -134,13 +134,13 @@ func (s *ServicesWidget) OnEvent(event appui.EventCommand) error {
 	return nil
 }
 
-//RowCount returns the number of rowns of this widget.
+// RowCount returns the number of rowns of this widget.
 func (s *ServicesWidget) RowCount() int {
 	return len(s.filteredRows)
 }
 
-//Sort rotates to the next sort mode.
-//SortByServiceName -> SortByServiceImage -> SortByServiceName
+// Sort rotates to the next sort mode.
+// SortByServiceName -> SortByServiceImage -> SortByServiceName
 func (s *ServicesWidget) Sort() {
 	s.Lock()
 	defer s.Unlock()
@@ -152,7 +152,7 @@ func (s *ServicesWidget) Sort() {
 	}
 }
 
-//Unmount marks this widget as unmounted
+// Unmount marks this widget as unmounted
 func (s *ServicesWidget) Unmount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -162,7 +162,7 @@ func (s *ServicesWidget) Unmount() error {
 
 }
 
-//Align aligns rows
+// Align aligns rows
 func (s *ServicesWidget) align() {
 	x := s.screen.Bounds().Min.X
 	width := s.screen.Bounds().Dx()
@@ -230,8 +230,8 @@ func (s *ServicesWidget) calculateVisibleRows() {
 	}
 }
 
-//prepareForRendering sets the internal state of this widget so it is ready for
-//rendering (i.e. Buffer()).
+// prepareForRendering sets the internal state of this widget so it is ready for
+// rendering (i.e. Buffer()).
 func (s *ServicesWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()

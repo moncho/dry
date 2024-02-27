@@ -8,7 +8,7 @@ import (
 	"github.com/docker/docker/api/types/events"
 )
 
-//EventCallback defines a callback function for messages
+// EventCallback defines a callback function for messages
 type EventCallback func(ctx context.Context, event events.Message) error
 
 // streamEvents sends incoming events to the provided channel.

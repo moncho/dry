@@ -6,7 +6,7 @@ import (
 	"github.com/moncho/dry/version"
 )
 
-//ShortHelp is a short description of dry
+// ShortHelp is a short description of dry
 const ShortHelp = `
 dry
 

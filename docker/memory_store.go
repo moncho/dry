@@ -6,7 +6,7 @@ import (
 	dockerAPI "github.com/docker/docker/client"
 )
 
-//ContainerStore defines a container storage.
+// ContainerStore defines a container storage.
 type ContainerStore interface {
 	Get(id string) *Container
 	List() []*Container
@@ -22,8 +22,8 @@ type inMemoryContainerStore struct {
 	sync.RWMutex
 }
 
-//NewDockerContainerStore creates a new Docker container store that will use the given Docker
-//daemon client to retrieve container information.
+// NewDockerContainerStore creates a new Docker container store that will use the given Docker
+// daemon client to retrieve container information.
 func NewDockerContainerStore(client dockerAPI.ContainerAPIClient) (ContainerStore, error) {
 	containers, err := containers(client)
 	if err != nil {

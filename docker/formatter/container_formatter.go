@@ -27,19 +27,19 @@ const (
 	labelsHeader     = "LABELS"
 )
 
-//ContainerFormatter knows how to pretty-print the information of a container
+// ContainerFormatter knows how to pretty-print the information of a container
 type ContainerFormatter struct {
 	trunc  bool
 	header []string
 	c      *docker.Container
 }
 
-//NewContainerFormatter creates a new container formatter
+// NewContainerFormatter creates a new container formatter
 func NewContainerFormatter(c *docker.Container, trunc bool) *ContainerFormatter {
 	return &ContainerFormatter{trunc: trunc, c: c}
 }
 
-//ID prettifies the id
+// ID prettifies the id
 func (c *ContainerFormatter) ID() string {
 	c.addHeader(idHeader)
 	if c.trunc {
@@ -48,7 +48,7 @@ func (c *ContainerFormatter) ID() string {
 	return c.c.ID
 }
 
-//Names prettifies the container name(s)
+// Names prettifies the container name(s)
 func (c *ContainerFormatter) Names() string {
 	c.addHeader(namesHeader)
 	names := stripNamePrefix(c.c.Names)
@@ -63,7 +63,7 @@ func (c *ContainerFormatter) Names() string {
 	return strings.Join(names, ",")
 }
 
-//Image prettifies the image used by the container
+// Image prettifies the image used by the container
 func (c *ContainerFormatter) Image() string {
 	c.addHeader(imageHeader)
 	if c.c.Image == "" {
@@ -80,7 +80,7 @@ func (c *ContainerFormatter) Image() string {
 	return c.c.Image
 }
 
-//Command prettifies the command that starts the container
+// Command prettifies the command that starts the container
 func (c *ContainerFormatter) Command() string {
 	c.addHeader(commandHeader)
 	command := c.c.Command
@@ -90,13 +90,13 @@ func (c *ContainerFormatter) Command() string {
 	return command
 }
 
-//CreatedAt prettifies the command that starts the container
+// CreatedAt prettifies the command that starts the container
 func (c *ContainerFormatter) CreatedAt() string {
 	c.addHeader(createdAtHeader)
 	return docker.DurationForHumans(c.c.Created)
 }
 
-//RunningFor prettifies the  that starts the container
+// RunningFor prettifies the  that starts the container
 func (c *ContainerFormatter) RunningFor() string {
 	c.addHeader(runningForHeader)
 	if createdAt, err := time.Parse(time.RFC3339, c.c.ContainerJSON.State.StartedAt); err == nil {
@@ -105,19 +105,19 @@ func (c *ContainerFormatter) RunningFor() string {
 	return ""
 }
 
-//Ports prettifies the container port information
+// Ports prettifies the container port information
 func (c *ContainerFormatter) Ports() string {
 	c.addHeader(portsHeader)
 	return DisplayablePorts(c.c.Ports)
 }
 
-//Status prettifies the container status
+// Status prettifies the container status
 func (c *ContainerFormatter) Status() string {
 	c.addHeader(statusHeader)
 	return c.c.Status
 }
 
-//Size prettifies the container size
+// Size prettifies the container size
 func (c *ContainerFormatter) Size() string {
 	c.addHeader(sizeHeader)
 	srw := units.HumanSize(float64(c.c.SizeRw))
@@ -130,7 +130,7 @@ func (c *ContainerFormatter) Size() string {
 	return sf
 }
 
-//Labels prettifies the container labels
+// Labels prettifies the container labels
 func (c *ContainerFormatter) Labels() string {
 	c.addHeader(labelsHeader)
 	if c.c.Labels == nil {
@@ -164,7 +164,7 @@ func stripNamePrefix(ss []string) []string {
 	return ss
 }
 
-//DisplayablePorts formats the given ports information for displaying
+// DisplayablePorts formats the given ports information for displaying
 func DisplayablePorts(ports []types.Port) string {
 	type portGroup struct {
 		first int
@@ -249,7 +249,7 @@ func formGroup(key string, start, last int) string {
 	return fmt.Sprintf("%s/%s", group, groupType)
 }
 
-//FormatLabels returns the string representation of the given labels.
+// FormatLabels returns the string representation of the given labels.
 func FormatLabels(labels map[string]string) string {
 	var joinLabels []string
 	for k, v := range labels {

@@ -11,7 +11,7 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
-//TasksWidget shows a service's task information
+// TasksWidget shows a service's task information
 type TasksWidget struct {
 	header               *termui.TableHeader
 	filteredRows         []*TaskRow
@@ -29,14 +29,14 @@ type TasksWidget struct {
 	mounted bool
 }
 
-//Filter applies the given filter to the container list
+// Filter applies the given filter to the container list
 func (s *TasksWidget) Filter(filter string) {
 	s.Lock()
 	defer s.Unlock()
 	s.filterPattern = filter
 }
 
-//OnEvent runs the given command
+// OnEvent runs the given command
 func (s *TasksWidget) OnEvent(event appui.EventCommand) error {
 	if s.RowCount() > 0 {
 		return event(s.filteredRows[s.selectedIndex].task.ID)
@@ -44,13 +44,13 @@ func (s *TasksWidget) OnEvent(event appui.EventCommand) error {
 	return nil
 }
 
-//RowCount returns the number of rowns of this widget.
+// RowCount returns the number of rowns of this widget.
 func (s *TasksWidget) RowCount() int {
 	return len(s.filteredRows)
 }
 
-//Sort rotates to the next sort mode.
-//SortByTaskService -> SortByTaskImage -> SortByTaskDesiredState -> SortByTaskState -> SortByTaskService
+// Sort rotates to the next sort mode.
+// SortByTaskService -> SortByTaskImage -> SortByTaskDesiredState -> SortByTaskState -> SortByTaskService
 func (s *TasksWidget) Sort() {
 	s.Lock()
 	defer s.Unlock()
@@ -66,7 +66,7 @@ func (s *TasksWidget) Sort() {
 	}
 }
 
-//Unmount marks this widget as unmounted
+// Unmount marks this widget as unmounted
 func (s *TasksWidget) Unmount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -76,7 +76,7 @@ func (s *TasksWidget) Unmount() error {
 
 }
 
-//Align aligns rows
+// Align aligns rows
 func (s *TasksWidget) align() {
 	x := s.screen.Bounds().Min.X
 	width := s.screen.Bounds().Dx()
@@ -147,8 +147,8 @@ func (s *TasksWidget) calculateVisibleRows() {
 	}
 }
 
-//prepareForRendering sets the internal state of this widget so it is ready for
-//rendering (i.e. Buffer()).
+// prepareForRendering sets the internal state of this widget so it is ready for
+// rendering (i.e. Buffer()).
 func (s *TasksWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()

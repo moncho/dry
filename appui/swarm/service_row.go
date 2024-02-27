@@ -10,7 +10,7 @@ import (
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
-//ServiceRow is a Grid row showing service information
+// ServiceRow is a Grid row showing service information
 type ServiceRow struct {
 	service      swarm.Service
 	ID           *drytermui.ParColumn
@@ -23,7 +23,7 @@ type ServiceRow struct {
 	appui.Row
 }
 
-//NewServiceRow creats a new ServiceRow widget
+// NewServiceRow creats a new ServiceRow widget
 func NewServiceRow(service swarm.Service, serviceInfo ServiceListInfo, table drytermui.Table) *ServiceRow {
 	row := &ServiceRow{
 		service:  service,
@@ -56,7 +56,7 @@ func NewServiceRow(service swarm.Service, serviceInfo ServiceListInfo, table dry
 
 }
 
-//ColumnsForFilter returns the columns that are used to filter
+// ColumnsForFilter returns the columns that are used to filter
 func (row *ServiceRow) ColumnsForFilter() []*drytermui.ParColumn {
 	return []*drytermui.ParColumn{row.Name, row.Image, row.Mode}
 }

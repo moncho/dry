@@ -9,12 +9,11 @@ import (
 	"github.com/moncho/dry/ui/termui"
 )
 
-//widgetRegistry holds references to two types of widgets:
-// * widgets that hold information that does not change or widgets
-//   that hold information that is worth updating only when is changed.
-//   These are all the widget tracked with a field in the struct.
-// * a set of widgets to be rendered on the next rendering phase.
-//
+// widgetRegistry holds references to two types of widgets:
+//   - widgets that hold information that does not change or widgets
+//     that hold information that is worth updating only when is changed.
+//     These are all the widget tracked with a field in the struct.
+//   - a set of widgets to be rendered on the next rendering phase.
 type widgetRegistry struct {
 	ContainerList *appui.ContainersWidget
 	ContainerMenu *appui.ContainerMenuWidget

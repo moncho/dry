@@ -18,7 +18,7 @@ const (
 	Really, nope`
 )
 
-//TestSearch tests basic search
+// TestSearch tests basic search
 func TestSearch(t *testing.T) {
 	expected := Result{
 		Hits:    5,
@@ -34,7 +34,7 @@ func TestSearch(t *testing.T) {
 	}
 }
 
-//TestResultIteration tests iterating the search results
+// TestResultIteration tests iterating the search results
 func TestResultIteration(t *testing.T) {
 	rs, _ := NewSearch(testText(), searchPattern)
 	line, _ := rs.NextLine()
