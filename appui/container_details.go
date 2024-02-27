@@ -3,16 +3,15 @@ package appui
 import (
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
-
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
-//ContainerDetailsWidget shows service information
+// ContainerDetailsWidget shows service information
 type ContainerDetailsWidget struct {
 	drytermui.SizableBufferer
 }
 
-//NewContainerDetailsWidget creates ContainerDetailsWidget with information about the service with the given ID
+// NewContainerDetailsWidget creates ContainerDetailsWidget with information about the service with the given ID
 func NewContainerDetailsWidget(container *docker.Container, y int) *ContainerDetailsWidget {
 	info, lines := NewContainerInfo(container)
 

@@ -2,7 +2,7 @@ package ui
 
 import "github.com/gizak/termui"
 
-//NewList returns a new list using the given ColorTheme
+// NewList returns a new list using the given ColorTheme
 func NewList(theme *ColorTheme) *termui.List {
 	l := termui.NewList()
 

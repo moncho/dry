@@ -7,20 +7,20 @@ import (
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
-//Row is a base row implementation
+// Row is a base row implementation
 type Row struct {
 	ParColumns []*drytermui.ParColumn
 	drytermui.Row
 }
 
-//Highlighted marks this rows as being highlighted
+// Highlighted marks this rows as being highlighted
 func (row *Row) Highlighted() {
 	row.changeTextColor(
 		termui.Attribute(DryTheme.Fg),
 		termui.Attribute(DryTheme.CursorLineBg))
 }
 
-//NotHighlighted marks this rows as being not highlighted
+// NotHighlighted marks this rows as being not highlighted
 func (row *Row) NotHighlighted() {
 
 	row.changeTextColor(
@@ -28,7 +28,7 @@ func (row *Row) NotHighlighted() {
 		termui.Attribute(DryTheme.Bg))
 }
 
-//Buffer returns this Row data as a termui.Buffer
+// Buffer returns this Row data as a termui.Buffer
 func (row *Row) Buffer() termui.Buffer {
 	buf := termui.NewBuffer()
 	//This set the background of the whole row

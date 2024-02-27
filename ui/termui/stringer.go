@@ -12,7 +12,7 @@ type bufferer interface {
 	Buffer() termui.Buffer
 }
 
-//String returns this Buffer content as a string
+// String returns this Buffer content as a string
 func String(b bufferer) (string, error) {
 	cellMap := b.Buffer().CellMap
 	var builder strings.Builder

@@ -1,16 +1,14 @@
 package mock
 
 import (
+	"context"
 	"strconv"
-
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-
-	"golang.org/x/net/context"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	dockerAPI "github.com/docker/docker/client"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 //Docker repo is vendoring x/net/context and it seems that it conflicts

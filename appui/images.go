@@ -6,8 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/docker/api/types"
-
+	"github.com/docker/docker/api/types/image"
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui/termui"
@@ -23,9 +22,9 @@ var imageTableHeaders = []SortableColumnHeader{
 	{`Size`, SortMode(docker.SortImagesBySize)},
 }
 
-//DockerImagesWidget knows how render a container list
+// DockerImagesWidget knows how render a container list
 type DockerImagesWidget struct {
-	images               func() ([]types.ImageSummary, error)
+	images               func() ([]image.Summary, error)
 	filteredRows         []*ImageRow
 	totalRows            []*ImageRow
 	filterPattern        string
@@ -39,8 +38,8 @@ type DockerImagesWidget struct {
 	mounted bool
 }
 
-//NewDockerImagesWidget creates a widget to show Docker images.
-func NewDockerImagesWidget(images func() ([]types.ImageSummary, error), s Screen) *DockerImagesWidget {
+// NewDockerImagesWidget creates a widget to show Docker images.
+func NewDockerImagesWidget(images func() ([]image.Summary, error), s Screen) *DockerImagesWidget {
 	return &DockerImagesWidget{
 		images:   images,
 		header:   defaultImageTableHeader,
@@ -48,7 +47,7 @@ func NewDockerImagesWidget(images func() ([]types.ImageSummary, error), s Screen
 		sortMode: docker.SortImagesByRepo}
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
+// Buffer returns the content of this widget as a termui.Buffer
 func (s *DockerImagesWidget) Buffer() gizaktermui.Buffer {
 	s.Lock()
 	defer s.Unlock()
@@ -87,14 +86,14 @@ func (s *DockerImagesWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
-//Filter filters the image list by the given filter
+// Filter filters the image list by the given filter
 func (s *DockerImagesWidget) Filter(filter string) {
 	s.Lock()
 	defer s.Unlock()
 	s.filterPattern = filter
 }
 
-//Mount tells this widget to be ready for rendering
+// Mount tells this widget to be ready for rendering
 func (s *DockerImagesWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -117,12 +116,12 @@ func (s *DockerImagesWidget) Mount() error {
 	return nil
 }
 
-//Name returns this widget name
+// Name returns this widget name
 func (s *DockerImagesWidget) Name() string {
 	return "DockerImagesWidget"
 }
 
-//OnEvent runs the given command
+// OnEvent runs the given command
 func (s *DockerImagesWidget) OnEvent(event EventCommand) error {
 	if s.RowCount() > 0 {
 		return event(s.filteredRows[s.selectedIndex].image.ID)
@@ -130,13 +129,13 @@ func (s *DockerImagesWidget) OnEvent(event EventCommand) error {
 	return nil
 }
 
-//RowCount returns the number of rows of this widget.
+// RowCount returns the number of rows of this widget.
 func (s *DockerImagesWidget) RowCount() int {
 	return len(s.filteredRows)
 }
 
-//Sort rotates to the next sort mode.
-//SortImagesByRepo -> SortImagesByID -> SortImagesByCreationDate -> SortImagesBySize -> SortImagesByRepo
+// Sort rotates to the next sort mode.
+// SortImagesByRepo -> SortImagesByID -> SortImagesByCreationDate -> SortImagesBySize -> SortImagesByRepo
 func (s *DockerImagesWidget) Sort() {
 	s.RLock()
 	defer s.RUnlock()
@@ -153,7 +152,7 @@ func (s *DockerImagesWidget) Sort() {
 	s.mounted = false
 }
 
-//Unmount tells this widget that it will not be rendering anymore
+// Unmount tells this widget that it will not be rendering anymore
 func (s *DockerImagesWidget) Unmount() error {
 	s.RLock()
 	defer s.RUnlock()
@@ -161,7 +160,7 @@ func (s *DockerImagesWidget) Unmount() error {
 	return nil
 }
 
-//Align aligns rows
+// Align aligns rows
 func (s *DockerImagesWidget) align() {
 	x := s.screen.Bounds().Min.X
 	width := s.screen.Bounds().Dx()
@@ -228,8 +227,8 @@ func (s *DockerImagesWidget) calculateVisibleRows() {
 	}
 }
 
-//prepareForRendering sets the internal state of this widget so it is ready for
-//rendering (i.e. Buffer()).
+// prepareForRendering sets the internal state of this widget so it is ready for
+// rendering (i.e. Buffer()).
 func (s *DockerImagesWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()

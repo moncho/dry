@@ -4,11 +4,10 @@ import (
 	"io"
 
 	"github.com/gdamore/tcell"
-
 	"github.com/moncho/dry/ui"
 )
 
-//Less renders the given renderer output in a "less" buffer
+// Less renders the given renderer output in a "less" buffer
 func Less(s string, screen *ui.Screen, events <-chan *tcell.EventKey, onDone func()) {
 	defer onDone()
 	screen.ClearAndFlush()

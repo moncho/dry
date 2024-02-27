@@ -13,7 +13,7 @@ const (
 	editBoxWidth                 = 30
 )
 
-//InputBox captures user input
+// InputBox captures user input
 type InputBox struct {
 	text          []byte
 	lineVOffset   int
@@ -26,7 +26,7 @@ type InputBox struct {
 	screen        *Screen
 }
 
-//Draw draws the InputBox in the given location
+// Draw draws the InputBox in the given location
 func (eb *InputBox) Draw(x, y, w, h int) {
 	eb.AdjustVOffset(w)
 
@@ -76,7 +76,7 @@ func (eb *InputBox) Draw(x, y, w, h int) {
 	}
 }
 
-//AdjustVOffset adjusts line visual offset to a proper value depending on width
+// AdjustVOffset adjusts line visual offset to a proper value depending on width
 func (eb *InputBox) AdjustVOffset(width int) {
 	ht := preferredHorizontalThreshold
 	maxHThreshold := (width - 1) / 2
@@ -100,23 +100,23 @@ func (eb *InputBox) AdjustVOffset(width int) {
 	}
 }
 
-//MoveCursorTo moves the cursor
+// MoveCursorTo moves the cursor
 func (eb *InputBox) MoveCursorTo(boffset int) {
 	eb.cursorBOffset = boffset
 	eb.cursorVOffset, eb.cursorCOffset = vOffsetToCOffset(eb.text, boffset)
 }
 
-//RuneUnderCursor returns the rune from the inputbox where the cursor is
+// RuneUnderCursor returns the rune from the inputbox where the cursor is
 func (eb *InputBox) RuneUnderCursor() (rune, int) {
 	return utf8.DecodeRune(eb.text[eb.cursorBOffset:])
 }
 
-//RuneBeforeCursor returns the rune from the inputbox placed before the cursor
+// RuneBeforeCursor returns the rune from the inputbox placed before the cursor
 func (eb *InputBox) RuneBeforeCursor() (rune, int) {
 	return utf8.DecodeLastRune(eb.text[:eb.cursorBOffset])
 }
 
-//MoveCursorOneRuneBackward moves the cursor one rune backwards
+// MoveCursorOneRuneBackward moves the cursor one rune backwards
 func (eb *InputBox) MoveCursorOneRuneBackward() {
 	if eb.cursorBOffset == 0 {
 		return
@@ -125,7 +125,7 @@ func (eb *InputBox) MoveCursorOneRuneBackward() {
 	eb.MoveCursorTo(eb.cursorBOffset - size)
 }
 
-//MoveCursorOneRuneForward moves the cursor one rune forward
+// MoveCursorOneRuneForward moves the cursor one rune forward
 func (eb *InputBox) MoveCursorOneRuneForward() {
 	if eb.cursorBOffset == len(eb.text) {
 		return
@@ -134,17 +134,17 @@ func (eb *InputBox) MoveCursorOneRuneForward() {
 	eb.MoveCursorTo(eb.cursorBOffset + size)
 }
 
-//MoveCursorToBeginningOfTheLine moves the cursor to the beginning of the line
+// MoveCursorToBeginningOfTheLine moves the cursor to the beginning of the line
 func (eb *InputBox) MoveCursorToBeginningOfTheLine() {
 	eb.MoveCursorTo(0)
 }
 
-//MoveCursorToEndOfTheLine moves the cursor to the end of the line
+// MoveCursorToEndOfTheLine moves the cursor to the end of the line
 func (eb *InputBox) MoveCursorToEndOfTheLine() {
 	eb.MoveCursorTo(len(eb.text))
 }
 
-//Delete deletes the content of the inputbox
+// Delete deletes the content of the inputbox
 func (eb *InputBox) Delete() {
 	if eb.cursorBOffset == 0 {
 		return
@@ -152,7 +152,7 @@ func (eb *InputBox) Delete() {
 	eb.text = nil
 }
 
-//DeleteRuneBackward deletes a rune moving the cursor backwards
+// DeleteRuneBackward deletes a rune moving the cursor backwards
 func (eb *InputBox) DeleteRuneBackward() {
 	if eb.cursorBOffset == 0 {
 		return
@@ -163,7 +163,7 @@ func (eb *InputBox) DeleteRuneBackward() {
 	eb.text = byteSliceRemove(eb.text, eb.cursorBOffset, eb.cursorBOffset+size)
 }
 
-//DeleteRuneForward deletes a rune and moving the cursor forward
+// DeleteRuneForward deletes a rune and moving the cursor forward
 func (eb *InputBox) DeleteRuneForward() {
 	if eb.cursorBOffset == len(eb.text) {
 		return
@@ -172,13 +172,13 @@ func (eb *InputBox) DeleteRuneForward() {
 	eb.text = byteSliceRemove(eb.text, eb.cursorBOffset, eb.cursorBOffset+size)
 }
 
-//DeleteTheRestOfTheLine deletes the conent of the line where the cursor is
-//from the cursor position until the end of the line
+// DeleteTheRestOfTheLine deletes the conent of the line where the cursor is
+// from the cursor position until the end of the line
 func (eb *InputBox) DeleteTheRestOfTheLine() {
 	eb.text = eb.text[:eb.cursorBOffset]
 }
 
-//InsertRune adds the given rune to the inputbox
+// InsertRune adds the given rune to the inputbox
 func (eb *InputBox) InsertRune(r rune) {
 	var buf [utf8.UTFMax]byte
 	n := utf8.EncodeRune(buf[:], r)
@@ -192,7 +192,7 @@ func (eb *InputBox) CursorX() int {
 	return eb.cursorVOffset - eb.lineVOffset
 }
 
-//String returns the inputbox content as a string
+// String returns the inputbox content as a string
 func (eb *InputBox) String() string {
 	return string(eb.text)
 }
@@ -205,8 +205,8 @@ func (eb *InputBox) redrawAll() {
 	eb.screen.Flush()
 }
 
-//Focus is set on the inputbox, it starts handling terminal events and responding
-//to user actions.
+// Focus is set on the inputbox, it starts handling terminal events and responding
+// to user actions.
 func (eb *InputBox) Focus() {
 	//TODO eb.screen.SetInputMode(termbox.InputEsc)
 
@@ -247,7 +247,7 @@ mainloop:
 	eb.output <- eb.String()
 }
 
-//NewInputBox creates an input box, located at position x,y in the screen.
+// NewInputBox creates an input box, located at position x,y in the screen.
 func NewInputBox(x, y int, prompt string, output chan<- string, keyboardQueue chan *tcell.EventKey, theme *ColorTheme, screen *Screen) *InputBox {
 	width := screen.Dimensions().Width
 	//TODO use color from the theme for the prompt

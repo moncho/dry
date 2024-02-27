@@ -15,7 +15,7 @@ const (
 	starttext = "(start)"
 )
 
-//Less is a View specialization with less-like behavior and characteristics, meaning:
+// Less is a View specialization with less-like behavior and characteristics, meaning:
 // * The cursor is always shown at the bottom of the screen.
 // * Navigation is done using less keybindings.
 // * Basic search is supported.
@@ -33,7 +33,7 @@ type Less struct {
 	sync.Mutex
 }
 
-//NewLess creates a view that partially simulates less.
+// NewLess creates a view that partially simulates less.
 func NewLess(theme *ColorTheme) *Less {
 	sd := ActiveScreen.Dimensions()
 
@@ -49,8 +49,8 @@ func NewLess(theme *ColorTheme) *Less {
 	return less
 }
 
-//Focus sets the view as active, so it starts handling terminal events
-//and user actions
+// Focus sets the view as active, so it starts handling terminal events
+// and user actions
 func (less *Less) Focus(events <-chan *tcell.EventKey) error {
 	refreshChan := make(chan struct{}, 1)
 
@@ -136,7 +136,7 @@ func (less *Less) Focus(events <-chan *tcell.EventKey) error {
 	return nil
 }
 
-//Search searches in the view buffer for the given pattern
+// Search searches in the view buffer for the given pattern
 func (less *Less) search(pattern string) error {
 	if pattern != "" {
 		searchResult, err := search.NewSearch(less.lines, pattern)
@@ -196,42 +196,42 @@ func (less *Less) flipFollow() {
 	}
 }
 
-//ScrollDown moves the cursor down one line
+// ScrollDown moves the cursor down one line
 func (less *Less) ScrollDown() {
 	less.scrollDown(1)
 }
 
-//ScrollUp moves the cursor up one line
+// ScrollUp moves the cursor up one line
 func (less *Less) ScrollUp() {
 	less.scrollUp(1)
 }
 
-//ScrollPageDown moves the buffer position down by the length of the screen,
-//at the end of buffer it also moves the cursor position to the bottom
-//of the screen
+// ScrollPageDown moves the buffer position down by the length of the screen,
+// at the end of buffer it also moves the cursor position to the bottom
+// of the screen
 func (less *Less) ScrollPageDown() {
 	_, height := less.renderableArea()
 	less.scrollDown(height)
 
 }
 
-//ScrollPageUp moves the buffer position up by the length of the screen,
-//at the beginning of buffer it also moves the cursor position to the beginning
-//of the screen
+// ScrollPageUp moves the buffer position up by the length of the screen,
+// at the beginning of buffer it also moves the cursor position to the beginning
+// of the screen
 func (less *Less) ScrollPageUp() {
 	_, height := less.renderableArea()
 	less.scrollUp(height)
 
 }
 
-//ScrollToBottom moves the cursor to the bottom of the view buffer
+// ScrollToBottom moves the cursor to the bottom of the view buffer
 func (less *Less) ScrollToBottom() {
 	less.bufferY = less.bufferSize() - less.y1
 	less.refreshBuffer()
 
 }
 
-//ScrollToTop moves the cursor to the top of the view buffer
+// ScrollToTop moves the cursor to the top of the view buffer
 func (less *Less) ScrollToTop() {
 	less.bufferY = 0
 	less.refreshBuffer()
@@ -284,7 +284,7 @@ func (less *Less) refreshBuffer() {
 	}
 }
 
-//renderableArea return the part of the view size available for rendering.
+// renderableArea return the part of the view size available for rendering.
 func (less *Less) renderableArea() (int, int) {
 	maxX, maxY := less.ViewSize()
 	return maxX, maxY - 1
@@ -320,7 +320,7 @@ func (less *Less) renderLine(x int, y int, line string) (int, error) {
 	return lines, nil
 }
 
-//scrollDown moves the buffer position down by the given number of lines
+// scrollDown moves the buffer position down by the given number of lines
 func (less *Less) scrollDown(lines int) {
 	_, height := less.ViewSize()
 	viewLength := less.bufferSize()
@@ -342,7 +342,7 @@ func (less *Less) scrollDown(lines int) {
 
 }
 
-//scrollUp moves the buffer position up by the given number of lines
+// scrollUp moves the buffer position up by the given number of lines
 func (less *Less) scrollUp(lines int) {
 	ox, bufferY := less.Position()
 	if bufferY-lines >= 0 {

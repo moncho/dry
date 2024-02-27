@@ -7,7 +7,7 @@ import (
 	"github.com/docker/docker/api/types/events"
 )
 
-//SourceType is a representation of the sources types that might emit Docker events
+// SourceType is a representation of the sources types that might emit Docker events
 type SourceType string
 
 const (
@@ -39,15 +39,15 @@ const (
 	SecretSource = SourceType("secret")
 )
 
-//CallbackRegistry d
+// CallbackRegistry d
 type CallbackRegistry interface {
 	Register(actor SourceType, callback EventCallback)
 }
 
-//GlobalRegistry is a globally available CallbackRegistry
+// GlobalRegistry is a globally available CallbackRegistry
 var GlobalRegistry CallbackRegistry
 
-//callbackNotifier should be registered to receive events from Docker
+// callbackNotifier should be registered to receive events from Docker
 var callbackNotifier EventCallback
 
 func init() {
@@ -61,7 +61,7 @@ type registry struct {
 	sync.RWMutex
 }
 
-//Register registers the interest of the given callback on messages from the given source
+// Register registers the interest of the given callback on messages from the given source
 func (r *registry) Register(source SourceType, callback EventCallback) {
 	r.Lock()
 	defer r.Unlock()

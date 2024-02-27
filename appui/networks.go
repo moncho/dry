@@ -24,7 +24,7 @@ var networkTableHeaders = []SortableColumnHeader{
 	{`GATEWAY`, SortMode(docker.NoSortNetworks)},
 }
 
-//DockerNetworksWidget knows how render a container list
+// DockerNetworksWidget knows how render a container list
 type DockerNetworksWidget struct {
 	dockerDaemon         docker.NetworkAPI
 	header               *termui.TableHeader
@@ -40,7 +40,7 @@ type DockerNetworksWidget struct {
 	mounted bool
 }
 
-//NewDockerNetworksWidget creates a renderer for a network list
+// NewDockerNetworksWidget creates a renderer for a network list
 func NewDockerNetworksWidget(dockerDaemon docker.NetworkAPI, s Screen) *DockerNetworksWidget {
 	return &DockerNetworksWidget{
 		dockerDaemon: dockerDaemon,
@@ -49,7 +49,7 @@ func NewDockerNetworksWidget(dockerDaemon docker.NetworkAPI, s Screen) *DockerNe
 		screen:       s}
 }
 
-//Buffer returns the content of this widget as a termui.Buffer
+// Buffer returns the content of this widget as a termui.Buffer
 func (s *DockerNetworksWidget) Buffer() gizaktermui.Buffer {
 	s.RLock()
 	defer s.RUnlock()
@@ -93,14 +93,14 @@ func (s *DockerNetworksWidget) Buffer() gizaktermui.Buffer {
 	return buf
 }
 
-//Filter filters the network list by the given filter
+// Filter filters the network list by the given filter
 func (s *DockerNetworksWidget) Filter(filter string) {
 	s.Lock()
 	defer s.Unlock()
 	s.filterPattern = filter
 }
 
-//Mount tells this widget to be ready for rendering
+// Mount tells this widget to be ready for rendering
 func (s *DockerNetworksWidget) Mount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -123,12 +123,12 @@ func (s *DockerNetworksWidget) Mount() error {
 	return nil
 }
 
-//Name returns this widget name
+// Name returns this widget name
 func (s *DockerNetworksWidget) Name() string {
 	return "DockerNetworksWidget"
 }
 
-//OnEvent runs the given command
+// OnEvent runs the given command
 func (s *DockerNetworksWidget) OnEvent(event EventCommand) error {
 	if s.RowCount() > 0 {
 		return event(s.filteredRows[s.selectedIndex].network.ID)
@@ -136,14 +136,14 @@ func (s *DockerNetworksWidget) OnEvent(event EventCommand) error {
 	return nil
 }
 
-//RowCount returns the number of rows of this widget.
+// RowCount returns the number of rows of this widget.
 func (s *DockerNetworksWidget) RowCount() int {
 	return len(s.filteredRows)
 
 }
 
-//Sort rotates to the next sort mode.
-//SortNetworksByID -> SortNetworksByName -> SortNetworksByDriver
+// Sort rotates to the next sort mode.
+// SortNetworksByID -> SortNetworksByName -> SortNetworksByDriver
 func (s *DockerNetworksWidget) Sort() {
 	s.RLock()
 	defer s.RUnlock()
@@ -163,7 +163,7 @@ func (s *DockerNetworksWidget) Sort() {
 	}
 }
 
-//Unmount tells this widget that it will not be rendering anymore
+// Unmount tells this widget that it will not be rendering anymore
 func (s *DockerNetworksWidget) Unmount() error {
 	s.Lock()
 	defer s.Unlock()
@@ -171,7 +171,7 @@ func (s *DockerNetworksWidget) Unmount() error {
 	return nil
 }
 
-//Align aligns rows
+// Align aligns rows
 func (s *DockerNetworksWidget) align() {
 	x := s.screen.Bounds().Min.X
 	width := s.screen.Bounds().Dx()
@@ -239,8 +239,8 @@ func (s *DockerNetworksWidget) calculateVisibleRows() {
 	}
 }
 
-//prepareForRendering sets the internal state of this widget so it is ready for
-//rendering (i.e. Buffer()).
+// prepareForRendering sets the internal state of this widget so it is ready for
+// rendering (i.e. Buffer()).
 func (s *DockerNetworksWidget) prepareForRendering() {
 	s.sortRows()
 	s.filterRows()

@@ -1,6 +1,6 @@
 package appui
 
-//Input reads input
+// Input reads input
 func Input(done chan<- struct{}) {
 	done <- struct{}{}
 }

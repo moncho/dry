@@ -7,7 +7,7 @@ import (
 	drytermui "github.com/moncho/dry/ui/termui"
 )
 
-//NetworkRow is a Grid row showing information about a Docker image
+// NetworkRow is a Grid row showing information about a Docker image
 type NetworkRow struct {
 	network    types.NetworkResource
 	ID         *drytermui.ParColumn
@@ -21,7 +21,7 @@ type NetworkRow struct {
 	Row
 }
 
-//NewNetworkRow creates a new NetworkRow widget
+// NewNetworkRow creates a new NetworkRow widget
 func NewNetworkRow(network types.NetworkResource, table drytermui.Table) *NetworkRow {
 	networkFormatter := formatter.NewNetworkFormatter(network, true)
 
@@ -64,7 +64,7 @@ func NewNetworkRow(network types.NetworkResource, table drytermui.Table) *Networ
 
 }
 
-//ColumnsForFilter returns the columns that are used to filter
+// ColumnsForFilter returns the columns that are used to filter
 func (row *NetworkRow) ColumnsForFilter() []*drytermui.ParColumn {
 	return []*drytermui.ParColumn{row.ID, row.Name, row.Driver, row.Services, row.Scope, row.Subnet, row.Gateway}
 }

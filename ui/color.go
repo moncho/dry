@@ -1,9 +1,9 @@
 package ui
 
-//Color representation
+// Color representation
 type Color uint32
 
-//Colors
+// Colors
 const (
 	Grey     Color = Color233
 	Grey2    Color = Color244
@@ -11,8 +11,8 @@ const (
 )
 
 // First 256 entries correspond to Colors from the color palette as defined by the standard
-//https://en.wikipedia.org/wiki/ANSI_escape_code#Colors. Order is important.
-//Below that, a few colors from the TrueColor palette are defined.
+// https://en.wikipedia.org/wiki/ANSI_escape_code#Colors. Order is important.
+// Below that, a few colors from the TrueColor palette are defined.
 const (
 	ColorBlack Color = iota
 	ColorMaroon
@@ -544,7 +544,7 @@ var colorNames = map[string]Color{
 	"slategrey":            ColorSlateGray,
 }
 
-//ColorFromName returns the Color that corresponds to the given color name
+// ColorFromName returns the Color that corresponds to the given color name
 func ColorFromName(name string) Color {
 	return colorNames[name]
 }

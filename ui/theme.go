@@ -1,6 +1,6 @@
 package ui
 
-//ColorTheme represents a color theme
+// ColorTheme represents a color theme
 type ColorTheme struct {
 	Fg           Color
 	Bg           Color

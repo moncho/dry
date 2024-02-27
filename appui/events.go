@@ -23,7 +23,7 @@ type eventsRenderer struct {
 	events []events.Message
 }
 
-//NewDockerEventsRenderer creates a renderer for docker events
+// NewDockerEventsRenderer creates a renderer for docker events
 func NewDockerEventsRenderer(events []events.Message) fmt.Stringer {
 	return &eventsRenderer{
 		events: events,

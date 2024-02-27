@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/gdamore/tcell/termbox"
-	"github.com/gizak/termui"
 	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/ui"
 )
@@ -33,7 +32,7 @@ func TestMarkupTextParsing(t *testing.T) {
 
 		result := cellsToString(tb.Build(
 			tt.arg,
-			termui.Attribute(theme.Fg), termui.Attribute(theme.Bg)))
+			gizaktermui.Attribute(theme.Fg), gizaktermui.Attribute(theme.Bg)))
 		if tt.want != result {
 			t.Errorf("\ninput :%s\nshould be :%s\ngot:%s", tt.arg, tt.want, result)
 		}
@@ -41,7 +40,7 @@ func TestMarkupTextParsing(t *testing.T) {
 
 }
 
-func cellsToString(cells []termui.Cell) string {
+func cellsToString(cells []gizaktermui.Cell) string {
 	var result []rune
 	for _, c := range cells {
 		result = append(result, c.Ch)

@@ -3,8 +3,8 @@ package app
 import (
 	"fmt"
 
-	"github.com/moncho/dry/appui/swarm"
 	"github.com/gdamore/tcell"
+	"github.com/moncho/dry/appui/swarm"
 )
 
 type stackTasksScreenEventHandler struct {
