@@ -1,22 +1,22 @@
 name: dry
-version: latest 
-version-script: cat APPVERSION
+version: v0.11.2
 summary: A Docker manager for the terminal
 description: |
-  Dry is a terminal application to manage Docker. It can manage Containers, Images and Networks, and, if running a Docker Swarm, it can manage a Swarm cluster. It can be used with both local and remote Docker daemons.
+  Dry is a terminal application to manage Docker.
+  It can manage Containers, Images and Networks, and,
+  if running a Docker Swarm, it can manage a Swarm cluster.
+  It can be used with both local and remote Docker daemons.
+base: core20
 
 grade: stable
 confinement: strict
 
-parts:
-  go:
-    source-tag: go1.10.3
-  dry:
-    after: [go]
-    source: .
-    plugin: go
-    go-importpath: github.com/moncho/dry
-
 apps:
   dry:
-    command: dry
+    command: bin/dry
+
+parts:
+  dry:
+    source-type: git
+    source: https://github.com/moncho/dry
+    plugin: go
