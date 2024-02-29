@@ -5,10 +5,9 @@
 ![Docker Build](https://github.com/moncho/dry/actions/workflows/docker.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/moncho/dry)](https://goreportcard.com/report/github.com/moncho/dry)
 [![GoDoc](https://godoc.org/github.com/moncho/dry?status.svg)](https://godoc.org/github.com/moncho/dry)
-[![Coverage Status](https://coveralls.io/repos/github/moncho/dry/badge.svg?branch=master)](https://coveralls.io/github/moncho/dry?branch=master)
 [![Github All Releases](https://img.shields.io/github/downloads/moncho/dry/total.svg)]()
-[![Join the chat at https://gitter.im/moncho/dry](https://badges.gitter.im/moncho/dry.svg)](https://gitter.im/moncho/dry?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Release](https://img.shields.io/github/release/moncho/dry.svg?style=flat-square)](https://github.com/moncho/dry/releases/latest)
+[![dry](https://snapcraft.io/dry/badge.svg)](https://snapcraft.io/dry)
 
 **Dry** is a terminal application to manage **Docker** and **Docker Swarm**.
 
