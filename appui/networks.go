@@ -20,8 +20,8 @@ var networkTableHeaders = []SortableColumnHeader{
 	{`CONTAINERS`, SortMode(docker.SortNetworksByContainerCount)},
 	{`SERVICES`, SortMode(docker.SortNetworksByServiceCount)},
 	{`SCOPE`, SortMode(docker.NoSortNetworks)},
-	{`SUBNET`, SortMode(docker.SortNetworksBySubnet)},
-	{`GATEWAY`, SortMode(docker.NoSortNetworks)},
+	{`SUBNETS`, SortMode(docker.SortNetworksBySubnet)},
+	{`GATEWAYS`, SortMode(docker.NoSortNetworks)},
 }
 
 // DockerNetworksWidget knows how render a container list
