@@ -26,7 +26,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	go.uber.org/goleak v1.1.12
 	golang.org/x/crypto v0.21.0
-	golang.org/x/net v0.21.0
+	golang.org/x/net v0.22.0
 )
 
 require (
