@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/docker/cli v25.0.3+incompatible
+	github.com/docker/cli v25.0.4+incompatible
 	github.com/docker/docker v25.0.3+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/docker/go-units v0.5.0
