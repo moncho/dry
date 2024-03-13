@@ -1,6 +1,7 @@
 package formatter
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 
@@ -15,8 +16,8 @@ const (
 	numberOfContainers = "NUMBER OF CONTAINERS"
 	numberOfServices   = "NUMBER OF SERVICES"
 	scope              = "SCOPE"
-	subnet             = "SUBNET"
-	gateway            = "GATEWAY"
+	subnet             = "SUBNETS"
+	gateway            = "GATEWAYS"
 )
 
 // NetworkFormatter knows how to pretty-print the information of an network
@@ -86,17 +87,31 @@ func (formatter *NetworkFormatter) Scope() string {
 // Subnet prettifies the network subnet
 func (formatter *NetworkFormatter) Subnet() string {
 	formatter.addHeader(subnet)
-	if len(formatter.network.IPAM.Config) > 0 {
-		return formatter.network.IPAM.Config[0].Subnet
+	var subnets []string
+	for _, config := range formatter.network.IPAM.Config {
+		if config.Subnet != "" {
+			subnets = append(subnets, config.Subnet)
+		}
 	}
-	return ""
+	// display IPv4 subnets first
+	sort.Slice(subnets, func(i, j int) bool {
+		return strings.Contains(subnets[i], ".")
+	})
+	return strings.Join(subnets, ", ")
 }
 
 // Gateway prettifies the network gateway
 func (formatter *NetworkFormatter) Gateway() string {
 	formatter.addHeader(gateway)
-	if len(formatter.network.IPAM.Config) > 0 {
-		return formatter.network.IPAM.Config[0].Gateway
+	var gateways []string
+	for _, config := range formatter.network.IPAM.Config {
+		if config.Gateway != "" {
+			gateways = append(gateways, config.Gateway)
+		}
 	}
-	return ""
+	// display IPv4 gateways first
+	sort.Slice(gateways, func(i, j int) bool {
+		return strings.Contains(gateways[i], ".")
+	})
+	return strings.Join(gateways, ", ")
 }
