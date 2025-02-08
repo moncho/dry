@@ -28,7 +28,6 @@ func (b *baseEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 	cursor := screen.Cursor()
 	refresh := true
 	switch event.Key() {
-
 	case tcell.KeyUp, tcell.KeyCtrlP: //cursor up
 		cursor.ScrollCursorUp()
 	case tcell.KeyDown, tcell.KeyCtrlN: // cursor down

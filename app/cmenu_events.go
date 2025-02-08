@@ -16,14 +16,11 @@ type cMenuEventHandler struct {
 }
 
 func (h *cMenuEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
-
 	handled := true
 	switch event.Key() {
-
 	case tcell.KeyEsc:
 		widgets.ContainerMenu.Unmount()
 		refreshScreen()
-
 	case tcell.KeyEnter:
 		err := widgets.ContainerMenu.OnEvent(func(s string) error {
 			//s is a string made of two parts: an Id and a description

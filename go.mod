@@ -1,6 +1,6 @@
 module github.com/moncho/dry
 
-go 1.22
+go 1.23
 
 require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect

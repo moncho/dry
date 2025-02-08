@@ -149,7 +149,7 @@ func newDry(screen *ui.Screen, d *docker.DockerDaemon) (*Dry, error) {
 		return nil, err
 	}
 
-	dry := &Dry{}
+	dry := new(Dry)
 	dry.showHeader = true
 	dry.dockerDaemon = d
 	dry.output = make(chan string)
@@ -166,7 +166,6 @@ func newDry(screen *ui.Screen, d *docker.DockerDaemon) (*Dry, error) {
 
 // NewDry creates a new dry application
 func NewDry(screen *ui.Screen, cfg Config) (*Dry, error) {
-
 	d, err := docker.ConnectToDaemon(cfg.dockerEnv())
 	if err != nil {
 		return nil, err

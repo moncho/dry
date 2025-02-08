@@ -65,8 +65,7 @@ func (_m *SwarmDockerDaemon) Services() ([]swarm.Service, error) {
 
 // ServiceTasks returns one task per service, the task belongs to node with id "1"
 func (_m *SwarmDockerDaemon) ServiceTasks(services ...string) ([]swarm.Task, error) {
-
-	tasks := make([]swarm.Task, len(services))
+	tasks := make([]swarm.Task, 0, len(services))
 	for _, service := range services {
 		tasks = append(tasks, swarm.Task{ServiceID: service, NodeID: TestNodeID})
 	}
