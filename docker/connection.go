@@ -2,10 +2,8 @@ package docker
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -14,7 +12,6 @@ import (
 
 	"github.com/docker/cli/opts"
 	"github.com/docker/docker/client"
-	"github.com/docker/go-connections/sockets"
 	"github.com/kevinburke/ssh_config"
 	homedir "github.com/mitchellh/go-homedir"
 	drytls "github.com/moncho/dry/tls"
@@ -64,36 +61,8 @@ func getServerHost(env Env) (string, error) {
 	return opts.ParseHost(env.DockerCertPath != "", host)
 }
 
-func newHTTPClient(host string, config *tls.Config) (*http.Client, error) {
-	if config == nil {
-		// let the api client configure the default transport.
-		return nil, nil
-	}
-
-	url, err := client.ParseHostURL(host)
-	if err != nil {
-		return nil, err
-	}
-	transport := &http.Transport{
-		TLSClientConfig: config,
-		Dial: func(network, addr string) (net.Conn, error) {
-			return net.DialTimeout(url.Scheme, url.Host, DefaultConnectionTimeout)
-		},
-	}
-
-	if err = sockets.ConfigureTransport(transport, url.Scheme, url.Host); err != nil {
-		return nil, err
-	}
-
-	return &http.Client{
-		Transport:     transport,
-		CheckRedirect: client.CheckRedirect,
-	}, nil
-}
-
 // ConnectToDaemon connects to a Docker daemon using the given properties.
 func ConnectToDaemon(env Env) (*DockerDaemon, error) {
-
 	host, err := getServerHost(env)
 	if err != nil {
 		return nil, fmt.Errorf("invalid host: %w", err)
@@ -121,9 +90,11 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 		env.DockerCertPath = defaultDockerPath
 	}
 
-	var opt []client.Opt
+	opts := []client.Opt{
+		client.WithAPIVersionNegotiation(),
+	}
 	if options != nil {
-		opt = append(opt, client.WithTLSClientConfig(options.CAFile, options.CertFile, options.KeyFile))
+		opts = append(opts, client.WithTLSClientConfig(options.CAFile, options.CertFile, options.KeyFile))
 	}
 
 	if host != "" && strings.Index(host, "ssh") == 0 {
@@ -136,20 +107,20 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 		}
 
 		pass, _ := url.User.Password()
-		sshConfig, err := configureSshTransport(url.Host, url.User.Username(), pass)
+		sshConfig, err := configureSSHTransport(url.Host, url.User.Username(), pass)
 		if err != nil {
 			return nil, err
 		}
-		opt = append(opt, client.WithDialContext(
+		opts = append(opts, client.WithDialContext(
 			func(ctx context.Context, network, addr string) (net.Conn, error) {
-				return connectSshTransport(url.Host, url.Path, sshConfig)
+				return connectSSHTransport(url.Host, url.Path, sshConfig)
 			}))
 	} else if host != "" {
 		//default uses the docker library to connect to hosts
-		opt = append(opt, client.WithHost(host))
+		opts = append(opts, client.WithHost(host))
 	}
 
-	client, err := client.NewClientWithOpts(opt...)
+	client, err := client.NewClientWithOpts(opts...)
 	if err != nil {
 		return nil, fmt.Errorf("create Docker client: %w", err)
 	}
@@ -157,7 +128,7 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 
 }
 
-func configureSshTransport(host string, user string, pass string) (*ssh.ClientConfig, error) {
+func configureSSHTransport(host string, user string, pass string) (*ssh.ClientConfig, error) {
 	dirname, err := homedir.Dir()
 	if err != nil {
 		return nil, err
@@ -217,7 +188,7 @@ func readPk(pkFilename string, auth []ssh.AuthMethod, dirname string) ([]ssh.Aut
 	return auth, nil
 }
 
-func connectSshTransport(host string, path string, sshConfig *ssh.ClientConfig) (net.Conn, error) {
+func connectSSHTransport(host string, path string, sshConfig *ssh.ClientConfig) (net.Conn, error) {
 	remoteConn, err := net.Dial("tcp", host)
 	if err != nil {
 		return nil, err

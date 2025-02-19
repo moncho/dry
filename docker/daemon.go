@@ -195,7 +195,7 @@ func (daemon *DockerDaemon) Kill(id string) error {
 
 // Logs shows the logs of the container with the given id
 func (daemon *DockerDaemon) Logs(id string, since string, withTimeStamps bool) (io.ReadCloser, error) {
-	options := dockerTypes.ContainerLogsOptions{
+	options := container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Timestamps: withTimeStamps,
