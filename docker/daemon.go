@@ -14,7 +14,9 @@ import (
 	dockerEvents "github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/api/types/volume"
 	dockerAPI "github.com/docker/docker/client"
 )
@@ -29,7 +31,7 @@ const (
 var defaultOperationTimeout = time.Duration(10) * time.Second
 
 // Defaults for listing images
-var defaultImageListOptions = dockerTypes.ImageListOptions{
+var defaultImageListOptions = image.ListOptions{
 	All: false}
 
 // DockerDaemon knows how to talk to the Docker daemon
@@ -153,7 +155,7 @@ func (daemon *DockerDaemon) EventLog() *EventLog {
 }
 
 // Info returns system-wide information about the Docker server.
-func (daemon *DockerDaemon) Info() (dockerTypes.Info, error) {
+func (daemon *DockerDaemon) Info() (system.Info, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
@@ -207,16 +209,16 @@ func (daemon *DockerDaemon) Logs(id string, since string, withTimeStamps bool) (
 }
 
 // Networks returns the list of Docker networks
-func (daemon *DockerDaemon) Networks() ([]dockerTypes.NetworkResource, error) {
+func (daemon *DockerDaemon) Networks() ([]network.Inspect, error) {
 	return networks(daemon.client)
 }
 
 // NetworkInspect returns network detailed information
-func (daemon *DockerDaemon) NetworkInspect(id string) (dockerTypes.NetworkResource, error) {
+func (daemon *DockerDaemon) NetworkInspect(id string) (network.Inspect, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
-	options := dockerTypes.NetworkInspectOptions{
+	options := network.InspectOptions{
 		Verbose: true,
 	}
 	return daemon.client.NetworkInspect(
@@ -343,7 +345,7 @@ func (daemon *DockerDaemon) RemoveDanglingImages() (int, error) {
 	danglingfilters := filters.NewArgs()
 	danglingfilters.Add("dangling", "true")
 	images, err := images(daemon.client,
-		dockerTypes.ImageListOptions{
+		image.ListOptions{
 			Filters: danglingfilters})
 	var count uint32
 	errs := make(chan error, 1)
@@ -398,7 +400,7 @@ func (daemon *DockerDaemon) RemoveNetwork(id string) error {
 // Rm removes the container with the given id
 func (daemon *DockerDaemon) Rm(id string) error {
 
-	opts := dockerTypes.ContainerRemoveOptions{
+	opts := container.RemoveOptions{
 		RemoveVolumes: false,
 		RemoveLinks:   false,
 		Force:         true,
@@ -413,8 +415,8 @@ func (daemon *DockerDaemon) Rm(id string) error {
 }
 
 // Rmi removes the image with the given name
-func (daemon *DockerDaemon) Rmi(name string, force bool) ([]dockerTypes.ImageDeleteResponseItem, error) {
-	options := dockerTypes.ImageRemoveOptions{
+func (daemon *DockerDaemon) Rmi(name string, force bool) ([]image.DeleteResponse, error) {
+	options := image.RemoveOptions{
 		Force: force,
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
@@ -551,13 +553,13 @@ func containers(client dockerAPI.ContainerAPIClient) ([]*Container, error) {
 
 }
 
-func images(client dockerAPI.ImageAPIClient, opts dockerTypes.ImageListOptions) ([]image.Summary, error) {
+func images(client dockerAPI.ImageAPIClient, opts image.ListOptions) ([]image.Summary, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 	return client.ImageList(ctx, opts)
 }
 
-func networks(client dockerAPI.NetworkAPIClient) ([]dockerTypes.NetworkResource, error) {
+func networks(client dockerAPI.NetworkAPIClient) ([]network.Inspect, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 	networks, err := client.NetworkList(ctx, dockerTypes.NetworkListOptions{})
@@ -565,7 +567,7 @@ func networks(client dockerAPI.NetworkAPIClient) ([]dockerTypes.NetworkResource,
 		return nil, err
 	}
 
-	detailedNetworks := make([]dockerTypes.NetworkResource, len(networks))
+	detailedNetworks := make([]network.Inspect, len(networks))
 	options := dockerTypes.NetworkInspectOptions{
 		Verbose: true,
 	}

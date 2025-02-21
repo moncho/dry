@@ -3,7 +3,7 @@ package formatter
 import (
 	"strings"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/go-units"
 	"github.com/moncho/dry/docker"
 )
@@ -21,11 +21,11 @@ const (
 type ImageFormatter struct {
 	trunc  bool
 	header []string
-	image  types.ImageSummary
+	image  image.Summary
 }
 
 // NewImageFormatter creates an image formatter
-func NewImageFormatter(image types.ImageSummary, trunc bool) *ImageFormatter {
+func NewImageFormatter(image image.Summary, trunc bool) *ImageFormatter {
 	return &ImageFormatter{trunc: trunc, image: image}
 }
 

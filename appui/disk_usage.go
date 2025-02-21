@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/volume"
 	units "github.com/docker/go-units"
 	"github.com/moncho/dry/docker"
@@ -182,7 +183,7 @@ func diskUsage(diskUsage *types.DiskUsage) ([]byte, error) {
 
 type diskUsageImagesContext struct {
 	totalSize int64
-	images    []*types.ImageSummary
+	images    []*image.Summary
 }
 
 func (c *diskUsageImagesContext) Type() string {

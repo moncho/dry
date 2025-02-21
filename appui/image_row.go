@@ -1,7 +1,7 @@
 package appui
 
 import (
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker/formatter"
 	drytermui "github.com/moncho/dry/ui/termui"
@@ -9,7 +9,7 @@ import (
 
 // ImageRow is a Grid row showing information about a Docker image
 type ImageRow struct {
-	image             types.ImageSummary
+	image             image.Summary
 	Repository        *drytermui.ParColumn
 	Tag               *drytermui.ParColumn
 	ID                *drytermui.ParColumn
@@ -22,7 +22,7 @@ type ImageRow struct {
 }
 
 // NewImageRow creates a new ImageRow widget
-func NewImageRow(image types.ImageSummary, table drytermui.Table) *ImageRow {
+func NewImageRow(image image.Summary, table drytermui.Table) *ImageRow {
 	iformatter := formatter.NewImageFormatter(image, true)
 
 	row := &ImageRow{

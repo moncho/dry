@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/api/types/volume"
 	drydocker "github.com/moncho/dry/docker"
 )
@@ -73,12 +74,12 @@ func (_m *DockerDaemonMock) History(id string) ([]image.HistoryResponseItem, err
 }
 
 // ImageByID mock
-func (_m *DockerDaemonMock) ImageByID(id string) (types.ImageSummary, error) {
-	return types.ImageSummary{}, nil
+func (_m *DockerDaemonMock) ImageByID(id string) (image.Summary, error) {
+	return image.Summary{}, nil
 }
 
 // Images mock
-func (_m *DockerDaemonMock) Images() ([]types.ImageSummary, error) {
+func (_m *DockerDaemonMock) Images() ([]image.Summary, error) {
 
 	imagesJSON := `[
 		 {
@@ -127,7 +128,7 @@ func (_m *DockerDaemonMock) Images() ([]types.ImageSummary, error) {
 							"RepoDigests": ["03b4557ad7b9"]
 		 }
 	]`
-	var images []types.ImageSummary
+	var images []image.Summary
 	err := json.Unmarshal([]byte(imagesJSON), &images)
 	return images, err
 }
@@ -139,9 +140,9 @@ func (_m *DockerDaemonMock) ImagesCount() int {
 }
 
 // Info provides a mock function with given fields:
-func (_m *DockerDaemonMock) Info() (types.Info, error) {
+func (_m *DockerDaemonMock) Info() (system.Info, error) {
 	swarmInfo := swarm.Info{LocalNodeState: swarm.LocalNodeStateInactive}
-	return types.Info{
+	return system.Info{
 		Name:     "test",
 		NCPU:     2,
 		MemTotal: 1024,
@@ -241,7 +242,7 @@ func (_m *DockerDaemonMock) Rm(id string) error {
 }
 
 // Rmi mock
-func (_m *DockerDaemonMock) Rmi(id string, force bool) ([]types.ImageDeleteResponseItem, error) {
+func (_m *DockerDaemonMock) Rmi(id string, force bool) ([]image.DeleteResponse, error) {
 	return nil, nil
 }
 
@@ -292,7 +293,7 @@ func (_m *DockerDaemonMock) ResolveService(id string) (string, error) {
 }
 
 // RunImage mock
-func (_m *DockerDaemonMock) RunImage(image types.ImageSummary, command string) error {
+func (_m *DockerDaemonMock) RunImage(image image.Summary, command string) error {
 	return nil
 }
 
@@ -391,7 +392,6 @@ func (_m *DockerDaemonMock) Task(id string) (swarm.Task, error) {
 
 // Top function mock
 func (_m *DockerDaemonMock) Top(ctx context.Context, id string) (container.ContainerTopOKBody, error) {
-
 	return container.ContainerTopOKBody{}, nil
 }
 

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"strconv"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/api/types/system"
 	"github.com/docker/go-units"
 	termui "github.com/gizak/termui"
 	"github.com/moncho/dry/docker"
@@ -93,7 +93,7 @@ func addSwarmInfo(rows [][]string, info swarm.Info) [][]string {
 	return [][]string{firstRow, secondRow, thirdRow}
 
 }
-func addHostInfo(rows [][]string, info types.Info) [][]string {
+func addHostInfo(rows [][]string, info system.Info) [][]string {
 	firstRow := rows[0]
 	secondRow := rows[1]
 	thirdRow := rows[2]

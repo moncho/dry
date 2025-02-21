@@ -3,8 +3,8 @@ package mocks
 import (
 	"strings"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/api/types/system"
 )
 
 const (
@@ -18,14 +18,14 @@ type SwarmDockerDaemon struct {
 }
 
 // Info provides a mock function with given fields:
-func (_m *SwarmDockerDaemon) Info() (types.Info, error) {
+func (_m *SwarmDockerDaemon) Info() (system.Info, error) {
 	clusterInfo := swarm.ClusterInfo{ID: "MyClusterID"}
 	swarmInfo := swarm.Info{
 		LocalNodeState:   swarm.LocalNodeStateActive,
 		NodeID:           "ThisNodeID",
 		Cluster:          &clusterInfo,
 		ControlAvailable: true}
-	return types.Info{
+	return system.Info{
 		Name:     "test",
 		NCPU:     2,
 		MemTotal: 1024,
@@ -65,8 +65,7 @@ func (_m *SwarmDockerDaemon) Services() ([]swarm.Service, error) {
 
 // ServiceTasks returns one task per service, the task belongs to node with id "1"
 func (_m *SwarmDockerDaemon) ServiceTasks(services ...string) ([]swarm.Task, error) {
-
-	tasks := make([]swarm.Task, len(services))
+	tasks := make([]swarm.Task, 0, len(services))
 	for _, service := range services {
 		tasks = append(tasks, swarm.Task{ServiceID: service, NodeID: TestNodeID})
 	}

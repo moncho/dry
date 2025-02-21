@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	"github.com/gdamore/tcell"
 	"github.com/moncho/dry/appui"
 	drydocker "github.com/moncho/dry/docker"
@@ -233,16 +233,16 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 		}
 	case 'r', 'R': //Run container
 		runImage := func(id string) error {
-			image, err := h.dry.dockerDaemon.ImageByID(id)
+			i, err := h.dry.dockerDaemon.ImageByID(id)
 			if err != nil {
 				return err
 			}
-			rw := appui.NewImageRunWidget(image)
+			rw := appui.NewImageRunWidget(i)
 			widgets.add(rw)
 			forwarder := newEventForwarder()
 			f(forwarder)
 			refreshScreen()
-			go func(image types.ImageSummary) {
+			go func(image image.Summary) {
 				defer f(h)
 				events := ui.EventSource{
 					Events: forwarder.events(),
@@ -270,7 +270,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 				}
 				refreshScreen()
 
-			}(image)
+			}(i)
 			return nil
 		}
 		if err := h.widget.OnEvent(runImage); err != nil {

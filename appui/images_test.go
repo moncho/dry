@@ -3,7 +3,7 @@ package appui
 import (
 	"testing"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	"github.com/moncho/dry/mocks"
 	"github.com/moncho/dry/ui"
 )
@@ -98,8 +98,8 @@ func TestImagesToShow(t *testing.T) {
 
 func TestImagesToShowNoImages(t *testing.T) {
 
-	imageFunc := func() ([]types.ImageSummary, error) {
-		return []types.ImageSummary{}, nil
+	imageFunc := func() ([]image.Summary, error) {
+		return []image.Summary{}, nil
 	}
 	renderer := NewDockerImagesWidget(imageFunc, &testScreen{})
 
