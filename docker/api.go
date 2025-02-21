@@ -8,7 +8,9 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/api/types/volume"
 )
 
@@ -30,8 +32,8 @@ type ContainerDaemon interface {
 	DockerEnv() Env
 	Events() (<-chan events.Message, chan<- struct{}, error)
 	EventLog() *EventLog
-	Info() (types.Info, error)
-	InspectImage(id string) (types.ImageInspect, error)
+	Info() (system.Info, error)
+	InspectImage(name string) (types.ImageInspect, error)
 	Ok() (bool, error)
 	Prune() (*PruneReport, error)
 	Rm(id string) error
@@ -62,18 +64,18 @@ type ContainerRuntime interface {
 // ImageAPI is a subset of the Docker API to manage images
 type ImageAPI interface {
 	History(id string) ([]image.HistoryResponseItem, error)
-	ImageByID(id string) (types.ImageSummary, error)
-	Images() ([]types.ImageSummary, error)
+	ImageByID(id string) (image.Summary, error)
+	Images() ([]image.Summary, error)
 	RemoveDanglingImages() (int, error)
 	RemoveUnusedImages() (int, error)
-	Rmi(id string, force bool) ([]types.ImageDeleteResponseItem, error)
-	RunImage(image types.ImageSummary, command string) error
+	Rmi(id string, force bool) ([]image.DeleteResponse, error)
+	RunImage(image image.Summary, command string) error
 }
 
 // NetworkAPI is a subset of the Docker API to manage networks
 type NetworkAPI interface {
-	Networks() ([]types.NetworkResource, error)
-	NetworkInspect(id string) (types.NetworkResource, error)
+	Networks() ([]network.Inspect, error)
+	NetworkInspect(id string) (network.Inspect, error)
 }
 
 // SwarmAPI defines the API for Docker Swarm

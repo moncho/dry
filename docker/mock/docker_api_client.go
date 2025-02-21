@@ -34,7 +34,7 @@ type ImageAPIClientMock struct {
 }
 
 // ContainerList returns a list with 10 container with IDs from 0 to 9.
-func (m ContainerAPIClientMock) ContainerList(ctx context.Context, options types.ContainerListOptions) ([]types.Container, error) {
+func (m ContainerAPIClientMock) ContainerList(ctx context.Context, options container.ListOptions) ([]types.Container, error) {
 	if len(m.Containers) > 0 {
 		return m.Containers, nil
 	}
@@ -60,7 +60,7 @@ func (mock ImageAPIClientMock) ContainerCreate(ctx context.Context, config *cont
 }
 
 // ContainerStart mock, accepts everything without complains
-func (mock ImageAPIClientMock) ContainerStart(ctx context.Context, container string, options types.ContainerStartOptions) error {
+func (mock ImageAPIClientMock) ContainerStart(ctx context.Context, container string, options container.StartOptions) error {
 	return nil
 }
 

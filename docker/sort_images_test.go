@@ -3,12 +3,12 @@ package docker
 import (
 	"testing"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 )
 
 func TestSortImages(t *testing.T) {
 	type args struct {
-		images []types.ImageSummary
+		images []image.Summary
 		mode   SortMode
 	}
 	tests := []struct {
@@ -18,7 +18,7 @@ func TestSortImages(t *testing.T) {
 		{
 			"Sort by repo ",
 			args{
-				[]types.ImageSummary{
+				[]image.Summary{
 					{
 						ID:       "1",
 						RepoTags: []string{"dry/dry:2"},
@@ -34,7 +34,7 @@ func TestSortImages(t *testing.T) {
 		{
 			"Sort by ID ",
 			args{
-				[]types.ImageSummary{
+				[]image.Summary{
 					{
 						ID: "3",
 					},
@@ -51,7 +51,7 @@ func TestSortImages(t *testing.T) {
 		{
 			"Sort by Creation Date ",
 			args{
-				[]types.ImageSummary{
+				[]image.Summary{
 					{
 						ID:      "1",
 						Created: 1,

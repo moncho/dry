@@ -3,13 +3,13 @@ package formatter
 import (
 	"testing"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 )
 
 func TestImageNameFormatting(t *testing.T) {
 	formatter := ImageFormatter{
 		trunc: false,
-		image: types.ImageSummary{
+		image: image.Summary{
 			RepoTags: []string{"nginx:1.10.0-alpine"},
 		},
 	}
@@ -25,7 +25,7 @@ func TestImageNameFormatting(t *testing.T) {
 func TestImageNameFormattingPrivateRegistry(t *testing.T) {
 	formatter := ImageFormatter{
 		trunc: false,
-		image: types.ImageSummary{
+		image: image.Summary{
 			RepoTags: []string{"localhost:5000/nginx:1.10.0-alpine"},
 		},
 	}
