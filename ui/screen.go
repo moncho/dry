@@ -110,7 +110,7 @@ func (screen *Screen) Clear() *Screen {
 	return screen
 }
 
-// ClearAndFlush cleares the screen and then flushes internal buffers
+// ClearAndFlush clears the screen and then flushes internal buffers
 func (screen *Screen) ClearAndFlush() *Screen {
 	screen.Clear()
 	screen.Flush()

@@ -43,8 +43,8 @@ func (d *Dry) Close() {
 	close(d.output)
 }
 
-// OuputChannel returns the channel where dry messages are written
-func (d *Dry) OuputChannel() <-chan string {
+// OutputChannel returns the channel where dry messages are written
+func (d *Dry) OutputChannel() <-chan string {
 	return d.output
 }
 

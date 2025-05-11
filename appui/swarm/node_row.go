@@ -29,7 +29,7 @@ type NodeRow struct {
 	drytermui.Row
 }
 
-// NewNodeRow creats a new NodeRow widget
+// NewNodeRow creates a new NodeRow widget
 func NewNodeRow(node swarm.Node, table drytermui.Table) *NodeRow {
 	row := &NodeRow{
 		node:          node,

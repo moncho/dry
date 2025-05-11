@@ -11,7 +11,7 @@ func TestEventLogCreation(t *testing.T) {
 	eventLog := EventLog{}
 	eventLog.Init(5)
 	if eventLog.Capacity() != 5 || eventLog.Count() != 0 {
-		t.Errorf("Event log did not intialize correctly: %d, %d", eventLog.Capacity(), eventLog.Count())
+		t.Errorf("Event log did not initialize correctly: %d, %d", eventLog.Capacity(), eventLog.Count())
 	} else if eventLog.head != 0 || eventLog.tail != 0 {
 		t.Errorf("Event log state is: head %d, tail %d", eventLog.head, eventLog.tail)
 	}

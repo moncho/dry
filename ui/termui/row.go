@@ -18,7 +18,7 @@ func (row *Row) AddColumn(c gtermui.GridBufferer) {
 	row.Columns = append(row.Columns, c)
 }
 
-// GetHeight returns this Row heigth
+// GetHeight returns this Row height
 func (row *Row) GetHeight() int {
 	return row.Height
 }

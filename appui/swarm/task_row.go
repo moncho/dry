@@ -26,7 +26,7 @@ type TaskRow struct {
 	drytermui.Row
 }
 
-// NewTaskRow creats a new TaskRow widget
+// NewTaskRow creates a new TaskRow widget
 func NewTaskRow(swarmClient docker.SwarmAPI, task swarm.Task, table drytermui.Table) *TaskRow {
 	ts := formatter.NewTaskStringer(swarmClient, task, true)
 

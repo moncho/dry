@@ -16,7 +16,7 @@ const (
 	MainScreenHeaderSize = 5
 	//MainScreenFooterLength is the number of lines the footer of the main screen uses
 	MainScreenFooterLength = 1
-	//DefaultColumnSpacing defines the minimun space between columns in pixels
+	//DefaultColumnSpacing defines the minimum space between columns in pixels
 	DefaultColumnSpacing = 1
 	//IDColumnWidth defines a fixed width for ID columns
 	IDColumnWidth = docker.ShortLen

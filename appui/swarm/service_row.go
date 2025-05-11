@@ -23,7 +23,7 @@ type ServiceRow struct {
 	appui.Row
 }
 
-// NewServiceRow creats a new ServiceRow widget
+// NewServiceRow creates a new ServiceRow widget
 func NewServiceRow(service swarm.Service, serviceInfo ServiceListInfo, table drytermui.Table) *ServiceRow {
 	row := &ServiceRow{
 		service:  service,
