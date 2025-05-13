@@ -35,7 +35,7 @@ func NewKeyValuePar(key, value string, theme *ui.ColorTheme) *KeyValuePar {
 	return kv
 }
 
-// GetHeight returns this kv heigth
+// GetHeight returns this kv height
 func (kv *KeyValuePar) GetHeight() int {
 	return kv.Height
 }

@@ -22,7 +22,7 @@ type StackRow struct {
 	appui.Row
 }
 
-// NewStackRow creats a new StackRow widget
+// NewStackRow creates a new StackRow widget
 func NewStackRow(stack docker.Stack, table drytermui.Table) *StackRow {
 	row := &StackRow{
 		stack:        stack,

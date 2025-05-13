@@ -44,7 +44,7 @@ func RenderLoop(dry *Dry) {
 		return nil
 	}
 
-	dryOutputChan := dry.OuputChannel()
+	dryOutputChan := dry.OutputChannel()
 
 	var wg sync.WaitGroup
 	wg.Add(1)

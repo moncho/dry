@@ -37,7 +37,7 @@ type ContainerStatsRow struct {
 	sync.RWMutex
 }
 
-// NewContainerStatsRow creats a new ContainerStatsRow widget
+// NewContainerStatsRow creates a new ContainerStatsRow widget
 func NewContainerStatsRow(container *docker.Container, table drytermui.Table) *ContainerStatsRow {
 	cf := formatter.NewContainerFormatter(container, true)
 	row := ContainerStatsRow{

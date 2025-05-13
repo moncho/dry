@@ -12,7 +12,7 @@ func TestTokenize(t *testing.T) {
 	expected := []string{"Dry", " ", "is", " ", "an", " ", "interactive", " ", "console", " ", "application"}
 
 	if len(result) != len(expected) {
-		t.Errorf("Tokenization didnt work, expected: %d tokens, got: %d.",
+		t.Errorf("Tokenization didn't work, expected: %d tokens, got: %d.",
 			len(expected),
 			len(result))
 	}
@@ -20,12 +20,12 @@ func TestTokenize(t *testing.T) {
 	resultJoin := strings.Join(result, "")
 
 	if expectedJoin != resultJoin {
-		t.Errorf("Tokenization didnt work. Expected: '%s', got: '%s'.",
+		t.Errorf("Tokenization didn't work. Expected: '%s', got: '%s'.",
 			expectedJoin,
 			resultJoin)
 	}
 	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Tokenization didnt work. Expected: '%s', got: '%s'.",
+		t.Errorf("Tokenization didn't work. Expected: '%s', got: '%s'.",
 			expectedJoin,
 			resultJoin)
 	}
@@ -34,7 +34,7 @@ func TestTokenize(t *testing.T) {
 func TestTokenizeEmptyString(t *testing.T) {
 	result := Tokenize("", regexp.MustCompile(" "))
 	if len(result) != 0 {
-		t.Errorf("Tokenization didnt work, expected: %d tokens, got: %d.",
+		t.Errorf("Tokenization didn't work, expected: %d tokens, got: %d.",
 			0,
 			len(result))
 	}
@@ -46,7 +46,7 @@ func TestTokenizeNil(t *testing.T) {
 	emptyRunesString := string(emptyRunes)
 	result := Tokenize(emptyRunesString, regexp.MustCompile(" "))
 	if len(result) != 0 {
-		t.Errorf("Tokenization didnt work, expected: %d tokens, got: %d.",
+		t.Errorf("Tokenization didn't work, expected: %d tokens, got: %d.",
 			0,
 			len(result))
 	}

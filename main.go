@@ -54,7 +54,7 @@ type options struct {
 	//Docker-related properties
 	DockerHost       string `short:"H" long:"docker_host" description:"Docker Host"`
 	DockerCertPath   string `short:"c" long:"docker_certpath" description:"Docker cert path"`
-	DockerTLSVerifiy string `short:"t" long:"docker_tls" description:"Docker TLS verify"`
+	DockerTLSVerify string `short:"t" long:"docker_tls" description:"Docker TLS verify"`
 	//Whale
 	Whale uint `short:"w" long:"whale" description:"Show whale for w seconds"`
 }
@@ -74,7 +74,7 @@ func config(opts options) (app.Config, error) {
 		}
 	} else {
 		cfg.DockerHost = opts.DockerHost
-		cfg.DockerTLSVerify = docker.GetBool(opts.DockerTLSVerifiy)
+		cfg.DockerTLSVerify = docker.GetBool(opts.DockerTLSVerify)
 		cfg.DockerCertPath = opts.DockerCertPath
 	}
 
@@ -101,7 +101,7 @@ func showLoadingScreen(ctx context.Context, screen *ui.Screen, cfg app.Config) {
 		screen.RenderLine(2, height-1, ui.White("No Docker host"))
 	}
 
-	//20 is a safe aproximation for the length of interpreted characters from the message
+	//20 is a safe approximation for the length of interpreted characters from the message
 	screen.RenderLine(ui.ActiveScreen.Dimensions().Width-len(cheese)+20, height-1, cheese)
 	screen.Flush()
 	go func() {

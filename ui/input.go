@@ -172,7 +172,7 @@ func (eb *InputBox) DeleteRuneForward() {
 	eb.text = byteSliceRemove(eb.text, eb.cursorBOffset, eb.cursorBOffset+size)
 }
 
-// DeleteTheRestOfTheLine deletes the conent of the line where the cursor is
+// DeleteTheRestOfTheLine deletes the content of the line where the cursor is
 // from the cursor position until the end of the line
 func (eb *InputBox) DeleteTheRestOfTheLine() {
 	eb.text = eb.text[:eb.cursorBOffset]

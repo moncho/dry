@@ -6,7 +6,7 @@ The capability to use [termui](https://github.com/gizak/termui) widgets has been
 
 #### Improvements
 
-* Pressing [Enter] on a container now shows a menu with the all the commands that can be executed on a container. Exisiting keybinds still work, but this change should make it easier to explore what can be done with **dry** on a container. #18
+* Pressing [Enter] on a container now shows a menu with the all the commands that can be executed on a container. Existing keybinds still work, but this change should make it easier to explore what can be done with **dry** on a container. #18
 * Improve stats screen to show detailed container information and stats in a nicer way.
 * Remove dangling images with [Ctrl+D]. #19
 * Container inspect now binded to [I], was on [Enter].

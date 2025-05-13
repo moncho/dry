@@ -101,7 +101,7 @@ func TestResultIteration(t *testing.T) {
 }
 
 func testText() [][]rune {
-	return [][]rune{[]rune("ine 1 nope"),
+	return [][]rune{[]rune("one 1 nope"),
 		[]rune("lien 2 nope"),
 		[]rune("line3 yes"),
 		[]rune("line 4"),

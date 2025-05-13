@@ -31,9 +31,9 @@ func (cc *containerConfigBuilder) image(image string) *containerConfigBuilder {
 
 func (cc *containerConfigBuilder) command(command string) *containerConfigBuilder {
 	if command != "" {
-		splittedCommand := strings.Split(command, " ")
-		if len(splittedCommand) > 0 {
-			cc.config.Cmd = strslice.StrSlice(splittedCommand)
+		splitCommand := strings.Split(command, " ")
+		if len(splitCommand) > 0 {
+			cc.config.Cmd = strslice.StrSlice(splitCommand)
 		}
 	}
 	return cc

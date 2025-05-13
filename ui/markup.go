@@ -24,7 +24,7 @@ func supportedTagsRegexp() *regexp.Regexp {
 // tags returns regular expression that matches all possible tags
 // supported by the markup, i.e. </?black>|</?red>| ... |<?b>| ... |</?right>
 func tags() map[string]termbox.Attribute {
-	//Due to how markup is currently being used, the tag character lengh must be
+	//Due to how markup is currently being used, the tag character length must be
 	//the same for all color tags (the magic number is 5, because white) to avoid,
 	//text alignment problems, hence the strange tag names.
 
