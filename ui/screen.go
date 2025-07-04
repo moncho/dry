@@ -69,6 +69,17 @@ func NewScreen(theme *ColorTheme) (*Screen, error) {
 	return screen, nil
 }
 
+// UseOptimizedScreen controls whether to use OptimizedScreen implementation
+var UseOptimizedScreen = false
+
+// NewScreenWithOptimization creates either a Screen or OptimizedScreen based on configuration
+func NewScreenWithOptimization(theme *ColorTheme) (ScreenRenderer, error) {
+	if UseOptimizedScreen {
+		return NewOptimizedScreen(theme)
+	}
+	return NewScreen(theme)
+}
+
 // Close gets called upon program termination to close
 func (screen *Screen) Close() ScreenRenderer {
 	screen.Lock()
