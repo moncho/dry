@@ -49,9 +49,10 @@ func NewOptimizedScreen(theme *ColorTheme) (*OptimizedScreen, error) {
 }
 
 // Close gets called upon program termination to close
-func (screen *OptimizedScreen) Close() {
+func (screen *OptimizedScreen) Close() ScreenRenderer {
 	atomic.StoreInt64(&screen.closing, 1)
 	screen.screen.Fini()
+	return screen
 }
 
 // Closing returns true if this screen is closing (lock-free)
@@ -79,7 +80,7 @@ func (screen *OptimizedScreen) Resize() {
 }
 
 // Clear makes the entire screen blank using default background color.
-func (screen *OptimizedScreen) Clear() {
+func (screen *OptimizedScreen) Clear() ScreenRenderer {
 	screen.renderLock.Lock()
 	defer screen.renderLock.Unlock()
 
@@ -90,24 +91,27 @@ func (screen *OptimizedScreen) Clear() {
 
 	st := mkStyle(termbox.Attribute(fg), termbox.Attribute(bg))
 	screen.screen.Fill(' ', st)
+	return screen
 }
 
 // Sync synchronizes internal states before flushing content
-func (screen *OptimizedScreen) Sync() {
+func (screen *OptimizedScreen) Sync() ScreenRenderer {
 	screen.renderLock.Lock()
 	defer screen.renderLock.Unlock()
 	screen.screen.Sync()
+	return screen
 }
 
 // Flush makes all the content visible on the display
-func (screen *OptimizedScreen) Flush() {
+func (screen *OptimizedScreen) Flush() ScreenRenderer {
 	screen.renderLock.Lock()
 	defer screen.renderLock.Unlock()
 	screen.screen.Show()
+	return screen
 }
 
 // ColorTheme changes the color theme of the screen
-func (screen *OptimizedScreen) ColorTheme(theme *ColorTheme) {
+func (screen *OptimizedScreen) ColorTheme(theme *ColorTheme) ScreenRenderer {
 	screen.configLock.Lock()
 	defer screen.configLock.Unlock()
 	screen.markup = NewMarkup(theme)
@@ -115,6 +119,7 @@ func (screen *OptimizedScreen) ColorTheme(theme *ColorTheme) {
 	screen.themeStyle = mkStyle(
 		screen.markup.Foreground,
 		screen.markup.Background)
+	return screen
 }
 
 // RenderBufferer renders all Bufferer in the given order
@@ -221,9 +226,10 @@ func (screen *OptimizedScreen) RenderRune(x, y int, r rune) {
 }
 
 // ClearAndFlush clears the screen and then flushes internal buffers
-func (screen *OptimizedScreen) ClearAndFlush() {
+func (screen *OptimizedScreen) ClearAndFlush() ScreenRenderer {
 	screen.Clear()
 	screen.Flush()
+	return screen
 }
 
 // Render renders the given content starting from the given row
