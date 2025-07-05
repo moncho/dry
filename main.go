@@ -52,8 +52,8 @@ type options struct {
 	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
 	Version bool `short:"v" long:"version" description:"Dry version"`
 	//Docker-related properties
-	DockerHost       string `short:"H" long:"docker_host" description:"Docker Host"`
-	DockerCertPath   string `short:"c" long:"docker_certpath" description:"Docker cert path"`
+	DockerHost      string `short:"H" long:"docker_host" description:"Docker Host"`
+	DockerCertPath  string `short:"c" long:"docker_certpath" description:"Docker cert path"`
 	DockerTLSVerify string `short:"t" long:"docker_tls" description:"Docker TLS verify"`
 	//Whale
 	Whale uint `short:"w" long:"whale" description:"Show whale for w seconds"`
@@ -173,23 +173,23 @@ func main() {
 			log.Fatal(http.ListenAndServe("localhost:6060", nil))
 		}()
 	}
-	
+
 	// Set the optimization flag based on command line argument
 	ui.UseOptimizedScreen = opts.OptimizedScreen
-	
+
 	screenRenderer, err := ui.NewScreenWithOptimization(appui.DryTheme)
 	if err != nil {
 		log.Printf("Dry could not start: %s", err)
 		return
 	}
-	
+
 	// Type assert to *ui.Screen for compatibility with existing code
 	screen, ok := screenRenderer.(*ui.Screen)
 	if !ok {
 		log.Printf("Screen type assertion failed - optimized screen not yet fully supported")
 		return
 	}
-	
+
 	cfg, err := config(opts)
 	if err != nil {
 		log.Println(err.Error())
