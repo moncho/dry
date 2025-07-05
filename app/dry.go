@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/events"
+	gizaktermui "github.com/gizak/termui"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/appui/swarm"
 	docker "github.com/moncho/dry/docker"
@@ -244,4 +245,13 @@ func (s *screen) Bounds() image.Rectangle {
 
 func (s *screen) Cursor() *ui.Cursor {
 	return s.Screen.Cursor()
+}
+
+func (s *screen) Flush() *ui.Screen {
+	s.Screen.Flush()
+	return s.Screen
+}
+
+func (s *screen) RenderBufferer(bs ...gizaktermui.Bufferer) {
+	s.Screen.RenderBufferer(bs...)
 }

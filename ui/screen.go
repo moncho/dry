@@ -11,6 +11,28 @@ import (
 	"github.com/gizak/termui"
 )
 
+// ScreenRenderer defines the interface for screen rendering operations
+type ScreenRenderer interface {
+	Close() ScreenRenderer
+	Closing() bool
+	Cursor() *Cursor
+	Dimensions() *Dimensions
+	Resize()
+	Clear() ScreenRenderer
+	ClearAndFlush() ScreenRenderer
+	Sync() ScreenRenderer
+	ColorTheme(theme *ColorTheme) ScreenRenderer
+	HideCursor()
+	Flush() ScreenRenderer
+	RenderBufferer(bs ...termui.Bufferer)
+	RenderLine(x int, y int, str string)
+	Render(row int, str string)
+	RenderAtColumn(column, initialRow int, str string)
+	ShowCursor(x, y int)
+	Fill(x, y, w, h int, r rune)
+	RenderRune(x, y int, r rune)
+}
+
 // ActiveScreen is the currently active screen
 var ActiveScreen *Screen
 
@@ -47,8 +69,19 @@ func NewScreen(theme *ColorTheme) (*Screen, error) {
 	return screen, nil
 }
 
+// UseOptimizedScreen controls whether to use OptimizedScreen implementation
+var UseOptimizedScreen = false
+
+// NewScreenWithOptimization creates either a Screen or OptimizedScreen based on configuration
+func NewScreenWithOptimization(theme *ColorTheme) (ScreenRenderer, error) {
+	if UseOptimizedScreen {
+		return NewOptimizedScreen(theme)
+	}
+	return NewScreen(theme)
+}
+
 // Close gets called upon program termination to close
-func (screen *Screen) Close() *Screen {
+func (screen *Screen) Close() ScreenRenderer {
 	screen.Lock()
 	screen.closing = true
 	screen.Unlock()
@@ -101,7 +134,7 @@ func (screen *Screen) Resize() {
 }
 
 // Clear makes the entire screen blank using default background color.
-func (screen *Screen) Clear() *Screen {
+func (screen *Screen) Clear() ScreenRenderer {
 	screen.Lock()
 	defer screen.Unlock()
 	st := mkStyle(
@@ -111,7 +144,7 @@ func (screen *Screen) Clear() *Screen {
 }
 
 // ClearAndFlush clears the screen and then flushes internal buffers
-func (screen *Screen) ClearAndFlush() *Screen {
+func (screen *Screen) ClearAndFlush() ScreenRenderer {
 	screen.Clear()
 	screen.Flush()
 	return screen
@@ -119,7 +152,7 @@ func (screen *Screen) ClearAndFlush() *Screen {
 
 // Sync is like flsuh but it ensures that whatever internal states are
 // synchronized before flushing content to the screen.
-func (screen *Screen) Sync() *Screen {
+func (screen *Screen) Sync() ScreenRenderer {
 	screen.Lock()
 	defer screen.Unlock()
 	screen.screen.Sync()
@@ -127,7 +160,7 @@ func (screen *Screen) Sync() *Screen {
 }
 
 // ColorTheme changes the color theme of the screen to the given one.
-func (screen *Screen) ColorTheme(theme *ColorTheme) *Screen {
+func (screen *Screen) ColorTheme(theme *ColorTheme) ScreenRenderer {
 	screen.Lock()
 	defer screen.Unlock()
 	screen.markup = NewMarkup(theme)
@@ -140,7 +173,7 @@ func (screen *Screen) HideCursor() {
 }
 
 // Flush makes all the content visible on the display.
-func (screen *Screen) Flush() *Screen {
+func (screen *Screen) Flush() ScreenRenderer {
 	screen.Lock()
 	defer screen.Unlock()
 	screen.screen.Show()

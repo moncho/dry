@@ -38,7 +38,7 @@ func NewContainerInfo(container *docker.Container) (string, int) {
 		networkIps = append(networkIps, ui.Yellow(v.IPAddress))
 		if v.GlobalIPv6Address != "" {
 			networkIpv6s = append(networkIpv6s, ui.Blue("\tIPv6 Address:"))
-			networkIpv6s = append(networkIpv6s, ui.Yellow(v.GlobalIPv6Address + "/" + strconv.Itoa(v.GlobalIPv6PrefixLen)))
+			networkIpv6s = append(networkIpv6s, ui.Yellow(v.GlobalIPv6Address+"/"+strconv.Itoa(v.GlobalIPv6PrefixLen)))
 		}
 	}
 	data = append(data, networkNames)
