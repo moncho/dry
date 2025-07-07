@@ -47,6 +47,9 @@ type Screen struct {
 	sync.RWMutex
 	closing    bool
 	dimensions *Dimensions
+	
+	// optimized holds reference to OptimizedScreen for delegation
+	optimized *OptimizedScreen
 }
 
 // NewScreen creates a new Screen and sets the ActiveScreen
@@ -73,15 +76,19 @@ func NewScreen(theme *ColorTheme) (*Screen, error) {
 var UseOptimizedScreen = false
 
 // NewScreenWithOptimization creates either a Screen or OptimizedScreen based on configuration
-func NewScreenWithOptimization(theme *ColorTheme) (ScreenRenderer, error) {
+func NewScreenWithOptimization(theme *ColorTheme) (*Screen, error) {
 	if UseOptimizedScreen {
-		return NewOptimizedScreen(theme)
+		return NewOptimizedScreenAsScreen(theme)
 	}
 	return NewScreen(theme)
 }
 
 // Close gets called upon program termination to close
 func (screen *Screen) Close() ScreenRenderer {
+	if screen.optimized != nil {
+		screen.optimized.Close()
+		return screen
+	}
 	screen.Lock()
 	screen.closing = true
 	screen.Unlock()
@@ -91,6 +98,9 @@ func (screen *Screen) Close() ScreenRenderer {
 
 // Closing returns true if this this screen is closing
 func (screen *Screen) Closing() bool {
+	if screen.optimized != nil {
+		return screen.optimized.Closing()
+	}
 	screen.RLock()
 	defer screen.RUnlock()
 	return screen.closing
@@ -103,6 +113,9 @@ func (screen *Screen) Cursor() *Cursor {
 
 // Dimensions returns the screen dimensions
 func (screen *Screen) Dimensions() *Dimensions {
+	if screen.optimized != nil {
+		return screen.optimized.Dimensions()
+	}
 	return screen.dimensions
 }
 
@@ -135,6 +148,10 @@ func (screen *Screen) Resize() {
 
 // Clear makes the entire screen blank using default background color.
 func (screen *Screen) Clear() ScreenRenderer {
+	if screen.optimized != nil {
+		screen.optimized.Clear()
+		return screen
+	}
 	screen.Lock()
 	defer screen.Unlock()
 	st := mkStyle(
@@ -174,6 +191,10 @@ func (screen *Screen) HideCursor() {
 
 // Flush makes all the content visible on the display.
 func (screen *Screen) Flush() ScreenRenderer {
+	if screen.optimized != nil {
+		screen.optimized.Flush()
+		return screen
+	}
 	screen.Lock()
 	defer screen.Unlock()
 	screen.screen.Show()
@@ -184,6 +205,10 @@ func (screen *Screen) Flush() ScreenRenderer {
 // right could overlap on left ones.
 // This allows usage of termui widgets.
 func (screen *Screen) RenderBufferer(bs ...termui.Bufferer) {
+	if screen.optimized != nil {
+		screen.optimized.RenderBufferer(bs...)
+		return
+	}
 	screen.Lock()
 	defer screen.Unlock()
 	for _, b := range bs {
@@ -200,6 +225,10 @@ func (screen *Screen) RenderBufferer(bs ...termui.Bufferer) {
 
 // RenderLine renders the given string, removing markup elements, at the given location.
 func (screen *Screen) RenderLine(x int, y int, str string) {
+	if screen.optimized != nil {
+		screen.optimized.RenderLine(x, y, str)
+		return
+	}
 	screen.Lock()
 	defer screen.Unlock()
 

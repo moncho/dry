@@ -177,16 +177,9 @@ func main() {
 	// Set the optimization flag based on command line argument
 	ui.UseOptimizedScreen = opts.OptimizedScreen
 
-	screenRenderer, err := ui.NewScreenWithOptimization(appui.DryTheme)
+	screen, err := ui.NewScreenWithOptimization(appui.DryTheme)
 	if err != nil {
 		log.Printf("Dry could not start: %s", err)
-		return
-	}
-
-	// Type assert to *ui.Screen for compatibility with existing code
-	screen, ok := screenRenderer.(*ui.Screen)
-	if !ok {
-		log.Printf("Screen type assertion failed - optimized screen not yet fully supported")
 		return
 	}
 

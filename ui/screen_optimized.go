@@ -48,6 +48,31 @@ func NewOptimizedScreen(theme *ColorTheme) (*OptimizedScreen, error) {
 	return screen, nil
 }
 
+// NewOptimizedScreenAsScreen creates an OptimizedScreen but wraps it to be compatible with *Screen
+func NewOptimizedScreenAsScreen(theme *ColorTheme) (*Screen, error) {
+	optimized, err := NewOptimizedScreen(theme)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Create a Screen that delegates to OptimizedScreen
+	wrapper := &Screen{
+		markup:     optimized.markup,
+		cursor:     optimized.cursor,
+		theme:      optimized.theme,
+		screen:     optimized.screen,
+		themeStyle: optimized.themeStyle,
+		closing:    false, // Will delegate to optimized implementation
+		dimensions: optimized.Dimensions(),
+	}
+	
+	// Store reference to optimized implementation
+	wrapper.optimized = optimized
+	ActiveScreen = wrapper
+	
+	return wrapper, nil
+}
+
 // Close gets called upon program termination to close
 func (screen *OptimizedScreen) Close() ScreenRenderer {
 	atomic.StoreInt64(&screen.closing, 1)
