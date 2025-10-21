@@ -204,7 +204,6 @@ func (s *ContainersWidget) align() {
 }
 
 func (s *ContainersWidget) filterRows() {
-
 	if s.filterPattern != "" {
 		var rows []*ContainerRow
 

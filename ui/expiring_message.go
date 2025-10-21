@@ -63,7 +63,7 @@ func (s *ExpiringMessageWidget) Message(msg string, clearDelay time.Duration) {
 // Render renders the status message
 func (s *ExpiringMessageWidget) Render() {
 	s.RLock()
-	s.RUnlock()
+	defer s.RUnlock()
 	if s.message == "" {
 		return
 	}

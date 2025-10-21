@@ -251,7 +251,7 @@ func (h *containersScreenEventHandler) handleCharacter(key rune, f func(eventHan
 			func(id string) error {
 				container := dry.dockerDaemon.ContainerByID(id)
 				if container == nil {
-					return fmt.Errorf("Container with id %s not found", id)
+					return fmt.Errorf("container with id %s not found", id)
 				}
 				h.handleCommand(commandRunner{
 					docker.RM,

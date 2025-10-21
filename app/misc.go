@@ -24,7 +24,7 @@ func newEventSource(events <-chan *tcell.EventKey) ui.EventSource {
 func inspect(
 	screen *ui.Screen,
 	events <-chan *tcell.EventKey,
-	inspect func(id string) (interface{}, error),
+	inspect func(id string) (any, error),
 	onClose func()) func(id string) error {
 	return func(id string) error {
 		inspected, err := inspect(id)

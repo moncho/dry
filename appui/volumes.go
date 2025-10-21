@@ -137,9 +137,9 @@ func (s *VolumesWidget) Name() string {
 // OnEvent runs the given command
 func (s *VolumesWidget) OnEvent(event EventCommand) error {
 	if s.RowCount() <= 0 {
-		return errors.New("The volume list is empty")
+		return errors.New("the volume list is empty")
 	} else if s.filteredRows[s.selectedIndex] == nil {
-		return fmt.Errorf("The volume list does not have an element on pos %d", s.selectedIndex)
+		return fmt.Errorf("the volume list does not have an element on pos %d", s.selectedIndex)
 	}
 	return event(s.filteredRows[s.selectedIndex].Name.Text)
 }
@@ -184,7 +184,6 @@ func (s *VolumesWidget) align() {
 }
 
 func (s *VolumesWidget) filterRows() {
-
 	if s.filterPattern != "" {
 		var rows []*VolumeRow
 
@@ -218,7 +217,6 @@ func (s *VolumesWidget) prepareForRendering() {
 
 func (s *VolumesWidget) updateTableHeader() {
 	sortMode := s.sortBy
-
 	for _, c := range s.header.Columns {
 		colTitle := c.Text
 		var header SortableColumnHeader
@@ -236,7 +234,6 @@ func (s *VolumesWidget) updateTableHeader() {
 		} else {
 			c.Text = colTitle
 		}
-
 	}
 }
 
@@ -266,9 +263,7 @@ func (s *VolumesWidget) visibleRows() []*VolumeRow {
 }
 
 func (s *VolumesWidget) calculateVisibleRows() {
-
 	height := s.screen.Bounds().Dy() - widgetHeaderLength
-
 	count := s.RowCount()
 	//no screen
 	if height < 0 || count == 0 {
@@ -303,7 +298,6 @@ func (s *VolumesWidget) calculateVisibleRows() {
 }
 
 func volumesTableHeader() *termui.TableHeader {
-
 	header := termui.NewHeader(DryTheme)
 	header.ColumnSpacing = DefaultColumnSpacing
 	header.AddColumn(volumesTableHeaders[1].Title)
