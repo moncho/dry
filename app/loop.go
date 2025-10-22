@@ -30,7 +30,6 @@ func RenderLoop(dry *Dry) {
 	refreshScreen = func() error {
 		closingLock.RLock()
 		defer closingLock.RUnlock()
-
 		renderChan <- struct{}{}
 		return nil
 	}
@@ -61,16 +60,9 @@ func RenderLoop(dry *Dry) {
 
 	go func() {
 		statusBar := widgets.MessageBar
-		for {
-			select {
-			case dryMessage, ok := <-dryOutputChan:
-				if ok {
-					statusBar.Message(dryMessage, 10*time.Second)
-					statusBar.Render()
-				} else {
-					return
-				}
-			}
+		for dryMessage := range dryOutputChan {
+			statusBar.Message(dryMessage, 10*time.Second)
+			statusBar.Render()
 		}
 	}()
 
