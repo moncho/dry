@@ -44,11 +44,8 @@ func (b *baseEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 		refresh = false
 		view := dry.viewMode()
 		dry.changeView(EventsMode)
-		eh := newEventForwarder()
-		f(eh)
-
+		eh := newRegisteredEventForwarder(f)
 		renderer := appui.NewDockerEventsRenderer(dry.dockerDaemon.EventLog().Events())
-
 		go appui.Less(renderer.String(), screen, eh.events(), func() {
 			dry.changeView(view)
 			f(viewsToHandlers[view])
@@ -56,17 +53,12 @@ func (b *baseEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 		})
 	case tcell.KeyF10: // docker info
 		refresh = false
-
 		view := dry.viewMode()
 		dry.changeView(InfoMode)
-
 		info, err := dry.dockerDaemon.Info()
 		if err == nil {
-			eh := newEventForwarder()
-			f(eh)
-
+			eh := newRegisteredEventForwarder(f)
 			renderer := appui.NewDockerInfoRenderer(info)
-
 			go appui.Less(renderer.String(), screen, eh.events(), func() {
 				dry.changeView(view)
 				f(viewsToHandlers[view])
@@ -87,8 +79,7 @@ func (b *baseEventHandler) handle(event *tcell.EventKey, f func(eventHandler)) {
 		refresh = false
 
 		view := dry.viewMode()
-		eh := newEventForwarder()
-		f(eh)
+		eh := newRegisteredEventForwarder(f)
 		go appui.Less(help, screen, eh.events(), func() {
 			dry.changeView(view)
 			f(viewsToHandlers[view])
@@ -237,10 +228,15 @@ type eventHandlerForwarder interface {
 	handle(event *tcell.EventKey, nextHandler func(eventHandler))
 }
 
-func newEventForwarder() eventHandlerForwarder {
-	return &eventHandlerForwarderImpl{
+// newRegisteredEventForwarder creates a new event forwarder and
+// immediately registers it as the next event handler by calling the given function.
+// Returns the forwarder for use with modal views that need to channel events.
+func newRegisteredEventForwarder(f func(eventHandler)) eventHandlerForwarder {
+	fwd := &eventHandlerForwarderImpl{
 		eventChan: make(chan *tcell.EventKey),
 	}
+	f(fwd)
+	return fwd
 }
 
 type eventHandlerForwarderImpl struct {

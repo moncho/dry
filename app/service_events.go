@@ -33,8 +33,7 @@ func (h *servicesScreenEventHandler) handle(event *tcell.EventKey, f func(eventH
 	case tcell.KeyCtrlR:
 		rw := appui.NewPrompt("The selected service will be removed. Do you want to proceed? y/N")
 		widgets.add(rw)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -64,8 +63,7 @@ func (h *servicesScreenEventHandler) handle(event *tcell.EventKey, f func(eventH
 
 		rw := appui.NewPrompt("Scale service. Number of replicas?")
 		widgets.add(rw)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -104,8 +102,7 @@ func (h *servicesScreenEventHandler) handle(event *tcell.EventKey, f func(eventH
 	case tcell.KeyCtrlU: //Update service
 		rw := appui.NewPrompt("The selected service will be updated. Do you want to proceed? y/N")
 		widgets.add(rw)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -145,8 +142,7 @@ func (h *servicesScreenEventHandler) handle(event *tcell.EventKey, f func(eventH
 	switch event.Rune() {
 	case '%':
 		handled = true
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		applyFilter := func(filter string, canceled bool) {
 			if !canceled {
@@ -157,8 +153,7 @@ func (h *servicesScreenEventHandler) handle(event *tcell.EventKey, f func(eventH
 		showFilterInput(newEventSource(forwarder.events()), applyFilter)
 	case 'i' | 'I':
 		handled = true
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		inspectService := inspect(
 			h.screen,
 			forwarder.events(),
@@ -187,8 +182,7 @@ func (h *servicesScreenEventHandler) handle(event *tcell.EventKey, f func(eventH
 func (h *servicesScreenEventHandler) showLogs(withTimestamp bool, f func(eventHandler)) {
 	prompt := logsPrompt()
 	widgets.add(prompt)
-	forwarder := newEventForwarder()
-	f(forwarder)
+	forwarder := newRegisteredEventForwarder(f)
 	refreshScreen()
 	go func() {
 		prompt.OnFocus(newEventSource(forwarder.events()))

@@ -66,8 +66,7 @@ func (h *monitorScreenEventHandler) handle(event *tcell.EventKey, f func(eventHa
 			h.widget.Unmount()
 			prompt := appui.NewPrompt("Set the delay between updates (in milliseconds)")
 			widgets.add(prompt)
-			forwarder := newEventForwarder()
-			f(forwarder)
+			forwarder := newRegisteredEventForwarder(f)
 			h.dry.changeView(NoView)
 			refreshScreen()
 			go func() {

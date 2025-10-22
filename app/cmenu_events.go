@@ -59,8 +59,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to kill container %s? (y/N)", id))
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 
 		go func() {
@@ -91,8 +90,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to restart container %s? (y/N)", id))
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 
 		go func() {
@@ -124,8 +122,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to stop container %s? (y/N)", id))
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 
 		go func() {
@@ -156,8 +153,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 	case docker.LOGS:
 		prompt := logsPrompt()
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -192,8 +188,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to remove container %s? (y/N)", id))
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 
 		go func() {
@@ -224,8 +219,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		}()
 
 	case docker.STATS:
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		h.dry.changeView(NoView)
 		if statsChan, err := dry.dockerDaemon.StatsChannel(container); err != nil {
 			dry.message(
@@ -240,8 +234,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 		}
 
 	case docker.INSPECT:
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 
 		err := inspect(
@@ -266,8 +259,7 @@ func (h *cMenuEventHandler) handleCommand(id string, command docker.Command, f f
 
 		if err == nil {
 			renderer := appui.NewDockerImageHistoryRenderer(history)
-			forwarder := newEventForwarder()
-			f(forwarder)
+			forwarder := newRegisteredEventForwarder(f)
 			refreshScreen()
 			go appui.Less(renderer.String(), screen, forwarder.events(), func() {
 				h.dry.changeView(ContainerMenu)

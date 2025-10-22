@@ -30,8 +30,7 @@ func (h *diskUsageScreenEventHandler) handle(event *tcell.EventKey, f func(event
 
 		rw := appui.NewPrompt(confirmation)
 		widgets.add(rw)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{

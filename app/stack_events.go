@@ -33,8 +33,7 @@ func (h *stacksScreenEventHandler) handle(event *tcell.EventKey, f func(eventHan
 	case tcell.KeyCtrlR: //remove stack
 		rw := appui.NewPrompt("The selected stack will be removed. Do you want to proceed? y/N")
 		widgets.add(rw)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -72,8 +71,7 @@ func (h *stacksScreenEventHandler) handle(event *tcell.EventKey, f func(eventHan
 			handled = true
 		case '%':
 			handled = true
-			forwarder := newEventForwarder()
-			f(forwarder)
+			forwarder := newRegisteredEventForwarder(f)
 			applyFilter := func(filter string, canceled bool) {
 				if !canceled {
 					h.widget.Filter(filter)

@@ -38,8 +38,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key tcell.Key, f func(eventHan
 	case tcell.KeyCtrlD: //remove dangling images
 		prompt := appui.NewPrompt("Do you want to remove dangling images? (y/N)")
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -69,11 +68,9 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key tcell.Key, f func(eventHan
 		}()
 
 	case tcell.KeyCtrlE: //remove image
-
 		prompt := appui.NewPrompt("Do you want to remove the selected image? (y/N)")
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -110,8 +107,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key tcell.Key, f func(eventHan
 	case tcell.KeyCtrlF: //force remove image
 		prompt := appui.NewPrompt("Do you want to remove the selected image? (y/N)")
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -148,8 +144,7 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key tcell.Key, f func(eventHan
 	case tcell.KeyCtrlU: //remove unused images
 		prompt := appui.NewPrompt("Do you want to remove all unused images? (y/N)")
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -175,16 +170,14 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key tcell.Key, f func(eventHan
 						"<red>Error removing unused images: %s</>", err))
 			}
 			refreshScreen()
-
 		}()
 
 	case tcell.KeyEnter: //inspect image
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		inspectImage := inspect(
 			h.screen,
 			forwarder.events(),
-			func(id string) (interface{}, error) {
+			func(id string) (any, error) {
 				return h.dry.dockerDaemon.InspectImage(id)
 			},
 			func() {
@@ -197,7 +190,6 @@ func (h *imagesScreenEventHandler) handleKeyEvent(key tcell.Key, f func(eventHan
 			h.dry.message(
 				fmt.Sprintf("Error inspecting image: %s", err.Error()))
 		}
-
 	default:
 		handled = false
 	}
@@ -211,13 +203,11 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 	case '2': //  already on the images screen
 
 	case 'i', 'I': //image history
-
 		showHistory := func(id string) error {
 			history, err := dry.dockerDaemon.History(id)
 
 			if err == nil {
-				forwarder := newEventForwarder()
-				f(forwarder)
+				forwarder := newRegisteredEventForwarder(f)
 				renderer := appui.NewDockerImageHistoryRenderer(history)
 
 				go appui.Less(renderer.String(), h.screen, forwarder.events(), func() {
@@ -239,8 +229,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 			}
 			rw := appui.NewImageRunWidget(i)
 			widgets.add(rw)
-			forwarder := newEventForwarder()
-			f(forwarder)
+			forwarder := newRegisteredEventForwarder(f)
 			refreshScreen()
 			go func(image image.Summary) {
 				defer f(h)
@@ -278,8 +267,7 @@ func (h *imagesScreenEventHandler) handleChEvent(ch rune, f func(eventHandler)) 
 				fmt.Sprintf("Error running image: %s", err.Error()))
 		}
 	case '%':
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		applyFilter := func(filter string, canceled bool) {
 			if !canceled {
 				h.widget.Filter(filter)

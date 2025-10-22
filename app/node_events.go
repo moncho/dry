@@ -29,8 +29,7 @@ func (h *nodesScreenEventHandler) handle(event *tcell.EventKey, f func(eventHand
 	case tcell.KeyCtrlA:
 		dry := h.dry
 		rw := appui.NewPrompt("Changing node availability, please type one of ('active'|'pause'|'drain')")
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		handled = true
 		widgets.add(rw)
@@ -84,8 +83,7 @@ func (h *nodesScreenEventHandler) handle(event *tcell.EventKey, f func(eventHand
 		switch event.Rune() {
 		case '%':
 			handled = true
-			forwarder := newEventForwarder()
-			f(forwarder)
+			forwarder := newRegisteredEventForwarder(f)
 			applyFilter := func(filter string, canceled bool) {
 				if !canceled {
 					h.widget.Filter(filter)

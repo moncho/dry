@@ -27,8 +27,7 @@ func (h *networksScreenEventHandler) handle(event *tcell.EventKey, f func(eh eve
 		h.widget.Unmount()
 		refreshScreen()
 	case tcell.KeyEnter: //inspect
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		inspectNetwork := inspect(screen, forwarder.events(),
 			func(id string) (interface{}, error) {
 				return h.dry.dockerDaemon.NetworkInspect(id)
@@ -48,8 +47,7 @@ func (h *networksScreenEventHandler) handle(event *tcell.EventKey, f func(eh eve
 
 		prompt := appui.NewPrompt("Do you want to remove the selected network? (y/N)")
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -94,8 +92,7 @@ func (h *networksScreenEventHandler) handle(event *tcell.EventKey, f func(eh eve
 			handled = true
 		case '%':
 			handled = true
-			forwarder := newEventForwarder()
-			f(forwarder)
+			forwarder := newRegisteredEventForwarder(f)
 			refreshScreen()
 			applyFilter := func(filter string, canceled bool) {
 				if !canceled {

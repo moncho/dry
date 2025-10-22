@@ -25,8 +25,7 @@ func (h *stackTasksScreenEventHandler) handle(event *tcell.EventKey, f func(even
 		h.dry.message("Refreshing stack tasks list")
 		h.widget.Unmount()
 	case tcell.KeyEnter:
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		if err := h.widget.OnEvent(
 			inspect(
 				h.screen,
@@ -48,8 +47,7 @@ func (h *stackTasksScreenEventHandler) handle(event *tcell.EventKey, f func(even
 	switch event.Rune() {
 	case '%':
 		handled = true
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		applyFilter := func(filter string, canceled bool) {
 			if !canceled {
 				h.widget.Filter(filter)

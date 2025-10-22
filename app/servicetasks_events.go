@@ -25,8 +25,7 @@ func (h *serviceTasksScreenEventHandler) handle(event *tcell.EventKey, f func(ev
 	case tcell.KeyF5: // refresh
 		h.widget.Unmount()
 	case tcell.KeyEnter:
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		if err := h.widget.OnEvent(
 			inspect(
 				h.screen,
@@ -50,8 +49,7 @@ func (h *serviceTasksScreenEventHandler) handle(event *tcell.EventKey, f func(ev
 		switch event.Rune() {
 		case '%':
 			handled = true
-			forwarder := newEventForwarder()
-			f(forwarder)
+			forwarder := newRegisteredEventForwarder(f)
 			refreshScreen()
 			applyFilter := func(filter string, canceled bool) {
 				if !canceled {

@@ -27,8 +27,7 @@ func (h *volumesScreenEventHandler) handle(event *tcell.EventKey, f func(eh even
 		h.widget.Unmount()
 		refreshScreen()
 	case tcell.KeyEnter: //inspect
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		inspect := inspect(screen, forwarder.events(),
 			func(id string) (interface{}, error) {
 				return h.dry.dockerDaemon.VolumeInspect(context.Background(), id)
@@ -47,8 +46,7 @@ func (h *volumesScreenEventHandler) handle(event *tcell.EventKey, f func(eh even
 
 		prompt := appui.NewPrompt("Do you want to remove all volumes? (y/N)")
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -81,8 +79,7 @@ func (h *volumesScreenEventHandler) handle(event *tcell.EventKey, f func(eh even
 
 		prompt := appui.NewPrompt("Do you want to remove the selected volume? (y/N)")
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -120,8 +117,7 @@ func (h *volumesScreenEventHandler) handle(event *tcell.EventKey, f func(eh even
 
 		prompt := appui.NewPrompt("Do you want to remove the selected volume? (y/N)")
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -158,8 +154,7 @@ func (h *volumesScreenEventHandler) handle(event *tcell.EventKey, f func(eh even
 	case tcell.KeyCtrlU: //remove unused volumes
 		prompt := appui.NewPrompt("Do you want to remove unused volumes? (y/N)")
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 		go func() {
 			events := ui.EventSource{
@@ -197,8 +192,7 @@ func (h *volumesScreenEventHandler) handle(event *tcell.EventKey, f func(eh even
 			handled = true
 		case '%':
 			handled = true
-			forwarder := newEventForwarder()
-			f(forwarder)
+			forwarder := newRegisteredEventForwarder(f)
 			refreshScreen()
 			applyFilter := func(filter string, canceled bool) {
 				if !canceled {

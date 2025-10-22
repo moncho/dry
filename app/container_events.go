@@ -41,8 +41,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to kill container %s? (y/N)", id))
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 
 		go func() {
@@ -75,8 +74,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to restart container %s? (y/N)", id))
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 
 		go func() {
@@ -106,8 +104,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to stop container %s? (y/N)", id))
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 
 		go func() {
@@ -139,8 +136,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 		prompt := appui.NewPrompt(
 			fmt.Sprintf("Do you want to remove container %s? (y/N)", id))
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 
 		go func() {
@@ -178,8 +174,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 				dry.message(
 					fmt.Sprintf("Error showing container stats: %s", err.Error()))
 			} else {
-				forwarder := newEventForwarder()
-				f(forwarder)
+				forwarder := newRegisteredEventForwarder(f)
 				h.dry.changeView(NoView)
 				go statsScreen(command.container, statsChan, screen, forwarder.events(), func() {
 					h.dry.changeView(Main)
@@ -190,8 +185,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 		}
 
 	case docker.INSPECT:
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		err := inspect(
 			h.screen,
 			forwarder.events(),
@@ -214,8 +208,7 @@ func (h *containersScreenEventHandler) handleCommand(command commandRunner, f fu
 		history, err := dry.dockerDaemon.History(command.container.ImageID)
 
 		if err == nil {
-			forwarder := newEventForwarder()
-			f(forwarder)
+			forwarder := newRegisteredEventForwarder(f)
 			renderer := appui.NewDockerImageHistoryRenderer(history)
 
 			go appui.Less(renderer.String(), screen, forwarder.events(), func() {
@@ -235,8 +228,7 @@ func (h *containersScreenEventHandler) handleCharacter(key rune, f func(eventHan
 	switch key {
 
 	case '%': //filter containers
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		applyFilter := func(filter string, canceled bool) {
 			if !canceled {
 				h.widget.Filter(filter)
@@ -340,8 +332,7 @@ func (h *containersScreenEventHandler) handleKey(key tcell.Key, f func(eventHand
 		prompt := appui.NewPrompt(
 			"All stopped containers will be removed. Do you want to continue? (y/N) ")
 		widgets.add(prompt)
-		forwarder := newEventForwarder()
-		f(forwarder)
+		forwarder := newRegisteredEventForwarder(f)
 		refreshScreen()
 
 		go func() {
@@ -517,8 +508,7 @@ loop:
 func (h *containersScreenEventHandler) showLogs(id string, withTimestamp bool, f func(eventHandler)) {
 	prompt := logsPrompt()
 	widgets.add(prompt)
-	forwarder := newEventForwarder()
-	f(forwarder)
+	forwarder := newRegisteredEventForwarder(f)
 	refreshScreen()
 
 	go func() {

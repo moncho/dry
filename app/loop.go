@@ -13,8 +13,6 @@ var refreshScreen func() error
 var refreshIfView func(v viewMode) error
 var widgets *widgetRegistry
 
-type nextHandler func(eh eventHandler)
-
 // RenderLoop runs dry
 // nolint: gocyclo
 func RenderLoop(dry *Dry) {
