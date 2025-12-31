@@ -33,17 +33,15 @@ func NewDockerInfo(daemon docker.ContainerDaemon) *DockerInfo {
 	di.Bg = termui.Attribute(DryTheme.Bg)
 	di.TextBgColor = termui.Attribute(DryTheme.Bg)
 	di.Display = false
+	di.SetX(0)
+	di.SetY(1)
 	return &DockerInfo{di}
 }
 
 func dockerInfo(daemon docker.ContainerDaemon) string {
 	version, _ := daemon.Version()
 	info, _ := daemon.Info()
-
 	swarmInfo := info.Swarm
-
-	buffer := new(bytes.Buffer)
-
 	rows := [][]string{
 		{
 			ui.Blue("Docker Host:"), ui.Yellow(daemon.DockerEnv().DockerHost), "",
@@ -58,7 +56,8 @@ func dockerInfo(daemon docker.ContainerDaemon) string {
 
 	rows = addHostInfo(rows, info)
 	rows = addSwarmInfo(rows, swarmInfo)
-	table := tablewriter.NewWriter(buffer)
+	var buffer bytes.Buffer
+	table := tablewriter.NewWriter(&buffer)
 	table.SetBorder(false)
 	table.SetColumnSeparator("")
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
