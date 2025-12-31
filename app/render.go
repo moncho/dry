@@ -11,9 +11,7 @@ import (
 
 // render renders dry on the given screen
 func render(d *Dry, screen *ui.Screen) {
-
 	var bufferers []gizaktermui.Bufferer
-
 	if d.showingHeader() {
 		bufferers = append(bufferers, widgets.DockerInfo)
 	}
@@ -29,9 +27,7 @@ func render(d *Dry, screen *ui.Screen) {
 				screen.Render(1, err.Error())
 			}
 			bufferers = append(bufferers, cMenu)
-
 			keymap = commandsMenuBar
-
 		}
 	case Main:
 		{
@@ -41,19 +37,15 @@ func render(d *Dry, screen *ui.Screen) {
 			}
 			bufferers = append(bufferers, containersWidget)
 			keymap = keyMappings
-
 		}
 	case Images:
 		{
-
 			widget := widgets.ImageList
 			if err := widget.Mount(); err != nil {
 				screen.Render(1, err.Error())
 			}
 			bufferers = append(bufferers, widget)
-
 			keymap = imagesKeyMappings
-
 		}
 	case Networks:
 		{
@@ -141,7 +133,6 @@ func render(d *Dry, screen *ui.Screen) {
 
 	}
 	bufferers = append(bufferers, footer(keymap))
-
 	widgets.MessageBar.Render()
 	screen.RenderBufferer(bufferers...)
 	if viewRenderer != nil {
