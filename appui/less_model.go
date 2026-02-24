@@ -97,7 +97,8 @@ func (m *LessModel) SetSize(w, h int) {
 	if vpHeight < 1 {
 		vpHeight = 1
 	}
-	m.viewport.Style = lipgloss.NewStyle().Width(w).Height(vpHeight)
+	m.viewport.SetWidth(w)
+	m.viewport.SetHeight(vpHeight)
 }
 
 // Update handles key events for the less viewer.
