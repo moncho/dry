@@ -1,20 +1,22 @@
 package ui
 
-// ColorTheme represents a color theme
-type ColorTheme struct {
-	Fg           Color
-	Bg           Color
-	DarkBg       Color
-	Prompt       Color
-	Key          Color
-	Current      Color
-	CurrentMatch Color
-	Spinner      Color
-	Info         Color
-	Cursor       Color
-	Selected     Color
-	Header       Color
-	Footer       Color
-	ListItem     Color
-	CursorLineBg Color
+import "image/color"
+
+// Theme defines the color palette for the application.
+type Theme struct {
+	Fg           color.Color
+	Bg           color.Color
+	DarkBg       color.Color
+	Prompt       color.Color
+	Key          color.Color
+	Current      color.Color
+	CurrentMatch color.Color
+	Spinner      color.Color
+	Info         color.Color
+	Cursor       color.Color
+	Selected     color.Color
+	Header       color.Color
+	Footer       color.Color
+	ListItem     color.Color
+	CursorLineBg color.Color
 }

@@ -1,28 +1,26 @@
 package ui
 
-import "fmt"
+import "charm.land/lipgloss/v2"
 
-// Blue blues the given string
-func Blue(text string) string {
-	return fmt.Sprintf("<blue>%s</>", text)
-}
+var (
+	blueStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("188"))
+	redStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
+	whiteStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("255"))
+	yellowStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
+	cyanStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("14"))
+)
 
-// Red reddens the given string
-func Red(text string) string {
-	return fmt.Sprintf("<red>%s</>", text)
-}
+// Blue styles the given text blue.
+func Blue(text string) string { return blueStyle.Render(text) }
 
-// White whites the given string
-func White(text string) string {
-	return fmt.Sprintf("<white>%s</>", text)
-}
+// Red styles the given text red.
+func Red(text string) string { return redStyle.Render(text) }
 
-// Yellow yellows the given string
-func Yellow(text string) string {
-	return fmt.Sprintf("<yellow>%s</>", text)
-}
+// White styles the given text white.
+func White(text string) string { return whiteStyle.Render(text) }
 
-// Cyan cyans the given string
-func Cyan(text string) string {
-	return fmt.Sprintf("<cyan>%s</>", text)
-}
+// Yellow styles the given text yellow.
+func Yellow(text string) string { return yellowStyle.Render(text) }
+
+// Cyan styles the given text cyan.
+func Cyan(text string) string { return cyanStyle.Render(text) }

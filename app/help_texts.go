@@ -1,22 +1,18 @@
 package app
 
-import (
-	"fmt"
-
-	"github.com/moncho/dry/version"
-)
+import "github.com/moncho/dry/version"
 
 // ShortHelp is a short description of dry
 const ShortHelp = `
 dry
 
-A tool to interact with a Docker Daemon from the terminal. 
+A tool to interact with a Docker Daemon from the terminal.
 `
 
-var help = `
-<white>dry ` + fmt.Sprintf("version %s, build %s", version.VERSION, version.GITCOMMIT) + `</>` +
-	`
-A tool to interact with a Docker Daemon from the terminal. 
+// Help returns the full help text with version info.
+func Help() string {
+	return `<white>dry version ` + version.VERSION + `, build ` + version.GITCOMMIT + `</>
+A tool to interact with a Docker Daemon from the terminal.
 
 Visit <blue>http://moncho.github.io/dry/</> for more information.
 
@@ -52,7 +48,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Ctrl+r</>    Restarts selected container
 	<white>s</>         Displays a live stream of the selected container resource usage statistics
 	<white>Ctrl+t</>    Stops selected container (noop if it is not running)
-	<white>Enter</>     Shows low-level information of the selected container
+	<white>Enter</>     Opens the command menu for the selected container
 
 <yellow>Image list keybinds</>
 	<white>Ctrl+d</>    Removes dangling images
@@ -97,6 +93,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 
 <r> Press ESC to exit help. </r>
 `
+}
 
 const (
 	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "

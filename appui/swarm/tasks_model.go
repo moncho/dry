@@ -1,0 +1,114 @@
+package swarm
+
+import (
+	"fmt"
+
+	"github.com/docker/docker/api/types/swarm"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"github.com/moncho/dry/appui"
+	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/docker/formatter"
+)
+
+// taskRow wraps a swarm task as a TableRow.
+type taskRow struct {
+	task    swarm.Task
+	columns []string
+}
+
+func newTaskRow(api docker.SwarmAPI, t swarm.Task) taskRow {
+	if api == nil {
+		return taskRow{
+			task: t,
+			columns: []string{
+				docker.TruncateID(t.ID), "", "", "",
+				string(t.DesiredState), string(t.Status.State), t.Status.Err,
+			},
+		}
+	}
+	ts := formatter.NewTaskStringer(api, t, true)
+	return taskRow{
+		task: t,
+		columns: []string{
+			ts.ID(), ts.Name(), ts.Image(), ts.NodeID(),
+			ts.DesiredState(), ts.CurrentState(), ts.Error(),
+		},
+	}
+}
+
+func (r taskRow) Columns() []string { return r.columns }
+func (r taskRow) ID() string        { return r.task.ID }
+
+// TasksLoadedMsg carries the loaded tasks.
+type TasksLoadedMsg struct {
+	Tasks []swarm.Task
+	Title string
+}
+
+// TasksModel is the swarm tasks list view.
+type TasksModel struct {
+	table  appui.TableModel
+	daemon docker.ContainerDaemon
+	title  string
+}
+
+// NewTasksModel creates a tasks list model.
+func NewTasksModel() TasksModel {
+	columns := []appui.Column{
+		{Title: "ID", Width: appui.IDColumnWidth, Fixed: true},
+		{Title: "NAME"},
+		{Title: "IMAGE"},
+		{Title: "NODE", Width: appui.IDColumnWidth, Fixed: true},
+		{Title: "DESIRED", Width: 10, Fixed: true},
+		{Title: "CURRENT", Width: 10, Fixed: true},
+		{Title: "ERROR"},
+	}
+	return TasksModel{
+		table: appui.NewTableModel(columns),
+		title: "Tasks",
+	}
+}
+
+// SetDaemon sets the Docker daemon reference.
+func (m *TasksModel) SetDaemon(d docker.ContainerDaemon) {
+	m.daemon = d
+}
+
+// SetSize updates the table dimensions.
+func (m *TasksModel) SetSize(w, h int) {
+	m.table.SetSize(w, h-1)
+}
+
+// SetTasks replaces the task list.
+func (m *TasksModel) SetTasks(tasks []swarm.Task, title string) {
+	m.title = title
+	rows := make([]appui.TableRow, len(tasks))
+	for i, t := range tasks {
+		rows[i] = newTaskRow(m.daemon, t)
+	}
+	m.table.SetRows(rows)
+}
+
+// Update handles key events.
+func (m TasksModel) Update(msg tea.Msg) (TasksModel, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "f1":
+			m.table.NextSort()
+			return m, nil
+		}
+	}
+	var cmd tea.Cmd
+	m.table, cmd = m.table.Update(msg)
+	return m, cmd
+}
+
+// View renders the tasks list.
+func (m TasksModel) View() string {
+	total := m.table.TotalRowCount()
+	title := fmt.Sprintf("%s: %d", m.title, total)
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255"))
+	return titleStyle.Render(title) + "\n" + m.table.View()
+}
