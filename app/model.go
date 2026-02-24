@@ -27,7 +27,6 @@ const (
 	overlayLess
 	overlayPrompt
 	overlayInputPrompt
-	overlayStream
 	overlayContainerMenu
 )
 

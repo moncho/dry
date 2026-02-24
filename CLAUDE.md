@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**dry** is a terminal UI (TUI) application for managing Docker containers and images, written in Go. It connects to a Docker daemon and provides an interactive interface for monitoring and managing containers, images, networks, volumes, and Docker Swarm resources.
+**dry** is a terminal UI (TUI) application for managing Docker containers and images, written in Go. It connects to a Docker daemon and provides an interactive interface for monitoring and managing containers, images, networks, volumes, and Docker Swarm resources. The UI is built with Bubbletea v2 (`charm.land/bubbletea/v2`).
 
 ## Build & Development Commands
 
@@ -23,51 +23,55 @@ Run a single test:
 go test -v -run TestName ./path/to/package/
 ```
 
-Update golden files for widget tests:
-```bash
-go test ./appui/ -update
-go test ./appui/swarm/ -update
-```
-
 Version is stored in `APPVERSION` and injected at build time via ldflags into `version.VERSION` and `version.GITCOMMIT`.
 
 ## Architecture
 
 ### Layered Structure
 
-1. **Entry point** (`main.go`) — CLI flags, screen init, Docker connection, starts render loop
-2. **App core** (`app/`) — `Dry` struct, render loop, event handling, view modes
-3. **App widgets** (`appui/`) — High-level Docker resource widgets (containers, images, networks, volumes, monitor, swarm)
-4. **Docker layer** (`docker/`) — `ContainerDaemon` interface abstracting the Docker API
-5. **UI primitives** (`ui/`) — Low-level TUI framework: Screen, Less viewer, InputBox, Cursor, Markup; `ui/termui/` has table primitives (Row, TableHeader, TextInput)
+1. **Entry point** (`main.go`) — CLI flags, config, creates `app.NewModel(cfg)` and runs `tea.NewProgram(m).Run()`
+2. **App core** (`app/`) — Top-level Bubbletea model (`model`), commands, messages, key bindings, view modes
+3. **App widgets** (`appui/`) — Sub-models for each view: containers, images, networks, volumes, monitor, disk usage, plus shared TableModel and overlay models (less, prompt, container menu)
+4. **Swarm widgets** (`appui/swarm/`) — Sub-models for nodes, services, stacks, tasks
+5. **Docker layer** (`docker/`) — `ContainerDaemon` interface abstracting the Docker API
+6. **UI primitives** (`ui/`) — Markup parser, colorize helpers, theme struct, color constants
 
-### Core Types and Patterns
+### Bubbletea Elm Architecture
 
-**`Dry`** (`app/dry.go`): Central application struct. Holds the Docker daemon, screen, event channels, output channel, and current view mode. Protected by `sync.RWMutex`.
+The app follows Bubbletea's Elm pattern: `Init() → Cmd`, `Update(Msg) → (Model, Cmd)`, `View() → View`.
 
-**View modes** (`app/view.go`): 16 modes as `uint16` enum — `Main`, `Images`, `Networks`, `Volumes`, `Monitor`, `DiskUsage`, `Nodes`, `Services`, `Stacks`, etc. The current view determines which widget renders and which event handler is active.
+**`model`** (`app/model.go`): The single top-level `tea.Model`. Holds all sub-models, the Docker daemon, overlay state, and view mode. Verified with `var _ tea.Model = model{}`.
 
-**Widget registry** (`app/widget_registry.go`): Package-level singleton `widgets` holds all persistent widgets. Initialized in `initRegistry()` which also registers Docker event listeners for auto-refresh.
+**View modes** (`app/view.go`): 12 modes as `viewMode` enum — `Main`, `Images`, `Networks`, `Volumes`, `DiskUsage`, `Monitor`, `Nodes`, `Services`, `Stacks`, `ServiceTasks`, `StackTasks`, `Tasks`.
 
-**Render loop** (`app/loop.go`): Runs on the main goroutine. A render goroutine reads from `renderChan`; the main loop reads keyboard events from `ui.EventChannel()` and delegates to the current `eventHandler`. Package-level `refreshScreen()` and `refreshIfView()` functions trigger re-renders.
+**Message flow** (`app/messages.go`): All custom `tea.Msg` types. Docker operations run in `tea.Cmd` functions and return result messages (e.g., `containersLoadedMsg`, `operationSuccessMsg`).
 
-**Event handler chain** (`app/events.go`): Handlers implement `handle(event, nextHandler)` where `nextHandler` swaps the active handler. `baseEventHandler` handles global keys; view-specific handlers embed it. Modal views (prompts, Less viewer) use `eventHandlerForwarder` to temporarily redirect input.
+**Commands** (`app/commands.go`): `tea.Cmd` factories that bridge UI ↔ docker/ — `loadContainersCmd`, `inspectContainerCmd`, `showContainerLogsCmd`, etc.
 
-**Widget lifecycle**: All widgets follow Mount/Unmount — `Mount()` loads data from Docker, `Buffer()` renders to a `termui.Buffer`, `Unmount()` marks for reload. `AppWidget` interface combines `termui.Widget`, `EventableWidget`, `FilterableWidget`, `SortableWidget`.
+### Sub-Model Pattern
 
-**Rendering** (`app/render.go`): `render()` switches on view mode, mounts the appropriate widget, collects `Bufferer`s (header, main widget, footer), renders them via `screen.RenderBufferer()`, then renders any active overlay widgets and flushes.
+Each view has a sub-model in `appui/` with `Update(msg) → (Model, Cmd)` and `View() → string`. The top-level model delegates key events to the active sub-model. Sub-models do NOT implement `Init()` — they're not full `tea.Model`s.
+
+**`TableModel`** (`appui/table_model.go`): Shared reusable table with cursor navigation (j/k/g/G/PgUp/PgDown), column sorting, text filtering, scroll windowing. Used by every list view.
+
+**Overlay system**: `overlayType` enum determines which overlay is active:
+- `overlayLess` — Scrollable text viewer (help, logs, inspect, events, info)
+- `overlayPrompt` — y/N confirmation for destructive actions
+- `overlayInputPrompt` — Text input (e.g., service scale)
+- `overlayContainerMenu` — Command menu for selected container
 
 ### Docker Integration
 
 **`ContainerDaemon`** (`docker/api.go`): Interface composed of `ContainerAPI`, `ImageAPI`, `NetworkAPI`, `VolumesAPI`, `SwarmAPI`, `ContainerRuntime`.
 
-**Event-driven refresh** (`docker/event_listener.go`): `GlobalRegistry` dispatches Docker events to registered callbacks by source type (container, image, network, etc.), triggering widget unmount/refresh with 250ms throttle.
+**Event-driven refresh**: Docker events arrive via `listenDockerEvents` command, are throttled with a 250ms debounce (`pendingRefresh` map + `flushRefreshMsg`), then trigger data reload for the active view.
 
 ### Key Conventions
 
-- **Concurrency**: Mutexes protect shared state throughout (Dry, widgets, screen, cursor, container store). Docker operations use 10-second timeouts.
-- **Markup**: Custom tag system for colored text (`<white>`, `<blue>`, `<red>`, `<b>`, `<darkgrey>`) parsed by `ui/markup.go`.
-- **Theming**: Colors defined in `appui/theme.go` via `DryTheme` (defaults to `Dark256`).
-- **Mocks**: `mocks/docker_daemon.go` provides `DockerDaemonMock` with canned data (10 running + 10 stopped containers). `docker/mock/` has additional internal mocks.
-- **Golden files**: Widget rendering tests use golden files in `appui/testdata/` and `appui/swarm/testdata/`.
-- **Destructive Docker actions** (kill, remove, stop) show a confirmation prompt before executing.
+- **Import paths**: `charm.land/bubbletea/v2`, `charm.land/bubbles/v2`, `charm.land/lipgloss/v2`
+- **Key events**: `tea.KeyPressMsg` — `.String()` returns key names (e.g., `"esc"` not `"escape"`, `"f1"` not `"F1"`)
+- **Markup**: Custom tag system for colored text (`<white>`, `<blue>`, `<red>`, `<b>`, `<darkgrey>`) parsed by `ui/markup.go`, rendered via lipgloss
+- **Theming**: Colors defined in `appui/theme.go` via `DryTheme`; styles in `appui/styles.go`
+- **Mocks**: `mocks/docker_daemon.go` provides `DockerDaemonMock` with canned data (10 running + 10 stopped containers)
+- **Destructive Docker actions** (kill, remove, stop) show a confirmation prompt before executing
+- **ID safety**: Use `shortID(id)` helper in `app/commands.go` for safe truncation to 12 chars
