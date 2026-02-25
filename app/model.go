@@ -790,7 +790,11 @@ func (m model) renderFooter() string {
 	default:
 		mapping = commonMappings
 	}
-	return ui.RenderMarkup(mapping)
+	rendered := ui.RenderMarkup(mapping)
+	footerStyle := lipgloss.NewStyle().
+		Background(appui.DryTheme.Footer).
+		Width(m.width)
+	return footerStyle.Render(rendered)
 }
 
 func (m model) renderLoadingScreen() string {

@@ -8,7 +8,6 @@ import (
 )
 
 // tagStyles maps markup tag names to lipgloss styles.
-// Color values match the original tcell/termbox attribute mappings.
 var tagStyles = map[string]lipgloss.Style{
 	"black":    lipgloss.NewStyle().Foreground(lipgloss.Color("0")),
 	"red":      lipgloss.NewStyle().Foreground(lipgloss.Color("9")),
@@ -20,9 +19,9 @@ var tagStyles = map[string]lipgloss.Style{
 	"cyan":     lipgloss.NewStyle().Foreground(lipgloss.Color("14")),
 	"cyan0":    lipgloss.NewStyle().Foreground(lipgloss.Color("181")),
 	"white":    lipgloss.NewStyle().Foreground(lipgloss.Color("255")),
-	"grey":     lipgloss.NewStyle().Foreground(lipgloss.Color("233")),
+	"grey":     lipgloss.NewStyle().Foreground(lipgloss.Color("244")),
 	"grey2":    lipgloss.NewStyle().Foreground(lipgloss.Color("244")),
-	"darkgrey": lipgloss.NewStyle().Foreground(lipgloss.Color("232")),
+	"darkgrey": lipgloss.NewStyle().Foreground(lipgloss.Color("242")),
 	"b":        lipgloss.NewStyle().Bold(true),
 	"u":        lipgloss.NewStyle().Underline(true),
 	"r":        lipgloss.NewStyle().Reverse(true),
@@ -43,7 +42,8 @@ func supportedTagsRegexp() *regexp.Regexp {
 
 // RenderMarkup converts markup-tagged strings to lipgloss-styled strings.
 // Tags like <white>, <blue>, <b> are converted to ANSI-styled text.
-// The </> tag (or any closing tag) resets to default foreground.
+// Tags stack: <b><darkgrey> produces bold + darkgrey foreground.
+// The </> tag (or any closing tag) resets all styles.
 func RenderMarkup(s string) string {
 	tokens := Tokenize(s, SupportedTags)
 	if len(tokens) == 0 {
@@ -51,14 +51,15 @@ func RenderMarkup(s string) string {
 	}
 
 	var b strings.Builder
-	var activeStyle *lipgloss.Style
+	style := lipgloss.NewStyle()
+	hasStyle := false
 
 	for _, token := range tokens {
 		tag, isOpen := probeForTag(token)
 		if tag == "" {
 			// Regular text — apply current style if any
-			if activeStyle != nil {
-				b.WriteString(activeStyle.Render(token))
+			if hasStyle {
+				b.WriteString(style.Render(token))
 			} else {
 				b.WriteString(token)
 			}
@@ -67,12 +68,15 @@ func RenderMarkup(s string) string {
 
 		if !isOpen || tag == "/" {
 			// Closing tag or </> — reset
-			activeStyle = nil
+			style = lipgloss.NewStyle()
+			hasStyle = false
 			continue
 		}
 
-		if style, ok := tagStyles[tag]; ok {
-			activeStyle = &style
+		if tagStyle, ok := tagStyles[tag]; ok {
+			// Stack: merge tag style into current style
+			style = style.Inherit(tagStyle)
+			hasStyle = true
 		}
 	}
 	return b.String()
