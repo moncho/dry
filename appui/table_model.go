@@ -4,11 +4,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/charmbracelet/x/ansi"
-	tea "charm.land/bubbletea/v2"
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/table"
+	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // Column defines a table column.
@@ -64,7 +64,7 @@ func NewTableModel(columns []Column) TableModel {
 	km.PageDown = key.NewBinding(key.WithKeys("pgdown"))
 	km.GotoTop = key.NewBinding(key.WithKeys("g", "home"))
 	km.GotoBottom = key.NewBinding(key.WithKeys("G", "end"))
-	km.HalfPageUp = key.NewBinding(key.WithKeys())  // disable
+	km.HalfPageUp = key.NewBinding(key.WithKeys())   // disable
 	km.HalfPageDown = key.NewBinding(key.WithKeys()) // disable
 	t.KeyMap = km
 

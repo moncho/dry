@@ -85,10 +85,10 @@ var globalKeys = globalKeyMap{
 // --- containers (Main) ------------------------------------------------
 
 type containerKeyMap struct {
-	Help, Quit                                        key.Binding
-	Sort, AllRunning, Refresh, Filter                 key.Binding
+	Help, Quit                                       key.Binding
+	Sort, AllRunning, Refresh, Filter                key.Binding
 	Monitor, Images, Nets, Vols, Nodes, Svcs, Stacks key.Binding
-	Commands                                          key.Binding
+	Commands                                         key.Binding
 }
 
 var containerKeys = containerKeyMap{
@@ -122,8 +122,8 @@ func (k containerKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.S
 // --- monitor ----------------------------------------------------------
 
 type monitorKeyMap struct {
-	Help, Quit                                                    key.Binding
-	Sort                                                          key.Binding
+	Help, Quit                                                   key.Binding
+	Sort                                                         key.Binding
 	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks key.Binding
 }
 
@@ -153,10 +153,10 @@ func (k monitorKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.Sho
 // --- images -----------------------------------------------------------
 
 type imagesKeyMap struct {
-	Help, Quit                                    key.Binding
-	Sort, Refresh                                 key.Binding
-	Containers, Nets, Vols, Nodes, Svcs, Stacks   key.Binding
-	RmDangling, Rm, ForceRm, RmUnused, History    key.Binding
+	Help, Quit                                  key.Binding
+	Sort, Refresh                               key.Binding
+	Containers, Nets, Vols, Nodes, Svcs, Stacks key.Binding
+	RmDangling, Rm, ForceRm, RmUnused, History  key.Binding
 }
 
 var imagesKeys = imagesKeyMap{
@@ -261,9 +261,9 @@ func (k volumesKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.Sho
 // --- disk usage -------------------------------------------------------
 
 type diskUsageKeyMap struct {
-	Help, Quit                                                    key.Binding
-	Containers, Images, Nets, Vols, Nodes, Svcs, Stacks          key.Binding
-	Prune                                                         key.Binding
+	Help, Quit                                          key.Binding
+	Containers, Images, Nets, Vols, Nodes, Svcs, Stacks key.Binding
+	Prune                                               key.Binding
 }
 
 var diskUsageKeys = diskUsageKeyMap{
@@ -292,10 +292,10 @@ func (k diskUsageKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.S
 // --- services ---------------------------------------------------------
 
 type servicesKeyMap struct {
-	Help, Quit                                                    key.Binding
-	Sort, Refresh, Filter                                         key.Binding
+	Help, Quit                                                   key.Binding
+	Sort, Refresh, Filter                                        key.Binding
 	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks key.Binding
-	Logs, Rm, Scale, Update                                       key.Binding
+	Logs, Rm, Scale, Update                                      key.Binding
 }
 
 var servicesKeys = servicesKeyMap{
@@ -332,10 +332,10 @@ func (k servicesKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.Sh
 // --- stacks -----------------------------------------------------------
 
 type stacksKeyMap struct {
-	Help, Quit                                                    key.Binding
-	Sort, Refresh, Filter                                         key.Binding
+	Help, Quit                                                   key.Binding
+	Sort, Refresh, Filter                                        key.Binding
 	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks key.Binding
-	Rm                                                            key.Binding
+	Rm                                                           key.Binding
 }
 
 var stacksKeys = stacksKeyMap{
@@ -369,10 +369,10 @@ func (k stacksKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.Shor
 // --- nodes ------------------------------------------------------------
 
 type nodesKeyMap struct {
-	Help, Quit                                                    key.Binding
-	Sort, Refresh                                                 key.Binding
+	Help, Quit                                                   key.Binding
+	Sort, Refresh                                                key.Binding
 	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks key.Binding
-	Tasks, Availability                                           key.Binding
+	Tasks, Availability                                          key.Binding
 }
 
 var nodesKeys = nodesKeyMap{

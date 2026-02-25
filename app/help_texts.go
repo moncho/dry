@@ -95,4 +95,3 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 <r> Press ESC to exit help. </r>
 `
 }
-
