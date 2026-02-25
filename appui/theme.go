@@ -9,8 +9,8 @@ import (
 var (
 	pepper   = lipgloss.Color("#201F26")
 	charcoal = lipgloss.Color("#3A3943")
-	charple  = lipgloss.Color("#6B50FF")
-	dolly    = lipgloss.Color("#FF60FF")
+	charple  = lipgloss.Color("#D08850")
+	dolly    = lipgloss.Color("#E07890")
 	bok      = lipgloss.Color("#E8A848")
 	malibu   = lipgloss.Color("#00A4FF")
 	julep    = lipgloss.Color("#00FFB2")
