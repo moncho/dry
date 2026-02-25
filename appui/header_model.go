@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/x/ansi"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	units "github.com/docker/go-units"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"

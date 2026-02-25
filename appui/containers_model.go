@@ -13,12 +13,10 @@ import (
 type containerRow struct {
 	container *docker.Container
 	columns   []string
-	running   bool
 }
 
 func newContainerRow(c *docker.Container) containerRow {
 	cf := formatter.NewContainerFormatter(c, true)
-	running := docker.IsContainerRunning(c)
 	indicator := "\u25A3" // ▣ status symbol
 	return containerRow{
 		container: c,
@@ -26,7 +24,6 @@ func newContainerRow(c *docker.Container) containerRow {
 			indicator, cf.ID(), cf.Image(), cf.Command(),
 			cf.Status(), cf.Ports(), cf.Names(),
 		},
-		running: running,
 	}
 }
 

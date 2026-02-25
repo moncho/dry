@@ -3,8 +3,8 @@ package swarm
 import (
 	"testing"
 
-	"github.com/docker/docker/api/types/swarm"
 	tea "charm.land/bubbletea/v2"
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/moncho/dry/docker"
 )
 

@@ -3,9 +3,9 @@ package swarm
 import (
 	"fmt"
 
-	"github.com/docker/docker/api/types/swarm"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/docker/formatter"
