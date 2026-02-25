@@ -98,6 +98,8 @@ func (m TasksModel) Update(msg tea.Msg) (TasksModel, tea.Cmd) {
 		case "f1":
 			m.table.NextSort()
 			return m, nil
+		case "f5":
+			return m, nil
 		}
 	}
 	var cmd tea.Cmd

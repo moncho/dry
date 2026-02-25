@@ -784,6 +784,8 @@ func (m model) renderFooter() string {
 		mapping = stackKeyMappings
 	case Nodes:
 		mapping = nodeKeyMappings
+	case ServiceTasks, Tasks, StackTasks:
+		mapping = taskKeyMappings
 	default:
 		mapping = commonMappings
 	}

@@ -103,6 +103,7 @@ const (
 		"<cyan>m</> <grey>monitor</>  <cyan>2</> <grey>images</>  <cyan>3</> <grey>nets</>  <cyan>4</> <grey>vols</>  <cyan>5</> <grey>nodes</>  <cyan>6</> <grey>svcs</>  <cyan>7</> <grey>stacks</>  <darkgrey>·</> <cyan>enter</> <grey>commands</>"
 
 	monitorMapping = commonMappings +
+		"<cyan>F1</> <grey>sort</>  <darkgrey>·</> " +
 		"<cyan>m</> <grey>monitor</>  <cyan>1</> <grey>containers</>  <cyan>2</> <grey>images</>  <cyan>3</> <grey>nets</>  <cyan>4</> <grey>vols</>  <cyan>5</> <grey>nodes</>  <cyan>6</> <grey>svcs</>  <cyan>7</> <grey>stacks</>"
 
 	swarmMapping = commonMappings +
@@ -132,6 +133,8 @@ const (
 	stackKeyMappings = swarmMapping + " <darkgrey>·</> <cyan>F1</> <grey>sort</>  <cyan>F5</> <grey>refresh</>  <cyan>%</> <grey>filter</>  <darkgrey>·</> <cyan>^r</> <grey>rm stack</>"
 
 	nodeKeyMappings = swarmMapping + " <darkgrey>·</> <cyan>F1</> <grey>sort</>  <cyan>F5</> <grey>refresh</>  <darkgrey>·</> <cyan>enter</> <grey>node tasks</>  <cyan>^a</> <grey>availability</>"
+
+	taskKeyMappings = commonMappings + "<cyan>F1</> <grey>sort</>  <darkgrey>·</> <cyan>esc</> <grey>back</>"
 
 	commandsMenuBar = "<cyan>esc</> <grey>back</>  <cyan>↑↓</> <grey>navigate</>  <cyan>enter</> <grey>execute</>"
 )

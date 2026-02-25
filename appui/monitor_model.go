@@ -177,6 +177,14 @@ func (m *MonitorModel) refreshTable() {
 
 // Update handles key events.
 func (m MonitorModel) Update(msg tea.Msg) (MonitorModel, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "f1":
+			m.table.NextSort()
+			return m, nil
+		}
+	}
 	var cmd tea.Cmd
 	m.table, cmd = m.table.Update(msg)
 	return m, cmd
