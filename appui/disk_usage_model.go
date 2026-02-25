@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/progress"
 	"charm.land/lipgloss/v2"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/go-units"
@@ -115,14 +116,15 @@ func (m DiskUsageModel) View() string {
 	for _, cat := range cats {
 		label := labelStyle.Render(cat.label)
 		info := valueStyle.Render(fmt.Sprintf(" %3d   %s", cat.count, units.HumanSize(float64(cat.size))))
-		bar := renderBar(cat.size, total, barWidth, cat.color, DryTheme.Border)
-		lines = append(lines, label+info+"  "+bar)
+		bar := makeProgressBar(barWidth, cat.color)
+		pct := safePct(cat.size, total)
+		lines = append(lines, label+info+"  "+bar.ViewAs(pct))
 	}
 
 	lines = append(lines, "")
 	totalLabel := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Key).Width(labelWidth).Render("Total")
-	totalBar := renderBar(total, total, barWidth, DryTheme.Primary, DryTheme.Border)
-	lines = append(lines, totalLabel+totalStyle.Render(fmt.Sprintf("       %s", units.HumanSize(float64(total))))+"  "+totalBar)
+	totalBar := makeProgressBar(barWidth, DryTheme.Primary)
+	lines = append(lines, totalLabel+totalStyle.Render(fmt.Sprintf("       %s", units.HumanSize(float64(total))))+"  "+totalBar.ViewAs(1.0))
 
 	// Pad to fill allocated height so the footer stays at the bottom.
 	for len(lines) < m.height {
@@ -132,24 +134,20 @@ func (m DiskUsageModel) View() string {
 	return strings.Join(lines, "\n")
 }
 
-// renderBar creates a horizontal bar chart segment.
-func renderBar(value, total int64, width int, fg, bg color.Color) string {
-	if total <= 0 || width <= 0 {
-		bgStyle := lipgloss.NewStyle().Foreground(bg)
-		return bgStyle.Render(strings.Repeat("─", width))
-	}
+func makeProgressBar(width int, fg color.Color) progress.Model {
+	p := progress.New(
+		progress.WithColors(fg),
+		progress.WithFillCharacters(progress.DefaultFullCharFullBlock, '─'),
+		progress.WithoutPercentage(),
+		progress.WithWidth(width),
+	)
+	p.EmptyColor = DryTheme.Border
+	return p
+}
 
-	filled := int(float64(value) * float64(width) / float64(total))
-	if filled < 0 {
-		filled = 0
+func safePct(value, total int64) float64 {
+	if total <= 0 {
+		return 0
 	}
-	if filled > width {
-		filled = width
-	}
-	empty := width - filled
-
-	fgStyle := lipgloss.NewStyle().Foreground(fg)
-	bgStyle := lipgloss.NewStyle().Foreground(bg)
-
-	return fgStyle.Render(strings.Repeat("█", filled)) + bgStyle.Render(strings.Repeat("─", empty))
+	return float64(value) / float64(total)
 }

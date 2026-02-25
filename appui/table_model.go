@@ -6,6 +6,8 @@ import (
 
 	"github.com/charmbracelet/x/ansi"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/table"
 	"charm.land/lipgloss/v2"
 )
 
@@ -35,24 +37,45 @@ type StyledIndicator interface {
 }
 
 // TableModel is a shared table component with navigation, sorting, and filtering.
+// It wraps bubbles/table for rendering and keyboard navigation while keeping
+// sort, filter, and column-width logic locally.
 type TableModel struct {
-	columns     []Column
-	rows        []TableRow
-	filtered    []TableRow
-	cursor      int
-	offset      int // scroll offset for visible window
-	width       int
-	height      int
-	sortField   int
-	sortAsc     bool
-	filterText  string
-	filterFn    func(row TableRow, pattern string) bool
-	colWidths   []int
+	inner      table.Model
+	columns    []Column
+	rows       []TableRow
+	filtered   []TableRow
+	sortField  int
+	sortAsc    bool
+	filterText string
+	filterFn   func(row TableRow, pattern string) bool
+	colWidths  []int
+	width      int
+	height     int
 }
 
 // NewTableModel creates a table with the given column definitions.
 func NewTableModel(columns []Column) TableModel {
+	t := table.New(table.WithFocused(true))
+
+	km := table.DefaultKeyMap()
+	km.LineUp = key.NewBinding(key.WithKeys("up", "k"))
+	km.LineDown = key.NewBinding(key.WithKeys("down", "j"))
+	km.PageUp = key.NewBinding(key.WithKeys("pgup"))
+	km.PageDown = key.NewBinding(key.WithKeys("pgdown"))
+	km.GotoTop = key.NewBinding(key.WithKeys("g", "home"))
+	km.GotoBottom = key.NewBinding(key.WithKeys("G", "end"))
+	km.HalfPageUp = key.NewBinding(key.WithKeys())  // disable
+	km.HalfPageDown = key.NewBinding(key.WithKeys()) // disable
+	t.KeyMap = km
+
+	t.SetStyles(table.Styles{
+		Header:   TableHeaderStyle,
+		Cell:     lipgloss.NewStyle(),
+		Selected: SelectedRowStyle,
+	})
+
 	return TableModel{
+		inner:    t,
 		columns:  columns,
 		sortAsc:  true,
 		filterFn: defaultFilter,
@@ -73,7 +96,7 @@ func defaultFilter(row TableRow, pattern string) bool {
 func (m *TableModel) SetRows(rows []TableRow) {
 	m.rows = rows
 	m.applyFilter()
-	m.clampCursor()
+	m.syncInner()
 }
 
 // SetSize updates the table dimensions.
@@ -81,19 +104,23 @@ func (m *TableModel) SetSize(w, h int) {
 	m.width = w
 	m.height = h
 	m.calculateColumnWidths()
+	m.inner.SetWidth(w)
+	m.inner.SetHeight(h)
+	m.syncInnerColumns()
 }
 
 // SelectedRow returns the row under the cursor, or nil.
 func (m TableModel) SelectedRow() TableRow {
-	if m.cursor >= 0 && m.cursor < len(m.filtered) {
-		return m.filtered[m.cursor]
+	cursor := m.inner.Cursor()
+	if cursor >= 0 && cursor < len(m.filtered) {
+		return m.filtered[cursor]
 	}
 	return nil
 }
 
 // Cursor returns the current cursor position.
 func (m TableModel) Cursor() int {
-	return m.cursor
+	return m.inner.Cursor()
 }
 
 // RowCount returns the number of visible (filtered) rows.
@@ -115,13 +142,117 @@ func (m TableModel) FilterText() string {
 func (m *TableModel) SetFilter(pattern string) {
 	m.filterText = pattern
 	m.applyFilter()
-	m.clampCursor()
+	m.syncInner()
 }
 
 // NextSort cycles to the next sort field and re-sorts the rows.
 func (m *TableModel) NextSort() {
 	m.sortField = (m.sortField + 1) % len(m.columns)
 	m.sortRows()
+	m.syncInnerColumns()
+}
+
+// SortField returns the current sort field index.
+func (m TableModel) SortField() int {
+	return m.sortField
+}
+
+// Update handles keyboard navigation via the inner bubbles table.
+func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
+	var cmd tea.Cmd
+	m.inner, cmd = m.inner.Update(msg)
+	return m, cmd
+}
+
+// View renders the table as a string.
+func (m TableModel) View() string {
+	if m.width == 0 {
+		return ""
+	}
+
+	view := m.inner.View()
+
+	// Pad each line to the full terminal width so backgrounds extend.
+	lines := strings.Split(view, "\n")
+	for i, line := range lines {
+		w := ansi.StringWidth(line)
+		if w < m.width {
+			lines[i] = line + strings.Repeat(" ", m.width-w)
+		}
+	}
+
+	// Pad with empty lines to fill allocated height so the footer stays
+	// at the bottom of the screen.
+	for len(lines) < m.height {
+		lines = append(lines, strings.Repeat(" ", m.width))
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+func (m *TableModel) syncInner() {
+	m.inner.SetRows(m.toBubblesRows())
+	if cursor := m.inner.Cursor(); cursor >= len(m.filtered) && len(m.filtered) > 0 {
+		m.inner.SetCursor(len(m.filtered) - 1)
+	}
+}
+
+func (m *TableModel) syncInnerColumns() {
+	cols := make([]table.Column, len(m.columns))
+	totalW := 0
+	for i, c := range m.columns {
+		w := 0
+		if i < len(m.colWidths) {
+			w = m.colWidths[i]
+		}
+		title := c.Title
+		if i == m.sortField && title != "" {
+			title += " " + DownArrow
+		}
+		cols[i] = table.Column{Title: title, Width: w}
+		totalW += w
+	}
+	// Stretch the last column so the total equals m.width, ensuring the
+	// selected-row highlight extends to the full screen width.
+	if totalW < m.width && len(cols) > 0 {
+		cols[len(cols)-1].Width += m.width - totalW
+	}
+	m.inner.SetColumns(cols)
+}
+
+func (m *TableModel) toBubblesRows() []table.Row {
+	rows := make([]table.Row, len(m.filtered))
+	for i, r := range m.filtered {
+		cols := r.Columns()
+		row := make(table.Row, len(m.columns))
+		var rowStyle lipgloss.Style
+		if sr, ok := r.(StyledRow); ok {
+			rowStyle = sr.Style()
+		}
+		for j := range m.columns {
+			cell := ""
+			if j < len(cols) {
+				cell = cols[j]
+			}
+			if j == 0 {
+				if si, ok := r.(StyledIndicator); ok {
+					row[j] = si.IndicatorStyle().Render(cell)
+					continue
+				}
+			}
+			if rowStyle.GetForeground() != nil {
+				row[j] = rowStyle.Render(cell)
+			} else {
+				row[j] = cell
+			}
+		}
+		rows[i] = row
+	}
+	return rows
 }
 
 func (m *TableModel) sortRows() {
@@ -136,6 +267,7 @@ func (m *TableModel) sortRows() {
 		return ci > cj
 	})
 	m.applyFilter()
+	m.syncInner()
 }
 
 func colValue(row TableRow, col int) string {
@@ -146,179 +278,17 @@ func colValue(row TableRow, col int) string {
 	return ""
 }
 
-// SortField returns the current sort field index.
-func (m TableModel) SortField() int {
-	return m.sortField
-}
-
-// Update handles keyboard navigation.
-func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyPressMsg:
-		switch msg.String() {
-		case "up", "k":
-			m.cursor--
-			m.clampCursor()
-		case "down", "j":
-			m.cursor++
-			m.clampCursor()
-		case "g", "home":
-			m.cursor = 0
-			m.offset = 0
-		case "G", "end":
-			m.cursor = len(m.filtered) - 1
-			if m.cursor < 0 {
-				m.cursor = 0
-			}
-		case "pgup":
-			visible := m.visibleRowCount()
-			m.cursor -= visible
-			m.clampCursor()
-		case "pgdown":
-			visible := m.visibleRowCount()
-			m.cursor += visible
-			m.clampCursor()
+func (m *TableModel) applyFilter() {
+	if m.filterText == "" {
+		m.filtered = m.rows
+		return
+	}
+	m.filtered = nil
+	for _, row := range m.rows {
+		if m.filterFn(row, m.filterText) {
+			m.filtered = append(m.filtered, row)
 		}
 	}
-	return m, nil
-}
-
-// View renders the table as a string.
-func (m TableModel) View() string {
-	if m.width == 0 {
-		return ""
-	}
-
-	var lines []string
-
-	// Header row
-	headerLine := m.renderRow(m.headerStrings(), TableHeaderStyle, false, nil)
-	lines = append(lines, headerLine)
-
-	// Data rows
-	start, end := m.visibleRange()
-	for i := start; i < end; i++ {
-		row := m.filtered[i]
-		selected := i == m.cursor
-		var style lipgloss.Style
-		if selected {
-			style = SelectedRowStyle
-		} else if sr, ok := row.(StyledRow); ok {
-			style = sr.Style()
-		}
-		// Check for indicator styling on column 0
-		var indStyle *lipgloss.Style
-		if si, ok := row.(StyledIndicator); ok {
-			s := si.IndicatorStyle()
-			indStyle = &s
-		}
-		lines = append(lines, m.renderRow(row.Columns(), style, selected, indStyle))
-	}
-
-	// Pad with empty lines to fill allocated height, ensuring the footer
-	// stays at the bottom of the screen.
-	totalRows := 1 + (end - start) // header + data rows
-	for totalRows < m.height {
-		lines = append(lines, strings.Repeat(" ", m.width))
-		totalRows++
-	}
-
-	return strings.Join(lines, "\n")
-}
-
-func (m TableModel) headerStrings() []string {
-	headers := make([]string, len(m.columns))
-	for i, col := range m.columns {
-		title := col.Title
-		if i == m.sortField && title != "" {
-			title += " " + DownArrow
-		}
-		headers[i] = title
-	}
-	return headers
-}
-
-// padOrTruncate ensures text is exactly targetWidth visual characters.
-func padOrTruncate(text string, targetWidth int) string {
-	if targetWidth <= 0 {
-		return ""
-	}
-	w := ansi.StringWidth(text)
-	if w > targetWidth {
-		return ansi.Truncate(text, targetWidth, "")
-	}
-	if w < targetWidth {
-		return text + strings.Repeat(" ", targetWidth-w)
-	}
-	return text
-}
-
-func (m TableModel) renderRow(cols []string, baseStyle lipgloss.Style, selected bool, indicatorStyle *lipgloss.Style) string {
-	if len(m.colWidths) == 0 {
-		return ""
-	}
-
-	// Build each column's plain text, truncated/padded to exact width.
-	cells := make([]string, len(m.columns))
-	for i := range m.columns {
-		w := 0
-		if i < len(m.colWidths) {
-			w = m.colWidths[i]
-		}
-		if w <= 0 {
-			w = 1
-		}
-
-		text := ""
-		if i < len(cols) {
-			text = cols[i]
-		}
-
-		// Truncate/pad text to column width, reserving space for column gap.
-		textWidth := w - DefaultColumnSpacing
-		if textWidth < 0 {
-			textWidth = 0
-		}
-		cells[i] = padOrTruncate(text, textWidth) + strings.Repeat(" ", w-textWidth)
-	}
-
-	// For rows with an indicator column (e.g. container ■), we must style
-	// each cell individually. A whole-line Render would nest ANSI resets
-	// and kill the row color after the indicator's reset sequence.
-	hasIndicator := !selected && indicatorStyle != nil
-
-	if hasIndicator {
-		styled := make([]string, len(cells))
-		for i, cell := range cells {
-			if i == 0 {
-				styled[i] = indicatorStyle.Render(cell)
-			} else {
-				styled[i] = baseStyle.Render(cell)
-			}
-		}
-		line := strings.Join(styled, "")
-		// Pad trailing space with the row style
-		lineWidth := ansi.StringWidth(line)
-		if lineWidth < m.width {
-			line += baseStyle.Render(strings.Repeat(" ", m.width-lineWidth))
-		}
-		return line
-	}
-
-	// Non-indicator rows: join as plain text, then apply one style to the whole line.
-	line := strings.Join(cells, "")
-	lineWidth := ansi.StringWidth(line)
-	if lineWidth < m.width {
-		line += strings.Repeat(" ", m.width-lineWidth)
-	}
-
-	if selected {
-		return SelectedRowStyle.Render(line)
-	}
-	if baseStyle.GetForeground() != nil {
-		return baseStyle.Render(line)
-	}
-	return line
 }
 
 func (m *TableModel) calculateColumnWidths() {
@@ -358,65 +328,4 @@ func (m *TableModel) calculateColumnWidths() {
 			}
 		}
 	}
-}
-
-func (m *TableModel) applyFilter() {
-	if m.filterText == "" {
-		m.filtered = m.rows
-		return
-	}
-	m.filtered = nil
-	for _, row := range m.rows {
-		if m.filterFn(row, m.filterText) {
-			m.filtered = append(m.filtered, row)
-		}
-	}
-}
-
-func (m *TableModel) clampCursor() {
-	if m.cursor < 0 {
-		m.cursor = 0
-	}
-	if len(m.filtered) > 0 && m.cursor >= len(m.filtered) {
-		m.cursor = len(m.filtered) - 1
-	}
-
-	// Adjust scroll offset to keep cursor visible
-	visible := m.visibleRowCount()
-	if visible <= 0 {
-		return
-	}
-	if m.cursor < m.offset {
-		m.offset = m.cursor
-	}
-	if m.cursor >= m.offset+visible {
-		m.offset = m.cursor - visible + 1
-	}
-}
-
-func (m TableModel) visibleRowCount() int {
-	// height minus header row
-	h := m.height - 1
-	if h < 1 {
-		h = 1
-	}
-	return h
-}
-
-func (m TableModel) visibleRange() (int, int) {
-	count := len(m.filtered)
-	if count == 0 {
-		return 0, 0
-	}
-
-	visible := m.visibleRowCount()
-	start := m.offset
-	if start < 0 {
-		start = 0
-	}
-	end := start + visible
-	if end > count {
-		end = count
-	}
-	return start, end
 }

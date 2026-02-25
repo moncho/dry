@@ -88,6 +88,7 @@ func (m *LessModel) AppendContent(text string) {
 		m.filtered = m.lines
 	}
 	m.viewport.SetContent(strings.Join(m.filtered, "\n"))
+	m.applySearch()
 	if m.following {
 		m.viewport.GotoBottom()
 	}
@@ -107,6 +108,7 @@ func (m *LessModel) SetSize(w, h int) {
 	// Re-apply content so viewport recalculates with new dimensions
 	if m.content != "" {
 		m.viewport.SetContent(strings.Join(m.filtered, "\n"))
+		m.applySearch()
 	}
 }
 
@@ -193,6 +195,7 @@ func (m LessModel) updateFilter(msg tea.Msg) (LessModel, tea.Cmd) {
 			m.filter = ""
 			m.filtered = m.lines
 			m.viewport.SetContent(strings.Join(m.filtered, "\n"))
+			m.applySearch()
 			m.filterInput.Blur()
 			return m, nil
 		case "enter":
@@ -201,6 +204,7 @@ func (m LessModel) updateFilter(msg tea.Msg) (LessModel, tea.Cmd) {
 			m.filterInput.Blur()
 			m.applyFilter()
 			m.viewport.SetContent(strings.Join(m.filtered, "\n"))
+			m.applySearch()
 			return m, nil
 		}
 	}
@@ -276,15 +280,15 @@ func (m LessModel) View() string {
 }
 
 func (m LessModel) statusLine() string {
-	parts := []string{"ESC:back"}
+	parts := []string{"esc back"}
 	if m.following {
-		parts = append(parts, "f:unfollow")
+		parts = append(parts, "f unfollow")
 	} else {
-		parts = append(parts, "f:follow")
+		parts = append(parts, "f follow")
 	}
-	parts = append(parts, "/:search", "F:filter")
+	parts = append(parts, "/ search", "F filter")
 	if m.pattern != "" {
-		parts = append(parts, "n/N:next/prev")
+		parts = append(parts, "n/N next/prev")
 	}
 	if m.filter != "" {
 		parts = append(parts, "[filter: "+m.filter+"]")

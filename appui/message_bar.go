@@ -1,17 +1,13 @@
 package appui
 
 import (
-	"strings"
 	"time"
-
-	"charm.land/lipgloss/v2"
 )
 
-// MessageBarModel displays timed status messages.
+// MessageBarModel holds timed status messages displayed in the header separator.
 type MessageBarModel struct {
 	text   string
 	expiry time.Time
-	width  int
 }
 
 // SetMessage sets a status message that auto-clears after the given duration.
@@ -20,21 +16,10 @@ func (m *MessageBarModel) SetMessage(text string, duration time.Duration) {
 	m.expiry = time.Now().Add(duration)
 }
 
-// SetWidth updates the message bar width.
-func (m *MessageBarModel) SetWidth(w int) {
-	m.width = w
-}
-
-// View renders the message bar. Returns an empty full-width line when
-// there is no active message so that the layout height stays constant.
-func (m MessageBarModel) View() string {
+// Message returns the active message text, or "" if expired/unset.
+func (m MessageBarModel) Message() string {
 	if m.text == "" || time.Now().After(m.expiry) {
-		return strings.Repeat(" ", m.width)
+		return ""
 	}
-	style := lipgloss.NewStyle().
-		Foreground(DryTheme.Fg).
-		Background(DryTheme.Primary).
-		Width(m.width).
-		MaxWidth(m.width)
-	return style.Render(m.text)
+	return m.text
 }

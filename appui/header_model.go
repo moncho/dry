@@ -100,13 +100,24 @@ func (m HeaderModel) View() string {
 	line2 = padLine(line2, m.width)
 	line3 = padLine(line3, m.width)
 
-	// Bottom border line
-	borderLine := lipgloss.NewStyle().
+	return line1 + "\n" + line2 + "\n" + line3
+}
+
+// SeparatorLine renders the header separator. When message is non-empty it
+// displays the message text; otherwise it renders a plain colored line.
+func (m HeaderModel) SeparatorLine(message string) string {
+	if message != "" {
+		style := lipgloss.NewStyle().
+			Foreground(DryTheme.Fg).
+			Background(DryTheme.Header).
+			Width(m.width).
+			MaxWidth(m.width)
+		return style.Render(message)
+	}
+	return lipgloss.NewStyle().
 		Background(DryTheme.Header).
 		Width(m.width).
 		Render(" ")
-
-	return line1 + "\n" + line2 + "\n" + line3 + "\n" + borderLine
 }
 
 // padLine pads or truncates a line to exactly targetWidth visual characters.

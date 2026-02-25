@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/help"
 	"charm.land/lipgloss/v2"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/swarm"
@@ -70,6 +71,9 @@ type model struct {
 	pendingRefresh map[docker.SourceType]bool
 	refreshTimer   bool
 
+	// Footer help
+	help help.Model
+
 	// Loading animation
 	loadingFrame int
 	loadingFwd   bool
@@ -77,6 +81,14 @@ type model struct {
 
 // NewModel creates a new top-level model.
 func NewModel(cfg Config) model {
+	h := help.New()
+	h.ShortSeparator = "  \u00b7  "
+	h.Styles = help.Styles{
+		ShortKey:       lipgloss.NewStyle().Foreground(appui.DryTheme.Key).Background(appui.DryTheme.Footer),
+		ShortDesc:      lipgloss.NewStyle().Foreground(appui.DryTheme.FgSubtle).Background(appui.DryTheme.Footer),
+		ShortSeparator: lipgloss.NewStyle().Foreground(appui.DryTheme.FgSubtle).Background(appui.DryTheme.Footer),
+		Ellipsis:       lipgloss.NewStyle().Foreground(appui.DryTheme.FgSubtle).Background(appui.DryTheme.Footer),
+	}
 	return model{
 		config:         cfg,
 		view:           Main,
@@ -91,6 +103,7 @@ func NewModel(cfg Config) model {
 		services:       appswarm.NewServicesModel(),
 		stacks:         appswarm.NewStacksModel(),
 		tasks:          appswarm.NewTasksModel(),
+		help:           h,
 		pendingRefresh: make(map[docker.SourceType]bool),
 		loadingFwd:     true,
 	}
@@ -120,7 +133,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.stacks.SetSize(m.width, ch)
 		m.tasks.SetSize(m.width, ch)
 		m.header.SetWidth(m.width)
-		m.messageBar.SetWidth(m.width)
+		m.help.SetWidth(m.width)
 		// Update overlay sizes
 		m.less.SetSize(m.width, m.height)
 		m.prompt.SetWidth(m.width)
@@ -730,6 +743,7 @@ func (m model) renderMainScreen() string {
 
 	if m.showHeader {
 		sections = append(sections, m.header.View())
+		sections = append(sections, m.header.SeparatorLine(m.messageBar.Message()))
 	}
 
 	switch m.view {
@@ -758,42 +772,38 @@ func (m model) renderMainScreen() string {
 	}
 
 	sections = append(sections, m.renderFooter())
-	sections = append(sections, m.messageBar.View())
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
 
 func (m model) renderFooter() string {
-	var mapping string
+	var km help.KeyMap
 	switch m.view {
 	case Main:
-		mapping = keyMappings
+		km = containerKeys
 	case Monitor:
-		mapping = monitorMapping
+		km = monitorKeys
 	case Images:
-		mapping = imagesKeyMappings
+		km = imagesKeys
 	case Networks:
-		mapping = networkKeyMappings
+		km = networksKeys
 	case Volumes:
-		mapping = volumesKeyMappings
+		km = volumesKeys
 	case DiskUsage:
-		mapping = diskUsageKeyMappings
+		km = diskUsageKeys
 	case Services:
-		mapping = serviceKeyMappings
+		km = servicesKeys
 	case Stacks:
-		mapping = stackKeyMappings
+		km = stacksKeys
 	case Nodes:
-		mapping = nodeKeyMappings
+		km = nodesKeys
 	case ServiceTasks, Tasks, StackTasks:
-		mapping = taskKeyMappings
+		km = tasksKeys
 	default:
-		mapping = commonMappings
+		km = containerKeys
 	}
-	// Render markup with the footer background as the base style so
-	// the blue background persists through ANSI resets in the styled text.
-	footerBase := lipgloss.NewStyle().
-		Background(appui.DryTheme.Footer)
-	rendered := ui.RenderMarkupWithBase(mapping, footerBase)
+	rendered := m.help.View(km)
+	footerBase := lipgloss.NewStyle().Background(appui.DryTheme.Footer)
 	return appui.PadLine(rendered, m.width, footerBase)
 }
 
@@ -1074,9 +1084,9 @@ func (m model) cycleNodeAvailability(nodeID string) tea.Cmd {
 func (m model) contentHeight() int {
 	h := m.height
 	if m.showHeader {
-		h -= appui.MainScreenHeaderSize
+		h -= appui.MainScreenHeaderSize // 3 info lines
+		h--                             // separator line
 	}
 	h -= appui.MainScreenFooterLength
-	h-- // message bar
 	return h
 }

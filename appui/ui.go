@@ -8,8 +8,8 @@ const (
 	//DownArrow character
 	DownArrow = string('\U00002193')
 
-	//MainScreenHeaderSize is the number of lines the header of the main screen uses
-	MainScreenHeaderSize = 4
+	//MainScreenHeaderSize is the number of lines the header info rows use (excluding separator)
+	MainScreenHeaderSize = 3
 	//MainScreenFooterLength is the number of lines the footer of the main screen uses
 	MainScreenFooterLength = 1
 	//DefaultColumnSpacing defines the minimum space between columns
