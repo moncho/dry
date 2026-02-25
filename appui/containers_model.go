@@ -1,10 +1,7 @@
 package appui
 
 import (
-	"fmt"
-
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/docker/formatter"
 )
@@ -151,20 +148,15 @@ func (m ContainersModel) View() string {
 }
 
 func (m ContainersModel) widgetHeader() string {
-	total := m.table.TotalRowCount()
-	filtered := m.table.RowCount()
-	filter := m.table.FilterText()
-
-	title := fmt.Sprintf("Containers: %d", total)
-	if total != filtered {
-		title = fmt.Sprintf("Containers: %d (showing %d)", total, filtered)
-	}
-	if filter != "" {
-		title += fmt.Sprintf(" | Filter: %s", filter)
-	}
-
-	style := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Key)
-	return style.Render(title)
+	return RenderWidgetHeader(WidgetHeaderOpts{
+		Icon:     "🐳",
+		Title:    "Containers",
+		Total:    m.table.TotalRowCount(),
+		Filtered: m.table.RowCount(),
+		Filter:   m.table.FilterText(),
+		Width:    m.table.Width(),
+		Accent:   DryTheme.Info,
+	})
 }
 
 func (m *ContainersModel) nextSort() {

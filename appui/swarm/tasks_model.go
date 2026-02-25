@@ -1,10 +1,7 @@
 package swarm
 
 import (
-	"fmt"
-
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
@@ -109,8 +106,13 @@ func (m TasksModel) Update(msg tea.Msg) (TasksModel, tea.Cmd) {
 
 // View renders the tasks list.
 func (m TasksModel) View() string {
-	total := m.table.TotalRowCount()
-	title := fmt.Sprintf("%s: %d", m.title, total)
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(appui.DryTheme.Key)
-	return titleStyle.Render(title) + "\n" + m.table.View()
+	header := appui.RenderWidgetHeader(appui.WidgetHeaderOpts{
+		Icon:     "📋",
+		Title:    m.title,
+		Total:    m.table.TotalRowCount(),
+		Filtered: m.table.TotalRowCount(),
+		Width:    m.table.Width(),
+		Accent:   appui.DryTheme.Info,
+	})
+	return header + "\n" + m.table.View()
 }

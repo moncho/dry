@@ -16,6 +16,7 @@ func newTestModel() model {
 	m.height = 40
 	m.daemon = &mocks.DockerDaemonMock{}
 	m.ready = true
+	m.swarmMode = true
 	m.containers.SetDaemon(m.daemon)
 	m.images.SetDaemon(m.daemon)
 	m.networks.SetDaemon(m.daemon)

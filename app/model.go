@@ -45,6 +45,7 @@ type model struct {
 	// Docker
 	daemon     docker.ContainerDaemon
 	config     Config
+	swarmMode  bool
 	eventsChan <-chan events.Message
 	eventsDone chan<- struct{}
 
@@ -133,6 +134,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case dockerConnectedMsg:
 		m.daemon = msg.daemon
 		m.ready = true
+		if info, err := m.daemon.Info(); err == nil {
+			m.swarmMode = info.Swarm.LocalNodeState == swarm.LocalNodeStateActive
+		}
 		m.containers.SetDaemon(m.daemon)
 		m.images.SetDaemon(m.daemon)
 		m.networks.SetDaemon(m.daemon)
@@ -239,11 +243,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					cmds = append(cmds, loadVolumesCmd(m.daemon))
 				}
 			case docker.ServiceSource:
-				if m.view == Services {
+				if m.swarmMode && m.view == Services {
 					cmds = append(cmds, loadServicesCmd(m.daemon))
 				}
 			case docker.NodeSource:
-				if m.view == Nodes {
+				if m.swarmMode && m.view == Nodes {
 					cmds = append(cmds, loadNodesCmd(m.daemon))
 				}
 			}
@@ -586,104 +590,110 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case Nodes:
-		switch msg.String() {
-		case "enter":
-			if n := m.nodes.SelectedNode(); n != nil {
-				m.previousView = m.view
-				m.view = Tasks
-				return m, loadNodeTasksCmd(m.daemon, n.ID)
+		if m.swarmMode {
+			switch msg.String() {
+			case "enter":
+				if n := m.nodes.SelectedNode(); n != nil {
+					m.previousView = m.view
+					m.view = Tasks
+					return m, loadNodeTasksCmd(m.daemon, n.ID)
+				}
+				return m, nil
+			case "i", "I":
+				if n := m.nodes.SelectedNode(); n != nil {
+					return m, inspectNodeCmd(m.daemon, n.ID)
+				}
+				return m, nil
+			case "ctrl+a":
+				if n := m.nodes.SelectedNode(); n != nil {
+					return m, m.cycleNodeAvailability(n.ID)
+				}
+				return m, nil
+			case "f5":
+				return m, loadNodesCmd(m.daemon)
 			}
-			return m, nil
-		case "i", "I":
-			if n := m.nodes.SelectedNode(); n != nil {
-				return m, inspectNodeCmd(m.daemon, n.ID)
-			}
-			return m, nil
-		case "ctrl+a":
-			if n := m.nodes.SelectedNode(); n != nil {
-				return m, m.cycleNodeAvailability(n.ID)
-			}
-			return m, nil
-		case "f5":
-			return m, loadNodesCmd(m.daemon)
 		}
 		var cmd tea.Cmd
 		m.nodes, cmd = m.nodes.Update(msg)
 		return m, cmd
 
 	case Services:
-		switch msg.String() {
-		case "enter":
-			if s := m.services.SelectedService(); s != nil {
-				m.previousView = m.view
-				m.view = ServiceTasks
-				return m, loadServiceTasksCmd(m.daemon, s.ID)
+		if m.swarmMode {
+			switch msg.String() {
+			case "enter":
+				if s := m.services.SelectedService(); s != nil {
+					m.previousView = m.view
+					m.view = ServiceTasks
+					return m, loadServiceTasksCmd(m.daemon, s.ID)
+				}
+				return m, nil
+			case "i", "I":
+				if s := m.services.SelectedService(); s != nil {
+					return m, inspectServiceCmd(m.daemon, s.ID)
+				}
+				return m, nil
+			case "l", "L":
+				if s := m.services.SelectedService(); s != nil {
+					return m, showServiceLogsCmd(m.daemon, s.ID)
+				}
+				return m, nil
+			case "ctrl+r":
+				if s := m.services.SelectedService(); s != nil {
+					return m.showPrompt(
+						fmt.Sprintf("Remove service %s?", s.Spec.Name),
+						"service-rm", s.ID,
+					), nil
+				}
+				return m, nil
+			case "ctrl+s":
+				if s := m.services.SelectedService(); s != nil {
+					var cmd tea.Cmd
+					m.inputPrompt, cmd = appui.NewInputPromptModel(
+						fmt.Sprintf("Scale service %s to replicas:", s.Spec.Name),
+						"number", "service-scale", s.ID,
+					)
+					m.inputPrompt.SetWidth(m.width)
+					m.overlay = overlayInputPrompt
+					return m, cmd
+				}
+				return m, nil
+			case "ctrl+u":
+				if s := m.services.SelectedService(); s != nil {
+					return m.showPrompt(
+						fmt.Sprintf("Force update service %s?", s.Spec.Name),
+						"service-update", s.ID,
+					), nil
+				}
+				return m, nil
+			case "f5":
+				return m, loadServicesCmd(m.daemon)
 			}
-			return m, nil
-		case "i", "I":
-			if s := m.services.SelectedService(); s != nil {
-				return m, inspectServiceCmd(m.daemon, s.ID)
-			}
-			return m, nil
-		case "l", "L":
-			if s := m.services.SelectedService(); s != nil {
-				return m, showServiceLogsCmd(m.daemon, s.ID)
-			}
-			return m, nil
-		case "ctrl+r":
-			if s := m.services.SelectedService(); s != nil {
-				return m.showPrompt(
-					fmt.Sprintf("Remove service %s?", s.Spec.Name),
-					"service-rm", s.ID,
-				), nil
-			}
-			return m, nil
-		case "ctrl+s":
-			if s := m.services.SelectedService(); s != nil {
-				var cmd tea.Cmd
-				m.inputPrompt, cmd = appui.NewInputPromptModel(
-					fmt.Sprintf("Scale service %s to replicas:", s.Spec.Name),
-					"number", "service-scale", s.ID,
-				)
-				m.inputPrompt.SetWidth(m.width)
-				m.overlay = overlayInputPrompt
-				return m, cmd
-			}
-			return m, nil
-		case "ctrl+u":
-			if s := m.services.SelectedService(); s != nil {
-				return m.showPrompt(
-					fmt.Sprintf("Force update service %s?", s.Spec.Name),
-					"service-update", s.ID,
-				), nil
-			}
-			return m, nil
-		case "f5":
-			return m, loadServicesCmd(m.daemon)
 		}
 		var cmd tea.Cmd
 		m.services, cmd = m.services.Update(msg)
 		return m, cmd
 
 	case Stacks:
-		switch msg.String() {
-		case "enter":
-			if s := m.stacks.SelectedStack(); s != nil {
-				m.previousView = m.view
-				m.view = StackTasks
-				return m, loadStackTasksCmd(m.daemon, s.Name)
+		if m.swarmMode {
+			switch msg.String() {
+			case "enter":
+				if s := m.stacks.SelectedStack(); s != nil {
+					m.previousView = m.view
+					m.view = StackTasks
+					return m, loadStackTasksCmd(m.daemon, s.Name)
+				}
+				return m, nil
+			case "ctrl+r":
+				if s := m.stacks.SelectedStack(); s != nil {
+					return m.showPrompt(
+						fmt.Sprintf("Remove stack %s?", s.Name),
+						"stack-rm", s.Name,
+					), nil
+				}
+				return m, nil
+			case "f5":
+				return m, loadStacksCmd(m.daemon)
 			}
-			return m, nil
-		case "ctrl+r":
-			if s := m.stacks.SelectedStack(); s != nil {
-				return m.showPrompt(
-					fmt.Sprintf("Remove stack %s?", s.Name),
-					"stack-rm", s.Name,
-				), nil
-			}
-			return m, nil
-		case "f5":
-			return m, loadStacksCmd(m.daemon)
 		}
 		var cmd tea.Cmd
 		m.stacks, cmd = m.stacks.Update(msg)
@@ -805,6 +815,13 @@ func (m model) renderFooter() string {
 		if !kb.Enabled() {
 			continue
 		}
+		// Hide swarm navigation keys when swarm is not active.
+		if !m.swarmMode {
+			k := kb.Help().Key
+			if k == "5" || k == "6" || k == "7" {
+				continue
+			}
+		}
 		if !first {
 			b.WriteString(sepStyle.Render("  \u00b7  "))
 		}
@@ -908,11 +925,17 @@ func (m model) loadViewData(v viewMode) tea.Cmd {
 		cmds := m.monitor.Start()
 		return tea.Batch(cmds...)
 	case Nodes:
-		return loadNodesCmd(m.daemon)
+		if m.swarmMode {
+			return loadNodesCmd(m.daemon)
+		}
 	case Services:
-		return loadServicesCmd(m.daemon)
+		if m.swarmMode {
+			return loadServicesCmd(m.daemon)
+		}
 	case Stacks:
-		return loadStacksCmd(m.daemon)
+		if m.swarmMode {
+			return loadStacksCmd(m.daemon)
+		}
 	}
 	return nil
 }

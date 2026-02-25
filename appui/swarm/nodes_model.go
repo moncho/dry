@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
@@ -138,8 +137,12 @@ func (m NodesModel) View() string {
 }
 
 func (m NodesModel) widgetHeader() string {
-	total := m.table.TotalRowCount()
-	title := fmt.Sprintf("Nodes: %d", total)
-	style := lipgloss.NewStyle().Bold(true).Foreground(appui.DryTheme.Key)
-	return style.Render(title)
+	return appui.RenderWidgetHeader(appui.WidgetHeaderOpts{
+		Icon:     "🖥️",
+		Title:    "Nodes",
+		Total:    m.table.TotalRowCount(),
+		Filtered: m.table.TotalRowCount(),
+		Width:    m.table.Width(),
+		Accent:   appui.DryTheme.Success,
+	})
 }

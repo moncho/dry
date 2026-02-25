@@ -97,6 +97,9 @@ func (m *TableModel) SetSize(w, h int) {
 	m.syncInnerColumns()
 }
 
+// Width returns the table's current width.
+func (m TableModel) Width() int { return m.width }
+
 // SelectedRow returns the row under the cursor, or nil.
 func (m TableModel) SelectedRow() TableRow {
 	cursor := m.inner.Cursor()

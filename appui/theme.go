@@ -21,6 +21,7 @@ var (
 	smoke    = lipgloss.Color("#BFBCC8")
 	squid    = lipgloss.Color("#858392")
 	oyster   = lipgloss.Color("#605F6B")
+	darkTeal = lipgloss.Color("#1E3D3D")
 )
 
 // CrushDark is the Crush-inspired dark theme.
@@ -46,7 +47,7 @@ var CrushDark = &ui.Theme{
 	Border:       charcoal,
 	Header:       charcoal,
 	Footer:       charcoal,
-	CursorLineBg: charple,
+	CursorLineBg: darkTeal,
 }
 
 // CrushBlack is a variant with pure-black background.
@@ -72,7 +73,7 @@ var CrushBlack = &ui.Theme{
 	Border:       charcoal,
 	Header:       charcoal,
 	Footer:       charcoal,
-	CursorLineBg: charple,
+	CursorLineBg: darkTeal,
 }
 
 // DryTheme is the active theme for dry.
