@@ -28,6 +28,7 @@ var Black256 = &ui.Theme{
 	Selected:     lipgloss.Color("168"),
 	Header:       lipgloss.Color("25"),
 	Footer:       lipgloss.Color("25"),
+	CursorLineBg: lipgloss.Color("25"),
 }
 
 // Dark256 dark theme for 256-color mode

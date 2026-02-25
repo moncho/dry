@@ -20,6 +20,12 @@ type TableRow interface {
 	ID() string
 }
 
+// StyledRow is an optional interface that TableRow implementations can
+// use to provide a base foreground style for the row.
+type StyledRow interface {
+	Style() lipgloss.Style
+}
+
 // TableModel is a shared table component with navigation, sorting, and filtering.
 type TableModel struct {
 	columns     []Column
@@ -166,6 +172,8 @@ func (m TableModel) View() string {
 		var style lipgloss.Style
 		if selected {
 			style = SelectedRowStyle
+		} else if sr, ok := row.(StyledRow); ok {
+			style = sr.Style()
 		}
 		lines = append(lines, m.renderRow(row.Columns(), style, selected))
 	}
@@ -205,7 +213,7 @@ func (m TableModel) renderRow(cols []string, baseStyle lipgloss.Style, selected 
 			text = cols[i]
 		}
 
-		style := lipgloss.NewStyle().Width(w).MaxWidth(w)
+		style := lipgloss.NewStyle().Width(w).MaxWidth(w).PaddingRight(DefaultColumnSpacing)
 		if selected {
 			style = style.Inherit(SelectedRowStyle)
 		} else if baseStyle.GetForeground() != nil {

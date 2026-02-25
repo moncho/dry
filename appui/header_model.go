@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"charm.land/lipgloss/v2"
+	units "github.com/docker/go-units"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 )
@@ -43,26 +44,45 @@ func (m HeaderModel) View() string {
 		return ui.Red("Error loading Docker version")
 	}
 
-	host := m.daemon.DockerEnv().DockerHost
+	env := m.daemon.DockerEnv()
+	host := env.DockerHost
 	if host == "" {
 		host = docker.DefaultDockerHost
 	}
 
-	line1 := fmt.Sprintf(
-		"%s | %s | Containers: %d (Running: %d) | Images: %d",
-		ui.Blue("Docker Host: ")+ui.White(host),
-		ui.Blue("Docker Version: ")+ui.White(ver.Version),
-		info.Containers, info.ContainersRunning,
-		info.Images,
+	swarmState := string(info.Swarm.LocalNodeState)
+	if swarmState == "" {
+		swarmState = "inactive"
+	}
+
+	osArchKernel := fmt.Sprintf("%s/%s/%s", info.OSType, info.Architecture, info.KernelVersion)
+
+	memStr := units.BytesSize(float64(info.MemTotal))
+
+	// Label style
+	label := lipgloss.NewStyle().Foreground(DryTheme.Key)
+	// Value style
+	value := lipgloss.NewStyle().Foreground(DryTheme.Fg)
+
+	line1 := fmt.Sprintf("%s %s    %s %s    %s %s  %s %s",
+		label.Render("Docker Host:"), value.Render(host),
+		label.Render("Docker Version:"), value.Render(ver.Version),
+		label.Render("Hostname:"), value.Render(info.Name),
+		label.Render("Swarm:"), value.Render(swarmState),
 	)
 
-	line2 := fmt.Sprintf(
-		"%s%s%s",
-		ui.Blue("OS: ")+ui.White(info.OperatingSystem),
-		"  ",
-		ui.Blue("Kernel: ")+ui.White(info.KernelVersion),
+	line2 := fmt.Sprintf("%s %s    %s %s    %s %s",
+		label.Render("Cert Path:"), value.Render(env.DockerCertPath),
+		label.Render("APIVersion:"), value.Render(ver.APIVersion),
+		label.Render("CPU:"), value.Render(fmt.Sprintf("%d", info.NCPU)),
+	)
+
+	line3 := fmt.Sprintf("%s %s    %s %s    %s %s",
+		label.Render("Verify Certificate:"), value.Render(fmt.Sprintf("%t", env.DockerTLSVerify)),
+		label.Render("OS/Arch/Kernel:"), value.Render(osArchKernel),
+		label.Render("Memory:"), value.Render(memStr),
 	)
 
 	style := lipgloss.NewStyle().Width(m.width)
-	return style.Render(line1 + "\n" + line2)
+	return style.Render(line1 + "\n" + line2 + "\n" + line3)
 }
