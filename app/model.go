@@ -724,45 +724,11 @@ func (m model) View() tea.View {
 }
 
 func (m model) renderMainScreen() string {
-	var sections []string
-
-	if m.showHeader {
-		sections = append(sections, m.header.View())
-		sections = append(sections, m.header.SeparatorLine(m.messageBar.Message()))
-	}
-
-	switch m.view {
-	case Main:
-		sections = append(sections, m.containers.View())
-	case Images:
-		sections = append(sections, m.images.View())
-	case Networks:
-		sections = append(sections, m.networks.View())
-	case Volumes:
-		sections = append(sections, m.volumes.View())
-	case DiskUsage:
-		sections = append(sections, m.diskUsage.View())
-	case Monitor:
-		sections = append(sections, m.monitor.View())
-	case Nodes:
-		sections = append(sections, m.nodes.View())
-	case Services:
-		sections = append(sections, m.services.View())
-	case Stacks:
-		sections = append(sections, m.stacks.View())
-	case ServiceTasks, Tasks, StackTasks:
-		sections = append(sections, m.tasks.View())
-	default:
-		sections = append(sections, "View not yet implemented")
-	}
-
-	sections = append(sections, m.renderFooter())
-
-	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+	return m.renderMainScreenWithFooter(m.renderFooter())
 }
 
-// renderMainScreenWithFooter renders the main screen but replaces the
-// footer with the given content (e.g. a prompt or input prompt).
+// renderMainScreenWithFooter renders the main screen with the given
+// bottom line (footer, prompt, or input prompt).
 func (m model) renderMainScreenWithFooter(footer string) string {
 	var sections []string
 
