@@ -1,6 +1,7 @@
 package appui
 
 import (
+	"strings"
 	"time"
 
 	"charm.land/lipgloss/v2"
@@ -24,14 +25,16 @@ func (m *MessageBarModel) SetWidth(w int) {
 	m.width = w
 }
 
-// View renders the message bar, returning empty string if expired.
+// View renders the message bar. Returns an empty full-width line when
+// there is no active message so that the layout height stays constant.
 func (m MessageBarModel) View() string {
 	if m.text == "" || time.Now().After(m.expiry) {
-		return ""
+		return strings.Repeat(" ", m.width)
 	}
 	style := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("255")).
 		Background(lipgloss.Color("25")).
+		Width(m.width).
 		MaxWidth(m.width)
 	return style.Render(m.text)
 }

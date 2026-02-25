@@ -2,7 +2,9 @@ package appui
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/charmbracelet/x/ansi"
 	"charm.land/lipgloss/v2"
 	units "github.com/docker/go-units"
 	"github.com/moncho/dry/docker"
@@ -59,30 +61,62 @@ func (m HeaderModel) View() string {
 
 	memStr := units.BytesSize(float64(info.MemTotal))
 
-	// Label style
+	// Label and value styles
 	label := lipgloss.NewStyle().Foreground(DryTheme.Key)
-	// Value style
 	value := lipgloss.NewStyle().Foreground(DryTheme.Fg)
 
-	line1 := fmt.Sprintf("%s %s    %s %s    %s %s  %s %s",
-		label.Render("Docker Host:"), value.Render(host),
-		label.Render("Docker Version:"), value.Render(ver.Version),
-		label.Render("Hostname:"), value.Render(info.Name),
-		label.Render("Swarm:"), value.Render(swarmState),
-	)
+	// Fixed-width cells so columns align across all three lines.
+	cellW1 := m.width * 38 / 100 // ~38% for column 1
+	cellW2 := m.width * 32 / 100 // ~32% for column 2
 
-	line2 := fmt.Sprintf("%s %s    %s %s    %s %s",
-		label.Render("Cert Path:"), value.Render(env.DockerCertPath),
-		label.Render("APIVersion:"), value.Render(ver.APIVersion),
-		label.Render("CPU:"), value.Render(fmt.Sprintf("%d", info.NCPU)),
-	)
+	// renderCell pads or truncates styled content to exactly cellWidth visual chars.
+	renderCell := func(l, v string, cellWidth int) string {
+		content := label.Render(l) + value.Render(v)
+		w := ansi.StringWidth(content)
+		if w > cellWidth {
+			return ansi.Truncate(content, cellWidth, "")
+		}
+		if w < cellWidth {
+			return content + strings.Repeat(" ", cellWidth-w)
+		}
+		return content
+	}
 
-	line3 := fmt.Sprintf("%s %s    %s %s    %s %s",
-		label.Render("Verify Certificate:"), value.Render(fmt.Sprintf("%t", env.DockerTLSVerify)),
-		label.Render("OS/Arch/Kernel:"), value.Render(osArchKernel),
-		label.Render("Memory:"), value.Render(memStr),
-	)
+	line1 := renderCell("Docker Host: ", host, cellW1) +
+		renderCell("Docker Version: ", ver.Version, cellW2) +
+		label.Render("Hostname: ") + value.Render(info.Name) + "  " +
+		label.Render("Swarm: ") + value.Render(swarmState)
 
-	style := lipgloss.NewStyle().Width(m.width)
-	return style.Render(line1 + "\n" + line2 + "\n" + line3)
+	line2 := renderCell("Cert Path: ", env.DockerCertPath, cellW1) +
+		renderCell("APIVersion: ", ver.APIVersion, cellW2) +
+		label.Render("CPU: ") + value.Render(fmt.Sprintf("%d", info.NCPU))
+
+	line3 := renderCell("Verify Certificate: ", fmt.Sprintf("%t", env.DockerTLSVerify), cellW1) +
+		renderCell("OS/Arch/Kernel: ", osArchKernel, cellW2) +
+		label.Render("Memory: ") + value.Render(memStr)
+
+	// Pad each line to full width (truncate if overflow)
+	line1 = padLine(line1, m.width)
+	line2 = padLine(line2, m.width)
+	line3 = padLine(line3, m.width)
+
+	// Bottom border line
+	borderLine := lipgloss.NewStyle().
+		Background(DryTheme.Header).
+		Width(m.width).
+		Render(" ")
+
+	return line1 + "\n" + line2 + "\n" + line3 + "\n" + borderLine
+}
+
+// padLine pads or truncates a line to exactly targetWidth visual characters.
+func padLine(line string, targetWidth int) string {
+	w := ansi.StringWidth(line)
+	if w > targetWidth {
+		return ansi.Truncate(line, targetWidth, "")
+	}
+	if w < targetWidth {
+		return line + strings.Repeat(" ", targetWidth-w)
+	}
+	return line
 }

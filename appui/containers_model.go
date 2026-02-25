@@ -41,6 +41,14 @@ func (r containerRow) Style() lipgloss.Style {
 	return StoppedStyle
 }
 
+// IndicatorStyle returns the style for the ■ status indicator column.
+func (r containerRow) IndicatorStyle() lipgloss.Style {
+	if r.running {
+		return RunningIndicatorStyle
+	}
+	return StoppedIndicatorStyle
+}
+
 // ContainersModel is the container list view sub-model.
 type ContainersModel struct {
 	table    TableModel
@@ -171,7 +179,7 @@ func (m ContainersModel) widgetHeader() string {
 		title += fmt.Sprintf(" | Filter: %s", filter)
 	}
 
-	style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255"))
+	style := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Key)
 	return style.Render(title)
 }
 

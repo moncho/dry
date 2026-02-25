@@ -109,6 +109,6 @@ func (m TasksModel) Update(msg tea.Msg) (TasksModel, tea.Cmd) {
 func (m TasksModel) View() string {
 	total := m.table.TotalRowCount()
 	title := fmt.Sprintf("%s: %d", m.title, total)
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255"))
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(appui.DryTheme.Key)
 	return titleStyle.Render(title) + "\n" + m.table.View()
 }

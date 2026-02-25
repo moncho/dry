@@ -2,6 +2,7 @@ package appui
 
 import (
 	"fmt"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -52,9 +53,9 @@ func (m DiskUsageModel) Update(msg tea.Msg) (DiskUsageModel, tea.Cmd) {
 
 // View renders the disk usage summary.
 func (m DiskUsageModel) View() string {
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255"))
-	labelStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("25")).Width(20)
-	valueStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("255"))
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Key)
+	labelStyle := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Key).Width(20)
+	valueStyle := lipgloss.NewStyle().Foreground(DryTheme.Fg)
 
 	title := titleStyle.Render("Docker Disk Usage")
 
@@ -98,9 +99,10 @@ func (m DiskUsageModel) View() string {
 			fmt.Sprintf(" %s", units.HumanSize(float64(imageSize+containerSize+volumeSize+buildCacheSize)))),
 	}
 
-	result := ""
-	for _, line := range lines {
-		result += line + "\n"
+	// Pad to fill allocated height so the footer stays at the bottom.
+	for len(lines) < m.height {
+		lines = append(lines, strings.Repeat(" ", m.width))
 	}
-	return result
+
+	return strings.Join(lines, "\n")
 }

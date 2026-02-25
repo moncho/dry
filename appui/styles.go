@@ -4,13 +4,15 @@ import "charm.land/lipgloss/v2"
 
 // Styles derived from the active theme.
 var (
-	HeaderStyle      lipgloss.Style
-	FooterStyle      lipgloss.Style
-	SelectedRowStyle lipgloss.Style
-	TableHeaderStyle lipgloss.Style
-	RunningStyle     lipgloss.Style
-	StoppedStyle     lipgloss.Style
-	InfoStyle        lipgloss.Style
+	HeaderStyle             lipgloss.Style
+	FooterStyle             lipgloss.Style
+	SelectedRowStyle        lipgloss.Style
+	TableHeaderStyle        lipgloss.Style
+	RunningStyle            lipgloss.Style
+	StoppedStyle            lipgloss.Style
+	RunningIndicatorStyle   lipgloss.Style
+	StoppedIndicatorStyle   lipgloss.Style
+	InfoStyle               lipgloss.Style
 )
 
 func init() {
@@ -31,10 +33,14 @@ func InitStyles() {
 		Foreground(DryTheme.Fg)
 	TableHeaderStyle = lipgloss.NewStyle().
 		Bold(true).
-		Foreground(DryTheme.Header)
+		Foreground(DryTheme.Fg)
 	RunningStyle = lipgloss.NewStyle().
-		Foreground(Running)
+		Foreground(lipgloss.Color("181"))
 	StoppedStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("244"))
+	RunningIndicatorStyle = lipgloss.NewStyle().
+		Foreground(Running)
+	StoppedIndicatorStyle = lipgloss.NewStyle().
 		Foreground(NotRunning)
 	InfoStyle = lipgloss.NewStyle().
 		Foreground(DryTheme.Info)

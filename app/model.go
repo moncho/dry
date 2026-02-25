@@ -721,6 +721,7 @@ func (m model) View() tea.View {
 	}
 	v := tea.NewView(content)
 	v.AltScreen = true
+	v.BackgroundColor = appui.DryTheme.Bg
 	return v
 }
 
@@ -757,11 +758,7 @@ func (m model) renderMainScreen() string {
 	}
 
 	sections = append(sections, m.renderFooter())
-
-	msgView := m.messageBar.View()
-	if msgView != "" {
-		sections = append(sections, msgView)
-	}
+	sections = append(sections, m.messageBar.View())
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }

@@ -3,6 +3,7 @@ package appui
 import (
 	"strings"
 
+	"github.com/charmbracelet/x/ansi"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
@@ -24,6 +25,12 @@ type TableRow interface {
 // use to provide a base foreground style for the row.
 type StyledRow interface {
 	Style() lipgloss.Style
+}
+
+// StyledIndicator is an optional interface for rows that have a specially
+// styled first column (e.g. the ■ status indicator in the container list).
+type StyledIndicator interface {
+	IndicatorStyle() lipgloss.Style
 }
 
 // TableModel is a shared table component with navigation, sorting, and filtering.
@@ -161,7 +168,7 @@ func (m TableModel) View() string {
 	var lines []string
 
 	// Header row
-	headerLine := m.renderRow(m.headerStrings(), TableHeaderStyle, false)
+	headerLine := m.renderRow(m.headerStrings(), TableHeaderStyle, false, nil)
 	lines = append(lines, headerLine)
 
 	// Data rows
@@ -175,7 +182,21 @@ func (m TableModel) View() string {
 		} else if sr, ok := row.(StyledRow); ok {
 			style = sr.Style()
 		}
-		lines = append(lines, m.renderRow(row.Columns(), style, selected))
+		// Check for indicator styling on column 0
+		var indStyle *lipgloss.Style
+		if si, ok := row.(StyledIndicator); ok {
+			s := si.IndicatorStyle()
+			indStyle = &s
+		}
+		lines = append(lines, m.renderRow(row.Columns(), style, selected, indStyle))
+	}
+
+	// Pad with empty lines to fill allocated height, ensuring the footer
+	// stays at the bottom of the screen.
+	totalRows := 1 + (end - start) // header + data rows
+	for totalRows < m.height {
+		lines = append(lines, strings.Repeat(" ", m.width))
+		totalRows++
 	}
 
 	return strings.Join(lines, "\n")
@@ -193,12 +214,28 @@ func (m TableModel) headerStrings() []string {
 	return headers
 }
 
-func (m TableModel) renderRow(cols []string, baseStyle lipgloss.Style, selected bool) string {
+// padOrTruncate ensures text is exactly targetWidth visual characters.
+func padOrTruncate(text string, targetWidth int) string {
+	if targetWidth <= 0 {
+		return ""
+	}
+	w := ansi.StringWidth(text)
+	if w > targetWidth {
+		return ansi.Truncate(text, targetWidth, "")
+	}
+	if w < targetWidth {
+		return text + strings.Repeat(" ", targetWidth-w)
+	}
+	return text
+}
+
+func (m TableModel) renderRow(cols []string, baseStyle lipgloss.Style, selected bool, indicatorStyle *lipgloss.Style) string {
 	if len(m.colWidths) == 0 {
 		return ""
 	}
 
-	parts := make([]string, len(m.columns))
+	// Build each column's plain text, truncated/padded to exact width.
+	cells := make([]string, len(m.columns))
 	for i := range m.columns {
 		w := 0
 		if i < len(m.colWidths) {
@@ -213,15 +250,51 @@ func (m TableModel) renderRow(cols []string, baseStyle lipgloss.Style, selected 
 			text = cols[i]
 		}
 
-		style := lipgloss.NewStyle().Width(w).MaxWidth(w).PaddingRight(DefaultColumnSpacing)
-		if selected {
-			style = style.Inherit(SelectedRowStyle)
-		} else if baseStyle.GetForeground() != nil {
-			style = style.Inherit(baseStyle)
+		// Truncate/pad text to column width, reserving space for column gap.
+		textWidth := w - DefaultColumnSpacing
+		if textWidth < 0 {
+			textWidth = 0
 		}
-		parts[i] = style.Render(text)
+		cells[i] = padOrTruncate(text, textWidth) + strings.Repeat(" ", w-textWidth)
 	}
-	return lipgloss.JoinHorizontal(lipgloss.Top, parts...)
+
+	// For rows with an indicator column (e.g. container ■), we must style
+	// each cell individually. A whole-line Render would nest ANSI resets
+	// and kill the row color after the indicator's reset sequence.
+	hasIndicator := !selected && indicatorStyle != nil
+
+	if hasIndicator {
+		styled := make([]string, len(cells))
+		for i, cell := range cells {
+			if i == 0 {
+				styled[i] = indicatorStyle.Render(cell)
+			} else {
+				styled[i] = baseStyle.Render(cell)
+			}
+		}
+		line := strings.Join(styled, "")
+		// Pad trailing space with the row style
+		lineWidth := ansi.StringWidth(line)
+		if lineWidth < m.width {
+			line += baseStyle.Render(strings.Repeat(" ", m.width-lineWidth))
+		}
+		return line
+	}
+
+	// Non-indicator rows: join as plain text, then apply one style to the whole line.
+	line := strings.Join(cells, "")
+	lineWidth := ansi.StringWidth(line)
+	if lineWidth < m.width {
+		line += strings.Repeat(" ", m.width-lineWidth)
+	}
+
+	if selected {
+		return SelectedRowStyle.Render(line)
+	}
+	if baseStyle.GetForeground() != nil {
+		return baseStyle.Render(line)
+	}
+	return line
 }
 
 func (m *TableModel) calculateColumnWidths() {
@@ -230,24 +303,34 @@ func (m *TableModel) calculateColumnWidths() {
 	}
 
 	m.colWidths = make([]int, len(m.columns))
-	spacing := DefaultColumnSpacing * len(m.columns)
-	remaining := m.width - spacing
+	remaining := m.width
 	proportionalCount := 0
+	lastProportional := -1
 
 	for i, col := range m.columns {
 		if col.Fixed && col.Width > 0 {
-			m.colWidths[i] = col.Width
-			remaining -= col.Width
+			w := col.Width + DefaultColumnSpacing
+			m.colWidths[i] = w
+			remaining -= w
 		} else {
 			proportionalCount++
+			lastProportional = i
 		}
 	}
 
 	if proportionalCount > 0 && remaining > 0 {
 		propWidth := remaining / proportionalCount
+		assigned := 0
 		for i, col := range m.columns {
 			if !col.Fixed || col.Width == 0 {
-				m.colWidths[i] = propWidth
+				if i == lastProportional {
+					// Give the last proportional column the remainder
+					// to avoid rounding gaps.
+					m.colWidths[i] = remaining - assigned
+				} else {
+					m.colWidths[i] = propWidth
+					assigned += propWidth
+				}
 			}
 		}
 	}

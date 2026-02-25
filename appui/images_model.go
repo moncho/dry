@@ -143,6 +143,6 @@ func (m ImagesModel) widgetHeader() string {
 		title += fmt.Sprintf(" | Filter: %s", filter)
 	}
 
-	style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255"))
+	style := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Key)
 	return style.Render(title)
 }

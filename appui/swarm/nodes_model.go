@@ -140,6 +140,6 @@ func (m NodesModel) View() string {
 func (m NodesModel) widgetHeader() string {
 	total := m.table.TotalRowCount()
 	title := fmt.Sprintf("Nodes: %d", total)
-	style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255"))
+	style := lipgloss.NewStyle().Bold(true).Foreground(appui.DryTheme.Key)
 	return style.Render(title)
 }

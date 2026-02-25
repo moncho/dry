@@ -184,7 +184,7 @@ func (m MonitorModel) Update(msg tea.Msg) (MonitorModel, tea.Cmd) {
 
 // View renders the monitor.
 func (m MonitorModel) View() string {
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255"))
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Key)
 	title := titleStyle.Render(fmt.Sprintf("Container Stats (%d containers)", len(m.stats)))
 	return title + "\n" + m.table.View()
 }

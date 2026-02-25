@@ -135,6 +135,6 @@ func (m StacksModel) View() string {
 func (m StacksModel) widgetHeader() string {
 	total := m.table.TotalRowCount()
 	title := fmt.Sprintf("Stacks: %d", total)
-	style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255"))
+	style := lipgloss.NewStyle().Bold(true).Foreground(appui.DryTheme.Key)
 	return style.Render(title)
 }
