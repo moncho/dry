@@ -1,6 +1,11 @@
 package appui
 
-import "charm.land/lipgloss/v2"
+import (
+	"fmt"
+	"image/color"
+
+	"charm.land/lipgloss/v2"
+)
 
 // Styles derived from the active theme.
 var (
@@ -32,4 +37,12 @@ func InitStyles() {
 		Foreground(DryTheme.FgSubtle)
 	InfoStyle = lipgloss.NewStyle().
 		Foreground(DryTheme.Info)
+}
+
+// ColorFg applies a foreground color to text using targeted ANSI sequences
+// that only reset the foreground (SGR 39), not the full SGR reset. This
+// preserves any outer background color (e.g. the selected row highlight).
+func ColorFg(text string, c color.Color) string {
+	r, g, b, _ := c.RGBA()
+	return fmt.Sprintf("\x1b[38;2;%d;%d;%dm%s\x1b[39m", r>>8, g>>8, b>>8, text)
 }

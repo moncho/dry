@@ -17,7 +17,10 @@ type containerRow struct {
 
 func newContainerRow(c *docker.Container) containerRow {
 	cf := formatter.NewContainerFormatter(c, true)
-	indicator := "\u25A3" // ▣ status symbol
+	indicator := ColorFg("\u25A0", DryTheme.Error) // ■ stopped
+	if docker.IsContainerRunning(c) {
+		indicator = ColorFg("\u25B6", DryTheme.Success) // ▶ running
+	}
 	return containerRow{
 		container: c,
 		columns: []string{
