@@ -102,7 +102,7 @@ func RenderWidgetHeader(o WidgetHeaderOpts) string {
 	} else if w < o.Width {
 		line += bg.Render(strings.Repeat(" ", o.Width-w))
 	}
-	return line
+	return line + "\n"
 }
 
 // ColorFg applies a foreground color to text using targeted ANSI sequences

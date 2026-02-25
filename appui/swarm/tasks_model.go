@@ -74,7 +74,7 @@ func (m *TasksModel) SetDaemon(d docker.ContainerDaemon) {
 
 // SetSize updates the table dimensions.
 func (m *TasksModel) SetSize(w, h int) {
-	m.table.SetSize(w, h-1)
+	m.table.SetSize(w, h-2)
 }
 
 // SetTasks replaces the task list.

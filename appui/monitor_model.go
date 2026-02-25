@@ -70,7 +70,7 @@ func (m *MonitorModel) SetDaemon(d docker.ContainerDaemon) {
 func (m *MonitorModel) SetSize(w, h int) {
 	m.width = w
 	m.height = h
-	m.table.SetSize(w, h-1) // -1 for header
+	m.table.SetSize(w, h-2) // -2 for header + blank line
 }
 
 // Active returns whether monitoring is active.

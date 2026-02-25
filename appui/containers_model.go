@@ -68,7 +68,7 @@ func (m *ContainersModel) SetSize(w, h int) {
 	if m.filter.Active() {
 		filterH = 1
 	}
-	m.table.SetSize(w, h-1-filterH) // -1 for widget header
+	m.table.SetSize(w, h-2-filterH) // -2 for widget header + blank line
 	m.filter.SetWidth(w)
 }
 

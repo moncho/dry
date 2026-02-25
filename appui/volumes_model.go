@@ -60,7 +60,7 @@ func (m *VolumesModel) SetSize(w, h int) {
 	if m.filter.Active() {
 		filterH = 1
 	}
-	m.table.SetSize(w, h-1-filterH)
+	m.table.SetSize(w, h-2-filterH)
 	m.filter.SetWidth(w)
 }
 
