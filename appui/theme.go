@@ -45,7 +45,6 @@ var Dark256 = &ui.Theme{
 	Selected:     lipgloss.Color("168"),
 	Header:       lipgloss.Color("25"),
 	Footer:       lipgloss.Color("25"),
-	ListItem:     lipgloss.Color("181"),
 	CursorLineBg: lipgloss.Color("25"),
 }
 

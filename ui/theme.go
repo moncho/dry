@@ -17,6 +17,5 @@ type Theme struct {
 	Selected     color.Color
 	Header       color.Color
 	Footer       color.Color
-	ListItem     color.Color
 	CursorLineBg color.Color
 }
