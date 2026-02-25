@@ -1,85 +1,84 @@
 package appui
 
 import (
-	"image/color"
-
 	"charm.land/lipgloss/v2"
 	"github.com/moncho/dry/ui"
 )
 
-// CharmTone palette — inspired by github.com/charmbracelet/crush
+// CharmTone palette — inspired by github.com/charmbracelet/crush.
+// Unexported: components should use DryTheme fields instead.
 var (
-	// Backgrounds
-	Pepper   = lipgloss.Color("#201F26") // base bg
-	Charcoal = lipgloss.Color("#3A3943") // subtle borders, separators
-	Overlay  = lipgloss.Color("#4D4C57") // overlay bg
-
-	// Primary accent
-	Charple = lipgloss.Color("#6B50FF") // purple — selection, focused borders
-
-	// Secondary / tertiary accents
-	Dolly = lipgloss.Color("#FF60FF") // magenta-pink
-	Bok   = lipgloss.Color("#68FFD6") // cyan-green
-
-	// Semantic colors
-	Malibu   = lipgloss.Color("#00A4FF") // info blue
-	Julep    = lipgloss.Color("#00FFB2") // success green
-	Sriracha = lipgloss.Color("#EB4268") // error red
-	Zest     = lipgloss.Color("#E8FE96") // warning yellow
-
-	// Text hierarchy
-	Ash    = lipgloss.Color("#DFDBDD") // primary text
-	Smoke  = lipgloss.Color("#BFBCC8") // secondary text
-	Squid  = lipgloss.Color("#858392") // muted text
-	Oyster = lipgloss.Color("#605F6B") // subtle text
+	pepper   = lipgloss.Color("#201F26")
+	charcoal = lipgloss.Color("#3A3943")
+	charple  = lipgloss.Color("#6B50FF")
+	dolly    = lipgloss.Color("#FF60FF")
+	bok      = lipgloss.Color("#68FFD6")
+	malibu   = lipgloss.Color("#00A4FF")
+	julep    = lipgloss.Color("#00FFB2")
+	sriracha = lipgloss.Color("#EB4268")
+	zest     = lipgloss.Color("#E8FE96")
+	ash      = lipgloss.Color("#DFDBDD")
+	smoke    = lipgloss.Color("#BFBCC8")
+	squid    = lipgloss.Color("#858392")
+	oyster   = lipgloss.Color("#605F6B")
 )
 
-// Running is the color used to identify a running element (e.g container, task)
-var Running color.Color = Julep
-
-// NotRunning is the color used to identify a non-running element
-var NotRunning color.Color = Sriracha
-
-// CrushDark is the Crush-inspired dark theme
+// CrushDark is the Crush-inspired dark theme.
 var CrushDark = &ui.Theme{
-	Fg:           Ash,
-	Bg:           Pepper,
-	DarkBg:       Pepper,
-	Prompt:       Dolly,
-	Key:          Bok,
-	Current:      Ash,
-	CurrentMatch: Dolly,
-	Spinner:      Charple,
-	Info:         Malibu,
-	Cursor:       Sriracha,
-	Selected:     Dolly,
-	Header:       Charcoal,
-	Footer:       Charcoal,
-	CursorLineBg: Charple,
+	Fg:     ash,
+	Bg:     pepper,
+	DarkBg: pepper,
+
+	FgMuted:  smoke,
+	FgSubtle: oyster,
+
+	Primary:   charple,
+	Secondary: dolly,
+	Tertiary:  bok,
+
+	Info:    malibu,
+	Success: julep,
+	Error:   sriracha,
+	Warning: zest,
+
+	Key:          bok,
+	Prompt:       dolly,
+	Border:       charcoal,
+	Header:       charcoal,
+	Footer:       charcoal,
+	CursorLineBg: charple,
 }
 
-// CrushBlack is a variant with pure-black background
+// CrushBlack is a variant with pure-black background.
 var CrushBlack = &ui.Theme{
-	Fg:           Ash,
-	Bg:           lipgloss.Color("#000000"),
-	DarkBg:       lipgloss.Color("#000000"),
-	Prompt:       Dolly,
-	Key:          Bok,
-	Current:      Ash,
-	CurrentMatch: Dolly,
-	Spinner:      Charple,
-	Info:         Malibu,
-	Cursor:       Sriracha,
-	Selected:     Dolly,
-	Header:       Charcoal,
-	Footer:       Charcoal,
-	CursorLineBg: Charple,
+	Fg:     ash,
+	Bg:     lipgloss.Color("#000000"),
+	DarkBg: lipgloss.Color("#000000"),
+
+	FgMuted:  smoke,
+	FgSubtle: oyster,
+
+	Primary:   charple,
+	Secondary: dolly,
+	Tertiary:  bok,
+
+	Info:    malibu,
+	Success: julep,
+	Error:   sriracha,
+	Warning: zest,
+
+	Key:          bok,
+	Prompt:       dolly,
+	Border:       charcoal,
+	Header:       charcoal,
+	Footer:       charcoal,
+	CursorLineBg: charple,
 }
 
-// DryTheme is the active theme for dry
+// DryTheme is the active theme for dry.
 var DryTheme = CrushDark
 
-// ColorThemes holds the list of dry color themes
+// ColorThemes holds the list of dry color themes.
 var ColorThemes = []*ui.Theme{CrushBlack, CrushDark}
 
 // RotateColorTheme changes the color theme to the next one in the

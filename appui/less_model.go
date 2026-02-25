@@ -250,8 +250,8 @@ func (m LessModel) View() string {
 	// Title bar
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(Ash).
-		Background(Charple).
+		Foreground(DryTheme.Fg).
+		Background(DryTheme.Primary).
 		Width(m.width)
 	sections = append(sections, titleStyle.Render(m.title))
 
@@ -267,7 +267,7 @@ func (m LessModel) View() string {
 	default:
 		status := m.statusLine()
 		statusStyle := lipgloss.NewStyle().
-			Foreground(Squid).
+			Foreground(DryTheme.FgSubtle).
 			Width(m.width)
 		sections = append(sections, statusStyle.Render(status))
 	}

@@ -1,6 +1,7 @@
 package appui
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/x/ansi"
@@ -117,9 +118,32 @@ func (m *TableModel) SetFilter(pattern string) {
 	m.clampCursor()
 }
 
-// NextSort cycles to the next sort field.
+// NextSort cycles to the next sort field and re-sorts the rows.
 func (m *TableModel) NextSort() {
 	m.sortField = (m.sortField + 1) % len(m.columns)
+	m.sortRows()
+}
+
+func (m *TableModel) sortRows() {
+	col := m.sortField
+	asc := m.sortAsc
+	sort.SliceStable(m.rows, func(i, j int) bool {
+		ci := colValue(m.rows[i], col)
+		cj := colValue(m.rows[j], col)
+		if asc {
+			return ci < cj
+		}
+		return ci > cj
+	})
+	m.applyFilter()
+}
+
+func colValue(row TableRow, col int) string {
+	cols := row.Columns()
+	if col < len(cols) {
+		return strings.ToLower(cols[col])
+	}
+	return ""
 }
 
 // SortField returns the current sort field index.

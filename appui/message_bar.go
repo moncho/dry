@@ -32,8 +32,8 @@ func (m MessageBarModel) View() string {
 		return strings.Repeat(" ", m.width)
 	}
 	style := lipgloss.NewStyle().
-		Foreground(Ash).
-		Background(Charple).
+		Foreground(DryTheme.Fg).
+		Background(DryTheme.Primary).
 		Width(m.width).
 		MaxWidth(m.width)
 	return style.Render(m.text)

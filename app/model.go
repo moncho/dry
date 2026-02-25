@@ -807,25 +807,27 @@ func (m model) renderLoadingScreen() string {
 	}
 
 	connecting := "\U0001f433 Trying to connect to the Docker Host \U0001f433"
-	hostInfo := ""
-	if m.config.DockerHost != "" {
-		hostInfo = fmt.Sprintf("Docker Host: %s", m.config.DockerHost)
-	}
 
 	whale := ui.Cyan(frame)
 	connectLine := ui.White(connecting)
 	verLine := ui.Blue("Dry Version: ") + ui.White(version.VERSION)
 
-	var content string
-	if hostInfo != "" {
+	var inner string
+	if m.config.DockerHost != "" {
 		hostLine := ui.Blue("Docker Host: ") + ui.White(m.config.DockerHost)
-		content = lipgloss.JoinVertical(lipgloss.Center,
+		inner = lipgloss.JoinVertical(lipgloss.Center,
 			connectLine, "", whale, "", verLine, hostLine)
 	} else {
-		content = lipgloss.JoinVertical(lipgloss.Center,
+		inner = lipgloss.JoinVertical(lipgloss.Center,
 			connectLine, "", whale, "", verLine)
 	}
 
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(appui.DryTheme.Border).
+		Padding(1, 3)
+
+	content := box.Render(inner)
 	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, content)
 }
 

@@ -56,8 +56,8 @@ func (m PromptModel) Update(msg tea.Msg) (PromptModel, tea.Cmd) {
 func (m PromptModel) View() string {
 	style := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(Ash).
-		Background(Sriracha).
+		Foreground(DryTheme.Fg).
+		Background(DryTheme.Error).
 		Width(m.width).
 		Padding(0, 1)
 	return style.Render(m.message + " [y/N]")

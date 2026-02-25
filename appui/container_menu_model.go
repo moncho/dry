@@ -88,7 +88,7 @@ func (m ContainerMenuModel) View() string {
 
 	// Container info section
 	infoStyle := lipgloss.NewStyle().
-		Foreground(Ash).
+		Foreground(DryTheme.FgMuted).
 		Bold(true)
 
 	var sections []string
@@ -100,12 +100,13 @@ func (m ContainerMenuModel) View() string {
 	// Menu items
 	normalStyle := lipgloss.NewStyle().
 		Width(menuWidth).
-		Padding(0, 1)
+		Padding(0, 1).
+		Foreground(DryTheme.Fg)
 	selectedStyle := lipgloss.NewStyle().
 		Width(menuWidth).
 		Padding(0, 1).
-		Background(Charple).
-		Foreground(Ash)
+		Background(DryTheme.Primary).
+		Foreground(DryTheme.Fg)
 
 	for i, cmd := range m.commands {
 		style := normalStyle
@@ -116,9 +117,16 @@ func (m ContainerMenuModel) View() string {
 	}
 
 	sections = append(sections, "")
-	hintStyle := lipgloss.NewStyle().Foreground(Squid)
-	sections = append(sections, hintStyle.Render("ESC:back  Enter:execute"))
+	hintStyle := lipgloss.NewStyle().Foreground(DryTheme.FgSubtle)
+	sections = append(sections, hintStyle.Render("esc back · enter execute"))
 
-	menu := lipgloss.JoinVertical(lipgloss.Left, sections...)
+	inner := lipgloss.JoinVertical(lipgloss.Left, sections...)
+
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(DryTheme.Border).
+		Padding(1, 2)
+
+	menu := box.Render(inner)
 	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, menu)
 }

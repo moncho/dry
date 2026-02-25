@@ -2,6 +2,7 @@ package appui
 
 import (
 	"fmt"
+	"image/color"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -54,18 +55,19 @@ func (m DiskUsageModel) Update(msg tea.Msg) (DiskUsageModel, tea.Cmd) {
 // View renders the disk usage summary.
 func (m DiskUsageModel) View() string {
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Key)
-	labelStyle := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Key).Width(20)
-	valueStyle := lipgloss.NewStyle().Foreground(DryTheme.Fg)
-
 	title := titleStyle.Render("Docker Disk Usage")
 
 	if m.usage == nil {
-		return title + "\n\nLoading..."
+		lines := []string{title, "", "Loading..."}
+		for len(lines) < m.height {
+			lines = append(lines, strings.Repeat(" ", m.width))
+		}
+		return strings.Join(lines, "\n")
 	}
 
 	du := m.usage
 
-	// Calculate totals
+	// Calculate sizes per category
 	var imageSize int64
 	for _, img := range du.Images {
 		imageSize += img.Size
@@ -83,21 +85,44 @@ func (m DiskUsageModel) View() string {
 		buildCacheSize += bc.Size
 	}
 
-	lines := []string{
-		title,
-		"",
-		labelStyle.Render("Images:") + valueStyle.Render(
-			fmt.Sprintf(" %d, Size: %s", len(du.Images), units.HumanSize(float64(imageSize)))),
-		labelStyle.Render("Containers:") + valueStyle.Render(
-			fmt.Sprintf(" %d, Size: %s", len(du.Containers), units.HumanSize(float64(containerSize)))),
-		labelStyle.Render("Volumes:") + valueStyle.Render(
-			fmt.Sprintf(" %d, Size: %s", len(du.Volumes), units.HumanSize(float64(volumeSize)))),
-		labelStyle.Render("Build Cache:") + valueStyle.Render(
-			fmt.Sprintf(" %d, Size: %s", len(du.BuildCache), units.HumanSize(float64(buildCacheSize)))),
-		"",
-		labelStyle.Render("Total:") + valueStyle.Render(
-			fmt.Sprintf(" %s", units.HumanSize(float64(imageSize+containerSize+volumeSize+buildCacheSize)))),
+	total := imageSize + containerSize + volumeSize + buildCacheSize
+
+	barWidth := 30
+	if m.width > 80 {
+		barWidth = 40
 	}
+
+	type category struct {
+		label string
+		count int
+		size  int64
+		color color.Color
+	}
+	cats := []category{
+		{"Images", len(du.Images), imageSize, DryTheme.Tertiary},
+		{"Containers", len(du.Containers), containerSize, DryTheme.Secondary},
+		{"Volumes", len(du.Volumes), volumeSize, DryTheme.Info},
+		{"Build Cache", len(du.BuildCache), buildCacheSize, DryTheme.Warning},
+	}
+
+	labelWidth := 14
+	labelStyle := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Key).Width(labelWidth)
+	valueStyle := lipgloss.NewStyle().Foreground(DryTheme.Fg)
+	totalStyle := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Fg)
+
+	lines := []string{title, ""}
+
+	for _, cat := range cats {
+		label := labelStyle.Render(cat.label)
+		info := valueStyle.Render(fmt.Sprintf(" %3d   %s", cat.count, units.HumanSize(float64(cat.size))))
+		bar := renderBar(cat.size, total, barWidth, cat.color, DryTheme.Border)
+		lines = append(lines, label+info+"  "+bar)
+	}
+
+	lines = append(lines, "")
+	totalLabel := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Key).Width(labelWidth).Render("Total")
+	totalBar := renderBar(total, total, barWidth, DryTheme.Primary, DryTheme.Border)
+	lines = append(lines, totalLabel+totalStyle.Render(fmt.Sprintf("       %s", units.HumanSize(float64(total))))+"  "+totalBar)
 
 	// Pad to fill allocated height so the footer stays at the bottom.
 	for len(lines) < m.height {
@@ -105,4 +130,26 @@ func (m DiskUsageModel) View() string {
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+// renderBar creates a horizontal bar chart segment.
+func renderBar(value, total int64, width int, fg, bg color.Color) string {
+	if total <= 0 || width <= 0 {
+		bgStyle := lipgloss.NewStyle().Foreground(bg)
+		return bgStyle.Render(strings.Repeat("─", width))
+	}
+
+	filled := int(float64(value) * float64(width) / float64(total))
+	if filled < 0 {
+		filled = 0
+	}
+	if filled > width {
+		filled = width
+	}
+	empty := width - filled
+
+	fgStyle := lipgloss.NewStyle().Foreground(fg)
+	bgStyle := lipgloss.NewStyle().Foreground(bg)
+
+	return fgStyle.Render(strings.Repeat("█", filled)) + bgStyle.Render(strings.Repeat("─", empty))
 }

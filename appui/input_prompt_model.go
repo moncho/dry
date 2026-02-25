@@ -75,8 +75,8 @@ func (m InputPromptModel) Update(msg tea.Msg) (InputPromptModel, tea.Cmd) {
 func (m InputPromptModel) View() string {
 	style := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(Ash).
-		Background(Charple).
+		Foreground(DryTheme.Fg).
+		Background(DryTheme.Primary).
 		Width(m.width).
 		Padding(0, 1)
 	return style.Render(m.message + " " + m.input.View())
