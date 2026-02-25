@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/docker/go-units"
 	"github.com/moncho/dry/docker"
 )
@@ -47,12 +46,12 @@ type MonitorModel struct {
 func NewMonitorModel() MonitorModel {
 	columns := []Column{
 		{Title: "CONTAINER", Width: IDColumnWidth, Fixed: true},
-		{Title: "CPU %", Width: 8, Fixed: true},
-		{Title: "MEM USAGE/LIMIT", Width: 22, Fixed: true},
-		{Title: "MEM %", Width: 8, Fixed: true},
-		{Title: "NET I/O", Width: 18, Fixed: true},
-		{Title: "BLOCK I/O", Width: 18, Fixed: true},
-		{Title: "PIDS", Width: 6, Fixed: true},
+		{Title: "CPU %", Width: 12, Fixed: true},
+		{Title: "MEM USAGE/LIMIT", Width: 30, Fixed: true},
+		{Title: "MEM %", Width: 12, Fixed: true},
+		{Title: "NET I/O", Width: 26, Fixed: true},
+		{Title: "BLOCK I/O", Width: 26, Fixed: true},
+		{Title: "PIDS", Width: 10, Fixed: true},
 		{Title: "COMMAND"},
 	}
 	return MonitorModel{
@@ -152,22 +151,27 @@ func (m *MonitorModel) refreshTable() {
 		if s == nil || s.Error != nil {
 			continue
 		}
+		memPctText := fmt.Sprintf("%.2f%%", s.MemoryPercentage)
+		memPctColor := DryTheme.Info
+		if s.MemoryPercentage > 80 {
+			memPctColor = DryTheme.Warning
+		}
 		rows = append(rows, monitorRow{
 			cid: cid,
 			columns: []string{
 				s.CID,
-				fmt.Sprintf("%.2f%%", s.CPUPercentage),
-				fmt.Sprintf("%s / %s",
+				ColorFg(fmt.Sprintf("%.2f%%", s.CPUPercentage), DryTheme.Info),
+				ColorFg(fmt.Sprintf("%s / %s",
 					units.BytesSize(s.Memory),
-					units.BytesSize(s.MemoryLimit)),
-				fmt.Sprintf("%.2f%%", s.MemoryPercentage),
-				fmt.Sprintf("%s / %s",
+					units.BytesSize(s.MemoryLimit)), DryTheme.FgMuted),
+				ColorFg(memPctText, memPctColor),
+				ColorFg(fmt.Sprintf("%s / %s",
 					units.BytesSize(s.NetworkRx),
-					units.BytesSize(s.NetworkTx)),
-				fmt.Sprintf("%s / %s",
+					units.BytesSize(s.NetworkTx)), DryTheme.Tertiary),
+				ColorFg(fmt.Sprintf("%s / %s",
 					units.BytesSize(s.BlockRead),
-					units.BytesSize(s.BlockWrite)),
-				fmt.Sprintf("%d", s.PidsCurrent),
+					units.BytesSize(s.BlockWrite)), DryTheme.FgMuted),
+				ColorFg(fmt.Sprintf("%d", s.PidsCurrent), DryTheme.FgMuted),
 				s.Command,
 			},
 		})
@@ -192,9 +196,15 @@ func (m MonitorModel) Update(msg tea.Msg) (MonitorModel, tea.Cmd) {
 
 // View renders the monitor.
 func (m MonitorModel) View() string {
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(DryTheme.Key)
-	title := titleStyle.Render(fmt.Sprintf("Container Stats (%d containers)", len(m.stats)))
-	return title + "\n" + m.table.View()
+	header := RenderWidgetHeader(WidgetHeaderOpts{
+		Title:    "Monitor",
+		Total:    len(m.stats),
+		Filtered: m.table.RowCount(),
+		Filter:   m.table.FilterText(),
+		Width:    m.width,
+		Accent:   DryTheme.Info,
+	})
+	return header + "\n" + m.table.View()
 }
 
 // RefreshTableStyles re-applies theme styles to the inner table.
