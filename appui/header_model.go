@@ -120,3 +120,17 @@ func padLine(line string, targetWidth int) string {
 	}
 	return line
 }
+
+// PadLine pads or truncates a line to exactly targetWidth visual characters,
+// using the given style for padding spaces. This ensures backgrounds extend
+// across the full width.
+func PadLine(line string, targetWidth int, style lipgloss.Style) string {
+	w := ansi.StringWidth(line)
+	if w > targetWidth {
+		return ansi.Truncate(line, targetWidth, "")
+	}
+	if w < targetWidth {
+		return line + style.Render(strings.Repeat(" ", targetWidth-w))
+	}
+	return line
+}

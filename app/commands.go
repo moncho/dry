@@ -12,6 +12,7 @@ import (
 	"github.com/moncho/dry/appui"
 	appswarm "github.com/moncho/dry/appui/swarm"
 	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/ui"
 )
 
 // shortID safely truncates an ID to at most 12 characters.
@@ -72,7 +73,7 @@ func loadingTickCmd() tea.Cmd {
 func showHelpCmd() tea.Cmd {
 	return func() tea.Msg {
 		return showLessMsg{
-			content: Help(),
+			content: ui.RenderMarkup(Help()),
 			title:   "Help",
 		}
 	}

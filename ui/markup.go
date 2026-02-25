@@ -45,14 +45,27 @@ func supportedTagsRegexp() *regexp.Regexp {
 // Tags stack: <b><darkgrey> produces bold + darkgrey foreground.
 // The </> tag (or any closing tag) resets all styles.
 func RenderMarkup(s string) string {
+	return RenderMarkupWithBase(s, lipgloss.NewStyle())
+}
+
+// RenderMarkupWithBase renders markup with a persistent base style.
+// When tags are reset with </>, the style reverts to base rather than
+// to an empty style. This preserves background colors through resets,
+// avoiding ANSI nesting issues (e.g. footer text on a colored background).
+func RenderMarkupWithBase(s string, base lipgloss.Style) string {
 	tokens := Tokenize(s, SupportedTags)
 	if len(tokens) == 0 {
+		if base.GetBackground() != nil {
+			return base.Render(s)
+		}
 		return s
 	}
 
+	hasBase := base.GetBackground() != nil || base.GetForeground() != nil
+
 	var b strings.Builder
-	style := lipgloss.NewStyle()
-	hasStyle := false
+	style := base
+	hasStyle := hasBase
 
 	for _, token := range tokens {
 		tag, isOpen := probeForTag(token)
@@ -67,9 +80,9 @@ func RenderMarkup(s string) string {
 		}
 
 		if !isOpen || tag == "/" {
-			// Closing tag or </> — reset
-			style = lipgloss.NewStyle()
-			hasStyle = false
+			// Closing tag or </> — reset to base
+			style = base
+			hasStyle = hasBase
 			continue
 		}
 

@@ -787,11 +787,12 @@ func (m model) renderFooter() string {
 	default:
 		mapping = commonMappings
 	}
-	rendered := ui.RenderMarkup(mapping)
-	footerStyle := lipgloss.NewStyle().
-		Background(appui.DryTheme.Footer).
-		Width(m.width)
-	return footerStyle.Render(rendered)
+	// Render markup with the footer background as the base style so
+	// the blue background persists through ANSI resets in the styled text.
+	footerBase := lipgloss.NewStyle().
+		Background(appui.DryTheme.Footer)
+	rendered := ui.RenderMarkupWithBase(mapping, footerBase)
+	return appui.PadLine(rendered, m.width, footerBase)
 }
 
 func (m model) renderLoadingScreen() string {
