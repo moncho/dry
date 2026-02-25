@@ -30,14 +30,14 @@ func InitStyles() {
 		Background(DryTheme.Footer)
 	SelectedRowStyle = lipgloss.NewStyle().
 		Background(DryTheme.CursorLineBg).
-		Foreground(DryTheme.Fg)
+		Foreground(Ash)
 	TableHeaderStyle = lipgloss.NewStyle().
 		Bold(true).
-		Foreground(DryTheme.Fg)
+		Foreground(Squid)
 	RunningStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("181"))
+		Foreground(Smoke)
 	StoppedStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("244"))
+		Foreground(Oyster)
 	RunningIndicatorStyle = lipgloss.NewStyle().
 		Foreground(Running)
 	StoppedIndicatorStyle = lipgloss.NewStyle().

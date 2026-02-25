@@ -97,41 +97,41 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 }
 
 const (
-	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "
+	commonMappings = "<cyan>h</> <grey>help</>  <cyan>q</> <grey>quit</>  <darkgrey>·</> "
 	keyMappings    = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> " +
-		"<b>[m]:<darkgrey>Monitor mode</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
+		"<cyan>F1</> <grey>sort</>  <cyan>F2</> <grey>all/running</>  <cyan>F5</> <grey>refresh</>  <cyan>%</> <grey>filter</>  <darkgrey>·</> " +
+		"<cyan>m</> <grey>monitor</>  <cyan>2</> <grey>images</>  <cyan>3</> <grey>nets</>  <cyan>4</> <grey>vols</>  <cyan>5</> <grey>nodes</>  <cyan>6</> <grey>svcs</>  <cyan>7</> <grey>stacks</>  <darkgrey>·</> <cyan>enter</> <grey>commands</>"
 
 	monitorMapping = commonMappings +
-		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</>"
+		"<cyan>m</> <grey>monitor</>  <cyan>1</> <grey>containers</>  <cyan>2</> <grey>images</>  <cyan>3</> <grey>nets</>  <cyan>4</> <grey>vols</>  <cyan>5</> <grey>nodes</>  <cyan>6</> <grey>svcs</>  <cyan>7</> <grey>stacks</>"
 
 	swarmMapping = commonMappings +
-		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</>"
+		"<cyan>m</> <grey>monitor</>  <cyan>1</> <grey>containers</>  <cyan>2</> <grey>images</>  <cyan>3</> <grey>nets</>  <cyan>4</> <grey>vols</>  <cyan>5</> <grey>nodes</>  <cyan>6</> <grey>svcs</>  <cyan>7</> <grey>stacks</>"
 
 	imagesKeyMappings = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
-		"<b>[1]:<darkgrey>Containers</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</>" +
-		"<b>[Ctrl+D]:<darkgrey>Remove Dangling</> <b>[Ctrl+E]:<darkgrey>Remove</> <b>[Ctrl+F]:<darkgrey>Force Remove</> <b>[Ctrl+U]:<darkgrey>Remove Unused</> <b>[I]:<darkgrey>History</>"
+		"<cyan>F1</> <grey>sort</>  <cyan>F5</> <grey>refresh</>  <darkgrey>·</> " +
+		"<cyan>1</> <grey>containers</>  <cyan>3</> <grey>nets</>  <cyan>4</> <grey>vols</>  <cyan>5</> <grey>nodes</>  <cyan>6</> <grey>svcs</>  <cyan>7</> <grey>stacks</>  <darkgrey>·</> " +
+		"<cyan>^d</> <grey>rm dangling</>  <cyan>^e</> <grey>rm</>  <cyan>^f</> <grey>force rm</>  <cyan>^u</> <grey>rm unused</>  <cyan>i</> <grey>history</>"
 
 	networkKeyMappings = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
-		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</>" +
-		"<b>[Ctrl+E]:<darkgrey>Remove</> <b>[Enter]:<darkgrey>Inspect</>"
+		"<cyan>F1</> <grey>sort</>  <cyan>F5</> <grey>refresh</>  <darkgrey>·</> " +
+		"<cyan>1</> <grey>containers</>  <cyan>2</> <grey>images</>  <cyan>4</> <grey>vols</>  <cyan>5</> <grey>nodes</>  <cyan>6</> <grey>svcs</>  <cyan>7</> <grey>stacks</>  <darkgrey>·</> " +
+		"<cyan>^e</> <grey>rm</>  <cyan>enter</> <grey>inspect</>"
 
 	volumesKeyMappings = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
-		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</>" +
-		"<b>[Ctrl+A]:<darkgrey>Remove All</> <b>[Ctrl+E]:<darkgrey>Remove</> <b>[Ctrl+F]:<darkgrey>Force Remove</> <b>[Ctrl+U]:<darkgrey>Remove Unused</> <b>[Enter]:<darkgrey>Inspect</>"
+		"<cyan>F1</> <grey>sort</>  <cyan>F5</> <grey>refresh</>  <darkgrey>·</> " +
+		"<cyan>1</> <grey>containers</>  <cyan>2</> <grey>images</>  <cyan>3</> <grey>nets</>  <cyan>5</> <grey>nodes</>  <cyan>6</> <grey>svcs</>  <cyan>7</> <grey>stacks</>  <darkgrey>·</> " +
+		"<cyan>^a</> <grey>rm all</>  <cyan>^e</> <grey>rm</>  <cyan>^f</> <grey>force rm</>  <cyan>^u</> <grey>rm unused</>  <cyan>enter</> <grey>inspect</>"
 
 	diskUsageKeyMappings = commonMappings +
-		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</>" +
-		"<b>[p]:<darkgrey>Prune</>"
+		"<cyan>1</> <grey>containers</>  <cyan>2</> <grey>images</>  <cyan>3</> <grey>nets</>  <cyan>4</> <grey>vols</>  <cyan>5</> <grey>nodes</>  <cyan>6</> <grey>svcs</>  <cyan>7</> <grey>stacks</>  <darkgrey>·</> " +
+		"<cyan>p</> <grey>prune</>"
 
-	serviceKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> <b>[l]:<darkgrey>Service logs</> <b>[Ctrl+R]:<darkgrey>Remove Service</> <b>[Ctrl+S]:<darkgrey>Scale service</><b>[Ctrl+U]:<darkgrey>Update service</>"
+	serviceKeyMappings = swarmMapping + " <darkgrey>·</> <cyan>F1</> <grey>sort</>  <cyan>F5</> <grey>refresh</>  <cyan>%</> <grey>filter</>  <darkgrey>·</> <cyan>l</> <grey>logs</>  <cyan>^r</> <grey>rm</>  <cyan>^s</> <grey>scale</>  <cyan>^u</> <grey>update</>"
 
-	stackKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> <b>[Ctrl+R]:<darkgrey>Remove Stack</>"
+	stackKeyMappings = swarmMapping + " <darkgrey>·</> <cyan>F1</> <grey>sort</>  <cyan>F5</> <grey>refresh</>  <cyan>%</> <grey>filter</>  <darkgrey>·</> <cyan>^r</> <grey>rm stack</>"
 
-	nodeKeyMappings = swarmMapping + " <blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</>  <b>[Enter]:<darkgrey>Show Node Tasks</> <b>[Ctrl+A]:<darkgrey>Set Availability</>"
+	nodeKeyMappings = swarmMapping + " <darkgrey>·</> <cyan>F1</> <grey>sort</>  <cyan>F5</> <grey>refresh</>  <darkgrey>·</> <cyan>enter</> <grey>node tasks</>  <cyan>^a</> <grey>availability</>"
 
-	commandsMenuBar = "<b>[Esc]:<darkgrey>Back</> <b>[Up]:<darkgrey>Cursor Up</> <b>[Down]:<darkgrey>Cursor Down</> <b>[Enter]:<darkgrey>Execute Command</>"
+	commandsMenuBar = "<cyan>esc</> <grey>back</>  <cyan>↑↓</> <grey>navigate</>  <cyan>enter</> <grey>execute</>"
 )

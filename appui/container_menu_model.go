@@ -88,7 +88,7 @@ func (m ContainerMenuModel) View() string {
 
 	// Container info section
 	infoStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("255")).
+		Foreground(Ash).
 		Bold(true)
 
 	var sections []string
@@ -104,8 +104,8 @@ func (m ContainerMenuModel) View() string {
 	selectedStyle := lipgloss.NewStyle().
 		Width(menuWidth).
 		Padding(0, 1).
-		Background(lipgloss.Color("25")).
-		Foreground(lipgloss.Color("255"))
+		Background(Charple).
+		Foreground(Ash)
 
 	for i, cmd := range m.commands {
 		style := normalStyle
@@ -116,7 +116,7 @@ func (m ContainerMenuModel) View() string {
 	}
 
 	sections = append(sections, "")
-	hintStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	hintStyle := lipgloss.NewStyle().Foreground(Squid)
 	sections = append(sections, hintStyle.Render("ESC:back  Enter:execute"))
 
 	menu := lipgloss.JoinVertical(lipgloss.Left, sections...)
