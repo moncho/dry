@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -248,5 +250,39 @@ func TestModel_ShortID(t *testing.T) {
 		if got != tt.expected {
 			t.Errorf("shortID(%q) = %q, want %q", tt.input, got, tt.expected)
 		}
+	}
+}
+
+func TestModel_LessScrolling(t *testing.T) {
+	m := newTestModel()
+
+	// Create a showLessMsg with many lines
+	lines := make([]string, 100)
+	for i := range 100 {
+		lines[i] = fmt.Sprintf("Line %d: content", i+1)
+	}
+	content := strings.Join(lines, "\n")
+
+	result, _ := m.Update(showLessMsg{content: content, title: "Test"})
+	m = result.(model)
+
+	if m.overlay != overlayLess {
+		t.Fatalf("expected overlayLess, got %d", m.overlay)
+	}
+
+	v1 := m.View()
+
+	// Scroll down with 'j'
+	result, _ = m.Update(tea.KeyPressMsg{Code: 'j'})
+	m = result.(model)
+	result, _ = m.Update(tea.KeyPressMsg{Code: 'j'})
+	m = result.(model)
+	result, _ = m.Update(tea.KeyPressMsg{Code: 'j'})
+	m = result.(model)
+
+	v2 := m.View()
+
+	if v1.Content == v2.Content {
+		t.Fatal("expected view to change after scrolling in less overlay")
 	}
 }

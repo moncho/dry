@@ -99,6 +99,10 @@ func (m *LessModel) SetSize(w, h int) {
 	}
 	m.viewport.SetWidth(w)
 	m.viewport.SetHeight(vpHeight)
+	// Re-apply content so viewport recalculates with new dimensions
+	if m.content != "" {
+		m.viewport.SetContent(strings.Join(m.filtered, "\n"))
+	}
 }
 
 // Update handles key events for the less viewer.
@@ -133,6 +137,12 @@ func (m LessModel) updateNormal(msg tea.Msg) (LessModel, tea.Cmd) {
 				m.viewport.GotoBottom()
 			}
 			return m, nil
+		case "g":
+			m.viewport.GotoTop()
+			return m, nil
+		case "G":
+			m.viewport.GotoBottom()
+			return m, nil
 		case "n":
 			m.viewport.HighlightNext()
 			return m, nil
@@ -142,7 +152,7 @@ func (m LessModel) updateNormal(msg tea.Msg) (LessModel, tea.Cmd) {
 		}
 	}
 
-	// Forward to viewport for scrolling (up/down/pgup/pgdown/g/G)
+	// Forward to viewport for scrolling (up/down/pgup/pgdown)
 	var cmd tea.Cmd
 	m.viewport, cmd = m.viewport.Update(msg)
 	return m, cmd

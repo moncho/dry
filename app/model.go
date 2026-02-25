@@ -257,8 +257,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case showLessMsg:
 		m.less = appui.NewLessModel()
-		m.less.SetContent(msg.content, msg.title)
 		m.less.SetSize(m.width, m.height)
+		m.less.SetContent(msg.content, msg.title)
 		m.overlay = overlayLess
 		return m, nil
 
@@ -297,6 +297,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleOverlayKeyPress(msg)
 		}
 		return m.handleKeyPress(msg)
+
+	case tea.MouseWheelMsg:
+		// Forward mouse wheel events to overlays for scrolling
+		if m.overlay == overlayLess {
+			var cmd tea.Cmd
+			m.less, cmd = m.less.Update(msg)
+			return m, cmd
+		}
 	}
 	return m, nil
 }
@@ -705,7 +713,9 @@ func (m model) View() tea.View {
 	} else {
 		content = m.renderMainScreen()
 	}
-	return tea.NewView(content)
+	v := tea.NewView(content)
+	v.AltScreen = true
+	return v
 }
 
 func (m model) renderMainScreen() string {
