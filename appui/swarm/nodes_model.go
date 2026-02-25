@@ -136,6 +136,11 @@ func (m NodesModel) View() string {
 	return result
 }
 
+// RefreshTableStyles re-applies theme styles to the inner table.
+func (m *NodesModel) RefreshTableStyles() {
+	m.table.RefreshStyles()
+}
+
 func (m NodesModel) widgetHeader() string {
 	return appui.RenderWidgetHeader(appui.WidgetHeaderOpts{
 		Icon:     "🖥️",

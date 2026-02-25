@@ -17,6 +17,7 @@ type globalKeyMap struct {
 	DiskUsage    key.Binding
 	Events       key.Binding
 	DockerInfo   key.Binding
+	Theme        key.Binding
 }
 
 var globalKeys = globalKeyMap{
@@ -75,6 +76,10 @@ var globalKeys = globalKeyMap{
 	DockerInfo: key.NewBinding(
 		key.WithKeys("f10"),
 		key.WithHelp("F10", "docker info"),
+	),
+	Theme: key.NewBinding(
+		key.WithKeys("ctrl+0"),
+		key.WithHelp("^0", "theme"),
 	),
 }
 

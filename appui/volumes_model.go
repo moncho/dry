@@ -123,6 +123,11 @@ func (m VolumesModel) View() string {
 	return result
 }
 
+// RefreshTableStyles re-applies theme styles to the inner table.
+func (m *VolumesModel) RefreshTableStyles() {
+	m.table.RefreshStyles()
+}
+
 func (m VolumesModel) widgetHeader() string {
 	return RenderWidgetHeader(WidgetHeaderOpts{
 		Icon:     "💾",

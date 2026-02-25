@@ -128,6 +128,11 @@ func (m NetworksModel) View() string {
 	return result
 }
 
+// RefreshTableStyles re-applies theme styles to the inner table.
+func (m *NetworksModel) RefreshTableStyles() {
+	m.table.RefreshStyles()
+}
+
 func (m NetworksModel) widgetHeader() string {
 	return RenderWidgetHeader(WidgetHeaderOpts{
 		Icon:     "🔗",

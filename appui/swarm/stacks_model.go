@@ -131,6 +131,11 @@ func (m StacksModel) View() string {
 	return result
 }
 
+// RefreshTableStyles re-applies theme styles to the inner table.
+func (m *StacksModel) RefreshTableStyles() {
+	m.table.RefreshStyles()
+}
+
 func (m StacksModel) widgetHeader() string {
 	return appui.RenderWidgetHeader(appui.WidgetHeaderOpts{
 		Icon:     "📚",

@@ -104,6 +104,11 @@ func (m TasksModel) Update(msg tea.Msg) (TasksModel, tea.Cmd) {
 	return m, cmd
 }
 
+// RefreshTableStyles re-applies theme styles to the inner table.
+func (m *TasksModel) RefreshTableStyles() {
+	m.table.RefreshStyles()
+}
+
 // View renders the tasks list.
 func (m TasksModel) View() string {
 	header := appui.RenderWidgetHeader(appui.WidgetHeaderOpts{

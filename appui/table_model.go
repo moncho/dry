@@ -164,11 +164,18 @@ func (m TableModel) View() string {
 	view := m.inner.View()
 
 	// Pad each line to the full terminal width so backgrounds extend.
+	// The selected row (cursor+1, accounting for the header line) must
+	// use SelectedRowStyle so the highlight covers the full width.
 	lines := strings.Split(view, "\n")
+	selectedLine := m.inner.Cursor() + 1 // +1 for header row
 	for i, line := range lines {
 		w := ansi.StringWidth(line)
 		if w < m.width {
-			lines[i] = line + strings.Repeat(" ", m.width-w)
+			pad := strings.Repeat(" ", m.width-w)
+			if i == selectedLine {
+				pad = SelectedRowStyle.Render(pad)
+			}
+			lines[i] = line + pad
 		}
 	}
 
@@ -222,7 +229,10 @@ func (m *TableModel) toBubblesRows() []table.Row {
 		row := make(table.Row, len(m.columns))
 		for j := range m.columns {
 			if j < len(cols) {
-				row[j] = cols[j]
+				// Use ColorFg (SGR 39 foreground-only reset) instead of
+				// the Cell style so that the Selected row background is
+				// not broken by full SGR resets between cells.
+				row[j] = ColorFg(cols[j], DryTheme.Fg)
 			}
 		}
 		rows[i] = row
@@ -264,6 +274,18 @@ func (m *TableModel) applyFilter() {
 			m.filtered = append(m.filtered, row)
 		}
 	}
+}
+
+// RefreshStyles re-applies the current theme styles to the inner table.
+// Call after InitStyles() to pick up theme changes.
+func (m *TableModel) RefreshStyles() {
+	m.inner.SetStyles(table.Styles{
+		Header:   TableHeaderStyle,
+		Cell:     lipgloss.NewStyle(),
+		Selected: SelectedRowStyle,
+	})
+	// Re-convert rows so ColorFg picks up the new theme foreground.
+	m.syncInner()
 }
 
 func (m *TableModel) calculateColumnWidths() {

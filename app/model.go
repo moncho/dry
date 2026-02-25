@@ -362,6 +362,19 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.stacks.SetSize(m.width, ch)
 		m.tasks.SetSize(m.width, ch)
 		return m, nil
+	case "ctrl+0":
+		appui.RotateColorTheme()
+		appui.InitStyles()
+		m.containers.RefreshTableStyles()
+		m.images.RefreshTableStyles()
+		m.networks.RefreshTableStyles()
+		m.volumes.RefreshTableStyles()
+		m.monitor.RefreshTableStyles()
+		m.nodes.RefreshTableStyles()
+		m.services.RefreshTableStyles()
+		m.stacks.RefreshTableStyles()
+		m.tasks.RefreshTableStyles()
+		return m, nil
 	case "1":
 		return m.switchView(Main)
 	case "?", "h", "H":
@@ -803,6 +816,7 @@ func (m model) renderFooter() string {
 	default:
 		bindings = containerKeys.ShortHelp()
 	}
+	bindings = append(bindings, globalKeys.Theme)
 
 	footerBg := lipgloss.NewStyle().Background(appui.DryTheme.Footer)
 	keyStyle := lipgloss.NewStyle().Foreground(appui.DryTheme.Key).Background(appui.DryTheme.Footer)

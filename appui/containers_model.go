@@ -14,9 +14,9 @@ type containerRow struct {
 
 func newContainerRow(c *docker.Container) containerRow {
 	cf := formatter.NewContainerFormatter(c, true)
-	indicator := ColorFg("\u25A0", DryTheme.Error) // ■ stopped
+	indicator := ColorFg("\u25A0", DryTheme.FgSubtle) // ■ stopped
 	if docker.IsContainerRunning(c) {
-		indicator = ColorFg("\u25B6", DryTheme.Success) // ▶ running
+		indicator = ColorFg("\u25B6", DryTheme.Key) // ▶ running
 	}
 	return containerRow{
 		container: c,
@@ -157,6 +157,11 @@ func (m ContainersModel) widgetHeader() string {
 		Width:    m.table.Width(),
 		Accent:   DryTheme.Info,
 	})
+}
+
+// RefreshTableStyles re-applies theme styles to the inner table.
+func (m *ContainersModel) RefreshTableStyles() {
+	m.table.RefreshStyles()
 }
 
 func (m *ContainersModel) nextSort() {

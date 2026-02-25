@@ -197,6 +197,11 @@ func (m MonitorModel) View() string {
 	return title + "\n" + m.table.View()
 }
 
+// RefreshTableStyles re-applies theme styles to the inner table.
+func (m *MonitorModel) RefreshTableStyles() {
+	m.table.RefreshStyles()
+}
+
 // listenContainerStats creates a command that reads from a stats channel.
 func listenContainerStats(cid string, ch <-chan *docker.Stats) tea.Cmd {
 	return func() tea.Msg {

@@ -127,6 +127,11 @@ func (m ImagesModel) View() string {
 	return result
 }
 
+// RefreshTableStyles re-applies theme styles to the inner table.
+func (m *ImagesModel) RefreshTableStyles() {
+	m.table.RefreshStyles()
+}
+
 func (m ImagesModel) widgetHeader() string {
 	return RenderWidgetHeader(WidgetHeaderOpts{
 		Icon:     "📦",
