@@ -3,11 +3,13 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
-	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/go-units"
@@ -71,9 +73,6 @@ type model struct {
 	pendingRefresh map[docker.SourceType]bool
 	refreshTimer   bool
 
-	// Footer help
-	help help.Model
-
 	// Loading animation
 	loadingFrame int
 	loadingFwd   bool
@@ -81,14 +80,6 @@ type model struct {
 
 // NewModel creates a new top-level model.
 func NewModel(cfg Config) model {
-	h := help.New()
-	h.ShortSeparator = "  \u00b7  "
-	h.Styles = help.Styles{
-		ShortKey:       lipgloss.NewStyle().Foreground(appui.DryTheme.Key).Background(appui.DryTheme.Footer),
-		ShortDesc:      lipgloss.NewStyle().Foreground(appui.DryTheme.FgSubtle).Background(appui.DryTheme.Footer),
-		ShortSeparator: lipgloss.NewStyle().Foreground(appui.DryTheme.FgSubtle).Background(appui.DryTheme.Footer),
-		Ellipsis:       lipgloss.NewStyle().Foreground(appui.DryTheme.FgSubtle).Background(appui.DryTheme.Footer),
-	}
 	return model{
 		config:         cfg,
 		view:           Main,
@@ -103,7 +94,6 @@ func NewModel(cfg Config) model {
 		services:       appswarm.NewServicesModel(),
 		stacks:         appswarm.NewStacksModel(),
 		tasks:          appswarm.NewTasksModel(),
-		help:           h,
 		pendingRefresh: make(map[docker.SourceType]bool),
 		loadingFwd:     true,
 	}
@@ -133,7 +123,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.stacks.SetSize(m.width, ch)
 		m.tasks.SetSize(m.width, ch)
 		m.header.SetWidth(m.width)
-		m.help.SetWidth(m.width)
 		// Update overlay sizes
 		m.less.SetSize(m.width, m.height)
 		m.prompt.SetWidth(m.width)
@@ -777,34 +766,60 @@ func (m model) renderMainScreen() string {
 }
 
 func (m model) renderFooter() string {
-	var km help.KeyMap
+	var bindings []key.Binding
 	switch m.view {
 	case Main:
-		km = containerKeys
+		bindings = containerKeys.ShortHelp()
 	case Monitor:
-		km = monitorKeys
+		bindings = monitorKeys.ShortHelp()
 	case Images:
-		km = imagesKeys
+		bindings = imagesKeys.ShortHelp()
 	case Networks:
-		km = networksKeys
+		bindings = networksKeys.ShortHelp()
 	case Volumes:
-		km = volumesKeys
+		bindings = volumesKeys.ShortHelp()
 	case DiskUsage:
-		km = diskUsageKeys
+		bindings = diskUsageKeys.ShortHelp()
 	case Services:
-		km = servicesKeys
+		bindings = servicesKeys.ShortHelp()
 	case Stacks:
-		km = stacksKeys
+		bindings = stacksKeys.ShortHelp()
 	case Nodes:
-		km = nodesKeys
+		bindings = nodesKeys.ShortHelp()
 	case ServiceTasks, Tasks, StackTasks:
-		km = tasksKeys
+		bindings = tasksKeys.ShortHelp()
 	default:
-		km = containerKeys
+		bindings = containerKeys.ShortHelp()
 	}
-	rendered := m.help.View(km)
-	footerBase := lipgloss.NewStyle().Background(appui.DryTheme.Footer)
-	return appui.PadLine(rendered, m.width, footerBase)
+
+	footerBg := lipgloss.NewStyle().Background(appui.DryTheme.Footer)
+	keyStyle := lipgloss.NewStyle().Foreground(appui.DryTheme.Key).Background(appui.DryTheme.Footer)
+	descStyle := lipgloss.NewStyle().Foreground(appui.DryTheme.FgSubtle).Background(appui.DryTheme.Footer)
+	sepStyle := lipgloss.NewStyle().Foreground(appui.DryTheme.FgSubtle).Background(appui.DryTheme.Footer)
+
+	var b strings.Builder
+	first := true
+	for _, kb := range bindings {
+		if !kb.Enabled() {
+			continue
+		}
+		if !first {
+			b.WriteString(sepStyle.Render("  \u00b7  "))
+		}
+		first = false
+		b.WriteString(keyStyle.Render(kb.Help().Key))
+		b.WriteString(footerBg.Render(" "))
+		b.WriteString(descStyle.Render(kb.Help().Desc))
+	}
+
+	line := b.String()
+	w := ansi.StringWidth(line)
+	if w > m.width {
+		line = ansi.Truncate(line, m.width, "")
+	} else if w < m.width {
+		line += footerBg.Render(strings.Repeat(" ", m.width-w))
+	}
+	return line
 }
 
 func (m model) renderLoadingScreen() string {

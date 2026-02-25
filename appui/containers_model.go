@@ -33,22 +33,6 @@ func newContainerRow(c *docker.Container) containerRow {
 func (r containerRow) Columns() []string { return r.columns }
 func (r containerRow) ID() string        { return r.container.ID }
 
-// Style returns the row's foreground color based on container state.
-func (r containerRow) Style() lipgloss.Style {
-	if r.running {
-		return RunningStyle
-	}
-	return StoppedStyle
-}
-
-// IndicatorStyle returns the style for the ■ status indicator column.
-func (r containerRow) IndicatorStyle() lipgloss.Style {
-	if r.running {
-		return RunningIndicatorStyle
-	}
-	return StoppedIndicatorStyle
-}
-
 // ContainersModel is the container list view sub-model.
 type ContainersModel struct {
 	table    TableModel

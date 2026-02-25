@@ -24,18 +24,6 @@ type TableRow interface {
 	ID() string
 }
 
-// StyledRow is an optional interface that TableRow implementations can
-// use to provide a base foreground style for the row.
-type StyledRow interface {
-	Style() lipgloss.Style
-}
-
-// StyledIndicator is an optional interface for rows that have a specially
-// styled first column (e.g. the ■ status indicator in the container list).
-type StyledIndicator interface {
-	IndicatorStyle() lipgloss.Style
-}
-
 // TableModel is a shared table component with navigation, sorting, and filtering.
 // It wraps bubbles/table for rendering and keyboard navigation while keeping
 // sort, filter, and column-width logic locally.
@@ -229,25 +217,9 @@ func (m *TableModel) toBubblesRows() []table.Row {
 	for i, r := range m.filtered {
 		cols := r.Columns()
 		row := make(table.Row, len(m.columns))
-		var rowStyle lipgloss.Style
-		if sr, ok := r.(StyledRow); ok {
-			rowStyle = sr.Style()
-		}
 		for j := range m.columns {
-			cell := ""
 			if j < len(cols) {
-				cell = cols[j]
-			}
-			if j == 0 {
-				if si, ok := r.(StyledIndicator); ok {
-					row[j] = si.IndicatorStyle().Render(cell)
-					continue
-				}
-			}
-			if rowStyle.GetForeground() != nil {
-				row[j] = rowStyle.Render(cell)
-			} else {
-				row[j] = cell
+				row[j] = cols[j]
 			}
 		}
 		rows[i] = row
