@@ -286,3 +286,34 @@ func TestModel_LessScrolling(t *testing.T) {
 		t.Fatal("expected view to change after scrolling in less overlay")
 	}
 }
+
+func TestModel_ResizeWithOverlay(t *testing.T) {
+	m := newTestModel()
+
+	// Open less overlay
+	lines := make([]string, 50)
+	for i := range 50 {
+		lines[i] = fmt.Sprintf("Line %d", i+1)
+	}
+	result, _ := m.Update(showLessMsg{content: strings.Join(lines, "\n"), title: "Test"})
+	m = result.(model)
+
+	if m.overlay != overlayLess {
+		t.Fatalf("expected overlayLess, got %d", m.overlay)
+	}
+
+	v1 := m.View()
+
+	// Resize terminal
+	result, _ = m.Update(tea.WindowSizeMsg{Width: 60, Height: 20})
+	m = result.(model)
+
+	if m.width != 60 || m.height != 20 {
+		t.Fatalf("expected 60x20, got %dx%d", m.width, m.height)
+	}
+
+	v2 := m.View()
+	if v1.Content == v2.Content {
+		t.Fatal("expected view to change after resize with less overlay active")
+	}
+}

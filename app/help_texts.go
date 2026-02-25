@@ -46,7 +46,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Ctrl+k</>    Kills the selected container
 	<white>l</>         Displays the logs of the selected container
 	<white>Ctrl+r</>    Restarts selected container
-	<white>s</>         Displays a live stream of the selected container resource usage statistics
+	<white>s</>         Displays resource usage statistics of the selected container
 	<white>Ctrl+t</>    Stops selected container (noop if it is not running)
 	<white>Enter</>     Opens the command menu for the selected container
 
@@ -84,6 +84,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 <yellow>Move around in logs/inspect buffers</>
 	<white>/</>         Searches for a pattern
 	<white>F</>         Only show lines that matches a pattern
+	<white>f</>         Toggles follow mode (auto-scroll to bottom)
 	<white>g</>         Moves the cursor to the beginning
 	<white>G</>         Moves the cursor until the end
 	<white>n</>         After a search, it moves forwards to the next search hit

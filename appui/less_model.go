@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/bubbles/v2/viewport"
 	"charm.land/lipgloss/v2"
@@ -43,6 +44,10 @@ type LessModel struct {
 func NewLessModel() LessModel {
 	vp := viewport.New()
 	vp.SoftWrap = true
+	// Customize keymap: remove "f" from PageDown since we use it for follow toggle
+	km := viewport.DefaultKeyMap()
+	km.PageDown = key.NewBinding(key.WithKeys("pgdown", "space"))
+	vp.KeyMap = km
 
 	si := textinput.New()
 	si.Prompt = "/"

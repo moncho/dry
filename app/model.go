@@ -120,6 +120,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.stacks.SetSize(m.width, ch)
 		m.tasks.SetSize(m.width, ch)
 		m.header.SetWidth(m.width)
+		m.messageBar.SetWidth(m.width)
+		// Update overlay sizes
+		m.less.SetSize(m.width, m.height)
+		m.prompt.SetWidth(m.width)
+		m.inputPrompt.SetWidth(m.width)
+		m.containerMenu.SetSize(m.width, m.height)
 		return m, nil
 
 	case dockerConnectedMsg:
