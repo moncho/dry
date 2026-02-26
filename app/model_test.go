@@ -121,7 +121,7 @@ func TestModel_PromptDeny(t *testing.T) {
 	m = m.showPrompt("Test?", "kill", "abc123def456")
 
 	result, cmd := m.Update(tea.KeyPressMsg{Code: 'n'})
-	m = result.(model)
+	_ = result.(model)
 
 	if cmd == nil {
 		t.Fatal("expected cmd from prompt deny")
@@ -219,7 +219,7 @@ func TestModel_OperationSuccessMsg(t *testing.T) {
 	m := newTestModel()
 
 	result, cmd := m.Update(operationSuccessMsg{message: "done!"})
-	m = result.(model)
+	_ = result.(model)
 
 	// Should trigger a reload for the current view
 	if cmd == nil {

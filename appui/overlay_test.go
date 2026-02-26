@@ -225,7 +225,7 @@ func TestFilterInput_EnterConfirms(t *testing.T) {
 func TestFilterInput_InactiveIgnoresKeys(t *testing.T) {
 	m := NewFilterInputModel()
 	// Not active — should ignore all keys
-	m, cmd := m.Update(tea.KeyPressMsg{Code: 'a'})
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'a'})
 	if cmd != nil {
 		t.Fatal("expected nil cmd from inactive filter")
 	}

@@ -1180,7 +1180,7 @@ func (m model) executeContainerOp(tag, id string) tea.Cmd {
 			successMsg = fmt.Sprintf("Removed %d unused images", count)
 		case "net-rm":
 			err = daemon.RemoveNetwork(id)
-			successMsg = fmt.Sprintf("Network removed")
+			successMsg = "Network removed"
 		case "vol-rm":
 			err = daemon.VolumeRemove(context.Background(), id, false)
 			successMsg = fmt.Sprintf("Volume %s removed", id)
