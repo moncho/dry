@@ -54,6 +54,9 @@ func NewNetworksModel() NetworksModel {
 	}
 }
 
+// FilterActive returns true when the filter input is active.
+func (m NetworksModel) FilterActive() bool { return m.filter.Active() }
+
 // SetDaemon sets the Docker daemon reference.
 func (m *NetworksModel) SetDaemon(d docker.ContainerDaemon) {
 	m.daemon = d

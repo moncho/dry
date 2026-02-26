@@ -42,8 +42,6 @@ type operationErrorMsg struct {
 
 // Internal messages
 
-type refreshMsg struct{}
-
 type statusMessageMsg struct {
 	text   string
 	expiry time.Duration
@@ -51,15 +49,8 @@ type statusMessageMsg struct {
 
 type flushRefreshMsg struct{}
 
-// View lifecycle messages
-
-type viewActivatedMsg struct {
-	view viewMode
-}
-
-type viewDeactivatedMsg struct {
-	view viewMode
-}
+// messageBarExpiredMsg triggers a re-render so the expired message clears.
+type messageBarExpiredMsg struct{}
 
 // Overlay messages
 
@@ -84,11 +75,6 @@ type appendLessMsg struct {
 
 // streamClosedMsg signals the streaming reader has ended.
 type streamClosedMsg struct{}
-
-type showPromptMsg struct {
-	message  string
-	callback func(string)
-}
 
 // Loading animation message
 type loadingTickMsg struct{}

@@ -79,7 +79,9 @@ func (m DiskUsageModel) View() string {
 	}
 	var volumeSize int64
 	for _, v := range du.Volumes {
-		volumeSize += v.UsageData.Size
+		if v.UsageData != nil {
+			volumeSize += v.UsageData.Size
+		}
 	}
 	var buildCacheSize int64
 	for _, bc := range du.BuildCache {

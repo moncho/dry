@@ -62,6 +62,9 @@ func (m *StacksModel) SetDaemon(d docker.ContainerDaemon) {
 	m.daemon = d
 }
 
+// FilterActive returns true when the filter input is active.
+func (m StacksModel) FilterActive() bool { return m.filter.Active() }
+
 // SetSize updates the table dimensions.
 func (m *StacksModel) SetSize(w, h int) {
 	filterH := 0
@@ -141,7 +144,7 @@ func (m StacksModel) widgetHeader() string {
 		Icon:     "📚",
 		Title:    "Stacks",
 		Total:    m.table.TotalRowCount(),
-		Filtered: m.table.TotalRowCount(),
+		Filtered: m.table.RowCount(),
 		Width:    m.table.Width(),
 		Accent:   appui.DryTheme.Error,
 	})

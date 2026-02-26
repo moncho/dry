@@ -303,6 +303,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case statusMessageMsg:
 		m.messageBar.SetMessage(msg.text, msg.expiry)
+		return m, tea.Tick(msg.expiry, func(time.Time) tea.Msg {
+			return messageBarExpiredMsg{}
+		})
+	case messageBarExpiredMsg:
 		return m, nil
 
 	case showLessMsg:
@@ -415,7 +419,7 @@ func (m model) handleOverlayKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	// Global keys always handled
+	// Quit keys always handled regardless of filter state
 	switch msg.String() {
 	case "ctrl+c", "Q":
 		m.monitor.StopAll()
@@ -427,6 +431,16 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.eventsCancel()
 		}
 		return m, tea.Quit
+	}
+
+	// When a sub-model's filter input is active, delegate directly
+	// so keys like Esc, numbers, etc. go to the filter, not global handlers.
+	if m.filterActive() {
+		return m.delegateToSubModel(msg)
+	}
+
+	// Global keys
+	switch msg.String() {
 	case "f7":
 		m.showHeader = !m.showHeader
 		ch := m.contentHeight()
@@ -802,6 +816,50 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 	return m, nil
+}
+
+// filterActive returns true if the current view's sub-model has an active filter input.
+func (m model) filterActive() bool {
+	switch m.view {
+	case Main:
+		return m.containers.FilterActive()
+	case Images:
+		return m.images.FilterActive()
+	case Networks:
+		return m.networks.FilterActive()
+	case Volumes:
+		return m.volumes.FilterActive()
+	case Nodes:
+		return m.nodes.FilterActive()
+	case Services:
+		return m.services.FilterActive()
+	case Stacks:
+		return m.stacks.FilterActive()
+	}
+	return false
+}
+
+// delegateToSubModel forwards a key event directly to the active sub-model,
+// bypassing global key handling. Used when a filter input is active.
+func (m model) delegateToSubModel(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	switch m.view {
+	case Main:
+		m.containers, cmd = m.containers.Update(msg)
+	case Images:
+		m.images, cmd = m.images.Update(msg)
+	case Networks:
+		m.networks, cmd = m.networks.Update(msg)
+	case Volumes:
+		m.volumes, cmd = m.volumes.Update(msg)
+	case Nodes:
+		m.nodes, cmd = m.nodes.Update(msg)
+	case Services:
+		m.services, cmd = m.services.Update(msg)
+	case Stacks:
+		m.stacks, cmd = m.stacks.Update(msg)
+	}
+	return m, cmd
 }
 
 func (m model) View() tea.View {

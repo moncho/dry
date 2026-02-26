@@ -35,8 +35,15 @@ func (el *EventLog) Capacity() int {
 	return el.capacity
 }
 
-// Count returns the number of events in the buffer
+// Count returns the number of events in the buffer (thread-safe).
 func (el *EventLog) Count() int {
+	el.RLock()
+	defer el.RUnlock()
+	return el.count()
+}
+
+// count returns the number of events (caller must hold lock).
+func (el *EventLog) count() int {
 	return el.tail - el.head
 }
 
@@ -44,10 +51,10 @@ func (el *EventLog) Count() int {
 func (el *EventLog) Events() []events.Message {
 	el.RLock()
 	defer el.RUnlock()
-	if el.Count() == 0 {
+	if el.count() == 0 {
 		return nil
 	}
-	messages := make([]events.Message, el.Count())
+	messages := make([]events.Message, el.count())
 	for i, message := range el.messages[el.head:el.tail] {
 		messages[i] = *message
 	}
@@ -65,7 +72,7 @@ func (el *EventLog) Init(capacity int) {
 func (el *EventLog) Peek() *events.Message {
 	el.RLock()
 	defer el.RUnlock()
-	if el.Count() == 0 {
+	if el.count() == 0 {
 		return nil
 	}
 	return el.messages[el.tail-1]

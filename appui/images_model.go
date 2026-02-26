@@ -53,6 +53,9 @@ func NewImagesModel() ImagesModel {
 	}
 }
 
+// FilterActive returns true when the filter input is active.
+func (m ImagesModel) FilterActive() bool { return m.filter.Active() }
+
 // SetDaemon sets the Docker daemon reference.
 func (m *ImagesModel) SetDaemon(d docker.ContainerDaemon) {
 	m.daemon = d

@@ -62,6 +62,9 @@ func NewNodesModel() NodesModel {
 	}
 }
 
+// FilterActive returns true when the filter input is active.
+func (m NodesModel) FilterActive() bool { return m.filter.Active() }
+
 // SetDaemon sets the Docker daemon reference.
 func (m *NodesModel) SetDaemon(d docker.ContainerDaemon) {
 	m.daemon = d
@@ -146,7 +149,7 @@ func (m NodesModel) widgetHeader() string {
 		Icon:     "🖥️",
 		Title:    "Nodes",
 		Total:    m.table.TotalRowCount(),
-		Filtered: m.table.TotalRowCount(),
+		Filtered: m.table.RowCount(),
 		Width:    m.table.Width(),
 		Accent:   appui.DryTheme.Success,
 	})

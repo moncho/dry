@@ -65,6 +65,9 @@ func NewServicesModel() ServicesModel {
 	}
 }
 
+// FilterActive returns true when the filter input is active.
+func (m ServicesModel) FilterActive() bool { return m.filter.Active() }
+
 // SetDaemon sets the Docker daemon reference.
 func (m *ServicesModel) SetDaemon(d docker.ContainerDaemon) {
 	m.daemon = d
@@ -149,7 +152,7 @@ func (m ServicesModel) widgetHeader() string {
 		Icon:     "⚙",
 		Title:    "Services",
 		Total:    m.table.TotalRowCount(),
-		Filtered: m.table.TotalRowCount(),
+		Filtered: m.table.RowCount(),
 		Width:    m.table.Width(),
 		Accent:   appui.DryTheme.Primary,
 	})

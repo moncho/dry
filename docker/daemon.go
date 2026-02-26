@@ -77,13 +77,19 @@ func (daemon *DockerDaemon) DockerEnv() Env {
 
 // Events returns a channel to receive Docker events.
 // The caller owns cancellation via the provided context.
+// The returned channel is closed when the context is cancelled or the
+// Docker daemon disconnects (error on the event stream).
 func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan dockerEvents.Message, error) {
+	// Derive an internal context so error on either event stream
+	// cancels all goroutines and closes the output channel.
+	innerCtx, innerCancel := context.WithCancel(ctx)
+
 	args := filters.NewArgs()
 	args.Add("scope", "local")
 	options := dockerTypes.EventsOptions{
 		Filters: args,
 	}
-	events, err := daemon.client.Events(ctx, options)
+	events, err := daemon.client.Events(innerCtx, options)
 
 	eventC := make(chan dockerEvents.Message)
 
@@ -97,15 +103,16 @@ func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan dockerEvents.Mes
 			case event := <-events:
 				if event.Action != "top" {
 					handleEvent(
-						ctx,
+						innerCtx,
 						event,
 						streamEvents(eventC),
 						logEvents(daemon.eventLog),
 						callbackNotifier)
 				}
 			case <-err:
+				innerCancel()
 				return
-			case <-ctx.Done():
+			case <-innerCtx.Done():
 				return
 			}
 		}
@@ -117,7 +124,7 @@ func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan dockerEvents.Mes
 		swarmOptions := dockerTypes.EventsOptions{
 			Filters: swarmArgs,
 		}
-		swarmEvents, swarmErr := daemon.client.Events(ctx, swarmOptions)
+		swarmEvents, swarmErr := daemon.client.Events(innerCtx, swarmOptions)
 
 		wg.Add(1)
 		go func() {
@@ -126,25 +133,27 @@ func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan dockerEvents.Mes
 				select {
 				case event := <-swarmEvents:
 					handleEvent(
-						ctx,
+						innerCtx,
 						event,
 						streamEvents(eventC),
 						logEvents(daemon.eventLog),
 						callbackNotifier)
 				case <-swarmErr:
+					innerCancel()
 					return
-				case <-ctx.Done():
+				case <-innerCtx.Done():
 					return
 				}
 			}
 		}()
 	}
 
-	// Cleanup goroutine: waits for context cancellation, then waits for
-	// event goroutines to finish before closing the output channel.
+	// Cleanup goroutine: waits for all event goroutines to finish,
+	// then closes the output channel. Goroutines exit on context
+	// cancellation (caller or internal) or Docker stream error.
 	go func() {
-		<-ctx.Done()
 		wg.Wait()
+		innerCancel() // no-op if already cancelled, prevents leak
 		close(eventC)
 	}()
 
@@ -240,22 +249,23 @@ func (daemon *DockerDaemon) StatsChannel(container *Container) (*StatsChannel, e
 // Prune requests the Docker daemon to prune unused containers, images
 // networks and volumes
 func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
-	c := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 
 	args := filters.NewArgs()
-	cReport, err := daemon.client.ContainersPrune(c, args)
+	cReport, err := daemon.client.ContainersPrune(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-	iReport, err := daemon.client.ImagesPrune(c, args)
+	iReport, err := daemon.client.ImagesPrune(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-	nReport, err := daemon.client.NetworksPrune(c, args)
+	nReport, err := daemon.client.NetworksPrune(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-	vRreport, err := daemon.client.VolumesPrune(c, args)
+	vRreport, err := daemon.client.VolumesPrune(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +274,6 @@ func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
 		ImagesReport:    iReport,
 		NetworksReport:  nReport,
 		VolumesReport:   vRreport}, nil
-
 }
 
 // RestartContainer restarts the container with the given id

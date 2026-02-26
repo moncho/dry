@@ -115,7 +115,7 @@ func (m TasksModel) View() string {
 		Icon:     "📋",
 		Title:    m.title,
 		Total:    m.table.TotalRowCount(),
-		Filtered: m.table.TotalRowCount(),
+		Filtered: m.table.RowCount(),
 		Width:    m.table.Width(),
 		Accent:   appui.DryTheme.Info,
 	})

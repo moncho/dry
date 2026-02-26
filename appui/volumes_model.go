@@ -49,6 +49,9 @@ func NewVolumesModel() VolumesModel {
 	}
 }
 
+// FilterActive returns true when the filter input is active.
+func (m VolumesModel) FilterActive() bool { return m.filter.Active() }
+
 // SetDaemon sets the Docker daemon reference.
 func (m *VolumesModel) SetDaemon(d docker.ContainerDaemon) {
 	m.daemon = d

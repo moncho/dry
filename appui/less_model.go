@@ -89,7 +89,17 @@ func (m *LessModel) SetContent(content string, title string) {
 // AppendContent adds content (for streaming).
 func (m *LessModel) AppendContent(text string) {
 	m.content += text
-	m.lines = strings.Split(m.content, "\n")
+	// Only split the new text and merge with existing lines,
+	// avoiding a full re-split of the entire content.
+	newLines := strings.Split(text, "\n")
+	if len(m.lines) > 0 && len(newLines) > 0 {
+		// The last existing line may be a partial line; merge with
+		// the first segment of the new text.
+		m.lines[len(m.lines)-1] += newLines[0]
+		m.lines = append(m.lines, newLines[1:]...)
+	} else {
+		m.lines = append(m.lines, newLines...)
+	}
 	if m.filter != "" {
 		m.applyFilter()
 	} else {

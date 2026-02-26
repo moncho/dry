@@ -3,6 +3,7 @@ package appui
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/docker/go-units"
@@ -146,8 +147,15 @@ func (m *MonitorModel) RemoveContainer(cid string) {
 }
 
 func (m *MonitorModel) refreshTable() {
+	ids := make([]string, 0, len(m.stats))
+	for cid := range m.stats {
+		ids = append(ids, cid)
+	}
+	sort.Strings(ids)
+
 	var rows []TableRow
-	for cid, s := range m.stats {
+	for _, cid := range ids {
+		s := m.stats[cid]
 		if s == nil || s.Error != nil {
 			continue
 		}

@@ -57,6 +57,9 @@ func NewContainersModel() ContainersModel {
 	}
 }
 
+// FilterActive returns true when the filter input is active.
+func (m ContainersModel) FilterActive() bool { return m.filter.Active() }
+
 // SetDaemon sets the Docker daemon reference.
 func (m *ContainersModel) SetDaemon(d docker.ContainerDaemon) {
 	m.daemon = d
