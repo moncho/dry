@@ -1,20 +1,18 @@
-# build stage
-FROM alpine:latest AS build-phase
+# Multi-stage build for local development
+FROM golang:alpine AS builder
 
-LABEL VERSION 0.11.2
+RUN apk add --no-cache git
 
-RUN set -x && \
-    apk update && \
-    apk upgrade && \
-    apk add curl file && \
-    curl https://moncho.github.io/dry/dryup.sh | sh && \
-    apk del curl file && \
-    rm -rf /var/cache/apk/* && \
-    chmod 755 /usr/local/bin/dry
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
 
-# final stage
-FROM alpine
+COPY . .
+
+RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o /dry .
+
+FROM alpine:latest
 WORKDIR /app
-COPY --from=build-phase /usr/local/bin/dry /app
+COPY --from=builder /dry /app/dry
 
-CMD sleep 1;/app/dry
+CMD ["sleep", "1", "&&", "/app/dry"]

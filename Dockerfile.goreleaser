@@ -1,0 +1,5 @@
+FROM alpine:latest
+ARG TARGETPLATFORM
+WORKDIR /app
+COPY ${TARGETPLATFORM}/dry /app/dry
+CMD ["sleep", "1", "&&", "/app/dry"]

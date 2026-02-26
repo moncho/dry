@@ -23,7 +23,7 @@ Run a single test:
 go test -v -run TestName ./path/to/package/
 ```
 
-Version is stored in `APPVERSION` and injected at build time via ldflags into `version.VERSION` and `version.GITCOMMIT`.
+Version is derived from git tags (e.g., `v0.12.0`) and injected at build time via ldflags into `version.VERSION` and `version.GITCOMMIT`. Releases are automated via GoReleaser — push a `v*` tag to trigger cross-compilation, checksums, GitHub Release, and Docker image builds.
 
 ## Architecture
 
