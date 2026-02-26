@@ -43,8 +43,8 @@ Keybinding           | Description
 <kbd>5</kbd>         | show node list (on Swarm mode)
 <kbd>6</kbd>         | show service list (on Swarm mode)
 <kbd>7</kbd>         | show stacks list (on Swarm mode)
-<kbd>ArrowUp</kbd>   | move the cursor one line up
-<kbd>ArrowDown</kbd> | move the cursor one line down
+<kbd>ArrowUp</kbd> or <kbd>k</kbd> | move the cursor one line up
+<kbd>ArrowDown</kbd> or <kbd>j</kbd> | move the cursor one line down
 <kbd>g</kbd>         | move the cursor to the top
 <kbd>G</kbd>         | move the cursor to the bottom
 <kbd>q</kbd>         | quit dry
@@ -62,7 +62,6 @@ Keybinding           | Description
 <kbd>s</kbd>         | stats
 <kbd>Ctrl+e</kbd>    | remove all stopped containers
 <kbd>Ctrl+k</kbd>    | kill
-<kbd>Ctrl+l</kbd>    | container logs with Docker timestamps
 <kbd>Ctrl+r</kbd>    | start/restart
 <kbd>Ctrl+t</kbd>    | stop
 
@@ -72,7 +71,6 @@ Keybinding           | Description
 Keybinding           | Description
 ---------------------|---------------------------------------
 <kbd>i</kbd>         | history
-<kbd>r</kbd>         | run command in new container
 <kbd>Ctrl+d</kbd>    | remove dangling images
 <kbd>Ctrl+e</kbd>    | remove image
 <kbd>Ctrl+f</kbd>    | remove image (force)
@@ -102,7 +100,6 @@ Keybinding           | Description
 ---------------------|---------------------------------------
 <kbd>i</kbd>         | inspect service
 <kbd>l</kbd>         | service logs
-<kbd>Ctrl+l</kbd>    | service logs with Docker timestamps
 <kbd>Ctrl+r</kbd>    | remove service
 <kbd>Ctrl+s</kbd>    | scale service
 <kbd>Ctrl+u</kbd>    | update service
@@ -112,8 +109,8 @@ Keybinding           | Description
 
 Keybinding           | Description
 ---------------------|---------------------------------------
-<kbd>ArrowUp</kbd>   | move the cursor one line up
-<kbd>ArrowDown</kbd> | move the cursor one line down
+<kbd>ArrowUp</kbd> or <kbd>k</kbd> | move the cursor one line up
+<kbd>ArrowDown</kbd> or <kbd>j</kbd> | move the cursor one line down
 <kbd>g</kbd>         | move the cursor to the beginning of the buffer
 <kbd>G</kbd>         | move the cursor to the end of the buffer
 <kbd>n</kbd>         | after search, move forwards to the next search hit
@@ -186,10 +183,11 @@ Code released under the MIT license. See
 
 Built on top of:
 
-* [tcell](https://github.com/gdamore/tcell)
-* [termui](https://github.com/gizak/termui)
+* [Bubbletea](https://github.com/charmbracelet/bubbletea)
+* [Bubbles](https://github.com/charmbracelet/bubbles)
+* [Lipgloss](https://github.com/charmbracelet/lipgloss)
 * [Docker](https://github.com/docker/docker)
-* [Docker CLI](github.com/docker/cli/cli)
+* [Docker CLI](https://github.com/docker/cli)
 
 ## Alternatives
 See [Awesome Docker list](https://github.com/veggiemonk/awesome-docker/blob/master/README.md#terminal) for similar tools to work with Docker.
