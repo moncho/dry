@@ -143,6 +143,18 @@ func (m *TableModel) NextSort() {
 	m.syncInnerColumns()
 }
 
+// SetSortField sets the sort field to a specific column index and updates
+// the column header indicator without performing a local sort. Use this when
+// sorting is handled externally (e.g., server-side Docker sort).
+func (m *TableModel) SetSortField(col int) {
+	if col >= 0 && col < len(m.columns) {
+		m.sortField = col
+	} else {
+		m.sortField = -1
+	}
+	m.syncInnerColumns()
+}
+
 // SortField returns the current sort field index.
 func (m TableModel) SortField() int {
 	return m.sortField
@@ -208,7 +220,7 @@ func (m *TableModel) syncInnerColumns() {
 			w = m.colWidths[i]
 		}
 		title := c.Title
-		if i == m.sortField && title != "" {
+		if m.sortField >= 0 && i == m.sortField && title != "" {
 			title += " " + DownArrow
 		}
 		cols[i] = table.Column{Title: title, Width: w}

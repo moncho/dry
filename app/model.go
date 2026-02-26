@@ -401,6 +401,14 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	// Global keys always handled
 	switch msg.String() {
 	case "ctrl+c", "Q":
+		m.monitor.StopAll()
+		if m.streamReader != nil {
+			m.streamReader.Close()
+			m.streamReader = nil
+		}
+		if m.eventsDone != nil {
+			m.eventsDone <- struct{}{}
+		}
 		return m, tea.Quit
 	case "f7":
 		m.showHeader = !m.showHeader

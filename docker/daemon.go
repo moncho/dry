@@ -84,21 +84,21 @@ func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct
 	options := dockerTypes.EventsOptions{
 		Filters: args,
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	events, err := daemon.client.Events(ctx, options)
+	localCtx, localCancel := context.WithCancel(context.Background())
+	events, err := daemon.client.Events(localCtx, options)
 
 	eventC := make(chan dockerEvents.Message)
 	done := make(chan struct{})
 
 	go func() {
-		defer cancel()
+		defer localCancel()
 		defer close(eventC)
 		for {
 			select {
 			case event := <-events:
 				if event.Action != "top" {
 					if err := handleEvent(
-						ctx,
+						localCtx,
 						event,
 						streamEvents(eventC),
 						logEvents(daemon.eventLog),
@@ -122,22 +122,23 @@ func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct
 			Filters: args,
 		}
 
-		swarmEvents, err := daemon.client.Events(ctx, options)
+		swarmCtx, swarmCancel := context.WithCancel(context.Background())
+		swarmEvents, swarmErr := daemon.client.Events(swarmCtx, options)
 
 		go func() {
-
+			defer swarmCancel()
 			for {
 				select {
 				case event := <-swarmEvents:
 					if err := handleEvent(
-						ctx,
+						swarmCtx,
 						event,
 						streamEvents(eventC),
 						logEvents(daemon.eventLog),
 						callbackNotifier); err != nil {
 						return
 					}
-				case <-err:
+				case <-swarmErr:
 					return
 				case <-done:
 					return
@@ -356,14 +357,15 @@ func (daemon *DockerDaemon) RemoveDanglingImages() (int, error) {
 		for _, image := range images {
 			wg.Add(1)
 			go func(id string) {
-				defer atomic.AddUint32(&count, 1)
 				defer wg.Done()
-				_, err = daemon.Rmi(id, true)
-				if err != nil {
+				_, localErr := daemon.Rmi(id, true)
+				if localErr != nil {
 					select {
-					case errs <- err:
+					case errs <- localErr:
 					default:
 					}
+				} else {
+					atomic.AddUint32(&count, 1)
 				}
 			}(image.ID)
 		}

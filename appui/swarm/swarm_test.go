@@ -162,6 +162,79 @@ func TestServicesModel_Navigation(t *testing.T) {
 	}
 }
 
+func TestServicesModel_NilReplicas(t *testing.T) {
+	m := NewServicesModel()
+	m.SetSize(120, 30)
+
+	// Service with Replicated mode but nil Replicas pointer
+	services := []swarm.Service{
+		{
+			ID: "svc-nil-replicas",
+			Spec: swarm.ServiceSpec{
+				Annotations:  swarm.Annotations{Name: "no-replicas"},
+				Mode:         swarm.ServiceMode{Replicated: &swarm.ReplicatedService{Replicas: nil}},
+				TaskTemplate: swarm.TaskSpec{ContainerSpec: &swarm.ContainerSpec{Image: "nginx:latest"}},
+			},
+		},
+	}
+	// Should not panic
+	m.SetServices(services)
+
+	sel := m.SelectedService()
+	if sel == nil {
+		t.Fatal("expected non-nil selected service")
+	}
+}
+
+func TestServicesModel_NilContainerSpec(t *testing.T) {
+	m := NewServicesModel()
+	m.SetSize(120, 30)
+
+	// Service with nil ContainerSpec (e.g., plugin-based task)
+	replicas := uint64(1)
+	services := []swarm.Service{
+		{
+			ID: "svc-nil-container",
+			Spec: swarm.ServiceSpec{
+				Annotations:  swarm.Annotations{Name: "no-container-spec"},
+				Mode:         swarm.ServiceMode{Replicated: &swarm.ReplicatedService{Replicas: &replicas}},
+				TaskTemplate: swarm.TaskSpec{ContainerSpec: nil},
+			},
+		},
+	}
+	// Should not panic
+	m.SetServices(services)
+
+	sel := m.SelectedService()
+	if sel == nil {
+		t.Fatal("expected non-nil selected service")
+	}
+}
+
+func TestServicesModel_GlobalMode(t *testing.T) {
+	m := NewServicesModel()
+	m.SetSize(120, 30)
+
+	// Global mode service (Replicated is nil)
+	services := []swarm.Service{
+		{
+			ID: "svc-global",
+			Spec: swarm.ServiceSpec{
+				Annotations:  swarm.Annotations{Name: "global-svc"},
+				Mode:         swarm.ServiceMode{Replicated: nil},
+				TaskTemplate: swarm.TaskSpec{ContainerSpec: &swarm.ContainerSpec{Image: "nginx:latest"}},
+			},
+		},
+	}
+	// Should not panic
+	m.SetServices(services)
+
+	sel := m.SelectedService()
+	if sel == nil {
+		t.Fatal("expected non-nil selected service")
+	}
+}
+
 func TestStacksModel_SetAndSelect(t *testing.T) {
 	m := NewStacksModel()
 	m.SetSize(120, 30)

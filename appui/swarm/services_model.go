@@ -17,8 +17,10 @@ type serviceRow struct {
 
 func newServiceRow(s swarm.Service) serviceRow {
 	var replicas string
-	if s.Spec.Mode.Replicated != nil {
+	if s.Spec.Mode.Replicated != nil && s.Spec.Mode.Replicated.Replicas != nil {
 		replicas = fmt.Sprintf("%d", *s.Spec.Mode.Replicated.Replicas)
+	} else if s.Spec.Mode.Replicated != nil {
+		replicas = "0"
 	} else {
 		replicas = "global"
 	}

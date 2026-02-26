@@ -171,6 +171,37 @@ func TestTableModel_NextSort(t *testing.T) {
 	}
 }
 
+func TestTableModel_SetSortField(t *testing.T) {
+	cols := []Column{{Title: "A"}, {Title: "B"}, {Title: "C"}, {Title: "D"}}
+	table := NewTableModel(cols)
+	table.SetSize(80, 25)
+	table.SetRows(makeRows(3))
+
+	// Set sort field to column 2
+	table.SetSortField(2)
+	if table.SortField() != 2 {
+		t.Fatalf("expected sort field 2, got %d", table.SortField())
+	}
+
+	// Set sort field to -1 (no sort indicator)
+	table.SetSortField(-1)
+	if table.SortField() != -1 {
+		t.Fatalf("expected sort field -1, got %d", table.SortField())
+	}
+
+	// Out-of-range sets to -1
+	table.SetSortField(99)
+	if table.SortField() != -1 {
+		t.Fatalf("expected sort field -1 for out-of-range, got %d", table.SortField())
+	}
+
+	// Valid field works again
+	table.SetSortField(0)
+	if table.SortField() != 0 {
+		t.Fatalf("expected sort field 0, got %d", table.SortField())
+	}
+}
+
 func TestTableModel_ScrollOffset(t *testing.T) {
 	cols := []Column{{Title: "Name"}}
 	table := NewTableModel(cols)

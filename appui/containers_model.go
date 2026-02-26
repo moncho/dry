@@ -169,5 +169,19 @@ func (m *ContainersModel) nextSort() {
 	if m.sortMode > docker.SortByName {
 		m.sortMode = docker.NoSort
 	}
-	m.table.NextSort()
+	// Map Docker SortMode to the corresponding table column index.
+	// Columns: [0]=indicator, [1]=CONTAINER, [2]=IMAGE, [3]=COMMAND,
+	//          [4]=STATUS, [5]=PORTS, [6]=NAMES
+	col := -1 // no sort indicator for NoSort
+	switch m.sortMode {
+	case docker.SortByContainerID:
+		col = 1
+	case docker.SortByImage:
+		col = 2
+	case docker.SortByStatus:
+		col = 4
+	case docker.SortByName:
+		col = 6
+	}
+	m.table.SetSortField(col)
 }
