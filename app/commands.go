@@ -36,9 +36,9 @@ func demuxDockerStream(raw io.ReadCloser) io.ReadCloser {
 		if err != nil {
 			pw.CloseWithError(err)
 		} else {
-			pw.Close()
+			_ = pw.Close()
 		}
-		raw.Close()
+		_ = raw.Close()
 	}()
 	return &demuxedReadCloser{
 		Reader: pr,
@@ -62,7 +62,7 @@ func readLogStreamCmd(reader io.ReadCloser) tea.Cmd {
 			}
 		}
 		if err != nil {
-			reader.Close()
+			_ = reader.Close()
 			return streamClosedMsg{}
 		}
 		return streamClosedMsg{}
