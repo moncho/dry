@@ -1,22 +1,18 @@
 package app
 
-import (
-	"fmt"
-
-	"github.com/moncho/dry/version"
-)
+import "github.com/moncho/dry/version"
 
 // ShortHelp is a short description of dry
 const ShortHelp = `
 dry
 
-A tool to interact with a Docker Daemon from the terminal. 
+A tool to interact with a Docker Daemon from the terminal.
 `
 
-var help = `
-<white>dry ` + fmt.Sprintf("version %s, build %s", version.VERSION, version.GITCOMMIT) + `</>` +
-	`
-A tool to interact with a Docker Daemon from the terminal. 
+// Help returns the full help text with version info.
+func Help() string {
+	return `<white>dry version ` + version.VERSION + `, build ` + version.GITCOMMIT + `</>
+A tool to interact with a Docker Daemon from the terminal.
 
 Visit <blue>http://moncho.github.io/dry/</> for more information.
 
@@ -50,9 +46,9 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Ctrl+k</>    Kills the selected container
 	<white>l</>         Displays the logs of the selected container
 	<white>Ctrl+r</>    Restarts selected container
-	<white>s</>         Displays a live stream of the selected container resource usage statistics
+	<white>s</>         Displays resource usage statistics of the selected container
 	<white>Ctrl+t</>    Stops selected container (noop if it is not running)
-	<white>Enter</>     Shows low-level information of the selected container
+	<white>Enter</>     Opens the command menu for the selected container
 
 <yellow>Image list keybinds</>
 	<white>Ctrl+d</>    Removes dangling images
@@ -88,6 +84,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 <yellow>Move around in logs/inspect buffers</>
 	<white>/</>         Searches for a pattern
 	<white>F</>         Only show lines that matches a pattern
+	<white>f</>         Toggles follow mode (auto-scroll to bottom)
 	<white>g</>         Moves the cursor to the beginning
 	<white>G</>         Moves the cursor until the end
 	<white>n</>         After a search, it moves forwards to the next search hit
@@ -97,43 +94,4 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 
 <r> Press ESC to exit help. </r>
 `
-
-const (
-	commonMappings = "<b>[H]:<darkgrey>Help</> <b>[Q]:<darkgrey>Quit</> <blue>|</> "
-	keyMappings    = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F2]:<darkgrey>Toggle Show Containers</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> " +
-		"<b>[m]:<darkgrey>Monitor mode</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</> <b>[Enter]:<darkgrey>Commands</></>"
-
-	monitorMapping = commonMappings +
-		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</> <b>[s]:<darkgrey>Set refresh rate</></>"
-
-	swarmMapping = commonMappings +
-		"<b>[m]:<darkgrey>Monitor mode</> <b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</>"
-
-	imagesKeyMappings = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
-		"<b>[1]:<darkgrey>Containers</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</>" +
-		"<b>[Ctrl+D]:<darkgrey>Remove Dangling</> <b>[Ctrl+E]:<darkgrey>Remove</> <b>[Ctrl+F]:<darkgrey>Force Remove</> <b>[Ctrl+U]:<darkgrey>Remove Unused</> <b>[I]:<darkgrey>History</>"
-
-	networkKeyMappings = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
-		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</>" +
-		"<b>[Ctrl+E]:<darkgrey>Remove</> <b>[Enter]:<darkgrey>Inspect</>"
-
-	volumesKeyMappings = commonMappings +
-		"<b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</> " +
-		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</> <b>[3]:<darkgrey>Networks</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</>" +
-		"<b>[Ctrl+A]:<darkgrey>Remove All</> <b>[Ctrl+E]:<darkgrey>Remove</> <b>[Ctrl+F]:<darkgrey>Force Remove</> <b>[Ctrl+U]:<darkgrey>Remove Unused</> <b>[Enter]:<darkgrey>Inspect</>"
-
-	diskUsageKeyMappings = commonMappings +
-		"<b>[1]:<darkgrey>Containers</> <b>[2]:<darkgrey>Images</><blue>|</> <b>[3]:<darkgrey>Networks</> <b>[4]:<darkgrey>Volumes</> <b>[5]:<darkgrey>Nodes</> <b>[6]:<darkgrey>Services</> <b>[7]:<darkgrey>Stacks</> <blue>|</>" +
-		"<b>[p]:<darkgrey>Prune</>"
-
-	serviceKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> <b>[l]:<darkgrey>Service logs</> <b>[Ctrl+R]:<darkgrey>Remove Service</> <b>[Ctrl+S]:<darkgrey>Scale service</><b>[Ctrl+U]:<darkgrey>Update service</>"
-
-	stackKeyMappings = swarmMapping + "<blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <b>[%]:<darkgrey>Filter</> <blue>|</> <b>[Ctrl+R]:<darkgrey>Remove Stack</>"
-
-	nodeKeyMappings = swarmMapping + " <blue>|</> <b>[F1]:<darkgrey>Sort</> <b>[F5]:<darkgrey>Refresh</> <blue>|</>  <b>[Enter]:<darkgrey>Show Node Tasks</> <b>[Ctrl+A]:<darkgrey>Set Availability</>"
-
-	commandsMenuBar = "<b>[Esc]:<darkgrey>Back</> <b>[Up]:<darkgrey>Cursor Up</> <b>[Down]:<darkgrey>Cursor Down</> <b>[Enter]:<darkgrey>Execute Command</>"
-)
+}

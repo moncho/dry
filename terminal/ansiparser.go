@@ -98,26 +98,6 @@ func (p *ansiParser) handlePreEscape(char rune) {
 	}
 }*/
 
-// Apply an escape sequence to the buffer, does nothing by default
-func (p *ansiParser) applyEscape(code rune, instructions []string) {
-
-	/*
-		if len(instructions) == 0 {
-			// Ensure we always have a first instruction
-			instructions = []string{""}
-		}
-
-		switch code {
-		case 'M':
-		case 'G':
-		case 'K':
-		case 'A':
-		case 'B':
-		case 'C':
-		case 'D':
-		}*/
-}
-
 // A buffer for the parser, tracks current position and characters
 type buffer struct {
 	x       int

@@ -16,8 +16,6 @@ const (
 	TableFormatKey  = "table"
 	RawFormatKey    = "raw"
 	PrettyFormatKey = "pretty"
-
-	defaultQuietFormat = "{{.ID}}"
 )
 
 // Format is the format string rendered using the Context

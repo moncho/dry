@@ -9,7 +9,7 @@ import (
 	"github.com/docker/docker/api/types/events"
 )
 
-var noop = func(ctx context.Context, event events.Message) error { return nil }
+var noop = func(ctx context.Context, event events.Message) {}
 
 func TestEventListeners_RegisterCallbacks(t *testing.T) {
 	type fields struct {
@@ -122,13 +122,12 @@ func Test_notifyCallbacks(t *testing.T) {
 	var callback = func(
 		wg *sync.WaitGroup,
 		i *invocations) EventCallback {
-		return func(ctx context.Context, event events.Message) error {
+		return func(ctx context.Context, event events.Message) {
 			defer wg.Done()
 			i.Lock()
 			defer i.Unlock()
 			t := SourceType(event.Type)
 			i.m[t] += 1
-			return nil
 		}
 	}
 	type args struct {

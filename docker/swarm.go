@@ -99,7 +99,6 @@ func (daemon *DockerDaemon) Service(id string) (*swarm.Service, error) {
 
 // ServiceLogs returns logs of the service with the given id
 func (daemon *DockerDaemon) ServiceLogs(id string, since string, withTimestamps bool) (io.ReadCloser, error) {
-
 	options := container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,

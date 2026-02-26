@@ -14,9 +14,6 @@ import (
 
 // StackRemove removes the stack with the given in
 func (daemon *DockerDaemon) StackRemove(stack string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
-	defer cancel()
-
 	var errs []string
 	services, err := daemon.StackServices(stack)
 	if err != nil {
@@ -45,8 +42,13 @@ func (daemon *DockerDaemon) StackRemove(stack string) error {
 	}
 
 	if len(services)+len(networks)+len(secrets)+len(configs) == 0 {
-		return fmt.Errorf("Nothing found in stack: %s", stack)
+		return fmt.Errorf("nothing found in stack: %s", stack)
 	}
+
+	// Create the timeout context just before the remove operations so the
+	// listing calls above don't consume the budget.
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 
 	hasError := removeServices(ctx, daemon, services)
 	hasError = removeSecrets(ctx, daemon, secrets) || hasError

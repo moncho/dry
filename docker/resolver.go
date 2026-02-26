@@ -32,8 +32,8 @@ func (r *idResolver) get(ctx context.Context, t interface{}, id string) (string,
 		if err != nil {
 			return id, nil
 		}
-		if node.Spec.Annotations.Name != "" {
-			return node.Spec.Annotations.Name, nil
+		if node.Spec.Name != "" {
+			return node.Spec.Name, nil
 		}
 		if node.Description.Hostname != "" {
 			return node.Description.Hostname, nil
@@ -44,7 +44,7 @@ func (r *idResolver) get(ctx context.Context, t interface{}, id string) (string,
 		if err != nil {
 			return id, nil
 		}
-		return service.Spec.Annotations.Name, nil
+		return service.Spec.Name, nil
 	default:
 		return "", errors.New("unsupported type")
 	}

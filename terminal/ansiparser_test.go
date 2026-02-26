@@ -30,7 +30,7 @@ func BenchmarkRemoveEscapeCharacters(b *testing.B) {
 		lastResult = RemoveANSIEscapeCharacters(text)
 	}
 	last := lastResult
-	if len(last) < 0 {
+	if len(last) == 0 {
 		b.Errorf("Parsing returned wrong number of lines, expected: %d, got: %d", 1, len(last))
 	}
 

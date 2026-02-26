@@ -53,6 +53,9 @@ func (t *TaskStringer) Name() string {
 
 // Image Task image as a string
 func (t *TaskStringer) Image() string {
+	if t.task.Spec.ContainerSpec == nil {
+		return ""
+	}
 	image := t.task.Spec.ContainerSpec.Image
 	if t.trunc {
 		ref, err := reference.ParseNormalizedNamed(image)

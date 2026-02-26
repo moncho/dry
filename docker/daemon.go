@@ -30,6 +30,7 @@ const (
 // timeout in seconds for docker operations
 var defaultOperationTimeout = time.Duration(10) * time.Second
 
+
 // Defaults for listing images
 var defaultImageListOptions = image.ListOptions{
 	All: false}
@@ -75,78 +76,88 @@ func (daemon *DockerDaemon) DockerEnv() Env {
 }
 
 // Events returns a channel to receive Docker events.
-func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct{}, error) {
+// The caller owns cancellation via the provided context.
+// The returned channel is closed when the context is cancelled or the
+// Docker daemon disconnects (error on the event stream).
+func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan dockerEvents.Message, error) {
+	// Derive an internal context so error on either event stream
+	// cancels all goroutines and closes the output channel.
+	innerCtx, innerCancel := context.WithCancel(ctx)
+
 	args := filters.NewArgs()
-
 	args.Add("scope", "local")
-
 	options := dockerTypes.EventsOptions{
 		Filters: args,
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	events, err := daemon.client.Events(ctx, options)
+	events, err := daemon.client.Events(innerCtx, options)
 
 	eventC := make(chan dockerEvents.Message)
-	done := make(chan struct{})
 
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	go func() {
-		defer cancel()
-		defer close(eventC)
+		defer wg.Done()
 		for {
 			select {
 			case event := <-events:
 				if event.Action != "top" {
-					if err := handleEvent(
-						ctx,
+					handleEvent(
+						innerCtx,
 						event,
 						streamEvents(eventC),
 						logEvents(daemon.eventLog),
-						callbackNotifier); err != nil {
-						return
-					}
+						callbackNotifier)
 				}
 			case <-err:
+				innerCancel()
 				return
-			case <-done:
+			case <-innerCtx.Done():
 				return
 			}
 		}
-
 	}()
 
 	if daemon.swarmMode {
-		args := filters.NewArgs()
-		args.Add("scope", "swarm")
-		options := dockerTypes.EventsOptions{
-			Filters: args,
+		swarmArgs := filters.NewArgs()
+		swarmArgs.Add("scope", "swarm")
+		swarmOptions := dockerTypes.EventsOptions{
+			Filters: swarmArgs,
 		}
+		swarmEvents, swarmErr := daemon.client.Events(innerCtx, swarmOptions)
 
-		swarmEvents, err := daemon.client.Events(ctx, options)
-
+		wg.Add(1)
 		go func() {
-
+			defer wg.Done()
 			for {
 				select {
 				case event := <-swarmEvents:
-					if err := handleEvent(
-						ctx,
+					handleEvent(
+						innerCtx,
 						event,
 						streamEvents(eventC),
 						logEvents(daemon.eventLog),
-						callbackNotifier); err != nil {
-						return
-					}
-				case <-err:
+						callbackNotifier)
+				case <-swarmErr:
+					innerCancel()
 					return
-				case <-done:
+				case <-innerCtx.Done():
 					return
 				}
 			}
-
 		}()
 	}
 
-	return eventC, done, nil
+	// Cleanup goroutine: waits for all event goroutines to finish,
+	// then closes the output channel. Goroutines exit on context
+	// cancellation (caller or internal) or Docker stream error.
+	go func() {
+		wg.Wait()
+		innerCancel() // no-op if already cancelled, prevents leak
+		close(eventC)
+	}()
+
+	return eventC, nil
 }
 
 // EventLog returns the events log
@@ -238,22 +249,23 @@ func (daemon *DockerDaemon) StatsChannel(container *Container) (*StatsChannel, e
 // Prune requests the Docker daemon to prune unused containers, images
 // networks and volumes
 func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
-	c := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
 
 	args := filters.NewArgs()
-	cReport, err := daemon.client.ContainersPrune(c, args)
+	cReport, err := daemon.client.ContainersPrune(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-	iReport, err := daemon.client.ImagesPrune(c, args)
+	iReport, err := daemon.client.ImagesPrune(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-	nReport, err := daemon.client.NetworksPrune(c, args)
+	nReport, err := daemon.client.NetworksPrune(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-	vRreport, err := daemon.client.VolumesPrune(c, args)
+	vRreport, err := daemon.client.VolumesPrune(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +274,6 @@ func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
 		ImagesReport:    iReport,
 		NetworksReport:  nReport,
 		VolumesReport:   vRreport}, nil
-
 }
 
 // RestartContainer restarts the container with the given id
@@ -355,14 +366,15 @@ func (daemon *DockerDaemon) RemoveDanglingImages() (int, error) {
 		for _, image := range images {
 			wg.Add(1)
 			go func(id string) {
-				defer atomic.AddUint32(&count, 1)
 				defer wg.Done()
-				_, err = daemon.Rmi(id, true)
-				if err != nil {
+				_, localErr := daemon.Rmi(id, true)
+				if localErr != nil {
 					select {
-					case errs <- err:
+					case errs <- localErr:
 					default:
 					}
+				} else {
+					atomic.AddUint32(&count, 1)
 				}
 			}(image.ID)
 		}
@@ -527,8 +539,8 @@ func (daemon *DockerDaemon) init() error {
 	}
 	GlobalRegistry.Register(
 		ContainerSource,
-		func(ctx context.Context, message dockerEvents.Message) error {
-			return daemon.refreshAndWait()
+		func(ctx context.Context, message dockerEvents.Message) {
+			daemon.refreshAndWait()
 		})
 	return nil
 }

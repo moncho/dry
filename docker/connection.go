@@ -15,7 +15,6 @@ import (
 	"github.com/kevinburke/ssh_config"
 	homedir "github.com/mitchellh/go-homedir"
 	drytls "github.com/moncho/dry/tls"
-	"github.com/moncho/dry/version"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -25,10 +24,6 @@ const (
 )
 
 var defaultDockerPath string
-
-var headers = map[string]string{
-	"User-Agent": "dry/" + version.VERSION,
-}
 
 func init() {
 	defaultDockerPath, _ = homedir.Expand("~/.docker")
