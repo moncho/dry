@@ -69,12 +69,12 @@ func certPool(caFile string) (*x509.CertPool, error) {
 	certPool := x509.NewCertPool()
 	pem, err := os.ReadFile(caFile)
 	if err != nil {
-		return nil, fmt.Errorf("Could not read CA certificate %q: %v", caFile, err)
+		return nil, fmt.Errorf("could not read CA certificate %q: %v", caFile, err)
 	}
 	if !certPool.AppendCertsFromPEM(pem) {
 		return nil, fmt.Errorf("failed to append certificates from PEM file: %q", caFile)
 	}
-	logrus.Debugf("Trusting %d certs", len(certPool.Subjects()))
+	logrus.Debugf("Certs loaded from %q", caFile)
 	return certPool, nil
 }
 
@@ -93,7 +93,7 @@ func Client(options Options) (*tls.Config, error) {
 	if options.CertFile != "" || options.KeyFile != "" {
 		tlsCert, err := tls.LoadX509KeyPair(options.CertFile, options.KeyFile)
 		if err != nil {
-			return nil, fmt.Errorf("Could not load X509 key pair: %v. Make sure the key is not encrypted", err)
+			return nil, fmt.Errorf("could not load X509 key pair: %v. Make sure the key is not encrypted", err)
 		}
 		tlsConfig.Certificates = []tls.Certificate{tlsCert}
 	}
