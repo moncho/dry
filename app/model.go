@@ -71,6 +71,7 @@ type model struct {
 	inputPrompt   appui.InputPromptModel
 	containerMenu appui.ContainerMenuModel
 	streamReader  io.ReadCloser // active streaming reader (logs)
+	eventsLive    bool          // true when events less overlay is open
 
 	// Docker event throttling
 	pendingRefresh map[docker.SourceType]bool
@@ -244,6 +245,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, listenDockerEvents(m.eventsChan)
 
 	case dockerEventMsg:
+		if m.eventsLive && m.overlay == overlayLess {
+			m.less.AppendContent(formatEvent(msg.event) + "\n")
+		}
 		source := docker.SourceType(msg.event.Type)
 		m.pendingRefresh[source] = true
 		cmds := []tea.Cmd{listenDockerEvents(m.eventsChan)}
@@ -306,6 +310,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.less.SetSize(m.width, m.height)
 		m.less.SetContent(msg.content, msg.title)
 		m.overlay = overlayLess
+		if msg.title == "Docker Events" {
+			m.eventsLive = true
+			m.less.SetFollowing(true)
+		}
 		return m, nil
 
 	case showStreamingLessMsg:
@@ -334,6 +342,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case appui.CloseOverlayMsg:
 		m.overlay = overlayNone
+		m.eventsLive = false
 		if m.streamReader != nil {
 			m.streamReader.Close()
 			m.streamReader = nil

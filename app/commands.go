@@ -157,16 +157,27 @@ func inspectContainerCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 	}
 }
 
+// formatEvent formats a Docker event as a display line.
+func formatEvent(e events.Message) string {
+	ts := time.Unix(0, e.TimeNano)
+	actor := e.Actor.ID
+	if actor == "" {
+		actor = e.Actor.Attributes["name"]
+	}
+	return fmt.Sprintf("[%s] %s %s: %s", ts.Format("15:04:05"), e.Type, e.Action, actor)
+}
+
 // showDockerEventsCmd shows the Docker event log.
 func showDockerEventsCmd(daemon docker.ContainerDaemon) tea.Cmd {
 	return func() tea.Msg {
 		eventLog := daemon.EventLog()
-		events := eventLog.Events()
+		if eventLog == nil {
+			return showLessMsg{content: "No events recorded", title: "Docker Events"}
+		}
+		evts := eventLog.Events()
 		var lines []string
-		for _, e := range events {
-			ts := time.Unix(e.Time, e.TimeNano)
-			lines = append(lines, fmt.Sprintf("[%s] %s %s: %s",
-				ts.Format("15:04:05"), e.Type, e.Action, e.Actor.ID))
+		for _, e := range evts {
+			lines = append(lines, formatEvent(e))
 		}
 		content := "No events recorded"
 		if len(lines) > 0 {
