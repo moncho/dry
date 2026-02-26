@@ -564,6 +564,15 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				), nil
 			}
 			return m, nil
+		case "f1":
+			// Change sort mode — need to reload with new sort
+			var cmd tea.Cmd
+			m.containers, cmd = m.containers.Update(msg)
+			if m.daemon != nil {
+				return m, tea.Batch(cmd,
+					loadContainersCmd(m.daemon, m.containers.ShowAll(), m.containers.SortMode()))
+			}
+			return m, cmd
 		case "f2":
 			// Toggle show all — need to reload after
 			var cmd tea.Cmd
