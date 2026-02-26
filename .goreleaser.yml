@@ -1,0 +1,47 @@
+version: 2
+
+project_name: dry
+
+builds:
+  - main: ./main.go
+    binary: dry
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X github.com/moncho/dry/version.VERSION={{.Version}} -X github.com/moncho/dry/version.GITCOMMIT={{.ShortCommit}}
+    targets:
+      - linux_amd64
+      - linux_386
+      - linux_arm64
+      - linux_arm_6
+      - linux_arm_7
+      - darwin_amd64
+      - darwin_arm64
+      - freebsd_amd64
+      - freebsd_386
+      - windows_amd64
+
+archives:
+  - formats: [binary]
+    name_template: "dry-{{ .Os }}-{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}"
+
+checksum:
+  name_template: "dry_checksums.txt"
+
+release:
+  github:
+    owner: moncho
+    name: dry
+
+dockers_v2:
+  - dockerfile: Dockerfile.goreleaser
+    images:
+      - moncho/dry
+    tags:
+      - "{{ .Version }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+      - linux/arm/v6
+      - linux/arm/v7

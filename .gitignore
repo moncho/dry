@@ -55,3 +55,4 @@ Godeps/_workspace/
 .idea
 .wercker
 .realize
+dist

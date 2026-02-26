@@ -2,7 +2,7 @@
 
 [![MIT License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/moncho/dryblob/master/LICENSE)
 ![Build Status](https://github.com/moncho/dry/actions/workflows/go.yml/badge.svg)
-![Docker Build](https://github.com/moncho/dry/actions/workflows/docker.yml/badge.svg)
+![Release](https://github.com/moncho/dry/actions/workflows/release.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/moncho/dry)](https://goreportcard.com/report/github.com/moncho/dry)
 [![GoDoc](https://godoc.org/github.com/moncho/dry?status.svg)](https://godoc.org/github.com/moncho/dry)
 [![Github All Releases](https://img.shields.io/github/downloads/moncho/dry/total.svg)]()
@@ -132,10 +132,10 @@ sudo chmod 755 /usr/local/bin/dry
 
 If you dont like to **curl | sh**, binaries are provided.
 
-* **darwin** [386](https://github.com/moncho/dry/releases/download/v0.11.2/dry-darwin-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.11.2/dry-darwin-amd64) / [arm64](https://github.com/moncho/dry/releases/download/v0.11.2/dry-darwin-arm64)
-* **freebsd** [386](https://github.com/moncho/dry/releases/download/v0.11.2/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.11.2/dry-freebsd-amd64)
-* **linux** [386](https://github.com/moncho/dry/releases/download/v0.11.2/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.11.2/dry-linux-amd64)
-* **windows** [386](https://github.com/moncho/dry/releases/download/v0.11.2/dry-windows-386) / [amd64](https://github.com/moncho/dry/releases/download/v0.11.2/dry-windows-amd64)
+* **darwin** [amd64](https://github.com/moncho/dry/releases/latest/download/dry-darwin-amd64) / [arm64](https://github.com/moncho/dry/releases/latest/download/dry-darwin-arm64)
+* **freebsd** [386](https://github.com/moncho/dry/releases/latest/download/dry-freebsd-386) / [amd64](https://github.com/moncho/dry/releases/latest/download/dry-freebsd-amd64)
+* **linux** [386](https://github.com/moncho/dry/releases/latest/download/dry-linux-386) / [amd64](https://github.com/moncho/dry/releases/latest/download/dry-linux-amd64) / [arm64](https://github.com/moncho/dry/releases/latest/download/dry-linux-arm64) / [armv6](https://github.com/moncho/dry/releases/latest/download/dry-linux-armv6) / [armv7](https://github.com/moncho/dry/releases/latest/download/dry-linux-armv7)
+* **windows** [amd64](https://github.com/moncho/dry/releases/latest/download/dry-windows-amd64)
 
 #### Mac OS X / Homebrew
 
