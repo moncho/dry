@@ -30,7 +30,7 @@ func NewSearch(text [][]rune, pattern string) (*Result, error) {
 		}
 		return sr, nil
 	}
-	return nil, errors.New("Nothing to search in an empty text")
+	return nil, errors.New("nothing to search in an empty text")
 }
 
 func (result *Result) String() string {
@@ -96,5 +96,5 @@ func (result *Result) PreviousLine() (int, error) {
 }
 
 func nohitsError() error {
-	return errors.New("Trying to iterate through the search result when there are no hits")
+	return errors.New("trying to iterate through the search result when there are no hits")
 }
