@@ -140,13 +140,6 @@ func (c *ContainerFormatter) Labels() string {
 	return FormatLabels(c.c.Labels)
 }
 
-func (c *ContainerFormatter) fullHeader() string {
-	if c.header == nil {
-		return ""
-	}
-	return strings.Join(c.header, "\t")
-}
-
 func (c *ContainerFormatter) addHeader(header string) {
 	if c.header == nil {
 		c.header = []string{}
