@@ -1,19 +1,37 @@
-name: Go build and test
-
+name: Go tests
 on:
   push:
-    branches: [ master ]
-
+  pull_request:
+  schedule:
+    - cron: '22 10 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
-
-  build:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go:
+          - { go-version: stable }
+          - { go-version-file: go.mod }
+        deps:
+          - locked
+          - latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
         with:
-          go-version: '1.26'
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go.go-version }}
+          go-version-file: ${{ matrix.go.go-version-file }}
       - name: Test
-        run: go test -v ./...    
+        run: |
+          if [ "${{ matrix.deps }}" = "latest" ]; then
+            go get -u -t ./...
+          fi
+          go test -v ./...
       - name: Build
         run: go build -v ./...
