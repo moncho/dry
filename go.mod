@@ -21,8 +21,8 @@ require (
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/sirupsen/logrus v1.9.3
 	go.uber.org/goleak v1.1.12
-	golang.org/x/crypto v0.33.0
-	golang.org/x/net v0.34.0
+	golang.org/x/crypto v0.48.0
+	golang.org/x/net v0.49.0
 )
 
 require (
@@ -34,6 +34,7 @@ require (
 	charm.land/bubbles/v2 v2.0.0
 	charm.land/bubbletea/v2 v2.0.0
 	charm.land/lipgloss/v2 v2.0.0
+	github.com/charmbracelet/x/ansi v0.11.6
 	github.com/distribution/reference v0.6.0
 )
 
@@ -42,7 +43,6 @@ require (
 	github.com/charmbracelet/colorprofile v0.4.2 // indirect
 	github.com/charmbracelet/harmonica v0.2.0 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20260205113103-524a6607adb8 // indirect
-	github.com/charmbracelet/x/ansi v0.11.6 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
