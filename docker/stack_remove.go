@@ -42,7 +42,7 @@ func (daemon *DockerDaemon) StackRemove(stack string) error {
 	}
 
 	if len(services)+len(networks)+len(secrets)+len(configs) == 0 {
-		return fmt.Errorf("Nothing found in stack: %s", stack)
+		return fmt.Errorf("nothing found in stack: %s", stack)
 	}
 
 	// Create the timeout context just before the remove operations so the
