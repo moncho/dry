@@ -1053,7 +1053,13 @@ func (m model) switchView(target viewMode) (tea.Model, tea.Cmd) {
 	}
 	m.previousView = m.view
 	m.view = target
-	// Load data for new view
+	// Monitor.Start() mutates the model (stores cancel funcs), so it must
+	// run on the copy that gets returned — not inside loadViewData which
+	// operates on a nested copy that gets discarded.
+	if target == Monitor {
+		cmds := m.monitor.Start()
+		return m, tea.Batch(cmds...)
+	}
 	return m, m.loadViewData(target)
 }
 
@@ -1073,8 +1079,9 @@ func (m model) loadViewData(v viewMode) tea.Cmd {
 	case DiskUsage:
 		return loadDiskUsageCmd(m.daemon)
 	case Monitor:
-		cmds := m.monitor.Start()
-		return tea.Batch(cmds...)
+		// Monitor is handled directly in switchView to avoid the
+		// value-receiver copy problem (Start mutates the model).
+		return nil
 	case Nodes:
 		if m.swarmMode {
 			return loadNodesCmd(m.daemon)

@@ -45,16 +45,14 @@ func (c *inMemoryContainerStore) add(cont *Container) {
 	if _, ok := c.s[cont.ID]; ok {
 		for pos, container := range c.c {
 			if container.ID == cont.ID {
-				c.c = append(c.c[0:pos], c.c[pos:]...)
+				c.c = append(c.c[0:pos], c.c[pos+1:]...)
 				break
 			}
 		}
-	} else {
-		c.c = append(c.c, cont)
 	}
+	c.c = append(c.c, cont)
 	c.s[cont.ID] = cont
 	c.Unlock()
-
 }
 
 // Get returns a container from the store by id.
