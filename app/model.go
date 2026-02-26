@@ -336,7 +336,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		// Overlay was closed, clean up the reader
 		if msg.reader != nil {
-			msg.reader.Close()
+			_ = msg.reader.Close()
 		}
 		return m, nil
 
@@ -348,7 +348,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.overlay = overlayNone
 		m.eventsLive = false
 		if m.streamReader != nil {
-			m.streamReader.Close()
+			_ = m.streamReader.Close()
 			m.streamReader = nil
 		}
 		return m, nil
@@ -424,7 +424,7 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "ctrl+c", "Q":
 		m.monitor.StopAll()
 		if m.streamReader != nil {
-			m.streamReader.Close()
+			_ = m.streamReader.Close()
 			m.streamReader = nil
 		}
 		if m.eventsCancel != nil {

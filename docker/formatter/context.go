@@ -71,13 +71,13 @@ func (c *Context) postFormat(tmpl *template.Template, subContext subContext) {
 	if c.Format.IsTable() {
 		t := tabwriter.NewWriter(c.Output, 20, 1, 3, ' ', 0)
 		buffer := bytes.NewBufferString("")
-		tmpl.Funcs(templates.HeaderFunctions).Execute(buffer, subContext.FullHeader())
-		buffer.WriteTo(t)
-		t.Write([]byte("\n"))
-		c.buffer.WriteTo(t)
+		_ = tmpl.Funcs(templates.HeaderFunctions).Execute(buffer, subContext.FullHeader())
+		_, _ = buffer.WriteTo(t)
+		_, _ = t.Write([]byte("\n"))
+		_, _ = c.buffer.WriteTo(t)
 		t.Flush()
 	} else {
-		c.buffer.WriteTo(c.Output)
+		_, _ = c.buffer.WriteTo(c.Output)
 	}
 }
 
