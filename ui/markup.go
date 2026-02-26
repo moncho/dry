@@ -4,110 +4,105 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gdamore/tcell/termbox"
+	"charm.land/lipgloss/v2"
 )
 
-// SupportedTags maps supported tags to a tcell.Attribute
+// tagStyles maps markup tag names to lipgloss styles.
+// Colors use the CharmTone palette from Crush.
+var tagStyles = map[string]lipgloss.Style{
+	"black":    lipgloss.NewStyle().Foreground(lipgloss.Color("#201F26")),
+	"red":      lipgloss.NewStyle().Foreground(lipgloss.Color("#EB4268")),
+	"red00":    lipgloss.NewStyle().Foreground(lipgloss.Color("#EB4268")),
+	"green":    lipgloss.NewStyle().Foreground(lipgloss.Color("#00FFB2")),
+	"yellow":   lipgloss.NewStyle().Foreground(lipgloss.Color("#E8FE96")),
+	"blue":     lipgloss.NewStyle().Foreground(lipgloss.Color("#6B50FF")),
+	"magenta":  lipgloss.NewStyle().Foreground(lipgloss.Color("#FF60FF")),
+	"cyan":     lipgloss.NewStyle().Foreground(lipgloss.Color("#68FFD6")),
+	"cyan0":    lipgloss.NewStyle().Foreground(lipgloss.Color("#BFBCC8")),
+	"white":    lipgloss.NewStyle().Foreground(lipgloss.Color("#DFDBDD")),
+	"grey":     lipgloss.NewStyle().Foreground(lipgloss.Color("#858392")),
+	"grey2":    lipgloss.NewStyle().Foreground(lipgloss.Color("#858392")),
+	"darkgrey": lipgloss.NewStyle().Foreground(lipgloss.Color("#605F6B")),
+	"b":        lipgloss.NewStyle().Bold(true),
+	"u":        lipgloss.NewStyle().Underline(true),
+	"r":        lipgloss.NewStyle().Reverse(true),
+}
+
+// SupportedTags is a regexp matching all supported markup tags.
 var SupportedTags = supportedTagsRegexp()
-var tagsToAttributeMap = tags()
 
 func supportedTagsRegexp() *regexp.Regexp {
-	arr := []string{}
-
-	for tag := range tagsToAttributeMap {
+	var arr []string
+	for tag := range tagStyles {
 		arr = append(arr, `</?`+tag+`>`)
 	}
-
+	// Also match the reset tag </>
+	arr = append(arr, `</>`)
 	return regexp.MustCompile(strings.Join(arr, `|`))
 }
 
-// tags returns regular expression that matches all possible tags
-// supported by the markup, i.e. </?black>|</?red>| ... |<?b>| ... |</?right>
-func tags() map[string]termbox.Attribute {
-	//Due to how markup is currently being used, the tag character length must be
-	//the same for all color tags (the magic number is 5, because white) to avoid,
-	//text alignment problems, hence the strange tag names.
-
-	//TODO Figure out a way to use markups and the ColorTheme. Right now a tag
-	//value corresponds to an specific color, and there are cases might now even
-	//fit the description (so green is not really green but something that fits the DarkTheme).
-	tags := make(map[string]termbox.Attribute)
-	tags[`/`] = termbox.Attribute(ColorWhite)
-	tags[`black`] = termbox.ColorBlack
-	tags[`red`] = termbox.ColorRed
-	tags[`red00`] = termbox.ColorRed
-	tags[`green`] = termbox.Attribute(Color190)
-	tags[`yellow`] = termbox.ColorYellow
-	tags[`blue`] = termbox.Attribute(Color188)
-	tags[`magenta`] = termbox.ColorMagenta
-	tags[`cyan`] = termbox.ColorCyan
-	tags[`cyan0`] = termbox.Attribute(Color181)
-	tags[`white`] = termbox.Attribute(Color255)
-	tags[`grey`] = termbox.Attribute(Grey)
-	tags[`grey2`] = termbox.Attribute(Grey2)
-	tags[`darkgrey`] = termbox.Attribute(Darkgrey)
-	tags[`b`] = termbox.AttrBold
-	tags[`u`] = termbox.AttrUnderline
-	tags[`r`] = termbox.AttrReverse
-	return tags
+// RenderMarkup converts markup-tagged strings to lipgloss-styled strings.
+// Tags like <white>, <blue>, <b> are converted to ANSI-styled text.
+// Tags stack: <b><darkgrey> produces bold + darkgrey foreground.
+// The </> tag (or any closing tag) resets all styles.
+func RenderMarkup(s string) string {
+	return RenderMarkupWithBase(s, lipgloss.NewStyle())
 }
 
-// Markup implements some minimalistic text formatting conventions that
-// get translated to Termbox colors and attributes. To colorize a string
-// wrap it in <color-name>...</> tags. Unlike HTML each tag sets a new
-// color whereas the </> tag changes color back to default. For example:
-//
-// <green>Hello, <red>world!</>
-type Markup struct {
-	Foreground termbox.Attribute
-	Background termbox.Attribute
-	theme      *ColorTheme
-}
-
-// NewMarkup creates a markup processor that uses the given theme for default
-// colors.
-func NewMarkup(theme *ColorTheme) *Markup {
-	markup := &Markup{}
-	markup.Foreground = termbox.Attribute(theme.Fg)
-	markup.Background = termbox.Attribute(theme.Bg)
-	markup.theme = theme
-	return markup
-}
-
-// IsTag returns true when the given string looks like markup tag. When the
-// tag name matches one of the markup-supported tags it gets translated to
-// relevant Termbox attributes and colors.
-func (markup *Markup) IsTag(str string) bool {
-	tag, open := probeForTag(str)
-
-	if tag == "" {
-		return false
+// RenderMarkupWithBase renders markup with a persistent base style.
+// When tags are reset with </>, the style reverts to base rather than
+// to an empty style. This preserves background colors through resets,
+// avoiding ANSI nesting issues (e.g. footer text on a colored background).
+func RenderMarkupWithBase(s string, base lipgloss.Style) string {
+	tokens := Tokenize(s, SupportedTags)
+	if len(tokens) == 0 {
+		if base.GetBackground() != nil {
+			return base.Render(s)
+		}
+		return s
 	}
 
-	return markup.process(tag, open)
-}
+	hasBase := base.GetBackground() != nil || base.GetForeground() != nil
 
-func (markup *Markup) process(tag string, open bool) bool {
-	if attribute, ok := tagsToAttributeMap[tag]; ok {
-		if open {
-			markup.Foreground = attribute
-		} else {
-			markup.Foreground = termbox.Attribute(markup.theme.Fg)
+	var b strings.Builder
+	style := base
+	hasStyle := hasBase
+
+	for _, token := range tokens {
+		tag, isOpen := probeForTag(token)
+		if tag == "" {
+			// Regular text — apply current style if any
+			if hasStyle {
+				b.WriteString(style.Render(token))
+			} else {
+				b.WriteString(token)
+			}
+			continue
+		}
+
+		if !isOpen || tag == "/" {
+			// Closing tag or </> — reset to base
+			style = base
+			hasStyle = hasBase
+			continue
+		}
+
+		if tagStyle, ok := tagStyles[tag]; ok {
+			// Stack: merge tag style into current style
+			style = style.Inherit(tagStyle)
+			hasStyle = true
 		}
 	}
-
-	return true
+	return b.String()
 }
 
 func probeForTag(str string) (string, bool) {
 	if len(str) > 2 && str[0:1] == `<` && str[len(str)-1:] == `>` {
 		return extractTagName(str), str[1:2] != "/"
 	}
-
 	return ``, false
 }
 
-// Extract tag name from the given tag, i.e. `<hello>` => `hello`.
 func extractTagName(str string) string {
 	if len(str) < 3 {
 		return ``
@@ -116,39 +111,24 @@ func extractTagName(str string) string {
 	} else if len(str) > 3 {
 		return str[2 : len(str)-1]
 	}
-
 	return `/`
 }
 
-// Tokenize works just like strings.Split() except the resulting array includes
-// the delimiters. For example, the "<green>Hello, <red>world!</>" string when
-// tokenized by tags produces the following:
-//
-//	[0] "<green>"
-//	[1] "Hello, "
-//	[2] "<red>"
-//	[3] "world!"
-//	[4] "</>"
+// Tokenize splits the string by tag matches, including the tags themselves.
 func Tokenize(str string, regex *regexp.Regexp) []string {
 	matches := regex.FindAllStringIndex(str, -1)
-	strings := make([]string, 0, len(matches))
+	result := make([]string, 0, len(matches)*2)
 
-	head, tail := 0, 0
+	head := 0
 	for _, match := range matches {
-		tail = match[0]
-		if match[1] != 0 {
-			if head != 0 || tail != 0 {
-				// Append the text between tags.
-				strings = append(strings, str[head:tail])
-			}
-			strings = append(strings, str[match[0]:match[1]])
+		if match[0] > head {
+			result = append(result, str[head:match[0]])
 		}
+		result = append(result, str[match[0]:match[1]])
 		head = match[1]
 	}
-
-	if head != len(str) && tail != len(str) {
-		strings = append(strings, str[head:])
+	if head < len(str) {
+		result = append(result, str[head:])
 	}
-
-	return strings
+	return result
 }

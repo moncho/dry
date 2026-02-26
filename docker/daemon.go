@@ -30,6 +30,7 @@ const (
 // timeout in seconds for docker operations
 var defaultOperationTimeout = time.Duration(10) * time.Second
 
+
 // Defaults for listing images
 var defaultImageListOptions = image.ListOptions{
 	All: false}

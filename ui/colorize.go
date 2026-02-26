@@ -1,28 +1,27 @@
 package ui
 
-import "fmt"
+import "charm.land/lipgloss/v2"
 
-// Blue blues the given string
-func Blue(text string) string {
-	return fmt.Sprintf("<blue>%s</>", text)
-}
+// Helper styles using CharmTone palette from Crush.
+var (
+	blueStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#6B50FF"))  // Charple
+	redStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#EB4268"))  // Sriracha
+	whiteStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#DFDBDD"))  // Ash
+	yellowStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#E8FE96"))  // Zest
+	cyanStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#68FFD6"))  // Bok
+)
 
-// Red reddens the given string
-func Red(text string) string {
-	return fmt.Sprintf("<red>%s</>", text)
-}
+// Blue styles the given text blue.
+func Blue(text string) string { return blueStyle.Render(text) }
 
-// White whites the given string
-func White(text string) string {
-	return fmt.Sprintf("<white>%s</>", text)
-}
+// Red styles the given text red.
+func Red(text string) string { return redStyle.Render(text) }
 
-// Yellow yellows the given string
-func Yellow(text string) string {
-	return fmt.Sprintf("<yellow>%s</>", text)
-}
+// White styles the given text white.
+func White(text string) string { return whiteStyle.Render(text) }
 
-// Cyan cyans the given string
-func Cyan(text string) string {
-	return fmt.Sprintf("<cyan>%s</>", text)
-}
+// Yellow styles the given text yellow.
+func Yellow(text string) string { return yellowStyle.Render(text) }
+
+// Cyan styles the given text cyan.
+func Cyan(text string) string { return cyanStyle.Render(text) }
