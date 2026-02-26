@@ -61,10 +61,13 @@ func (el *EventLog) Init(capacity int) {
 	el.capacity = capacity
 }
 
-// Peek the latest event added
+// Peek the latest event added. Returns nil if the log is empty.
 func (el *EventLog) Peek() *events.Message {
 	el.RLock()
 	defer el.RUnlock()
+	if el.Count() == 0 {
+		return nil
+	}
 	return el.messages[el.tail-1]
 }
 

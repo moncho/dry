@@ -70,20 +70,19 @@ func (r *registry) Register(source SourceType, callback EventCallback) {
 }
 
 func notifyCallbacks(r *registry) EventCallback {
-	return func(ctx context.Context, message events.Message) error {
+	return func(ctx context.Context, message events.Message) {
 		r.RLock()
 		defer r.RUnlock()
 		actor := SourceType(message.Type)
 		for _, c := range r.actions[actor] {
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				return
 			default:
 				go func(callback EventCallback) {
 					callback(ctx, message)
 				}(c)
 			}
 		}
-		return nil
 	}
 }

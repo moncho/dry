@@ -530,8 +530,8 @@ func (daemon *DockerDaemon) init() error {
 	}
 	GlobalRegistry.Register(
 		ContainerSource,
-		func(ctx context.Context, message dockerEvents.Message) error {
-			return daemon.refreshAndWait()
+		func(ctx context.Context, message dockerEvents.Message) {
+			daemon.refreshAndWait()
 		})
 	return nil
 }

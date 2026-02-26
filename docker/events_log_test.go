@@ -61,6 +61,14 @@ func TestEventLogCapacity(t *testing.T) {
 	}
 }
 
+func TestEventLog_PeekEmpty(t *testing.T) {
+	eventLog := EventLog{}
+	eventLog.Init(5)
+	if eventLog.Peek() != nil {
+		t.Error("Peek on empty log should return nil")
+	}
+}
+
 func BenchmarkEventLog(b *testing.B) {
 	eventLog := NewEventLog()
 	for i := 0; i < b.N; i++ {

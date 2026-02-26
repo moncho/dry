@@ -16,11 +16,10 @@ func TestHandleEvent_RunsCallbacksSynchronously(t *testing.T) {
 	var mu sync.Mutex
 
 	cb := func(n int) EventCallback {
-		return func(ctx context.Context, event events.Message) error {
+		return func(ctx context.Context, event events.Message) {
 			mu.Lock()
 			order = append(order, n)
 			mu.Unlock()
-			return nil
 		}
 	}
 
@@ -44,10 +43,7 @@ func TestStreamEvents_SendsEvent(t *testing.T) {
 	cb := streamEvents(ch)
 
 	msg := events.Message{Action: "start"}
-	err := cb(context.Background(), msg)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	cb(context.Background(), msg)
 
 	select {
 	case got := <-ch:
@@ -92,32 +88,38 @@ func TestStreamEvents_RespectsContextCancellation(t *testing.T) {
 func TestStreamEvents_NoPanicAfterChannelDrain(t *testing.T) {
 	// Simulate the coordinated shutdown: context cancelled, channel drained.
 	// streamEvents must not panic.
-	ch := make(chan events.Message, 1)
+	// Use an unbuffered channel so the cancelled-context path is deterministic.
+	ch := make(chan events.Message)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	cb := streamEvents(ch)
 
-	// Send one event successfully
+	// Send one event successfully (need a goroutine to drain unbuffered channel)
+	go func() { <-ch }()
 	cb(ctx, events.Message{Action: "first"})
-	<-ch // drain
 
 	// Now cancel context — subsequent calls should be no-ops
 	cancel()
-	cb(ctx, events.Message{Action: "after-cancel"})
+
+	// Should return immediately without blocking (context is cancelled).
+	done := make(chan struct{})
+	go func() {
+		cb(ctx, events.Message{Action: "after-cancel"})
+		close(done)
+	}()
 
 	select {
-	case msg := <-ch:
-		t.Fatalf("expected no event after cancel, got %v", msg)
-	default:
+	case <-done:
+		// good — returned promptly
+	case <-time.After(time.Second):
+		t.Fatal("streamEvents blocked despite cancelled context")
 	}
 }
 
 func TestLogEvents_NilLogger(t *testing.T) {
 	cb := logEvents(nil)
-	err := cb(context.Background(), events.Message{})
-	if err == nil {
-		t.Fatal("expected error for nil logger")
-	}
+	// Should not panic with nil logger
+	cb(context.Background(), events.Message{})
 }
 
 func TestLogEvents_PushesEvent(t *testing.T) {
@@ -125,10 +127,7 @@ func TestLogEvents_PushesEvent(t *testing.T) {
 	log.Init(10)
 
 	cb := logEvents(log)
-	err := cb(context.Background(), events.Message{Action: "create"})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	cb(context.Background(), events.Message{Action: "create"})
 	if log.Count() != 1 {
 		t.Fatalf("expected 1 event in log, got %d", log.Count())
 	}

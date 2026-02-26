@@ -1,34 +1,30 @@
 package docker
 
 import (
-	"errors"
-
 	"context"
 
 	"github.com/docker/docker/api/types/events"
 )
 
 // EventCallback defines a callback function for messages
-type EventCallback func(ctx context.Context, event events.Message) error
+type EventCallback func(ctx context.Context, event events.Message)
 
 // streamEvents sends incoming events to the provided channel.
 func streamEvents(out chan<- events.Message) EventCallback {
-	return func(ctx context.Context, event events.Message) error {
+	return func(ctx context.Context, event events.Message) {
 		select {
 		case <-ctx.Done():
 		case out <- event:
 		}
-		return nil
 	}
 }
 
 func logEvents(log *EventLog) EventCallback {
-	return func(ctx context.Context, event events.Message) error {
+	return func(ctx context.Context, event events.Message) {
 		if log == nil {
-			return errors.New("No logger given")
+			return
 		}
 		log.Push(&event)
-		return nil
 	}
 }
 
