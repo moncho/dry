@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/swarm"
 )
 
@@ -252,12 +253,12 @@ func (daemon *DockerDaemon) StackConfigs(stack string) ([]swarm.Config, error) {
 }
 
 // StackNetworks returns the networks created for the given stack
-func (daemon *DockerDaemon) StackNetworks(stack string) ([]types.NetworkResource, error) {
+func (daemon *DockerDaemon) StackNetworks(stack string) ([]network.Inspect, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 	return daemon.client.NetworkList(
 		ctx,
-		types.NetworkListOptions{Filters: buildStackFilter(stack)})
+		network.ListOptions{Filters: buildStackFilter(stack)})
 }
 
 // StackSecrets return the secrets created for the given stack

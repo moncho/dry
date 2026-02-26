@@ -3,7 +3,7 @@ package docker
 import (
 	"sort"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/network"
 )
 
 // Allowed sort methods
@@ -17,7 +17,7 @@ const (
 	SortNetworksBySubnet
 )
 
-type dockerNetworks []types.NetworkResource
+type dockerNetworks []network.Inspect
 
 func (s dockerNetworks) Len() int      { return len(s) }
 func (s dockerNetworks) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
@@ -69,7 +69,7 @@ func (s networksBySubnet) Less(i, j int) bool {
 }
 
 // SortNetworks sorts the given network slice using the given mode
-func SortNetworks(networks []types.NetworkResource, mode SortMode) {
+func SortNetworks(networks []network.Inspect, mode SortMode) {
 	switch mode {
 	case SortNetworksByID:
 		sort.Sort(networksByID{networks})

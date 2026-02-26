@@ -4,15 +4,15 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/docker/docker/api/types/container"
 	"github.com/moncho/dry/docker"
-	dockerTypes "github.com/docker/docker/api/types"
 )
 
 func makeTestContainers(n int) []*docker.Container {
 	containers := make([]*docker.Container, n)
 	for i := range n {
 		containers[i] = &docker.Container{
-			Container: dockerTypes.Container{
+			Summary: container.Summary{
 				ID:    "abcdef" + string(rune('0'+i)) + "12345",
 				Names: []string{"container-" + string(rune('a'+i))},
 				Image: "image-" + string(rune('a'+i)),

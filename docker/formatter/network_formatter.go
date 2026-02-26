@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/network"
 	"github.com/moncho/dry/docker"
 )
 
@@ -24,11 +24,11 @@ const (
 type NetworkFormatter struct {
 	trunc   bool
 	header  []string
-	network types.NetworkResource
+	network network.Inspect
 }
 
 // NewNetworkFormatter creates an network formatter
-func NewNetworkFormatter(network types.NetworkResource, trunc bool) *NetworkFormatter {
+func NewNetworkFormatter(network network.Inspect, trunc bool) *NetworkFormatter {
 	return &NetworkFormatter{trunc: trunc, network: network}
 }
 

@@ -86,7 +86,7 @@ func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan dockerEvents.Mes
 
 	args := filters.NewArgs()
 	args.Add("scope", "local")
-	options := dockerTypes.EventsOptions{
+	options := dockerEvents.ListOptions{
 		Filters: args,
 	}
 	events, err := daemon.client.Events(innerCtx, options)
@@ -121,7 +121,7 @@ func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan dockerEvents.Mes
 	if daemon.swarmMode {
 		swarmArgs := filters.NewArgs()
 		swarmArgs.Add("scope", "swarm")
-		swarmOptions := dockerTypes.EventsOptions{
+		swarmOptions := dockerEvents.ListOptions{
 			Filters: swarmArgs,
 		}
 		swarmEvents, swarmErr := daemon.client.Events(innerCtx, swarmOptions)
@@ -174,7 +174,7 @@ func (daemon *DockerDaemon) Info() (system.Info, error) {
 }
 
 // Inspect the container with the given id
-func (daemon *DockerDaemon) Inspect(id string) (dockerTypes.ContainerJSON, error) {
+func (daemon *DockerDaemon) Inspect(id string) (container.InspectResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
@@ -182,7 +182,7 @@ func (daemon *DockerDaemon) Inspect(id string) (dockerTypes.ContainerJSON, error
 }
 
 // InspectImage the image with the name
-func (daemon *DockerDaemon) InspectImage(name string) (dockerTypes.ImageInspect, error) {
+func (daemon *DockerDaemon) InspectImage(name string) (image.InspectResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 	inspect, _, err := daemon.client.ImageInspectWithRaw(ctx, name)
@@ -461,7 +461,7 @@ func (daemon *DockerDaemon) StopContainer(id string) error {
 }
 
 // Top returns Top information for the given container
-func (daemon *DockerDaemon) Top(ctx context.Context, id string) (container.ContainerTopOKBody, error) {
+func (daemon *DockerDaemon) Top(ctx context.Context, id string) (container.TopResponse, error) {
 	return daemon.client.ContainerTop(ctx, id, nil)
 }
 
@@ -559,7 +559,7 @@ func containers(client dockerAPI.ContainerAPIClient) ([]*Container, error) {
 		if err != nil {
 			return nil, fmt.Errorf("inspect container %s: %w", c.ID, err)
 		}
-		cc = append(cc, &Container{containers[i], details})
+		cc = append(cc, &Container{Summary: containers[i], Detail: details})
 	}
 	return cc, nil
 
@@ -574,13 +574,13 @@ func images(client dockerAPI.ImageAPIClient, opts image.ListOptions) ([]image.Su
 func networks(client dockerAPI.NetworkAPIClient) ([]network.Inspect, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	networks, err := client.NetworkList(ctx, dockerTypes.NetworkListOptions{})
+	networks, err := client.NetworkList(ctx, network.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	detailedNetworks := make([]network.Inspect, len(networks))
-	options := dockerTypes.NetworkInspectOptions{
+	options := network.InspectOptions{
 		Verbose: true,
 	}
 	for i, n := range networks {

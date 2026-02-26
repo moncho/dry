@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/api/types/versions"
 )
@@ -88,7 +88,7 @@ func removeServices(
 func removeNetworks(
 	ctx context.Context,
 	daemon *DockerDaemon,
-	networks []types.NetworkResource) bool {
+	networks []network.Inspect) bool {
 	var hasError bool
 	for _, network := range networks {
 		if err := daemon.client.NetworkRemove(ctx, network.ID); err != nil {

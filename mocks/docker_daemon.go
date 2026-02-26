@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/api/types/volume"
@@ -31,13 +32,13 @@ func (_m *DockerDaemonMock) Containers(filters []drydocker.ContainerFilter, mode
 	var containers []*drydocker.Container
 	for index := 0; index < 10; index++ {
 		containers = append(containers, &drydocker.Container{
-			Container: types.Container{ID: strconv.Itoa(index), Names: []string{"Name"},
+			Summary: container.Summary{ID: strconv.Itoa(index), Names: []string{"Name"},
 				Status: "Up and running"},
 		})
 	}
 	for index := 0; index < 10; index++ {
 		containers = append(containers, &drydocker.Container{
-			Container: types.Container{ID: strconv.Itoa(index), Names: []string{"Name"},
+			Summary: container.Summary{ID: strconv.Itoa(index), Names: []string{"Name"},
 				Status: "Never worked"},
 		})
 	}
@@ -150,13 +151,13 @@ func (_m *DockerDaemonMock) Info() (system.Info, error) {
 }
 
 // Inspect provides a mock function with given fields: id
-func (_m *DockerDaemonMock) Inspect(id string) (types.ContainerJSON, error) {
-	return types.ContainerJSON{}, nil
+func (_m *DockerDaemonMock) Inspect(id string) (container.InspectResponse, error) {
+	return container.InspectResponse{}, nil
 }
 
 // InspectImage mock
-func (_m *DockerDaemonMock) InspectImage(name string) (types.ImageInspect, error) {
-	return types.ImageInspect{}, nil
+func (_m *DockerDaemonMock) InspectImage(name string) (image.InspectResponse, error) {
+	return image.InspectResponse{}, nil
 }
 
 // IsContainerRunning provides a mock function with given fields: id
@@ -175,12 +176,12 @@ func (_m *DockerDaemonMock) Logs(id, since string, ts bool) (io.ReadCloser, erro
 }
 
 // Networks mock
-func (_m *DockerDaemonMock) Networks() ([]types.NetworkResource, error) {
+func (_m *DockerDaemonMock) Networks() ([]network.Inspect, error) {
 	return nil, nil
 }
 
 // NetworkAt mock
-func (_m *DockerDaemonMock) NetworkAt(position int) (*types.NetworkResource, error) {
+func (_m *DockerDaemonMock) NetworkAt(position int) (*network.Inspect, error) {
 	return nil, nil
 }
 
@@ -190,8 +191,8 @@ func (_m *DockerDaemonMock) NetworksCount() int {
 }
 
 // NetworkInspect mock
-func (_m *DockerDaemonMock) NetworkInspect(id string) (types.NetworkResource, error) {
-	return types.NetworkResource{}, nil
+func (_m *DockerDaemonMock) NetworkInspect(id string) (network.Inspect, error) {
+	return network.Inspect{}, nil
 }
 
 // Node mock
@@ -361,7 +362,7 @@ func (_m *DockerDaemonMock) StackConfigs(stack string) ([]swarm.Config, error) {
 }
 
 // StackNetworks mock
-func (_m *DockerDaemonMock) StackNetworks(stack string) ([]types.NetworkResource, error) {
+func (_m *DockerDaemonMock) StackNetworks(stack string) ([]network.Inspect, error) {
 	return nil, nil
 }
 
@@ -391,8 +392,8 @@ func (_m *DockerDaemonMock) Task(id string) (swarm.Task, error) {
 }
 
 // Top function mock
-func (_m *DockerDaemonMock) Top(ctx context.Context, id string) (container.ContainerTopOKBody, error) {
-	return container.ContainerTopOKBody{}, nil
+func (_m *DockerDaemonMock) Top(ctx context.Context, id string) (container.TopResponse, error) {
+	return container.TopResponse{}, nil
 }
 
 // Version provides a mock function with given fields:

@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	dockerTypes "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/moncho/dry/docker/mock"
 )
 
@@ -49,11 +49,11 @@ func TestMemoryStoreCreation(t *testing.T) {
 	checkMemoryStore(memStore.(*inMemoryContainerStore), containerCount, t)
 }
 
-func createTestContainers(numberOfContainers int) []dockerTypes.Container {
-	var containers []dockerTypes.Container
+func createTestContainers(numberOfContainers int) []container.Summary {
+	var containers []container.Summary
 
 	for i := 0; i < numberOfContainers; i++ {
-		containers = append(containers, dockerTypes.Container{
+		containers = append(containers, container.Summary{
 			ID:    strconv.Itoa(i),
 			Names: []string{"Name" + strconv.Itoa(i)},
 		})
@@ -74,7 +74,7 @@ func TestMemoryStoreAddReplacesExisting(t *testing.T) {
 
 	// Add a replacement container with the same ID but different name
 	replacement := &Container{
-		Container: dockerTypes.Container{
+		Summary: container.Summary{
 			ID:    "1",
 			Names: []string{"Replaced"},
 		},

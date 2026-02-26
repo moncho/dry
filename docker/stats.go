@@ -37,7 +37,7 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 		responseBody := containerStats.Body
 		defer responseBody.Close()
 
-		var statsJSON types.StatsJSON
+		var statsJSON container.StatsResponse
 		dec := jsoniter.NewDecoder(responseBody)
 	loop:
 		for {
@@ -87,7 +87,7 @@ func newStatsChannel(version *types.Version, client client.ContainerAPIClient, c
 }
 
 // buildStats builds Stats with the given information
-func buildStats(version *types.Version, container *Container, stats *types.StatsJSON, topResult *container.ContainerTopOKBody) *Stats {
+func buildStats(version *types.Version, container *Container, stats *container.StatsResponse, topResult *container.TopResponse) *Stats {
 	s := &Stats{
 		CID:         TruncateID(container.ID),
 		Command:     container.Command,
@@ -128,7 +128,7 @@ func buildStats(version *types.Version, container *Container, stats *types.Stats
 	return s
 }
 
-func calculateBlockIO(blkio types.BlkioStats) (blkRead uint64, blkWrite uint64) {
+func calculateBlockIO(blkio container.BlkioStats) (blkRead uint64, blkWrite uint64) {
 	for _, bioEntry := range blkio.IoServiceBytesRecursive {
 		switch strings.ToLower(bioEntry.Op) {
 		case "read":
@@ -140,7 +140,7 @@ func calculateBlockIO(blkio types.BlkioStats) (blkRead uint64, blkWrite uint64) 
 	return
 }
 
-func calculateNetwork(stats *types.StatsJSON) (float64, float64) {
+func calculateNetwork(stats *container.StatsResponse) (float64, float64) {
 	networks := stats.Networks
 	var rx, tx float64
 	for _, v := range networks {
@@ -151,7 +151,7 @@ func calculateNetwork(stats *types.StatsJSON) (float64, float64) {
 
 }
 
-func calculateMemUsageUnixNoCache(mem types.MemoryStats) float64 {
+func calculateMemUsageUnixNoCache(mem container.MemoryStats) float64 {
 	return float64(mem.Usage - mem.Stats["cache"])
 }
 
@@ -162,7 +162,7 @@ func calculateMemPercentUnixNoCache(limit float64, usedNoCache float64) float64 
 	return 0
 }
 
-func calculateCPUPercentUnix(stats *types.StatsJSON) float64 {
+func calculateCPUPercentUnix(stats *container.StatsResponse) float64 {
 	previousCPU := stats.PreCPUStats.CPUUsage.TotalUsage
 	previousSystem := stats.PreCPUStats.SystemUsage
 	var (
@@ -183,7 +183,7 @@ func calculateCPUPercentUnix(stats *types.StatsJSON) float64 {
 	return cpuPercent
 }
 
-func calculateCPUPercentWindows(v *types.StatsJSON) float64 {
+func calculateCPUPercentWindows(v *container.StatsResponse) float64 {
 	// Max number of 100ns intervals between the previous time read and now
 	possIntervals := uint64(v.Read.Sub(v.PreRead).Nanoseconds()) // Start with number of ns intervals
 	possIntervals /= 100                                         // Convert to number of 100ns intervals
