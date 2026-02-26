@@ -5,7 +5,7 @@ go 1.26
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/docker/cli v27.5.1+incompatible
-	github.com/docker/docker v27.5.1+incompatible
+	github.com/docker/docker v28.0.0+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/docker/go-units v0.5.0
 	github.com/gogo/protobuf v1.3.2 // indirect
