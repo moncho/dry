@@ -99,7 +99,7 @@ func (c *ContainerFormatter) CreatedAt() string {
 // RunningFor prettifies the  that starts the container
 func (c *ContainerFormatter) RunningFor() string {
 	c.addHeader(runningForHeader)
-	if createdAt, err := time.Parse(time.RFC3339, c.c.ContainerJSON.State.StartedAt); err == nil {
+	if createdAt, err := time.Parse(time.RFC3339, c.c.Detail.State.StartedAt); err == nil {
 		return units.HumanDuration(time.Now().UTC().Sub(createdAt))
 	}
 	return ""

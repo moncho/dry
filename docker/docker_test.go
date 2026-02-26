@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	dockerAPI "github.com/docker/docker/client"
 	"github.com/moncho/dry/docker/mock"
 )
@@ -20,14 +20,14 @@ func TestContainerListRetrieval(t *testing.T) {
 }
 
 func TestContainerConversionToPointerList(t *testing.T) {
-	var containers []types.Container
+	var containers []container.Summary
 
 	for i := 0; i < 10; i++ {
-		containers = append(containers, types.Container{
+		containers = append(containers, container.Summary{
 			ID: strconv.Itoa(i),
 		})
 	}
-	var cPointers []*types.Container
+	var cPointers []*container.Summary
 	for i := range containers {
 		cPointers = append(cPointers, &containers[i])
 	}

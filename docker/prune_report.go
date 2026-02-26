@@ -1,13 +1,18 @@
 package docker
 
-import "github.com/docker/docker/api/types"
+import (
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/volume"
+)
 
 // PruneReport represents the result of a prune operation
 type PruneReport struct {
-	ContainerReport types.ContainersPruneReport
-	ImagesReport    types.ImagesPruneReport
-	NetworksReport  types.NetworksPruneReport
-	VolumesReport   types.VolumesPruneReport
+	ContainerReport container.PruneReport
+	ImagesReport    image.PruneReport
+	NetworksReport  network.PruneReport
+	VolumesReport   volume.PruneReport
 }
 
 // TotalSpaceReclaimed reports the total space reclaimed

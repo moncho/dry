@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/swarm"
 	dockerAPI "github.com/docker/docker/client"
 )
@@ -81,7 +82,7 @@ func (mock SwarmAPIClientMock) ConfigList(
 
 // NetworkList mock
 func (mock SwarmAPIClientMock) NetworkList(
-	context context.Context, opts types.NetworkListOptions) ([]types.NetworkResource, error) {
+	context context.Context, opts network.ListOptions) ([]network.Summary, error) {
 	return nil, nil
 }
 

@@ -3,13 +3,13 @@ package docker
 import (
 	"testing"
 
-	dockerTypes "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 )
 
 func TestFilterByName(t *testing.T) {
 
 	c := &Container{
-		Container: dockerTypes.Container{Names: []string{"bla"}},
+		Summary: container.Summary{Names: []string{"bla"}},
 	}
 
 	filter := ContainerFilters.ByName("bla")
@@ -18,14 +18,14 @@ func TestFilterByName(t *testing.T) {
 	}
 
 	c = &Container{
-		Container: dockerTypes.Container{Names: []string{"123"}},
+		Summary: container.Summary{Names: []string{"123"}},
 	}
 	if filter(c) {
 		t.Error("Filter by name is not filtering")
 	}
 
 	c = &Container{
-		Container: dockerTypes.Container{Names: []string{"123bla123"}},
+		Summary: container.Summary{Names: []string{"123bla123"}},
 	}
 	if !filter(c) {
 		t.Error("Filter by name is filtering out when it should not")
@@ -37,7 +37,7 @@ func TestFilterByName(t *testing.T) {
 func TestFilterByID(t *testing.T) {
 
 	c := &Container{
-		Container: dockerTypes.Container{ID: "bla"},
+		Summary: container.Summary{ID: "bla"},
 	}
 
 	filter := ContainerFilters.ByID("bla")
@@ -46,14 +46,14 @@ func TestFilterByID(t *testing.T) {
 	}
 
 	c = &Container{
-		Container: dockerTypes.Container{ID: "123"},
+		Summary: container.Summary{ID: "123"},
 	}
 	if filter(c) {
 		t.Error("Filter by ID is not filtering")
 	}
 
 	c = &Container{
-		Container: dockerTypes.Container{ID: "123bla123"},
+		Summary: container.Summary{ID: "123bla123"},
 	}
 	if !filter(c) {
 		t.Error("Filter by ID is filtering out when it should not")

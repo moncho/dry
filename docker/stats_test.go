@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/docker/docker/api/types"
-	containertypes "github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"go.uber.org/goleak"
 )
@@ -22,25 +22,24 @@ type statsClientMock struct {
 	statsErr  error
 }
 
-func (s statsClientMock) ContainerStats(ctx context.Context, id string, stream bool) (types.ContainerStats, error) {
-	return types.ContainerStats{
+func (s statsClientMock) ContainerStats(ctx context.Context, id string, stream bool) (container.StatsResponseReader, error) {
+	return container.StatsResponseReader{
 		Body: s.statsBody,
 	}, s.statsErr
 }
 
-func (s statsClientMock) ContainerTop(ctx context.Context, container string, arguments []string) (containertypes.ContainerTopOKBody, error) {
-	return containertypes.ContainerTopOKBody{}, nil
+func (s statsClientMock) ContainerTop(ctx context.Context, ctr string, arguments []string) (container.TopResponse, error) {
+	return container.TopResponse{}, nil
 }
 
 func TestStatsChannel_cancellingContextClosesResources(t *testing.T) {
 
 	sc := StatsChannel{
 		Container: &Container{
-			types.Container{
+			Summary: container.Summary{
 				ID:    "1234",
 				Names: []string{"1234"},
 			},
-			types.ContainerJSON{},
 		},
 		version: &types.Version{
 			Os: "Not windows",
@@ -64,17 +63,16 @@ func TestStatsChannel_statsArePublished(t *testing.T) {
 
 	sc := StatsChannel{
 		Container: &Container{
-			types.Container{
+			Summary: container.Summary{
 				ID:    "1234",
 				Names: []string{"1234"},
 			},
-			types.ContainerJSON{},
 		},
 		version: &types.Version{
 			Os: "Not windows",
 		},
 		client: statsClientMock{
-			statsBody: io.NopCloser(strings.NewReader(asJSON(types.StatsJSON{}))),
+			statsBody: io.NopCloser(strings.NewReader(asJSON(container.StatsResponse{}))),
 		}}
 	ctx, cancel := context.WithCancel(context.Background())
 	stats := sc.Start(ctx)
@@ -95,17 +93,16 @@ func TestStatsChannel_noErrors_goroutineExitsOnCtxCancel(t *testing.T) {
 	defer goleak.VerifyNone(t)
 	sc := StatsChannel{
 		Container: &Container{
-			types.Container{
+			Summary: container.Summary{
 				ID:    "1234",
 				Names: []string{"1234"},
 			},
-			types.ContainerJSON{},
 		},
 		version: &types.Version{
 			Os: "Not windows",
 		},
 		client: statsClientMock{
-			statsBody: io.NopCloser(strings.NewReader(asJSON(types.StatsJSON{}))),
+			statsBody: io.NopCloser(strings.NewReader(asJSON(container.StatsResponse{}))),
 		}}
 	ctx, cancel := context.WithCancel(context.Background())
 	sc.Start(ctx)
@@ -116,11 +113,10 @@ func TestStatsChannel_errorBuildingStats_goroutineExitsOnCtxCancel(t *testing.T)
 	defer goleak.VerifyNone(t)
 	sc := StatsChannel{
 		Container: &Container{
-			types.Container{
+			Summary: container.Summary{
 				ID:    "1234",
 				Names: []string{"1234"},
 			},
-			types.ContainerJSON{},
 		},
 		version: &types.Version{
 			Os: "Not windows",
@@ -138,11 +134,10 @@ func TestStatsChannel_errorOpeningStream_goroutineExits(t *testing.T) {
 	defer goleak.VerifyNone(t)
 	sc := StatsChannel{
 		Container: &Container{
-			types.Container{
+			Summary: container.Summary{
 				ID:    "1234",
 				Names: []string{"1234"},
 			},
-			types.ContainerJSON{},
 		},
 		version: &types.Version{
 			Os: "Not windows",
@@ -156,7 +151,7 @@ func TestStatsChannel_errorOpeningStream_goroutineExits(t *testing.T) {
 }
 
 func TestCalculateMemUsageUnixNoCache(t *testing.T) {
-	stats := types.MemoryStats{Usage: 500, Stats: map[string]uint64{"cache": 400}}
+	stats := container.MemoryStats{Usage: 500, Stats: map[string]uint64{"cache": 400}}
 	result := calculateMemUsageUnixNoCache(stats)
 	if 100.0 != result {
 		t.Errorf("Error calculating Unix mem usage, expected: %f, got: %f ", 100.0, result)
@@ -200,35 +195,31 @@ func TestCalculateCPUPercentUnix(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		stats    *types.StatsJSON
+		stats    *container.StatsResponse
 		expected float64
 	}{
 		{
 			"CPU percent calculation",
-			&types.StatsJSON{
-				Stats: types.Stats{
-					CPUStats: types.CPUStats{
-						CPUUsage: types.CPUUsage{
-							TotalUsage:  700,
-							PercpuUsage: []uint64{0},
-						},
-						SystemUsage: 1000,
+			&container.StatsResponse{
+				CPUStats: container.CPUStats{
+					CPUUsage: container.CPUUsage{
+						TotalUsage:  700,
+						PercpuUsage: []uint64{0},
 					},
-					PreCPUStats: types.CPUStats{
-						CPUUsage: types.CPUUsage{
-							TotalUsage: 0,
-						},
-						SystemUsage: 0,
+					SystemUsage: 1000,
+				},
+				PreCPUStats: container.CPUStats{
+					CPUUsage: container.CPUUsage{
+						TotalUsage: 0,
 					},
+					SystemUsage: 0,
 				},
 			},
 			70.0,
 		},
 		{
 			"CPU percent calculation, missing data",
-			&types.StatsJSON{
-				Stats: types.Stats{},
-			},
+			&container.StatsResponse{},
 			0,
 		},
 	}
@@ -244,7 +235,7 @@ func TestCalculateCPUPercentUnix(t *testing.T) {
 
 }
 
-func asJSON(stats types.StatsJSON) string {
+func asJSON(stats container.StatsResponse) string {
 	var buffer bytes.Buffer
 	enc := json.NewEncoder(&buffer)
 	enc.Encode(stats)

@@ -4,7 +4,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/moncho/dry/docker"
 )
@@ -26,7 +26,7 @@ func (m *mockSwarmAPI) ServiceTasks(...string) ([]swarm.Task, error)            
 func (m *mockSwarmAPI) ServiceUpdate(string) error                                 { return nil }
 func (m *mockSwarmAPI) Stacks() ([]docker.Stack, error)                            { return nil, nil }
 func (m *mockSwarmAPI) StackConfigs(string) ([]swarm.Config, error)                { return nil, nil }
-func (m *mockSwarmAPI) StackNetworks(string) ([]types.NetworkResource, error)      { return nil, nil }
+func (m *mockSwarmAPI) StackNetworks(string) ([]network.Inspect, error)      { return nil, nil }
 func (m *mockSwarmAPI) StackSecrets(string) ([]swarm.Secret, error)                { return nil, nil }
 func (m *mockSwarmAPI) StackRemove(string) error                                   { return nil }
 func (m *mockSwarmAPI) StackTasks(string) ([]swarm.Task, error)                    { return nil, nil }

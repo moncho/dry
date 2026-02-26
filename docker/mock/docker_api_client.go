@@ -4,8 +4,8 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	dockerAPI "github.com/docker/docker/client"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -20,7 +20,7 @@ import (
 // ContainerAPIClientMock mocks docker ContainerAPIClient
 type ContainerAPIClientMock struct {
 	dockerAPI.ContainerAPIClient
-	Containers []types.Container
+	Containers []container.Summary
 }
 
 // NetworkAPIClientMock mocks docker NetworkAPIClient
@@ -34,14 +34,14 @@ type ImageAPIClientMock struct {
 }
 
 // ContainerList returns a list with 10 container with IDs from 0 to 9.
-func (m ContainerAPIClientMock) ContainerList(ctx context.Context, options container.ListOptions) ([]types.Container, error) {
+func (m ContainerAPIClientMock) ContainerList(ctx context.Context, options container.ListOptions) ([]container.Summary, error) {
 	if len(m.Containers) > 0 {
 		return m.Containers, nil
 	}
-	var containers []types.Container
+	var containers []container.Summary
 
 	for i := 0; i < 10; i++ {
-		containers = append(containers, types.Container{
+		containers = append(containers, container.Summary{
 			ID: strconv.Itoa(i),
 		})
 	}
@@ -50,8 +50,8 @@ func (m ContainerAPIClientMock) ContainerList(ctx context.Context, options conta
 }
 
 // ContainerInspect returns an empty inspection result.
-func (m ContainerAPIClientMock) ContainerInspect(ctx context.Context, container string) (types.ContainerJSON, error) {
-	return types.ContainerJSON{}, nil
+func (m ContainerAPIClientMock) ContainerInspect(ctx context.Context, ctr string) (container.InspectResponse, error) {
+	return container.InspectResponse{}, nil
 }
 
 // ContainerCreate mocks container creation
@@ -65,15 +65,15 @@ func (mock ImageAPIClientMock) ContainerStart(ctx context.Context, container str
 }
 
 // InspectImage mock
-func (mock ImageAPIClientMock) InspectImage(ctx context.Context, image string) (types.ImageInspect, error) {
-	return types.ImageInspect{
+func (mock ImageAPIClientMock) InspectImage(ctx context.Context, img string) (image.InspectResponse, error) {
+	return image.InspectResponse{
 		ContainerConfig: &container.Config{},
 	}, nil
 }
 
 // ImageInspectWithRaw mock
-func (mock ImageAPIClientMock) ImageInspectWithRaw(ctx context.Context, image string) (types.ImageInspect, []byte, error) {
-	return types.ImageInspect{
+func (mock ImageAPIClientMock) ImageInspectWithRaw(ctx context.Context, img string) (image.InspectResponse, []byte, error) {
+	return image.InspectResponse{
 		ContainerConfig: &container.Config{},
 	}, nil, nil
 }

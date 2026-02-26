@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
 	dockerAPI "github.com/docker/docker/client"
@@ -18,8 +17,8 @@ type imageAPIClientMock struct {
 	imagesDeleted []image.DeleteResponse
 }
 
-func (c imageAPIClientMock) ImagesPrune(ctx context.Context, f filters.Args) (dockerTypes.ImagesPruneReport, error) {
-	return dockerTypes.ImagesPruneReport{
+func (c imageAPIClientMock) ImagesPrune(ctx context.Context, f filters.Args) (image.PruneReport, error) {
+	return image.PruneReport{
 		ImagesDeleted: c.imagesDeleted,
 	}, c.err
 }
@@ -28,14 +27,14 @@ type timedOutImageAPIClientMock struct {
 	dockerAPI.APIClient
 }
 
-func (c timedOutImageAPIClientMock) ImagesPrune(ctx context.Context, f filters.Args) (dockerTypes.ImagesPruneReport, error) {
+func (c timedOutImageAPIClientMock) ImagesPrune(ctx context.Context, f filters.Args) (image.PruneReport, error) {
 	ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 	defer cancel()
 	select {
 	case <-time.After(600 * time.Millisecond):
-		return dockerTypes.ImagesPruneReport{}, nil
+		return image.PruneReport{}, nil
 	case <-ctx.Done(): //This should always happen
-		return dockerTypes.ImagesPruneReport{}, ctx.Err()
+		return image.PruneReport{}, ctx.Err()
 	}
 }
 func TestDockerDaemon_RemoveUnusedImages(t *testing.T) {

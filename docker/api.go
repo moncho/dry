@@ -14,10 +14,11 @@ import (
 	"github.com/docker/docker/api/types/volume"
 )
 
-// Container holds a detailed view of a container
+// Container holds a detailed view of a container.
+// Detail holds the full inspect response (State, Config, etc.).
 type Container struct {
-	types.Container
-	types.ContainerJSON
+	container.Summary
+	Detail container.InspectResponse
 }
 
 // ContainerDaemon describes what is expected from the container daemon
@@ -33,7 +34,7 @@ type ContainerDaemon interface {
 	Events(ctx context.Context) (<-chan events.Message, error)
 	EventLog() *EventLog
 	Info() (system.Info, error)
-	InspectImage(name string) (types.ImageInspect, error)
+	InspectImage(name string) (image.InspectResponse, error)
 	Ok() (bool, error)
 	Prune() (*PruneReport, error)
 	Rm(id string) error
@@ -46,7 +47,7 @@ type ContainerDaemon interface {
 type ContainerAPI interface {
 	ContainerByID(id string) *Container
 	Containers(filter []ContainerFilter, mode SortMode) []*Container
-	Inspect(id string) (types.ContainerJSON, error)
+	Inspect(id string) (container.InspectResponse, error)
 	IsContainerRunning(id string) bool
 	Kill(id string) error
 	Logs(id string, since string, withTimeStamp bool) (io.ReadCloser, error)
@@ -58,7 +59,7 @@ type ContainerAPI interface {
 // ContainerRuntime is the subset of the Docker API to query container runtime information
 type ContainerRuntime interface {
 	StatsChannel(container *Container) (*StatsChannel, error)
-	Top(ctx context.Context, id string) (container.ContainerTopOKBody, error)
+	Top(ctx context.Context, id string) (container.TopResponse, error)
 }
 
 // ImageAPI is a subset of the Docker API to manage images
@@ -95,7 +96,7 @@ type SwarmAPI interface {
 	ServiceUpdate(id string) error
 	Stacks() ([]Stack, error)
 	StackConfigs(stack string) ([]swarm.Config, error)
-	StackNetworks(stack string) ([]types.NetworkResource, error)
+	StackNetworks(stack string) ([]network.Inspect, error)
 	StackRemove(id string) error
 	StackSecrets(stack string) ([]swarm.Secret, error)
 	StackTasks(stack string) ([]swarm.Task, error)
@@ -115,8 +116,8 @@ type Stats struct {
 	BlockRead        float64
 	BlockWrite       float64
 	PidsCurrent      uint64
-	Stats            *types.StatsJSON
-	ProcessList      *container.ContainerTopOKBody
+	Stats            *container.StatsResponse
+	ProcessList      *container.TopResponse
 	Error            error
 }
 
