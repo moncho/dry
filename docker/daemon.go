@@ -76,79 +76,79 @@ func (daemon *DockerDaemon) DockerEnv() Env {
 }
 
 // Events returns a channel to receive Docker events.
-func (daemon *DockerDaemon) Events() (<-chan dockerEvents.Message, chan<- struct{}, error) {
+// The caller owns cancellation via the provided context.
+func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan dockerEvents.Message, error) {
 	args := filters.NewArgs()
-
 	args.Add("scope", "local")
-
 	options := dockerTypes.EventsOptions{
 		Filters: args,
 	}
-	localCtx, localCancel := context.WithCancel(context.Background())
-	events, err := daemon.client.Events(localCtx, options)
+	events, err := daemon.client.Events(ctx, options)
 
 	eventC := make(chan dockerEvents.Message)
-	done := make(chan struct{})
 
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	go func() {
-		defer localCancel()
-		defer close(eventC)
+		defer wg.Done()
 		for {
 			select {
 			case event := <-events:
 				if event.Action != "top" {
-					if err := handleEvent(
-						localCtx,
+					handleEvent(
+						ctx,
 						event,
 						streamEvents(eventC),
 						logEvents(daemon.eventLog),
-						callbackNotifier); err != nil {
-						return
-					}
+						callbackNotifier)
 				}
 			case <-err:
 				return
-			case <-done:
+			case <-ctx.Done():
 				return
 			}
 		}
-
 	}()
 
 	if daemon.swarmMode {
-		args := filters.NewArgs()
-		args.Add("scope", "swarm")
-		options := dockerTypes.EventsOptions{
-			Filters: args,
+		swarmArgs := filters.NewArgs()
+		swarmArgs.Add("scope", "swarm")
+		swarmOptions := dockerTypes.EventsOptions{
+			Filters: swarmArgs,
 		}
+		swarmEvents, swarmErr := daemon.client.Events(ctx, swarmOptions)
 
-		swarmCtx, swarmCancel := context.WithCancel(context.Background())
-		swarmEvents, swarmErr := daemon.client.Events(swarmCtx, options)
-
+		wg.Add(1)
 		go func() {
-			defer swarmCancel()
+			defer wg.Done()
 			for {
 				select {
 				case event := <-swarmEvents:
-					if err := handleEvent(
-						swarmCtx,
+					handleEvent(
+						ctx,
 						event,
 						streamEvents(eventC),
 						logEvents(daemon.eventLog),
-						callbackNotifier); err != nil {
-						return
-					}
+						callbackNotifier)
 				case <-swarmErr:
 					return
-				case <-done:
+				case <-ctx.Done():
 					return
 				}
 			}
-
 		}()
 	}
 
-	return eventC, done, nil
+	// Cleanup goroutine: waits for context cancellation, then waits for
+	// event goroutines to finish before closing the output channel.
+	go func() {
+		<-ctx.Done()
+		wg.Wait()
+		close(eventC)
+	}()
+
+	return eventC, nil
 }
 
 // EventLog returns the events log

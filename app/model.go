@@ -47,8 +47,8 @@ type model struct {
 	daemon     docker.ContainerDaemon
 	config     Config
 	swarmMode  bool
-	eventsChan <-chan events.Message
-	eventsDone chan<- struct{}
+	eventsChan   <-chan events.Message
+	eventsCancel context.CancelFunc
 
 	// Sub-models
 	containers appui.ContainersModel
@@ -150,13 +150,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.stacks.SetDaemon(m.daemon)
 		m.tasks.SetDaemon(m.daemon)
 		m.header = appui.NewHeaderModel(m.daemon, m.width)
-		eventsCh, doneCh, err := m.daemon.Events()
+		eventsCtx, eventsCancel := context.WithCancel(context.Background())
+		eventsCh, err := m.daemon.Events(eventsCtx)
 		if err != nil {
+			eventsCancel()
 			m.messageBar.SetMessage(fmt.Sprintf("Docker events error: %s", err), 5*time.Second)
 			return m, loadContainersCmd(m.daemon, m.containers.ShowAll(), m.containers.SortMode())
 		}
 		m.eventsChan = eventsCh
-		m.eventsDone = doneCh
+		m.eventsCancel = eventsCancel
 		return m, tea.Batch(
 			loadContainersCmd(m.daemon, m.containers.ShowAll(), m.containers.SortMode()),
 			listenDockerEvents(m.eventsChan),
@@ -223,15 +225,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.daemon == nil {
 			return m, nil
 		}
-		eventsCh, doneCh, err := m.daemon.Events()
+		// Cancel the old event goroutines before creating new ones.
+		if m.eventsCancel != nil {
+			m.eventsCancel()
+		}
+		eventsCtx, eventsCancel := context.WithCancel(context.Background())
+		eventsCh, err := m.daemon.Events(eventsCtx)
 		if err != nil {
+			eventsCancel()
 			m.messageBar.SetMessage(fmt.Sprintf("Events reconnect failed: %s", err), 5*time.Second)
 			return m, tea.Tick(5*time.Second, func(time.Time) tea.Msg {
 				return reconnectEventsMsg{}
 			})
 		}
 		m.eventsChan = eventsCh
-		m.eventsDone = doneCh
+		m.eventsCancel = eventsCancel
 		m.messageBar.SetMessage("Docker events reconnected", 3*time.Second)
 		return m, listenDockerEvents(m.eventsChan)
 
@@ -406,8 +414,8 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.streamReader.Close()
 			m.streamReader = nil
 		}
-		if m.eventsDone != nil {
-			m.eventsDone <- struct{}{}
+		if m.eventsCancel != nil {
+			m.eventsCancel()
 		}
 		return m, tea.Quit
 	case "f7":

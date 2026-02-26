@@ -30,7 +30,7 @@ type ContainerDaemon interface {
 	ContainerRuntime
 	DiskUsage() (types.DiskUsage, error)
 	DockerEnv() Env
-	Events() (<-chan events.Message, chan<- struct{}, error)
+	Events(ctx context.Context) (<-chan events.Message, error)
 	EventLog() *EventLog
 	Info() (system.Info, error)
 	InspectImage(name string) (types.ImageInspect, error)
