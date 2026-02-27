@@ -103,6 +103,7 @@ func NewModel(cfg Config) model {
 		tasks:          appswarm.NewTasksModel(),
 		pendingRefresh: make(map[docker.SourceType]bool),
 		loadingFwd:     true,
+		splashDone:     cfg.SplashDuration <= 0,
 	}
 }
 
@@ -115,8 +116,6 @@ func (m model) Init() tea.Cmd {
 		cmds = append(cmds, tea.Tick(m.config.SplashDuration, func(time.Time) tea.Msg {
 			return splashDoneMsg{}
 		}))
-	} else {
-		m.splashDone = true
 	}
 	return tea.Batch(cmds...)
 }
