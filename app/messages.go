@@ -78,3 +78,6 @@ type streamClosedMsg struct{}
 
 // Loading animation message
 type loadingTickMsg struct{}
+
+// splashDoneMsg signals the splash timer has elapsed.
+type splashDoneMsg struct{}

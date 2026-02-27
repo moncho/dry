@@ -7,6 +7,8 @@ import (
 	"os"
 	"runtime/debug"
 	"strconv"
+	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/jessevdk/go-flags"
@@ -23,6 +25,7 @@ type options struct {
 	// enable profiling
 	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
 	Version bool `short:"v" long:"version" description:"Dry version"`
+	Splash int `short:"w" long:"splash" description:"Show loading screen for N seconds (max 10)" default:"0"`
 	//Docker-related properties
 	DockerHost      string `short:"H" long:"docker_host" description:"Docker Host"`
 	DockerCertPath  string `short:"c" long:"docker_certpath" description:"Docker cert path"`
@@ -39,13 +42,20 @@ func config(opts options) (app.Config, error) {
 			cfg.DockerHost = docker.DefaultDockerHost
 		} else {
 			cfg.DockerHost = os.Getenv("DOCKER_HOST")
-			cfg.DockerTLSVerify = docker.GetBool(os.Getenv("DOCKER_TLS_VERIFY"))
+			cfg.DockerTLSVerify = getBool(os.Getenv("DOCKER_TLS_VERIFY"))
 			cfg.DockerCertPath = os.Getenv("DOCKER_CERT_PATH")
 		}
 	} else {
 		cfg.DockerHost = opts.DockerHost
-		cfg.DockerTLSVerify = docker.GetBool(opts.DockerTLSVerify)
+		cfg.DockerTLSVerify = getBool(opts.DockerTLSVerify)
 		cfg.DockerCertPath = opts.DockerCertPath
+	}
+
+	if opts.Splash > 0 {
+		if opts.Splash > 10 {
+			opts.Splash = 10
+		}
+		cfg.SplashDuration = time.Duration(opts.Splash) * time.Second
 	}
 
 	if opts.MonitorMode != "" {
@@ -57,6 +67,16 @@ func config(opts options) (app.Config, error) {
 		cfg.MonitorRefreshRate = refreshRate
 	}
 	return cfg, nil
+}
+
+// getBool returns false if the given string looks like you mean
+// false, true otherwise.
+func getBool(key string) bool {
+	s := strings.ToLower(strings.Trim(key, " "))
+	if s == "" || s == "0" || s == "no" || s == "false" || s == "none" {
+		return false
+	}
+	return true
 }
 
 func main() {

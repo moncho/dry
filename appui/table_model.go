@@ -246,10 +246,14 @@ func (m *TableModel) toBubblesRows() []table.Row {
 		row := make(table.Row, len(m.columns))
 		for j := range m.columns {
 			if j < len(cols) {
-				// Use ColorFg (SGR 39 foreground-only reset) instead of
-				// the Cell style so that the Selected row background is
-				// not broken by full SGR resets between cells.
-				row[j] = ColorFg(cols[j], DryTheme.Fg)
+				// Skip ColorFg wrapping for columns that already contain
+				// ANSI escape sequences (e.g. container status indicator)
+				// to avoid double-coloring.
+				if strings.Contains(cols[j], "\x1b[") {
+					row[j] = cols[j]
+				} else {
+					row[j] = ColorFg(cols[j], DryTheme.Fg)
+				}
 			}
 		}
 		rows[i] = row

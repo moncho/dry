@@ -80,6 +80,9 @@ type model struct {
 	// Loading animation
 	loadingFrame int
 	loadingFwd   bool
+
+	// Splash screen
+	splashDone bool
 }
 
 // NewModel creates a new top-level model.
@@ -100,14 +103,21 @@ func NewModel(cfg Config) model {
 		tasks:          appswarm.NewTasksModel(),
 		pendingRefresh: make(map[docker.SourceType]bool),
 		loadingFwd:     true,
+		splashDone:     cfg.SplashDuration <= 0,
 	}
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(
+	cmds := []tea.Cmd{
 		connectToDockerCmd(m.config),
 		loadingTickCmd(),
-	)
+	}
+	if m.config.SplashDuration > 0 {
+		cmds = append(cmds, tea.Tick(m.config.SplashDuration, func(time.Time) tea.Msg {
+			return splashDoneMsg{}
+		}))
+	}
+	return tea.Batch(cmds...)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -136,7 +146,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case dockerConnectedMsg:
 		m.daemon = msg.daemon
-		m.ready = true
+		m.ready = m.splashDone
 		if info, err := m.daemon.Info(); err == nil {
 			m.swarmMode = info.Swarm.LocalNodeState == swarm.LocalNodeStateActive
 		}
@@ -160,6 +170,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.eventsChan = eventsCh
 		m.eventsCancel = eventsCancel
+		if m.config.MonitorMode {
+			m2, cmd := m.switchView(Monitor)
+			return m2, tea.Batch(cmd, listenDockerEvents(m.eventsChan))
+		}
 		return m, tea.Batch(
 			loadContainersCmd(m.daemon, m.containers.ShowAll(), m.containers.SortMode()),
 			listenDockerEvents(m.eventsChan),
@@ -169,6 +183,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Fatal error — can't connect to Docker
 		m.messageBar.SetMessage(fmt.Sprintf("Error: %s", msg.err), 10*time.Second)
 		return m, tea.Quit
+
+	case splashDoneMsg:
+		m.splashDone = true
+		if m.daemon != nil {
+			m.ready = true
+		}
+		return m, nil
 
 	case containersLoadedMsg:
 		m.containers.SetContainers(msg.containers)
@@ -1018,27 +1039,65 @@ func (m model) renderLoadingScreen() string {
 
 	connecting := "\U0001f433 Trying to connect to the Docker Host \U0001f433"
 
-	whale := ui.Cyan(frame)
+	// Top line: connecting message, centered
 	connectLine := ui.White(connecting)
-	verLine := ui.Blue("Dry Version: ") + ui.White(version.VERSION)
+	topLine := lipgloss.PlaceHorizontal(m.width, lipgloss.Center, connectLine)
 
-	var inner string
-	if m.config.DockerHost != "" {
-		hostLine := ui.Blue("Docker Host: ") + ui.White(m.config.DockerHost)
-		inner = lipgloss.JoinVertical(lipgloss.Center,
-			connectLine, "", whale, "", verLine, hostLine)
-	} else {
-		inner = lipgloss.JoinVertical(lipgloss.Center,
-			connectLine, "", whale, "", verLine)
+	// Middle: whale, centered
+	whale := ui.Cyan(frame)
+	whaleBlock := lipgloss.PlaceHorizontal(m.width, lipgloss.Center, whale)
+
+	// Fill the middle area so the whale is vertically centered.
+	// Account for: 1 top line, 2 bottom lines, whale height.
+	whaleHeight := strings.Count(whale, "\n") + 1
+	bottomLines := 2
+	padding := m.height - 1 - whaleHeight - bottomLines
+	topPad := padding / 2
+	botPad := padding - topPad
+	if topPad < 0 {
+		topPad = 0
+	}
+	if botPad < 0 {
+		botPad = 0
 	}
 
-	box := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(appui.DryTheme.Border).
-		Padding(1, 3)
+	// Bottom-left: version + host
+	verLine := ui.Blue("Dry Version: ") + ui.White(version.VERSION)
+	hostLine := ""
+	if m.config.DockerHost != "" {
+		hostLine = ui.Blue("Docker Host: ") + ui.White(m.config.DockerHost)
+	}
 
-	content := box.Render(inner)
-	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, content)
+	// Bottom-right: attribution
+	attribution := "made with \U0001f499 (and go) by moncho"
+
+	// Compose bottom two lines
+	bottomRow1 := verLine
+	if m.width > 0 {
+		attrW := ansi.StringWidth(attribution)
+		verW := ansi.StringWidth(verLine)
+		gap := m.width - verW - attrW
+		if gap > 0 {
+			bottomRow1 = verLine + strings.Repeat(" ", gap) + attribution
+		}
+	}
+	bottomRow2 := hostLine
+
+	var sections []string
+	sections = append(sections, topLine)
+	if topPad > 0 {
+		sections = append(sections, strings.Repeat("\n", topPad-1))
+	}
+	sections = append(sections, whaleBlock)
+	if botPad > 0 {
+		sections = append(sections, strings.Repeat("\n", botPad-1))
+	}
+	sections = append(sections, bottomRow1)
+	if bottomRow2 != "" {
+		sections = append(sections, bottomRow2)
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
 
 func (m *model) advanceLoadingFrame() {

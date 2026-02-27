@@ -69,7 +69,7 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 			CAFile:             filepath.Join(dockerCertPath, "ca.pem"),
 			CertFile:           filepath.Join(dockerCertPath, "cert.pem"),
 			KeyFile:            filepath.Join(dockerCertPath, "key.pem"),
-			InsecureSkipVerify: env.DockerTLSVerify,
+			InsecureSkipVerify: !env.DockerTLSVerify,
 		}
 	} else if env.DockerTLSVerify {
 		//No cert path is given but TLS verify is set, default location for
@@ -80,7 +80,7 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 			CAFile:             filepath.Join(defaultDockerPath, "ca.pem"),
 			CertFile:           filepath.Join(defaultDockerPath, "cert.pem"),
 			KeyFile:            filepath.Join(defaultDockerPath, "key.pem"),
-			InsecureSkipVerify: env.DockerTLSVerify,
+			InsecureSkipVerify: !env.DockerTLSVerify,
 		}
 		env.DockerCertPath = defaultDockerPath
 	}
@@ -92,7 +92,7 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 		opts = append(opts, client.WithTLSClientConfig(options.CAFile, options.CertFile, options.KeyFile))
 	}
 
-	if host != "" && strings.Index(host, "ssh") == 0 {
+	if host != "" && strings.HasPrefix(host, "ssh") {
 		//if it starts with ssh, its an ssh connection, and we need to handle this specially
 		//github.com/docker/docker does not handle ssh, as an upgrade to go-connections need to be made
 		//see https://github.com/docker/go-connections/pull/39
@@ -151,7 +151,7 @@ func configureSSHTransport(host string, user string, pass string) (*ssh.ClientCo
 		}
 
 		for _, pkFilename := range pkFilenames {
-			if strings.Index(pkFilename.Name(), "id_") == 0 && !strings.HasSuffix(pkFilename.Name(), ".pub") {
+			if strings.HasPrefix(pkFilename.Name(), "id_") && !strings.HasSuffix(pkFilename.Name(), ".pub") {
 				methods, err = readPk(pkFilename.Name(), methods, dirname+"/.ssh/")
 				if err != nil {
 					return nil, err
@@ -171,7 +171,7 @@ func configureSSHTransport(host string, user string, pass string) (*ssh.ClientCo
 }
 
 func readPk(pkFilename string, auth []ssh.AuthMethod, dirname string) ([]ssh.AuthMethod, error) {
-	pk, err := os.ReadFile(dirname + pkFilename)
+	pk, err := os.ReadFile(filepath.Join(dirname, pkFilename))
 	if err != nil {
 		return nil, nil
 	}

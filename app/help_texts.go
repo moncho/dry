@@ -72,7 +72,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Ctrl+U</>    Forces an update of the selected service
 
 <yellow>Stack list keybinds</>
-	<white>Enter</>     Shows the list of services of the selected stack
+	<white>Enter</>     Shows the list of tasks of the selected stack
 	<white>Ctrl+R</>    Removes the selected stack
 	
 <yellow>Move around in lists</>

@@ -248,7 +248,7 @@ func (daemon *DockerDaemon) StatsChannel(container *Container) (*StatsChannel, e
 // Prune requests the Docker daemon to prune unused containers, images
 // networks and volumes
 func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
 	args := filters.NewArgs()
@@ -593,16 +593,6 @@ func networks(client dockerAPI.NetworkAPIClient) ([]network.Inspect, error) {
 	}
 
 	return detailedNetworks, nil
-}
-
-// GetBool returns false if the given string looks like you mean
-// false, true otherwise. Func does not belong here.
-func GetBool(key string) (value bool) {
-	s := strings.ToLower(strings.Trim(key, " "))
-	if s == "" || s == "0" || s == "no" || s == "false" || s == "none" {
-		return false
-	}
-	return true
 }
 
 // IsContainerRunning returns true if the given container is running
