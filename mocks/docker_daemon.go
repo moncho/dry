@@ -27,16 +27,15 @@ func (_m *DockerDaemonMock) ContainerByID(id string) *drydocker.Container {
 }
 
 // Containers mock
-func (_m *DockerDaemonMock) Containers(filters []drydocker.ContainerFilter, mode drydocker.SortMode) []*drydocker.Container {
-
+func (_m *DockerDaemonMock) Containers(filters []drydocker.ContainerFilter, _ drydocker.SortMode) []*drydocker.Container {
 	var containers []*drydocker.Container
-	for index := 0; index < 10; index++ {
+	for index := range 10 {
 		containers = append(containers, &drydocker.Container{
 			Summary: container.Summary{ID: strconv.Itoa(index), Names: []string{"Name"},
 				Status: "Up and running"},
 		})
 	}
-	for index := 0; index < 10; index++ {
+	for index := range 10 {
 		containers = append(containers, &drydocker.Container{
 			Summary: container.Summary{ID: strconv.Itoa(index), Names: []string{"Name"},
 				Status: "Never worked"},

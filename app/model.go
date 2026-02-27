@@ -44,9 +44,9 @@ type model struct {
 	ready        bool
 
 	// Docker
-	daemon     docker.ContainerDaemon
-	config     Config
-	swarmMode  bool
+	daemon       docker.ContainerDaemon
+	config       Config
+	swarmMode    bool
 	eventsChan   <-chan events.Message
 	eventsCancel context.CancelFunc
 
