@@ -43,9 +43,9 @@ func (formatter *NetworkFormatter) addHeader(header string) {
 func (formatter *NetworkFormatter) ID() string {
 	formatter.addHeader(networkIDHeader)
 	if formatter.trunc {
-		return docker.TruncateID(docker.ImageID(formatter.network.ID))
+		return docker.TruncateID(formatter.network.ID)
 	}
-	return docker.ImageID(formatter.network.ID)
+	return formatter.network.ID
 }
 
 // Name prettifies the network name

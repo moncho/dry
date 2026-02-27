@@ -30,7 +30,7 @@ type TaskStringer struct {
 // ID Task id as a string
 func (t *TaskStringer) ID() string {
 	if t.trunc {
-		return TruncateID(t.task.ID)
+		return docker.TruncateID(t.task.ID)
 	}
 	return t.task.ID
 }

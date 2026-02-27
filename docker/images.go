@@ -6,7 +6,7 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
-	"golang.org/x/net/context"
+	"context"
 )
 
 // History returns image history

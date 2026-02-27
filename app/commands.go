@@ -65,7 +65,8 @@ func readLogStreamCmd(reader io.ReadCloser) tea.Cmd {
 			_ = reader.Close()
 			return streamClosedMsg{}
 		}
-		return streamClosedMsg{}
+		// n == 0 && err == nil: valid per io.Reader contract, retry.
+		return readLogStreamCmd(reader)()
 	}
 }
 

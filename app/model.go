@@ -160,6 +160,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.eventsChan = eventsCh
 		m.eventsCancel = eventsCancel
+		if m.config.MonitorMode {
+			m2, cmd := m.switchView(Monitor)
+			return m2, tea.Batch(cmd, listenDockerEvents(m.eventsChan))
+		}
 		return m, tea.Batch(
 			loadContainersCmd(m.daemon, m.containers.ShowAll(), m.containers.SortMode()),
 			listenDockerEvents(m.eventsChan),

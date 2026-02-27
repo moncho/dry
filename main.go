@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime/debug"
 	"strconv"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/jessevdk/go-flags"
@@ -39,12 +40,12 @@ func config(opts options) (app.Config, error) {
 			cfg.DockerHost = docker.DefaultDockerHost
 		} else {
 			cfg.DockerHost = os.Getenv("DOCKER_HOST")
-			cfg.DockerTLSVerify = docker.GetBool(os.Getenv("DOCKER_TLS_VERIFY"))
+			cfg.DockerTLSVerify = getBool(os.Getenv("DOCKER_TLS_VERIFY"))
 			cfg.DockerCertPath = os.Getenv("DOCKER_CERT_PATH")
 		}
 	} else {
 		cfg.DockerHost = opts.DockerHost
-		cfg.DockerTLSVerify = docker.GetBool(opts.DockerTLSVerify)
+		cfg.DockerTLSVerify = getBool(opts.DockerTLSVerify)
 		cfg.DockerCertPath = opts.DockerCertPath
 	}
 
@@ -57,6 +58,16 @@ func config(opts options) (app.Config, error) {
 		cfg.MonitorRefreshRate = refreshRate
 	}
 	return cfg, nil
+}
+
+// getBool returns false if the given string looks like you mean
+// false, true otherwise.
+func getBool(key string) bool {
+	s := strings.ToLower(strings.Trim(key, " "))
+	if s == "" || s == "0" || s == "no" || s == "false" || s == "none" {
+		return false
+	}
+	return true
 }
 
 func main() {
