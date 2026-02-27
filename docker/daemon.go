@@ -198,7 +198,6 @@ func (daemon *DockerDaemon) IsContainerRunning(id string) bool {
 func (daemon *DockerDaemon) Kill(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	//TODO Send signal?
 	err := daemon.client.ContainerKill(ctx, id, "")
 	if err != nil {
 		return err
@@ -265,7 +264,7 @@ func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
 	if err != nil {
 		return nil, err
 	}
-	vRreport, err := daemon.client.VolumesPrune(ctx, args)
+	vReport, err := daemon.client.VolumesPrune(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +272,7 @@ func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
 		ContainerReport: cReport,
 		ImagesReport:    iReport,
 		NetworksReport:  nReport,
-		VolumesReport:   vRreport}, nil
+		VolumesReport:   vReport}, nil
 }
 
 // RestartContainer restarts the container with the given id

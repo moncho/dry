@@ -145,6 +145,7 @@ func (m StacksModel) widgetHeader() string {
 		Title:    "Stacks",
 		Total:    m.table.TotalRowCount(),
 		Filtered: m.table.RowCount(),
+		Filter:   m.table.FilterText(),
 		Width:    m.table.Width(),
 		Accent:   appui.DryTheme.Error,
 	})

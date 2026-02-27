@@ -150,6 +150,7 @@ func (m NodesModel) widgetHeader() string {
 		Title:    "Nodes",
 		Total:    m.table.TotalRowCount(),
 		Filtered: m.table.RowCount(),
+		Filter:   m.table.FilterText(),
 		Width:    m.table.Width(),
 		Accent:   appui.DryTheme.Success,
 	})

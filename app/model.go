@@ -844,6 +844,8 @@ func (m model) filterActive() bool {
 		return m.services.FilterActive()
 	case Stacks:
 		return m.stacks.FilterActive()
+	case Tasks, ServiceTasks, StackTasks:
+		return m.tasks.FilterActive()
 	}
 	return false
 }
@@ -867,6 +869,8 @@ func (m model) delegateToSubModel(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.services, cmd = m.services.Update(msg)
 	case Stacks:
 		m.stacks, cmd = m.stacks.Update(msg)
+	case Tasks, ServiceTasks, StackTasks:
+		m.tasks, cmd = m.tasks.Update(msg)
 	}
 	return m, cmd
 }

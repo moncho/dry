@@ -208,7 +208,6 @@ func (m MonitorModel) View() string {
 		Title:    "Monitor",
 		Total:    len(m.stats),
 		Filtered: m.table.RowCount(),
-		Filter:   m.table.FilterText(),
 		Width:    m.width,
 		Accent:   DryTheme.Info,
 	})
