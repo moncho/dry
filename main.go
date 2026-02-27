@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/jessevdk/go-flags"
@@ -24,6 +25,7 @@ type options struct {
 	// enable profiling
 	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
 	Version bool `short:"v" long:"version" description:"Dry version"`
+	Splash int `short:"w" long:"splash" description:"Show loading screen for N seconds (max 10)" default:"0"`
 	//Docker-related properties
 	DockerHost      string `short:"H" long:"docker_host" description:"Docker Host"`
 	DockerCertPath  string `short:"c" long:"docker_certpath" description:"Docker cert path"`
@@ -47,6 +49,13 @@ func config(opts options) (app.Config, error) {
 		cfg.DockerHost = opts.DockerHost
 		cfg.DockerTLSVerify = getBool(opts.DockerTLSVerify)
 		cfg.DockerCertPath = opts.DockerCertPath
+	}
+
+	if opts.Splash > 0 {
+		if opts.Splash > 10 {
+			opts.Splash = 10
+		}
+		cfg.SplashDuration = time.Duration(opts.Splash) * time.Second
 	}
 
 	if opts.MonitorMode != "" {

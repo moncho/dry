@@ -80,6 +80,9 @@ type model struct {
 	// Loading animation
 	loadingFrame int
 	loadingFwd   bool
+
+	// Splash screen
+	splashDone bool
 }
 
 // NewModel creates a new top-level model.
@@ -104,10 +107,18 @@ func NewModel(cfg Config) model {
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(
+	cmds := []tea.Cmd{
 		connectToDockerCmd(m.config),
 		loadingTickCmd(),
-	)
+	}
+	if m.config.SplashDuration > 0 {
+		cmds = append(cmds, tea.Tick(m.config.SplashDuration, func(time.Time) tea.Msg {
+			return splashDoneMsg{}
+		}))
+	} else {
+		m.splashDone = true
+	}
+	return tea.Batch(cmds...)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -136,7 +147,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case dockerConnectedMsg:
 		m.daemon = msg.daemon
-		m.ready = true
+		m.ready = m.splashDone
 		if info, err := m.daemon.Info(); err == nil {
 			m.swarmMode = info.Swarm.LocalNodeState == swarm.LocalNodeStateActive
 		}
@@ -173,6 +184,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Fatal error — can't connect to Docker
 		m.messageBar.SetMessage(fmt.Sprintf("Error: %s", msg.err), 10*time.Second)
 		return m, tea.Quit
+
+	case splashDoneMsg:
+		m.splashDone = true
+		if m.daemon != nil {
+			m.ready = true
+		}
+		return m, nil
 
 	case containersLoadedMsg:
 		m.containers.SetContainers(msg.containers)
