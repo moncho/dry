@@ -87,14 +87,16 @@ func (m *TableModel) SetRows(rows []TableRow) {
 	m.syncInner()
 }
 
-// SetSize updates the table dimensions.
+// SetSize updates the table dimensions. Table height is reduced
+// by 1 to leave space for the blank line after the table.
 func (m *TableModel) SetSize(w, h int) {
 	m.width = w
 	m.height = h
 	m.calculateColumnWidths()
-	m.inner.SetWidth(w)
-	m.inner.SetHeight(h)
 	m.syncInnerColumns()
+	m.inner.SetWidth(w)
+	// -1 for blank line after the table
+	m.inner.SetHeight(h - 1)
 }
 
 // Width returns the table's current width.
@@ -206,7 +208,10 @@ func (m TableModel) View() string {
 
 func (m *TableModel) syncInner() {
 	m.inner.SetRows(m.toBubblesRows())
-	if cursor := m.inner.Cursor(); cursor >= len(m.filtered) && len(m.filtered) > 0 {
+	cursor := m.inner.Cursor()
+	if cursor < 0 && len(m.filtered) > 0 {
+		m.inner.SetCursor(0)
+	} else if cursor >= len(m.filtered) && len(m.filtered) > 0 {
 		m.inner.SetCursor(len(m.filtered) - 1)
 	}
 }
