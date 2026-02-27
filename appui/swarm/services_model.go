@@ -153,6 +153,7 @@ func (m ServicesModel) widgetHeader() string {
 		Title:    "Services",
 		Total:    m.table.TotalRowCount(),
 		Filtered: m.table.RowCount(),
+		Filter:   m.table.FilterText(),
 		Width:    m.table.Width(),
 		Accent:   appui.DryTheme.Primary,
 	})

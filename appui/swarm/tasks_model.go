@@ -46,6 +46,7 @@ type TasksLoadedMsg struct {
 // TasksModel is the swarm tasks list view.
 type TasksModel struct {
 	table  appui.TableModel
+	filter appui.FilterInputModel
 	daemon docker.ContainerDaemon
 	title  string
 }
@@ -62,10 +63,14 @@ func NewTasksModel() TasksModel {
 		{Title: "ERROR"},
 	}
 	return TasksModel{
-		table: appui.NewTableModel(columns),
-		title: "Tasks",
+		table:  appui.NewTableModel(columns),
+		filter: appui.NewFilterInputModel(),
+		title:  "Tasks",
 	}
 }
+
+// FilterActive returns true when the filter input is active.
+func (m TasksModel) FilterActive() bool { return m.filter.Active() }
 
 // SetDaemon sets the Docker daemon reference.
 func (m *TasksModel) SetDaemon(d docker.ContainerDaemon) {
@@ -74,7 +79,12 @@ func (m *TasksModel) SetDaemon(d docker.ContainerDaemon) {
 
 // SetSize updates the table dimensions.
 func (m *TasksModel) SetSize(w, h int) {
-	m.table.SetSize(w, h-2)
+	filterH := 0
+	if m.filter.Active() {
+		filterH = 1
+	}
+	m.table.SetSize(w, h-2-filterH)
+	m.filter.SetWidth(w)
 }
 
 // SetTasks replaces the task list.
@@ -89,6 +99,13 @@ func (m *TasksModel) SetTasks(tasks []swarm.Task, title string) {
 
 // Update handles key events.
 func (m TasksModel) Update(msg tea.Msg) (TasksModel, tea.Cmd) {
+	if m.filter.Active() {
+		var cmd tea.Cmd
+		m.filter, cmd = m.filter.Update(msg)
+		m.table.SetFilter(m.filter.Value())
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
@@ -97,6 +114,9 @@ func (m TasksModel) Update(msg tea.Msg) (TasksModel, tea.Cmd) {
 			return m, nil
 		case "f5":
 			return m, nil
+		case "%":
+			cmd := m.filter.Activate()
+			return m, cmd
 		}
 	}
 	var cmd tea.Cmd
@@ -116,8 +136,13 @@ func (m TasksModel) View() string {
 		Title:    m.title,
 		Total:    m.table.TotalRowCount(),
 		Filtered: m.table.RowCount(),
+		Filter:   m.table.FilterText(),
 		Width:    m.table.Width(),
 		Accent:   appui.DryTheme.Info,
 	})
-	return header + "\n" + m.table.View()
+	result := header + "\n" + m.table.View()
+	if filterView := m.filter.View(); filterView != "" {
+		result += "\n" + filterView
+	}
+	return result
 }
