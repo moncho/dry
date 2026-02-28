@@ -18,7 +18,7 @@ set_globals() {
 
     #location of the distribution server
     dist_server="https://github.com/moncho/dry/releases/download"
-    version_file_url="https://raw.githubusercontent.com/moncho/dry/master/APPVERSION"
+    latest_release_url="https://api.github.com/repos/moncho/dry/releases/latest"
 
     #Install prefix
     default_prefix="${DRY_PREFIX-/usr/local/bin}"
@@ -226,8 +226,14 @@ get_architecture() {
     aarch64 | arm64)
             local _cputype=arm64
             ;;
+    armv6*)
+            local _cputype=armv6
+            ;;
+    armv7*)
+            local _cputype=armv7
+            ;;
     arm*)
-            local _cputype=arm
+            local _cputype=armv6
             ;;
 	*)
                err "unknown CPU type: $CFG_CPUTYPE"
@@ -258,8 +264,26 @@ get_architecture() {
 }
 
 get_latest_dry_version() {
-  verbose_say "getting latest dry version from $version_file_url"
-  RETVAL="v$(curl $version_file_url)"
+  verbose_say "getting latest dry version from $latest_release_url"
+  local _version=""
+  local _response
+
+  _response="$(curl -sf "$latest_release_url" 2>/dev/null)"
+  if [ -n "$_response" ]; then
+    _version="$(echo "$_response" | grep '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')"
+  fi
+
+  # Validate: version must start with 'v' followed by a digit.
+  case "$_version" in
+    v[0-9]*)
+      ;;
+    *)
+      err "could not determine latest dry version from GitHub API (got: '$_version')"
+      ;;
+  esac
+
+  verbose_say "latest version is $_version"
+  RETVAL="$_version"
 }
 
 # Downloads a remote file, returns 0 on success.
