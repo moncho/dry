@@ -3,8 +3,6 @@ package appui
 import (
 	"context"
 	"fmt"
-	"sort"
-
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -150,15 +148,8 @@ func (m *MonitorModel) RemoveContainer(cid string) {
 }
 
 func (m *MonitorModel) refreshTable() {
-	ids := make([]string, 0, len(m.stats))
-	for cid := range m.stats {
-		ids = append(ids, cid)
-	}
-	sort.Strings(ids)
-
 	var rows []TableRow
-	for _, cid := range ids {
-		s := m.stats[cid]
+	for cid, s := range m.stats {
 		if s == nil || s.Error != nil {
 			continue
 		}
@@ -183,6 +174,7 @@ func (m *MonitorModel) refreshTable() {
 		})
 	}
 	m.table.SetRows(rows)
+	m.table.Sort()
 }
 
 // Update handles key events.

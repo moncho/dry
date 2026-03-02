@@ -224,6 +224,111 @@ func TestTableModel_ScrollOffset(t *testing.T) {
 	}
 }
 
+func TestTableModel_Sort(t *testing.T) {
+	cols := []Column{{Title: "Name"}, {Title: "Value"}}
+	table := NewTableModel(cols)
+	table.SetSize(80, 25)
+	rows := []TableRow{
+		testRow{id: "1", cols: []string{"cherry", "3"}},
+		testRow{id: "2", cols: []string{"apple", "1"}},
+		testRow{id: "3", cols: []string{"banana", "2"}},
+	}
+	table.SetRows(rows)
+
+	// Sort by first column (Name)
+	table.Sort()
+	if table.RowCount() != 3 {
+		t.Fatalf("expected 3 rows, got %d", table.RowCount())
+	}
+	// Default sort field is 0 (Name), ascending
+	r := table.SelectedRow()
+	if r == nil || r.Columns()[0] != "apple" {
+		t.Fatalf("expected first row 'apple' after sort, got %v", r)
+	}
+}
+
+func TestTableModel_SortNumeric(t *testing.T) {
+	cols := []Column{{Title: "Name"}, {Title: "Count"}}
+	table := NewTableModel(cols)
+	table.SetSize(80, 25)
+	rows := []TableRow{
+		testRow{id: "1", cols: []string{"a", "9"}},
+		testRow{id: "2", cols: []string{"b", "10"}},
+		testRow{id: "3", cols: []string{"c", "2"}},
+		testRow{id: "4", cols: []string{"d", "100"}},
+	}
+	table.SetRows(rows)
+
+	// Sort by column 1 (Count) — should use numeric comparison
+	table.NextSort() // sort field = 1
+	table.Sort()
+
+	// Numeric ascending: 2, 9, 10, 100
+	expected := []string{"2", "9", "10", "100"}
+	for i, want := range expected {
+		r := table.filtered[i]
+		got := r.Columns()[1]
+		if got != want {
+			t.Errorf("row %d: expected count %q, got %q", i, want, got)
+		}
+	}
+}
+
+func TestTableModel_SortNumericWithANSI(t *testing.T) {
+	cols := []Column{{Title: "Name"}, {Title: "Pids"}}
+	table := NewTableModel(cols)
+	table.SetSize(80, 25)
+	// Wrap numbers in ANSI color codes like monitor model does
+	rows := []TableRow{
+		testRow{id: "1", cols: []string{"a", ColorFg("9", DryTheme.FgMuted)}},
+		testRow{id: "2", cols: []string{"b", ColorFg("10", DryTheme.FgMuted)}},
+		testRow{id: "3", cols: []string{"c", ColorFg("2", DryTheme.FgMuted)}},
+		testRow{id: "4", cols: []string{"d", ColorFg("100", DryTheme.FgMuted)}},
+	}
+	table.SetRows(rows)
+
+	// Sort by column 1 (Pids)
+	table.NextSort() // sort field = 1
+	table.Sort()
+
+	// Numeric ascending: 2, 9, 10, 100
+	expectedIDs := []string{"3", "1", "2", "4"}
+	for i, want := range expectedIDs {
+		r := table.filtered[i]
+		if r.ID() != want {
+			t.Errorf("row %d: expected id %q, got %q", i, want, r.ID())
+		}
+	}
+}
+
+func TestTableModel_SortPreservedAfterSetRows(t *testing.T) {
+	cols := []Column{{Title: "Name"}, {Title: "Value"}}
+	table := NewTableModel(cols)
+	table.SetSize(80, 25)
+
+	// Set sort field to column 1 (Value)
+	table.NextSort() // now sorting by column 1
+
+	rows := []TableRow{
+		testRow{id: "1", cols: []string{"cherry", "c"}},
+		testRow{id: "2", cols: []string{"apple", "a"}},
+		testRow{id: "3", cols: []string{"banana", "b"}},
+	}
+	table.SetRows(rows)
+	// SetRows does NOT re-sort, so order is insertion order
+	r := table.SelectedRow()
+	if r == nil || r.ID() != "1" {
+		t.Fatalf("expected first row id '1' after SetRows (no sort), got %v", r)
+	}
+
+	// Calling Sort() should re-sort by column 1 (Value)
+	table.Sort()
+	r = table.SelectedRow()
+	if r == nil || r.Columns()[1] != "a" {
+		t.Fatalf("expected first row value 'a' after Sort(), got %v", r)
+	}
+}
+
 func TestTableModel_ViewNotEmpty(t *testing.T) {
 	cols := []Column{{Title: "Name", Width: 20, Fixed: true}}
 	table := NewTableModel(cols)
