@@ -21,6 +21,44 @@ import (
 type DockerDaemonMock struct {
 }
 
+// ComposeProjects mock
+func (_m *DockerDaemonMock) ComposeProjects() []drydocker.ComposeProject {
+	return []drydocker.ComposeProject{
+		{Name: "webapp", Services: 3, Containers: 4, Running: 3, Exited: 1},
+		{Name: "monitoring", Services: 2, Containers: 2, Running: 2, Exited: 0},
+	}
+}
+
+// ComposeProjectsWithServices mock
+func (_m *DockerDaemonMock) ComposeProjectsWithServices() []drydocker.ProjectWithServices {
+	return []drydocker.ProjectWithServices{
+		{
+			Project: drydocker.ComposeProject{Name: "webapp", Services: 3, Containers: 4, Running: 3, Exited: 1},
+			Services: []drydocker.ComposeService{
+				{Project: "webapp", Name: "api", Containers: 2, Running: 2, Exited: 0, Image: "api:latest", Health: "healthy", Ports: "0.0.0.0:8080->8080/tcp"},
+				{Project: "webapp", Name: "db", Containers: 1, Running: 1, Exited: 0, Image: "postgres:15", Health: "none", Ports: "0.0.0.0:5432->5432/tcp"},
+				{Project: "webapp", Name: "worker", Containers: 1, Running: 0, Exited: 1, Image: "worker:latest", Health: "none"},
+			},
+		},
+		{
+			Project: drydocker.ComposeProject{Name: "monitoring", Services: 2, Containers: 2, Running: 2, Exited: 0},
+			Services: []drydocker.ComposeService{
+				{Project: "monitoring", Name: "grafana", Containers: 1, Running: 1, Exited: 0, Image: "grafana/grafana:latest", Health: "healthy", Ports: "0.0.0.0:3000->3000/tcp"},
+				{Project: "monitoring", Name: "prometheus", Containers: 1, Running: 1, Exited: 0, Image: "prom/prometheus:latest", Health: "healthy", Ports: "0.0.0.0:9090->9090/tcp"},
+			},
+		},
+	}
+}
+
+// ComposeServices mock
+func (_m *DockerDaemonMock) ComposeServices(project string) []drydocker.ComposeService {
+	return []drydocker.ComposeService{
+		{Project: project, Name: "api", Containers: 2, Running: 2, Exited: 0, Image: "api:latest", Health: "healthy", Ports: "0.0.0.0:8080->8080/tcp"},
+		{Project: project, Name: "db", Containers: 1, Running: 1, Exited: 0, Image: "postgres:15", Health: "none", Ports: "0.0.0.0:5432->5432/tcp"},
+		{Project: project, Name: "worker", Containers: 1, Running: 0, Exited: 1, Image: "worker:latest", Health: "none"},
+	}
+}
+
 // ContainerByID mock
 func (_m *DockerDaemonMock) ContainerByID(id string) *drydocker.Container {
 	return nil

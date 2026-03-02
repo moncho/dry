@@ -21,6 +21,14 @@ type Container struct {
 	Detail container.InspectResponse
 }
 
+// ComposeAPI defines methods to query Docker Compose project/service information
+// derived from container labels.
+type ComposeAPI interface {
+	ComposeProjects() []ComposeProject
+	ComposeProjectsWithServices() []ProjectWithServices
+	ComposeServices(project string) []ComposeService
+}
+
 // ContainerDaemon describes what is expected from the container daemon
 type ContainerDaemon interface {
 	ContainerAPI
@@ -28,6 +36,7 @@ type ContainerDaemon interface {
 	NetworkAPI
 	VolumesAPI
 	SwarmAPI
+	ComposeAPI
 	ContainerRuntime
 	DiskUsage() (types.DiskUsage, error)
 	DockerEnv() Env

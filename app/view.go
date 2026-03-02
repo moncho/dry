@@ -28,4 +28,8 @@ const (
 	Tasks
 	// Volumes is the volume list view
 	Volumes
+	// ComposeProjects is the compose project list view
+	ComposeProjects
+	// ComposeServices shows services for a compose project
+	ComposeServices
 )

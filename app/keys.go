@@ -12,6 +12,7 @@ type globalKeyMap struct {
 	Nodes        key.Binding
 	Services     key.Binding
 	Stacks       key.Binding
+	Compose      key.Binding
 	Monitor      key.Binding
 	ToggleHeader key.Binding
 	DiskUsage    key.Binding
@@ -57,6 +58,10 @@ var globalKeys = globalKeyMap{
 		key.WithKeys("7"),
 		key.WithHelp("7", "stacks"),
 	),
+	Compose: key.NewBinding(
+		key.WithKeys("8"),
+		key.WithHelp("8", "compose"),
+	),
 	Monitor: key.NewBinding(
 		key.WithKeys("m", "M"),
 		key.WithHelp("m", "monitor"),
@@ -90,11 +95,11 @@ var globalKeys = globalKeyMap{
 // --- containers (Main) ------------------------------------------------
 
 type containerKeyMap struct {
-	Help, Quit                                       key.Binding
-	Sort, AllRunning, Refresh, Filter                key.Binding
-	Monitor, Images, Nets, Vols, Nodes, Svcs, Stacks key.Binding
-	Commands                                         key.Binding
-	Logs, Stats, Rm, RmStopped, Kill, Restart, Stop  key.Binding
+	Help, Quit                                                key.Binding
+	Sort, AllRunning, Refresh, Filter                         key.Binding
+	Monitor, Images, Nets, Vols, Nodes, Svcs, Stacks, Compose key.Binding
+	Commands                                                  key.Binding
+	Logs, Stats, Rm, RmStopped, Kill, Restart, Stop           key.Binding
 }
 
 var containerKeys = containerKeyMap{
@@ -111,6 +116,7 @@ var containerKeys = containerKeyMap{
 	Nodes:      key.NewBinding(key.WithKeys("5"), key.WithHelp("5", "nodes")),
 	Svcs:       key.NewBinding(key.WithKeys("6"), key.WithHelp("6", "svcs")),
 	Stacks:     key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
+	Compose:    key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
 	Commands:   key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "commands")),
 	Logs:       key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "logs")),
 	Stats:      key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "stats")),
@@ -125,7 +131,7 @@ func (k containerKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		k.Help, k.Quit,
 		k.Sort, k.AllRunning, k.Refresh, k.Filter,
-		k.Monitor, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks,
+		k.Monitor, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks, k.Compose,
 		k.Commands, k.Logs, k.Stats,
 		k.Rm, k.RmStopped, k.Kill, k.Restart, k.Stop,
 	}
@@ -136,9 +142,9 @@ func (k containerKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.S
 // --- monitor ----------------------------------------------------------
 
 type monitorKeyMap struct {
-	Help, Quit                                                   key.Binding
-	Sort                                                         key.Binding
-	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks key.Binding
+	Help, Quit                                                            key.Binding
+	Sort                                                                  key.Binding
+	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks, Compose key.Binding
 }
 
 var monitorKeys = monitorKeyMap{
@@ -153,12 +159,13 @@ var monitorKeys = monitorKeyMap{
 	Nodes:      key.NewBinding(key.WithKeys("5"), key.WithHelp("5", "nodes")),
 	Svcs:       key.NewBinding(key.WithKeys("6"), key.WithHelp("6", "svcs")),
 	Stacks:     key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
+	Compose:    key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
 }
 
 func (k monitorKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		k.Help, k.Quit, k.Sort,
-		k.Monitor, k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks,
+		k.Monitor, k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks, k.Compose,
 	}
 }
 
@@ -167,11 +174,11 @@ func (k monitorKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.Sho
 // --- images -----------------------------------------------------------
 
 type imagesKeyMap struct {
-	Help, Quit                                  key.Binding
-	Sort, Refresh, Filter                       key.Binding
-	Containers, Nets, Vols, Nodes, Svcs, Stacks key.Binding
-	Inspect                                     key.Binding
-	RmDangling, Rm, ForceRm, RmUnused, History  key.Binding
+	Help, Quit                                           key.Binding
+	Sort, Refresh, Filter                                key.Binding
+	Containers, Nets, Vols, Nodes, Svcs, Stacks, Compose key.Binding
+	Inspect                                              key.Binding
+	RmDangling, Rm, ForceRm, RmUnused, History           key.Binding
 }
 
 var imagesKeys = imagesKeyMap{
@@ -186,6 +193,7 @@ var imagesKeys = imagesKeyMap{
 	Nodes:      key.NewBinding(key.WithKeys("5"), key.WithHelp("5", "nodes")),
 	Svcs:       key.NewBinding(key.WithKeys("6"), key.WithHelp("6", "svcs")),
 	Stacks:     key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
+	Compose:    key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
 	Inspect:    key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "inspect")),
 	RmDangling: key.NewBinding(key.WithKeys("ctrl+d"), key.WithHelp("^d", "rm dangling")),
 	Rm:         key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("^e", "rm")),
@@ -197,7 +205,7 @@ var imagesKeys = imagesKeyMap{
 func (k imagesKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		k.Help, k.Quit, k.Sort, k.Refresh, k.Filter,
-		k.Containers, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks,
+		k.Containers, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks, k.Compose,
 		k.Inspect, k.RmDangling, k.Rm, k.ForceRm, k.RmUnused, k.History,
 	}
 }
@@ -207,10 +215,10 @@ func (k imagesKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.Shor
 // --- networks ---------------------------------------------------------
 
 type networksKeyMap struct {
-	Help, Quit                                    key.Binding
-	Sort, Refresh, Filter                         key.Binding
-	Containers, Images, Vols, Nodes, Svcs, Stacks key.Binding
-	Rm, Inspect                                   key.Binding
+	Help, Quit                                             key.Binding
+	Sort, Refresh, Filter                                  key.Binding
+	Containers, Images, Vols, Nodes, Svcs, Stacks, Compose key.Binding
+	Rm, Inspect                                            key.Binding
 }
 
 var networksKeys = networksKeyMap{
@@ -225,6 +233,7 @@ var networksKeys = networksKeyMap{
 	Nodes:      key.NewBinding(key.WithKeys("5"), key.WithHelp("5", "nodes")),
 	Svcs:       key.NewBinding(key.WithKeys("6"), key.WithHelp("6", "svcs")),
 	Stacks:     key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
+	Compose:    key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
 	Rm:         key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("^e", "rm")),
 	Inspect:    key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "inspect")),
 }
@@ -232,7 +241,7 @@ var networksKeys = networksKeyMap{
 func (k networksKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		k.Help, k.Quit, k.Sort, k.Refresh, k.Filter,
-		k.Containers, k.Images, k.Vols, k.Nodes, k.Svcs, k.Stacks,
+		k.Containers, k.Images, k.Vols, k.Nodes, k.Svcs, k.Stacks, k.Compose,
 		k.Rm, k.Inspect,
 	}
 }
@@ -242,10 +251,10 @@ func (k networksKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.Sh
 // --- volumes ----------------------------------------------------------
 
 type volumesKeyMap struct {
-	Help, Quit                                    key.Binding
-	Sort, Refresh, Filter                         key.Binding
-	Containers, Images, Nets, Nodes, Svcs, Stacks key.Binding
-	RmAll, Rm, ForceRm, RmUnused, Inspect         key.Binding
+	Help, Quit                                             key.Binding
+	Sort, Refresh, Filter                                  key.Binding
+	Containers, Images, Nets, Nodes, Svcs, Stacks, Compose key.Binding
+	RmAll, Rm, ForceRm, RmUnused, Inspect                 key.Binding
 }
 
 var volumesKeys = volumesKeyMap{
@@ -260,6 +269,7 @@ var volumesKeys = volumesKeyMap{
 	Nodes:      key.NewBinding(key.WithKeys("5"), key.WithHelp("5", "nodes")),
 	Svcs:       key.NewBinding(key.WithKeys("6"), key.WithHelp("6", "svcs")),
 	Stacks:     key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
+	Compose:    key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
 	RmAll:      key.NewBinding(key.WithKeys("ctrl+a"), key.WithHelp("^a", "rm all")),
 	Rm:         key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("^e", "rm")),
 	ForceRm:    key.NewBinding(key.WithKeys("ctrl+f"), key.WithHelp("^f", "force rm")),
@@ -270,7 +280,7 @@ var volumesKeys = volumesKeyMap{
 func (k volumesKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		k.Help, k.Quit, k.Sort, k.Refresh, k.Filter,
-		k.Containers, k.Images, k.Nets, k.Nodes, k.Svcs, k.Stacks,
+		k.Containers, k.Images, k.Nets, k.Nodes, k.Svcs, k.Stacks, k.Compose,
 		k.RmAll, k.Rm, k.ForceRm, k.RmUnused, k.Inspect,
 	}
 }
@@ -280,9 +290,9 @@ func (k volumesKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.Sho
 // --- disk usage -------------------------------------------------------
 
 type diskUsageKeyMap struct {
-	Help, Quit                                          key.Binding
-	Containers, Images, Nets, Vols, Nodes, Svcs, Stacks key.Binding
-	Prune                                               key.Binding
+	Help, Quit                                                   key.Binding
+	Containers, Images, Nets, Vols, Nodes, Svcs, Stacks, Compose key.Binding
+	Prune                                                        key.Binding
 }
 
 var diskUsageKeys = diskUsageKeyMap{
@@ -295,13 +305,14 @@ var diskUsageKeys = diskUsageKeyMap{
 	Nodes:      key.NewBinding(key.WithKeys("5"), key.WithHelp("5", "nodes")),
 	Svcs:       key.NewBinding(key.WithKeys("6"), key.WithHelp("6", "svcs")),
 	Stacks:     key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
+	Compose:    key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
 	Prune:      key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "prune")),
 }
 
 func (k diskUsageKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		k.Help, k.Quit,
-		k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks,
+		k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks, k.Compose,
 		k.Prune,
 	}
 }
@@ -311,10 +322,10 @@ func (k diskUsageKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.S
 // --- services ---------------------------------------------------------
 
 type servicesKeyMap struct {
-	Help, Quit                                                   key.Binding
-	Sort, Refresh, Filter                                        key.Binding
-	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks key.Binding
-	Tasks, Inspect, Logs, Rm, Scale, Update                      key.Binding
+	Help, Quit                                                            key.Binding
+	Sort, Refresh, Filter                                                 key.Binding
+	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks, Compose key.Binding
+	Tasks, Inspect, Logs, Rm, Scale, Update                               key.Binding
 }
 
 var servicesKeys = servicesKeyMap{
@@ -328,6 +339,7 @@ var servicesKeys = servicesKeyMap{
 	Nodes:      key.NewBinding(key.WithKeys("5"), key.WithHelp("5", "nodes")),
 	Svcs:       key.NewBinding(key.WithKeys("6"), key.WithHelp("6", "svcs")),
 	Stacks:     key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
+	Compose:    key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
 	Sort:       key.NewBinding(key.WithKeys("f1"), key.WithHelp("F1", "sort")),
 	Refresh:    key.NewBinding(key.WithKeys("f5"), key.WithHelp("F5", "refresh")),
 	Filter:     key.NewBinding(key.WithKeys("%"), key.WithHelp("%", "filter")),
@@ -342,7 +354,7 @@ var servicesKeys = servicesKeyMap{
 func (k servicesKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		k.Help, k.Quit,
-		k.Monitor, k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks,
+		k.Monitor, k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks, k.Compose,
 		k.Sort, k.Refresh, k.Filter,
 		k.Tasks, k.Inspect, k.Logs, k.Rm, k.Scale, k.Update,
 	}
@@ -353,10 +365,10 @@ func (k servicesKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.Sh
 // --- stacks -----------------------------------------------------------
 
 type stacksKeyMap struct {
-	Help, Quit                                                   key.Binding
-	Sort, Refresh, Filter                                        key.Binding
-	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks key.Binding
-	Tasks, Rm                                                    key.Binding
+	Help, Quit                                                            key.Binding
+	Sort, Refresh, Filter                                                 key.Binding
+	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks, Compose key.Binding
+	Tasks, Rm                                                             key.Binding
 }
 
 var stacksKeys = stacksKeyMap{
@@ -370,6 +382,7 @@ var stacksKeys = stacksKeyMap{
 	Nodes:      key.NewBinding(key.WithKeys("5"), key.WithHelp("5", "nodes")),
 	Svcs:       key.NewBinding(key.WithKeys("6"), key.WithHelp("6", "svcs")),
 	Stacks:     key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
+	Compose:    key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
 	Sort:       key.NewBinding(key.WithKeys("f1"), key.WithHelp("F1", "sort")),
 	Refresh:    key.NewBinding(key.WithKeys("f5"), key.WithHelp("F5", "refresh")),
 	Filter:     key.NewBinding(key.WithKeys("%"), key.WithHelp("%", "filter")),
@@ -380,7 +393,7 @@ var stacksKeys = stacksKeyMap{
 func (k stacksKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		k.Help, k.Quit,
-		k.Monitor, k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks,
+		k.Monitor, k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks, k.Compose,
 		k.Sort, k.Refresh, k.Filter,
 		k.Tasks, k.Rm,
 	}
@@ -391,10 +404,10 @@ func (k stacksKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.Shor
 // --- nodes ------------------------------------------------------------
 
 type nodesKeyMap struct {
-	Help, Quit                                                   key.Binding
-	Sort, Refresh, Filter                                        key.Binding
-	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks key.Binding
-	Tasks, Inspect, Availability                                 key.Binding
+	Help, Quit                                                            key.Binding
+	Sort, Refresh, Filter                                                 key.Binding
+	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks, Compose key.Binding
+	Tasks, Inspect, Availability                                          key.Binding
 }
 
 var nodesKeys = nodesKeyMap{
@@ -408,6 +421,7 @@ var nodesKeys = nodesKeyMap{
 	Nodes:        key.NewBinding(key.WithKeys("5"), key.WithHelp("5", "nodes")),
 	Svcs:         key.NewBinding(key.WithKeys("6"), key.WithHelp("6", "svcs")),
 	Stacks:       key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
+	Compose:      key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
 	Sort:         key.NewBinding(key.WithKeys("f1"), key.WithHelp("F1", "sort")),
 	Refresh:      key.NewBinding(key.WithKeys("f5"), key.WithHelp("F5", "refresh")),
 	Filter:       key.NewBinding(key.WithKeys("%"), key.WithHelp("%", "filter")),
@@ -419,7 +433,7 @@ var nodesKeys = nodesKeyMap{
 func (k nodesKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		k.Help, k.Quit,
-		k.Monitor, k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks,
+		k.Monitor, k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks, k.Compose,
 		k.Sort, k.Refresh, k.Filter,
 		k.Tasks, k.Inspect, k.Availability,
 	}
@@ -447,3 +461,62 @@ func (k tasksKeyMap) ShortHelp() []key.Binding {
 }
 
 func (k tasksKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.ShortHelp()} }
+
+// --- compose projects -----------------------------------------------------
+
+type composeProjectsKeyMap struct {
+	Help, Quit                                                            key.Binding
+	Sort, Refresh, Filter                                                 key.Binding
+	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks, Compose key.Binding
+	Enter                                                                 key.Binding
+}
+
+var composeProjectsKeys = composeProjectsKeyMap{
+	Help:       key.NewBinding(key.WithKeys("h"), key.WithHelp("h", "help")),
+	Quit:       key.NewBinding(key.WithKeys("Q"), key.WithHelp("q", "quit")),
+	Sort:       key.NewBinding(key.WithKeys("f1"), key.WithHelp("F1", "sort")),
+	Refresh:    key.NewBinding(key.WithKeys("f5"), key.WithHelp("F5", "refresh")),
+	Filter:     key.NewBinding(key.WithKeys("%"), key.WithHelp("%", "filter")),
+	Monitor:    key.NewBinding(key.WithKeys("m"), key.WithHelp("m", "monitor")),
+	Containers: key.NewBinding(key.WithKeys("1"), key.WithHelp("1", "containers")),
+	Images:     key.NewBinding(key.WithKeys("2"), key.WithHelp("2", "images")),
+	Nets:       key.NewBinding(key.WithKeys("3"), key.WithHelp("3", "nets")),
+	Vols:       key.NewBinding(key.WithKeys("4"), key.WithHelp("4", "vols")),
+	Nodes:      key.NewBinding(key.WithKeys("5"), key.WithHelp("5", "nodes")),
+	Svcs:       key.NewBinding(key.WithKeys("6"), key.WithHelp("6", "svcs")),
+	Stacks:     key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
+	Compose:    key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
+	Enter:      key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "services")),
+}
+
+func (k composeProjectsKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{
+		k.Help, k.Quit, k.Sort, k.Refresh, k.Filter,
+		k.Monitor, k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks, k.Compose,
+		k.Enter,
+	}
+}
+
+func (k composeProjectsKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.ShortHelp()} }
+
+// --- compose services -----------------------------------------------------
+
+type composeServicesKeyMap struct {
+	Help, Quit    key.Binding
+	Sort, Filter  key.Binding
+	Back          key.Binding
+}
+
+var composeServicesKeys = composeServicesKeyMap{
+	Help:   key.NewBinding(key.WithKeys("h"), key.WithHelp("h", "help")),
+	Quit:   key.NewBinding(key.WithKeys("Q"), key.WithHelp("q", "quit")),
+	Sort:   key.NewBinding(key.WithKeys("f1"), key.WithHelp("F1", "sort")),
+	Filter: key.NewBinding(key.WithKeys("%"), key.WithHelp("%", "filter")),
+	Back:   key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
+}
+
+func (k composeServicesKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Help, k.Quit, k.Sort, k.Filter, k.Back}
+}
+
+func (k composeServicesKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.ShortHelp()} }

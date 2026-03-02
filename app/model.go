@@ -15,6 +15,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/go-units"
 	"github.com/moncho/dry/appui"
+	appcompose "github.com/moncho/dry/appui/compose"
 	appswarm "github.com/moncho/dry/appui/swarm"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -57,11 +58,14 @@ type model struct {
 	volumes    appui.VolumesModel
 	diskUsage  appui.DiskUsageModel
 	monitor    appui.MonitorModel
-	nodes      appswarm.NodesModel
-	services   appswarm.ServicesModel
-	stacks     appswarm.StacksModel
-	tasks      appswarm.TasksModel
-	header     appui.HeaderModel
+	nodes           appswarm.NodesModel
+	services        appswarm.ServicesModel
+	stacks          appswarm.StacksModel
+	tasks           appswarm.TasksModel
+	composeProjects appcompose.ProjectsModel
+	composeServices appcompose.ServicesModel
+	selectedProject string
+	header          appui.HeaderModel
 	messageBar appui.MessageBarModel
 
 	// Overlay state
@@ -99,8 +103,10 @@ func NewModel(cfg Config) model {
 		monitor:        appui.NewMonitorModel(),
 		nodes:          appswarm.NewNodesModel(),
 		services:       appswarm.NewServicesModel(),
-		stacks:         appswarm.NewStacksModel(),
-		tasks:          appswarm.NewTasksModel(),
+		stacks:          appswarm.NewStacksModel(),
+		tasks:           appswarm.NewTasksModel(),
+		composeProjects: appcompose.NewProjectsModel(),
+		composeServices: appcompose.NewServicesModel(),
 		pendingRefresh: make(map[docker.SourceType]bool),
 		loadingFwd:     true,
 		splashDone:     cfg.SplashDuration <= 0,
@@ -136,6 +142,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.services.SetSize(m.width, ch)
 		m.stacks.SetSize(m.width, ch)
 		m.tasks.SetSize(m.width, ch)
+		m.composeProjects.SetSize(m.width, ch)
+		m.composeServices.SetSize(m.width, ch)
 		m.header.SetWidth(m.width)
 		// Update overlay sizes
 		m.less.SetSize(m.width, m.height)
@@ -160,6 +168,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.services.SetDaemon(m.daemon)
 		m.stacks.SetDaemon(m.daemon)
 		m.tasks.SetDaemon(m.daemon)
+		m.composeProjects.SetDaemon(m.daemon)
 		m.header = appui.NewHeaderModel(m.daemon, m.width)
 		eventsCtx, eventsCancel := context.WithCancel(context.Background())
 		eventsCh, err := m.daemon.Events(eventsCtx)
@@ -235,6 +244,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.tasks.SetTasks(msg.Tasks, msg.Title)
 		return m, nil
 
+	case appcompose.ProjectsLoadedMsg:
+		m.composeProjects.SetProjects(msg.Projects)
+		return m, nil
+
+	case appcompose.ServicesLoadedMsg:
+		m.composeServices.SetServices(msg.Services, msg.Networks, msg.Volumes, msg.Project)
+		return m, nil
+
 	case eventsClosedMsg:
 		// Events channel was closed (daemon restart, network error).
 		// Try to re-establish the events listener after a short delay.
@@ -288,6 +305,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case docker.ContainerSource:
 				if m.view == Main {
 					cmds = append(cmds, loadContainersCmd(m.daemon, m.containers.ShowAll(), m.containers.SortMode()))
+				}
+				if m.view == ComposeProjects {
+					cmds = append(cmds, loadComposeProjectsCmd(m.daemon))
+				}
+				if m.view == ComposeServices {
+					cmds = append(cmds, loadComposeServicesCmd(m.daemon, m.selectedProject))
 				}
 			case docker.ImageSource:
 				if m.view == Images {
@@ -475,6 +498,8 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.services.SetSize(m.width, ch)
 		m.stacks.SetSize(m.width, ch)
 		m.tasks.SetSize(m.width, ch)
+		m.composeProjects.SetSize(m.width, ch)
+		m.composeServices.SetSize(m.width, ch)
 		return m, nil
 	case "ctrl+0":
 		appui.RotateColorTheme()
@@ -488,6 +513,8 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.services.RefreshTableStyles()
 		m.stacks.RefreshTableStyles()
 		m.tasks.RefreshTableStyles()
+		m.composeProjects.RefreshTableStyles()
+		m.composeServices.RefreshTableStyles()
 		return m, nil
 	case "1":
 		return m.switchView(Main)
@@ -519,9 +546,11 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m.switchView(Services)
 	case "7":
 		return m.switchView(Stacks)
+	case "8":
+		return m.switchView(ComposeProjects)
 	case "esc":
-		// Escape goes back to main from any non-main, non-task view
-		if m.view != Main && m.view != ServiceTasks && m.view != Tasks && m.view != StackTasks {
+		// Escape goes back to main from any non-main, non-task, non-compose-services view
+		if m.view != Main && m.view != ServiceTasks && m.view != Tasks && m.view != StackTasks && m.view != ComposeServices {
 			return m.switchView(Main)
 		}
 	}
@@ -835,6 +864,64 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.stacks, cmd = m.stacks.Update(msg)
 		return m, cmd
 
+	case ComposeProjects:
+		switch msg.String() {
+		case "enter":
+			// Service row: inspect the service's first container
+			if svc := m.composeProjects.SelectedService(); svc != nil {
+				return m, inspectComposeServiceCmd(m.daemon, svc.Project, svc.Name)
+			}
+			// Project row: drill into project resources
+			if p := m.composeProjects.SelectedProject(); p != nil {
+				m.previousView = m.view
+				m.view = ComposeServices
+				m.selectedProject = p.Name
+				return m, loadComposeServicesCmd(m.daemon, p.Name)
+			}
+			return m, nil
+		case "l", "L":
+			if svc := m.composeProjects.SelectedService(); svc != nil {
+				return m, showComposeLogsCmd(m.daemon, svc.Project, svc.Name)
+			}
+			if p := m.composeProjects.SelectedProject(); p != nil {
+				return m, showComposeLogsCmd(m.daemon, p.Name, "")
+			}
+			return m, nil
+		case "f5":
+			return m, loadComposeProjectsCmd(m.daemon)
+		}
+		var cmd tea.Cmd
+		m.composeProjects, cmd = m.composeProjects.Update(msg)
+		return m, cmd
+
+	case ComposeServices:
+		switch msg.String() {
+		case "esc":
+			m.view = ComposeProjects
+			return m, loadComposeProjectsCmd(m.daemon)
+		case "enter":
+			if svc := m.composeServices.SelectedService(); svc != nil {
+				return m, inspectComposeServiceCmd(m.daemon, svc.Project, svc.Name)
+			}
+			if n := m.composeServices.SelectedNetwork(); n != nil {
+				return m, inspectNetworkCmd(m.daemon, n.Name)
+			}
+			if v := m.composeServices.SelectedVolume(); v != nil {
+				return m, inspectVolumeCmd(m.daemon, v.Name)
+			}
+			return m, nil
+		case "l", "L":
+			if svc := m.composeServices.SelectedService(); svc != nil {
+				return m, showComposeLogsCmd(m.daemon, svc.Project, svc.Name)
+			}
+			return m, nil
+		case "f5":
+			return m, loadComposeServicesCmd(m.daemon, m.selectedProject)
+		}
+		var cmd tea.Cmd
+		m.composeServices, cmd = m.composeServices.Update(msg)
+		return m, cmd
+
 	case ServiceTasks, Tasks, StackTasks:
 		switch msg.String() {
 		case "esc":
@@ -867,6 +954,10 @@ func (m model) filterActive() bool {
 		return m.stacks.FilterActive()
 	case Tasks, ServiceTasks, StackTasks:
 		return m.tasks.FilterActive()
+	case ComposeProjects:
+		return m.composeProjects.FilterActive()
+	case ComposeServices:
+		return m.composeServices.FilterActive()
 	}
 	return false
 }
@@ -892,6 +983,10 @@ func (m model) delegateToSubModel(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.stacks, cmd = m.stacks.Update(msg)
 	case Tasks, ServiceTasks, StackTasks:
 		m.tasks, cmd = m.tasks.Update(msg)
+	case ComposeProjects:
+		m.composeProjects, cmd = m.composeProjects.Update(msg)
+	case ComposeServices:
+		m.composeServices, cmd = m.composeServices.Update(msg)
 	}
 	return m, cmd
 }
@@ -952,6 +1047,10 @@ func (m model) renderMainScreenWithFooter(footer string) string {
 		sections = append(sections, m.stacks.View())
 	case ServiceTasks, Tasks, StackTasks:
 		sections = append(sections, m.tasks.View())
+	case ComposeProjects:
+		sections = append(sections, m.composeProjects.View())
+	case ComposeServices:
+		sections = append(sections, m.composeServices.View())
 	default:
 		sections = append(sections, "View not yet implemented")
 	}
@@ -984,6 +1083,10 @@ func (m model) renderFooter() string {
 		bindings = nodesKeys.ShortHelp()
 	case ServiceTasks, Tasks, StackTasks:
 		bindings = tasksKeys.ShortHelp()
+	case ComposeProjects:
+		bindings = composeProjectsKeys.ShortHelp()
+	case ComposeServices:
+		bindings = composeServicesKeys.ShortHelp()
 	default:
 		bindings = containerKeys.ShortHelp()
 	}
@@ -1166,6 +1269,10 @@ func (m model) loadViewData(v viewMode) tea.Cmd {
 		if m.swarmMode {
 			return loadStacksCmd(m.daemon)
 		}
+	case ComposeProjects:
+		return loadComposeProjectsCmd(m.daemon)
+	case ComposeServices:
+		return loadComposeServicesCmd(m.daemon, m.selectedProject)
 	}
 	return nil
 }
