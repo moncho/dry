@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"sort"
 
+	"strings"
+
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/docker/go-units"
 	"github.com/moncho/dry/docker"
 )
@@ -47,9 +50,9 @@ type MonitorModel struct {
 func NewMonitorModel() MonitorModel {
 	columns := []Column{
 		{Title: "CONTAINER", Width: IDColumnWidth, Fixed: true},
-		{Title: "CPU %", Width: 12, Fixed: true},
+		{Title: "CPU %", Width: 20, Fixed: true},
 		{Title: "MEM USAGE/LIMIT", Width: 30, Fixed: true},
-		{Title: "MEM %", Width: 12, Fixed: true},
+		{Title: "MEM %", Width: 20, Fixed: true},
 		{Title: "NET I/O", Width: 26, Fixed: true},
 		{Title: "BLOCK I/O", Width: 26, Fixed: true},
 		{Title: "PIDS", Width: 10, Fixed: true},
@@ -159,20 +162,15 @@ func (m *MonitorModel) refreshTable() {
 		if s == nil || s.Error != nil {
 			continue
 		}
-		memPctText := fmt.Sprintf("%.2f%%", s.MemoryPercentage)
-		memPctColor := DryTheme.Info
-		if s.MemoryPercentage > 80 {
-			memPctColor = DryTheme.Warning
-		}
 		rows = append(rows, monitorRow{
 			cid: cid,
 			columns: []string{
 				s.CID,
-				ColorFg(fmt.Sprintf("%.2f%%", s.CPUPercentage), DryTheme.Info),
+				monitorBar(s.CPUPercentage, 12),
 				ColorFg(fmt.Sprintf("%s / %s",
 					units.BytesSize(s.Memory),
 					units.BytesSize(s.MemoryLimit)), DryTheme.FgMuted),
-				ColorFg(memPctText, memPctColor),
+				monitorBar(s.MemoryPercentage, 12),
 				ColorFg(fmt.Sprintf("%s / %s",
 					units.BytesSize(s.NetworkRx),
 					units.BytesSize(s.NetworkTx)), DryTheme.Tertiary),
@@ -217,6 +215,52 @@ func (m MonitorModel) View() string {
 // RefreshTableStyles re-applies theme styles to the inner table.
 func (m *MonitorModel) RefreshTableStyles() {
 	m.table.RefreshStyles()
+}
+
+// monitorBar renders a half-block progress bar with a numeric label for a
+// percentage value (0–100). Using ▌/█ gives double the resolution of a
+// full-block bar and guarantees a visible indicator when pct > 0.
+func monitorBar(pct float64, width int) string {
+	fg := DryTheme.Info
+	if pct > 80 {
+		fg = DryTheme.Warning
+	}
+
+	frac := pct / 100
+	if frac > 1 {
+		frac = 1
+	}
+
+	// Two "slots" per character: left half (▌) and full (█).
+	slots := float64(width) * 2
+	filled := frac * slots
+	full := int(filled) / 2  // number of full-block characters
+	half := int(filled) % 2  // 1 if there's a trailing half-block
+
+	// Always show at least a half-block when pct > 0.
+	if pct > 0 && full == 0 && half == 0 {
+		half = 1
+	}
+
+	empty := width - full - half
+
+	var b strings.Builder
+	fillStyle := lipgloss.NewStyle().Foreground(fg)
+	halfStyle := lipgloss.NewStyle().Foreground(fg).Background(DryTheme.Border)
+	emptyStyle := lipgloss.NewStyle().Foreground(DryTheme.Border)
+
+	if full > 0 {
+		b.WriteString(fillStyle.Render(strings.Repeat("█", full)))
+	}
+	if half > 0 {
+		b.WriteString(halfStyle.Render("▌"))
+	}
+	if empty > 0 {
+		b.WriteString(emptyStyle.Render(strings.Repeat("─", empty)))
+	}
+
+	label := ColorFg(fmt.Sprintf(" %5.1f%%", pct), fg)
+	return b.String() + label
 }
 
 // listenContainerStats creates a command that reads from a stats channel.
