@@ -2,6 +2,7 @@ package appui
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
@@ -162,6 +163,11 @@ func (m TableModel) SortField() int {
 	return m.sortField
 }
 
+// Sort re-sorts the current rows using the active sort field.
+func (m *TableModel) Sort() {
+	m.sortRows()
+}
+
 // Update handles keyboard navigation via the inner bubbles table.
 func (m TableModel) Update(msg tea.Msg) (TableModel, tea.Cmd) {
 	var cmd tea.Cmd
@@ -267,6 +273,15 @@ func (m *TableModel) sortRows() {
 	sort.SliceStable(m.rows, func(i, j int) bool {
 		ci := colValue(m.rows[i], col)
 		cj := colValue(m.rows[j], col)
+		// Try numeric comparison so "9" < "10".
+		if ni, ei := strconv.ParseFloat(ci, 64); ei == nil {
+			if nj, ej := strconv.ParseFloat(cj, 64); ej == nil {
+				if asc {
+					return ni < nj
+				}
+				return ni > nj
+			}
+		}
 		if asc {
 			return ci < cj
 		}
@@ -279,7 +294,8 @@ func (m *TableModel) sortRows() {
 func colValue(row TableRow, col int) string {
 	cols := row.Columns()
 	if col < len(cols) {
-		return strings.ToLower(cols[col])
+		// Strip ANSI escape sequences so sorting compares visible text only.
+		return strings.ToLower(ansi.Strip(cols[col]))
 	}
 	return ""
 }

@@ -4,7 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/moncho/dry/docker"
 )
 
 func TestMonitorBar_VisualWidth(t *testing.T) {
@@ -88,5 +90,108 @@ func TestMonitorBar_Clamping(t *testing.T) {
 	want := 12 + 7
 	if got != want {
 		t.Errorf("monitorBar(150): visual width = %d, want %d", got, want)
+	}
+}
+
+// newTestMonitor creates a MonitorModel with stats pre-populated
+// and the table sized for testing.
+func newTestMonitor(stats map[string]*docker.Stats) MonitorModel {
+	m := NewMonitorModel()
+	m.SetSize(200, 25)
+	m.stats = stats
+	m.refreshTable()
+	return m
+}
+
+func TestMonitor_SortPreservedAcrossRefresh(t *testing.T) {
+	stats := map[string]*docker.Stats{
+		"ccc": {CID: "ccc", Command: "cmd_c", CPUPercentage: 30},
+		"aaa": {CID: "aaa", Command: "cmd_a", CPUPercentage: 10},
+		"bbb": {CID: "bbb", Command: "cmd_b", CPUPercentage: 20},
+	}
+	m := newTestMonitor(stats)
+
+	// Default sort is column 0 (CONTAINER), ascending.
+	first := m.table.SelectedRow()
+	if first == nil || first.ID() != "aaa" {
+		t.Fatalf("expected first row 'aaa' with default sort, got %v", first)
+	}
+
+	// Cycle sort to column 7 (COMMAND) via F1 presses.
+	// Columns: 0=CONTAINER, 1=CPU%, 2=MEM USAGE, 3=MEM%, 4=NET, 5=BLOCK, 6=PIDS, 7=COMMAND
+	for range 7 {
+		m, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyF1})
+	}
+	if m.table.SortField() != 7 {
+		t.Fatalf("expected sort field 7 (COMMAND), got %d", m.table.SortField())
+	}
+
+	// After sorting by COMMAND, first row should be cmd_a
+	first = m.table.SelectedRow()
+	if first == nil || first.ID() != "aaa" {
+		t.Fatalf("expected first row 'aaa' sorted by COMMAND, got %v", first)
+	}
+
+	// Simulate stats update — this calls refreshTable() internally.
+	// The sort should be preserved.
+	stats["aaa"].CPUPercentage = 99
+	m.stats = stats
+	m.refreshTable()
+
+	first = m.table.SelectedRow()
+	if first == nil || first.ID() != "aaa" {
+		t.Fatalf("expected first row 'aaa' after refreshTable, got %v", first)
+	}
+}
+
+func TestMonitor_SortChangesRowOrder(t *testing.T) {
+	stats := map[string]*docker.Stats{
+		"zzz": {CID: "zzz", Command: "alpha"},
+		"aaa": {CID: "aaa", Command: "zulu"},
+		"mmm": {CID: "mmm", Command: "mike"},
+	}
+	m := newTestMonitor(stats)
+
+	// Default sort by column 0 (CONTAINER) ascending → aaa first
+	first := m.table.SelectedRow()
+	if first == nil || first.ID() != "aaa" {
+		t.Fatalf("expected first row 'aaa' sorted by CONTAINER, got %v", first)
+	}
+
+	// Sort by COMMAND (column 7) → "alpha" (zzz) first
+	for range 7 {
+		m, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyF1})
+	}
+
+	first = m.table.SelectedRow()
+	if first == nil || first.ID() != "zzz" {
+		t.Fatalf("expected first row 'zzz' sorted by COMMAND, got %v", first)
+	}
+}
+
+func TestMonitor_RefreshWithNewContainer(t *testing.T) {
+	stats := map[string]*docker.Stats{
+		"bbb": {CID: "bbb", Command: "beta"},
+		"aaa": {CID: "aaa", Command: "alpha"},
+	}
+	m := newTestMonitor(stats)
+
+	// Sort by CONTAINER (default) — aaa first
+	first := m.table.SelectedRow()
+	if first == nil || first.ID() != "aaa" {
+		t.Fatalf("expected 'aaa' first, got %v", first)
+	}
+
+	// Add a new container and refresh
+	m.stats["ccc"] = &docker.Stats{CID: "ccc", Command: "charlie"}
+	m.refreshTable()
+
+	// aaa should still be first (sorted by CONTAINER)
+	first = m.table.SelectedRow()
+	if first == nil || first.ID() != "aaa" {
+		t.Fatalf("expected 'aaa' first after adding ccc, got %v", first)
+	}
+	if m.table.RowCount() != 3 {
+		t.Fatalf("expected 3 rows, got %d", m.table.RowCount())
 	}
 }
