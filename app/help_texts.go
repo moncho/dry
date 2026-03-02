@@ -81,11 +81,18 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>F1</>        Sorts the list
 	<white>F5</>        Refreshes the list
 	<white>%</>         Filters the list
+	<white>Ctrl+t</>    Stop project containers
+	<white>Ctrl+r</>    Restart project containers
+	<white>Ctrl+e</>    Remove project containers
 
 <yellow>Compose Services</>
 	<white>Esc</>       Back to projects
 	<white>F1</>        Sorts the list
 	<white>%</>         Filters the list
+	<white>Ctrl+s</>    Start service containers
+	<white>Ctrl+t</>    Stop service containers
+	<white>Ctrl+r</>    Restart service containers
+	<white>Ctrl+e</>    Remove service containers
 
 <yellow>Move around in lists</>
 	<white>ArrowUp</>   Moves the cursor one line up

@@ -447,6 +447,16 @@ func (daemon *DockerDaemon) store() ContainerStore {
 	return daemon.s
 }
 
+// StartContainer starts the container with the given id
+func (daemon *DockerDaemon) StartContainer(id string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
+	defer cancel()
+	if err := daemon.client.ContainerStart(ctx, id, container.StartOptions{}); err != nil {
+		return err
+	}
+	return daemon.refreshAndWait()
+}
+
 // StopContainer stops the container with the given id
 func (daemon *DockerDaemon) StopContainer(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
