@@ -3,6 +3,7 @@ package appui
 import (
 	"fmt"
 
+	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/moncho/dry/docker"
@@ -15,29 +16,69 @@ type ContainerMenuCommandMsg struct {
 	Command     docker.Command
 }
 
+// commandItem wraps a docker.CommandDescription as a list.DefaultItem.
+type commandItem struct {
+	cmd docker.CommandDescription
+}
+
+func (i commandItem) Title() string       { return i.cmd.Description }
+func (i commandItem) Description() string { return "" }
+func (i commandItem) FilterValue() string { return i.cmd.Description }
+
 // ContainerMenuModel shows a command menu for a selected container.
 type ContainerMenuModel struct {
 	containerID string
-	commands    []docker.CommandDescription
-	cursor      int
+	header      string
+	list        list.Model
 	width       int
 	height      int
-	infoLines   []string
 }
 
 // NewContainerMenuModel creates a container menu for the given container.
 func NewContainerMenuModel(c *docker.Container) ContainerMenuModel {
 	cf := formatter.NewContainerFormatter(c, true)
-	info := []string{
-		fmt.Sprintf("Container: %s", cf.Names()),
-		fmt.Sprintf("Image:     %s", cf.Image()),
-		fmt.Sprintf("Status:    %s", cf.Status()),
-		fmt.Sprintf("ID:        %s", cf.ID()),
+
+	items := make([]list.Item, len(docker.ContainerCommands))
+	for i, cmd := range docker.ContainerCommands {
+		items[i] = commandItem{cmd: cmd}
 	}
+
+	delegate := list.NewDefaultDelegate()
+	delegate.ShowDescription = false
+	delegate.SetSpacing(0)
+	delegate.Styles = list.DefaultItemStyles{
+		NormalTitle: lipgloss.NewStyle().
+			Foreground(DryTheme.Fg).
+			Padding(0, 0, 0, 2),
+		SelectedTitle: lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder(), false, false, false, true).
+			BorderForeground(DryTheme.Primary).
+			Foreground(DryTheme.Fg).
+			Padding(0, 0, 0, 1),
+		DimmedTitle: lipgloss.NewStyle().
+			Foreground(DryTheme.FgMuted).
+			Padding(0, 0, 0, 2),
+	}
+
+	header := fmt.Sprintf("Container: %s\nImage:     %s\nStatus:    %s\nID:        %s",
+		cf.Names(), cf.Image(), cf.Status(), cf.ID())
+
+	// List height: just items (title is rendered separately).
+	listHeight := len(items) + 2
+	l := list.New(items, delegate, 50, listHeight)
+	l.SetShowTitle(false)
+	l.SetShowStatusBar(false)
+	l.SetShowPagination(false)
+	l.SetShowHelp(false)
+	l.SetFilteringEnabled(false)
+	l.SetShowFilter(false)
+	l.DisableQuitKeybindings()
+	l.Styles.NoItems = lipgloss.NewStyle().Foreground(DryTheme.FgMuted)
+
 	return ContainerMenuModel{
 		containerID: c.ID,
-		commands:    docker.ContainerCommands,
-		infoLines:   info,
+		header:      header,
+		list:        l,
 	}
 }
 
@@ -54,73 +95,33 @@ func (m ContainerMenuModel) Update(msg tea.Msg) (ContainerMenuModel, tea.Cmd) {
 		switch msg.String() {
 		case "esc", "q":
 			return m, func() tea.Msg { return CloseOverlayMsg{} }
-		case "up", "k":
-			m.cursor--
-			if m.cursor < 0 {
-				m.cursor = len(m.commands) - 1
-			}
-			return m, nil
-		case "down", "j":
-			m.cursor++
-			if m.cursor >= len(m.commands) {
-				m.cursor = 0
-			}
-			return m, nil
 		case "enter":
-			if m.cursor >= 0 && m.cursor < len(m.commands) {
-				cmd := m.commands[m.cursor]
+			if item, ok := m.list.SelectedItem().(commandItem); ok {
 				return m, func() tea.Msg {
 					return ContainerMenuCommandMsg{
 						ContainerID: m.containerID,
-						Command:     cmd.Command,
+						Command:     item.cmd.Command,
 					}
 				}
 			}
 			return m, nil
 		}
 	}
-	return m, nil
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+	return m, cmd
 }
 
 // View renders the container menu.
 func (m ContainerMenuModel) View() string {
-	menuWidth := 40
-
-	// Container info section
-	infoStyle := lipgloss.NewStyle().
+	headerStyle := lipgloss.NewStyle().
 		Foreground(DryTheme.FgMuted).
-		Bold(true)
-
-	var sections []string
-	for _, line := range m.infoLines {
-		sections = append(sections, infoStyle.Render(line))
-	}
-	sections = append(sections, "") // blank separator
-
-	// Menu items
-	normalStyle := lipgloss.NewStyle().
-		Width(menuWidth).
-		Padding(0, 1).
-		Foreground(DryTheme.Fg)
-	selectedStyle := lipgloss.NewStyle().
-		Width(menuWidth).
-		Padding(0, 1).
-		Background(DryTheme.Primary).
-		Foreground(DryTheme.Fg)
-
-	for i, cmd := range m.commands {
-		style := normalStyle
-		if i == m.cursor {
-			style = selectedStyle
-		}
-		sections = append(sections, style.Render(cmd.Description))
-	}
-
-	sections = append(sections, "")
+		Bold(true).
+		MarginBottom(1)
 	hintStyle := lipgloss.NewStyle().Foreground(DryTheme.FgSubtle)
-	sections = append(sections, hintStyle.Render("esc back · enter execute"))
+	hint := hintStyle.Render("esc back · enter execute")
 
-	inner := lipgloss.JoinVertical(lipgloss.Left, sections...)
+	inner := lipgloss.JoinVertical(lipgloss.Left, headerStyle.Render(m.header), m.list.View(), "", hint)
 
 	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
