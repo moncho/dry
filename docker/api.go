@@ -29,6 +29,17 @@ type ComposeAPI interface {
 	ComposeServices(project string) []ComposeService
 }
 
+// ComposeActionsAPI defines lifecycle actions for Docker Compose services and projects.
+type ComposeActionsAPI interface {
+	ComposeServiceStart(project, service string) (ComposeServiceActionReport, error)
+	ComposeServiceStop(project, service string) (ComposeServiceActionReport, error)
+	ComposeServiceRestart(project, service string) (ComposeServiceActionReport, error)
+	ComposeServiceRemove(project, service string) (ComposeServiceActionReport, error)
+	ComposeProjectStop(project string) (ComposeServiceActionReport, error)
+	ComposeProjectRestart(project string) (ComposeServiceActionReport, error)
+	ComposeProjectRemove(project string) (ComposeServiceActionReport, error)
+}
+
 // ContainerDaemon describes what is expected from the container daemon
 type ContainerDaemon interface {
 	ContainerAPI
@@ -37,6 +48,7 @@ type ContainerDaemon interface {
 	VolumesAPI
 	SwarmAPI
 	ComposeAPI
+	ComposeActionsAPI
 	ContainerRuntime
 	DiskUsage() (types.DiskUsage, error)
 	DockerEnv() Env
@@ -62,6 +74,7 @@ type ContainerAPI interface {
 	Logs(id string, since string, withTimeStamp bool) (io.ReadCloser, error)
 	RemoveAllStoppedContainers() (int, error)
 	RestartContainer(id string) error
+	StartContainer(id string) error
 	StopContainer(id string) error
 }
 

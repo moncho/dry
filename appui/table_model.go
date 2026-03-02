@@ -126,6 +126,11 @@ func (m TableModel) TotalRowCount() int {
 	return len(m.rows)
 }
 
+// FilteredRows returns the currently visible (filtered) rows.
+func (m TableModel) FilteredRows() []TableRow {
+	return m.filtered
+}
+
 // FilterText returns the active filter string.
 func (m TableModel) FilterText() string {
 	return m.filterText

@@ -91,9 +91,10 @@ type ServicesLoadedMsg struct {
 
 // ServicesModel is the Compose project resources view.
 type ServicesModel struct {
-	table   appui.TableModel
-	filter  appui.FilterInputModel
-	project string
+	table        appui.TableModel
+	filter       appui.FilterInputModel
+	project      string
+	serviceCount int
 }
 
 // NewServicesModel creates a compose services list model.
@@ -129,6 +130,7 @@ func (m *ServicesModel) SetSize(w, h int) {
 // SetServices replaces the resource list with services, networks, and volumes.
 func (m *ServicesModel) SetServices(services []docker.ComposeService, networks []docker.ComposeNetwork, volumes []docker.ComposeVolume, project string) {
 	m.project = project
+	m.serviceCount = len(services)
 	var rows []appui.TableRow
 
 	if len(services) > 0 {
@@ -220,11 +222,15 @@ func (m ServicesModel) View() string {
 	if m.project != "" {
 		title = fmt.Sprintf("Compose: %s", m.project)
 	}
+	filtered := m.serviceCount
+	if m.table.FilterText() != "" {
+		filtered = m.countFilteredServices()
+	}
 	header := appui.RenderWidgetHeader(appui.WidgetHeaderOpts{
 		Icon:     "\U0001f433",
 		Title:    title,
-		Total:    m.table.TotalRowCount(),
-		Filtered: m.table.RowCount(),
+		Total:    m.serviceCount,
+		Filtered: filtered,
 		Filter:   m.table.FilterText(),
 		Width:    m.table.Width(),
 		Accent:   appui.DryTheme.Info,
@@ -234,6 +240,17 @@ func (m ServicesModel) View() string {
 		result += "\n" + filterView
 	}
 	return result
+}
+
+// countFilteredServices counts how many service rows survive the current filter.
+func (m ServicesModel) countFilteredServices() int {
+	count := 0
+	for _, row := range m.table.FilteredRows() {
+		if _, ok := row.(serviceRow); ok {
+			count++
+		}
+	}
+	return count
 }
 
 // RefreshTableStyles re-applies theme styles to the inner table.

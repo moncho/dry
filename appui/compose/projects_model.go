@@ -210,13 +210,29 @@ func (m *ProjectsModel) RefreshTableStyles() {
 }
 
 func (m ProjectsModel) widgetHeader() string {
+	total := len(m.projects)
+	filtered := total
+	if m.table.FilterText() != "" {
+		filtered = m.countFilteredProjects()
+	}
 	return appui.RenderWidgetHeader(appui.WidgetHeaderOpts{
 		Icon:     "\U0001f433",
 		Title:    "Compose Projects",
-		Total:    m.table.TotalRowCount(),
-		Filtered: m.table.RowCount(),
+		Total:    total,
+		Filtered: filtered,
 		Filter:   m.table.FilterText(),
 		Width:    m.table.Width(),
 		Accent:   appui.DryTheme.Info,
 	})
+}
+
+// countFilteredProjects counts how many project header rows survive the current filter.
+func (m ProjectsModel) countFilteredProjects() int {
+	count := 0
+	for _, row := range m.table.FilteredRows() {
+		if _, ok := row.(projectHeaderRow); ok {
+			count++
+		}
+	}
+	return count
 }

@@ -370,6 +370,11 @@ func (_m *DockerDaemonMock) ServiceUpdate(id string) error {
 	return nil
 }
 
+// StartContainer provides a mock function with given fields: id
+func (_m *DockerDaemonMock) StartContainer(id string) error {
+	return nil
+}
+
 // StopContainer provides a mock function with given fields: id
 func (_m *DockerDaemonMock) StopContainer(id string) error {
 	return nil
@@ -467,4 +472,39 @@ func (_m *DockerDaemonMock) VolumeRemove(ctx context.Context, volumeID string, f
 // VolumeRemoveAll mock
 func (_m *DockerDaemonMock) VolumeRemoveAll(ctx context.Context) (int, error) {
 	return 0, nil
+}
+
+// ComposeServiceStart mock
+func (_m *DockerDaemonMock) ComposeServiceStart(project, service string) (drydocker.ComposeServiceActionReport, error) {
+	return drydocker.ComposeServiceActionReport{}, nil
+}
+
+// ComposeServiceStop mock
+func (_m *DockerDaemonMock) ComposeServiceStop(project, service string) (drydocker.ComposeServiceActionReport, error) {
+	return drydocker.ComposeServiceActionReport{}, nil
+}
+
+// ComposeServiceRestart mock
+func (_m *DockerDaemonMock) ComposeServiceRestart(project, service string) (drydocker.ComposeServiceActionReport, error) {
+	return drydocker.ComposeServiceActionReport{}, nil
+}
+
+// ComposeServiceRemove mock
+func (_m *DockerDaemonMock) ComposeServiceRemove(project, service string) (drydocker.ComposeServiceActionReport, error) {
+	return drydocker.ComposeServiceActionReport{}, nil
+}
+
+// ComposeProjectStop mock
+func (_m *DockerDaemonMock) ComposeProjectStop(project string) (drydocker.ComposeServiceActionReport, error) {
+	return drydocker.ComposeServiceActionReport{}, nil
+}
+
+// ComposeProjectRestart mock
+func (_m *DockerDaemonMock) ComposeProjectRestart(project string) (drydocker.ComposeServiceActionReport, error) {
+	return drydocker.ComposeServiceActionReport{}, nil
+}
+
+// ComposeProjectRemove mock
+func (_m *DockerDaemonMock) ComposeProjectRemove(project string) (drydocker.ComposeServiceActionReport, error) {
+	return drydocker.ComposeServiceActionReport{}, nil
 }

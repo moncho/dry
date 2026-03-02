@@ -469,6 +469,7 @@ type composeProjectsKeyMap struct {
 	Sort, Refresh, Filter                                                 key.Binding
 	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks, Compose key.Binding
 	Enter                                                                 key.Binding
+	Stop, Restart, Remove                                                 key.Binding
 }
 
 var composeProjectsKeys = composeProjectsKeyMap{
@@ -487,13 +488,16 @@ var composeProjectsKeys = composeProjectsKeyMap{
 	Stacks:     key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
 	Compose:    key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
 	Enter:      key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "services")),
+	Stop:       key.NewBinding(key.WithKeys("ctrl+t"), key.WithHelp("^t", "stop")),
+	Restart:    key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("^r", "restart")),
+	Remove:     key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("^e", "remove")),
 }
 
 func (k composeProjectsKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		k.Help, k.Quit, k.Sort, k.Refresh, k.Filter,
 		k.Monitor, k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks, k.Compose,
-		k.Enter,
+		k.Enter, k.Stop, k.Restart, k.Remove,
 	}
 }
 
@@ -502,21 +506,26 @@ func (k composeProjectsKeyMap) FullHelp() [][]key.Binding { return [][]key.Bindi
 // --- compose services -----------------------------------------------------
 
 type composeServicesKeyMap struct {
-	Help, Quit    key.Binding
-	Sort, Filter  key.Binding
-	Back          key.Binding
+	Help, Quit                      key.Binding
+	Sort, Filter                    key.Binding
+	Back                            key.Binding
+	Start, Stop, Restart, Remove    key.Binding
 }
 
 var composeServicesKeys = composeServicesKeyMap{
-	Help:   key.NewBinding(key.WithKeys("h"), key.WithHelp("h", "help")),
-	Quit:   key.NewBinding(key.WithKeys("Q"), key.WithHelp("q", "quit")),
-	Sort:   key.NewBinding(key.WithKeys("f1"), key.WithHelp("F1", "sort")),
-	Filter: key.NewBinding(key.WithKeys("%"), key.WithHelp("%", "filter")),
-	Back:   key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
+	Help:    key.NewBinding(key.WithKeys("h"), key.WithHelp("h", "help")),
+	Quit:    key.NewBinding(key.WithKeys("Q"), key.WithHelp("q", "quit")),
+	Sort:    key.NewBinding(key.WithKeys("f1"), key.WithHelp("F1", "sort")),
+	Filter:  key.NewBinding(key.WithKeys("%"), key.WithHelp("%", "filter")),
+	Back:    key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
+	Start:   key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("^s", "start")),
+	Stop:    key.NewBinding(key.WithKeys("ctrl+t"), key.WithHelp("^t", "stop")),
+	Restart: key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("^r", "restart")),
+	Remove:  key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("^e", "remove")),
 }
 
 func (k composeServicesKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit, k.Sort, k.Filter, k.Back}
+	return []key.Binding{k.Help, k.Quit, k.Sort, k.Filter, k.Back, k.Start, k.Stop, k.Restart, k.Remove}
 }
 
 func (k composeServicesKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.ShortHelp()} }

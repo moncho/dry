@@ -889,6 +889,21 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "f5":
 			return m, loadComposeProjectsCmd(m.daemon)
+		case "ctrl+t":
+			if p := m.composeProjects.SelectedProject(); p != nil {
+				return m.showPrompt(fmt.Sprintf("Stop project %s?", p.Name),
+					"compose-project-stop", p.Name), nil
+			}
+		case "ctrl+r":
+			if p := m.composeProjects.SelectedProject(); p != nil {
+				return m.showPrompt(fmt.Sprintf("Restart project %s?", p.Name),
+					"compose-project-restart", p.Name), nil
+			}
+		case "ctrl+e":
+			if p := m.composeProjects.SelectedProject(); p != nil {
+				return m.showPrompt(fmt.Sprintf("Remove project %s containers?", p.Name),
+					"compose-project-rm", p.Name), nil
+			}
 		}
 		var cmd tea.Cmd
 		m.composeProjects, cmd = m.composeProjects.Update(msg)
@@ -917,6 +932,26 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "f5":
 			return m, loadComposeServicesCmd(m.daemon, m.selectedProject)
+		case "ctrl+s":
+			if svc := m.composeServices.SelectedService(); svc != nil {
+				return m.showPrompt(fmt.Sprintf("Start service %s?", svc.Name),
+					"compose-start", svc.Project+"/"+svc.Name), nil
+			}
+		case "ctrl+t":
+			if svc := m.composeServices.SelectedService(); svc != nil {
+				return m.showPrompt(fmt.Sprintf("Stop service %s?", svc.Name),
+					"compose-stop", svc.Project+"/"+svc.Name), nil
+			}
+		case "ctrl+r":
+			if svc := m.composeServices.SelectedService(); svc != nil {
+				return m.showPrompt(fmt.Sprintf("Restart service %s?", svc.Name),
+					"compose-restart", svc.Project+"/"+svc.Name), nil
+			}
+		case "ctrl+e":
+			if svc := m.composeServices.SelectedService(); svc != nil {
+				return m.showPrompt(fmt.Sprintf("Remove service %s containers?", svc.Name),
+					"compose-rm", svc.Project+"/"+svc.Name), nil
+			}
 		}
 		var cmd tea.Cmd
 		m.composeServices, cmd = m.composeServices.Update(msg)
@@ -1383,6 +1418,38 @@ func (m model) executeContainerOp(tag, id string) tea.Cmd {
 		case "stack-rm":
 			err = daemon.StackRemove(id)
 			successMsg = fmt.Sprintf("Stack %s removed", id)
+		case "compose-start":
+			project, service, _ := strings.Cut(id, "/")
+			var report docker.ComposeServiceActionReport
+			report, err = daemon.ComposeServiceStart(project, service)
+			successMsg = report.Summary()
+		case "compose-stop":
+			project, service, _ := strings.Cut(id, "/")
+			var report docker.ComposeServiceActionReport
+			report, err = daemon.ComposeServiceStop(project, service)
+			successMsg = report.Summary()
+		case "compose-restart":
+			project, service, _ := strings.Cut(id, "/")
+			var report docker.ComposeServiceActionReport
+			report, err = daemon.ComposeServiceRestart(project, service)
+			successMsg = report.Summary()
+		case "compose-rm":
+			project, service, _ := strings.Cut(id, "/")
+			var report docker.ComposeServiceActionReport
+			report, err = daemon.ComposeServiceRemove(project, service)
+			successMsg = report.Summary()
+		case "compose-project-stop":
+			var report docker.ComposeServiceActionReport
+			report, err = daemon.ComposeProjectStop(id)
+			successMsg = report.Summary()
+		case "compose-project-restart":
+			var report docker.ComposeServiceActionReport
+			report, err = daemon.ComposeProjectRestart(id)
+			successMsg = report.Summary()
+		case "compose-project-rm":
+			var report docker.ComposeServiceActionReport
+			report, err = daemon.ComposeProjectRemove(id)
+			successMsg = report.Summary()
 		case "prune":
 			report, pruneErr := daemon.Prune()
 			if pruneErr != nil {
