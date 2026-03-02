@@ -43,6 +43,7 @@ Keybinding           | Description
 <kbd>5</kbd>         | show node list (on Swarm mode)
 <kbd>6</kbd>         | show service list (on Swarm mode)
 <kbd>7</kbd>         | show stacks list (on Swarm mode)
+<kbd>8</kbd>         | show compose projects list
 <kbd>ArrowUp</kbd> or <kbd>k</kbd> | move the cursor one line up
 <kbd>ArrowDown</kbd> or <kbd>j</kbd> | move the cursor one line down
 <kbd>g</kbd>         | move the cursor to the top
@@ -104,6 +105,28 @@ Keybinding           | Description
 <kbd>Ctrl+s</kbd>    | scale service
 <kbd>Ctrl+u</kbd>    | update service
 <kbd>Enter</kbd>     | show service tasks
+
+#### Compose Projects commands
+
+Keybinding           | Description
+---------------------|---------------------------------------
+<kbd>Enter</kbd>     | show project services
+<kbd>l</kbd>         | project logs
+<kbd>Ctrl+t</kbd>    | stop project containers
+<kbd>Ctrl+r</kbd>    | restart project containers
+<kbd>Ctrl+e</kbd>    | remove project containers
+
+#### Compose Services commands
+
+Keybinding           | Description
+---------------------|---------------------------------------
+<kbd>Enter</kbd>     | inspect service
+<kbd>Esc</kbd>       | back to projects
+<kbd>l</kbd>         | service logs
+<kbd>Ctrl+s</kbd>    | start service containers
+<kbd>Ctrl+t</kbd>    | stop service containers
+<kbd>Ctrl+r</kbd>    | restart service containers
+<kbd>Ctrl+e</kbd>    | remove service containers
 
 #### Moving around buffers
 
