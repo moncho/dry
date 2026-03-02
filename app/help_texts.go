@@ -28,6 +28,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>5</>         To node list (in Swarm mode)
 	<white>6</>         To service list (in Swarm mode)
 	<white>7</>         To stack list (in Swarm mode)
+	<white>8</>         To compose projects list
 	<white>m</>         Show container monitor mode
 	<white>h</>         Shows this help screen
 	<white>Ctrl+c</>    Quits <white>dry</> immediately
@@ -74,7 +75,18 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 <yellow>Stack list keybinds</>
 	<white>Enter</>     Shows the list of tasks of the selected stack
 	<white>Ctrl+R</>    Removes the selected stack
-	
+
+<yellow>Compose Projects</>
+	<white>Enter</>     Shows the services of the selected project
+	<white>F1</>        Sorts the list
+	<white>F5</>        Refreshes the list
+	<white>%</>         Filters the list
+
+<yellow>Compose Services</>
+	<white>Esc</>       Back to projects
+	<white>F1</>        Sorts the list
+	<white>%</>         Filters the list
+
 <yellow>Move around in lists</>
 	<white>ArrowUp</>   Moves the cursor one line up
 	<white>ArrowDown</> Moves the cursor one line down

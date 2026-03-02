@@ -1,17 +1,20 @@
 package app
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/moncho/dry/appui"
+	appcompose "github.com/moncho/dry/appui/compose"
 	appswarm "github.com/moncho/dry/appui/swarm"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
@@ -433,6 +436,175 @@ func inspectVolumeCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 			content: string(data),
 			title:   fmt.Sprintf("Volume: %s", id),
 		}
+	}
+}
+
+// --- Compose commands ---
+
+// loadComposeProjectsCmd fetches compose projects with services derived from container labels.
+func loadComposeProjectsCmd(daemon docker.ContainerDaemon) tea.Cmd {
+	return func() tea.Msg {
+		projects := daemon.ComposeProjectsWithServices()
+		return appcompose.ProjectsLoadedMsg{Projects: projects}
+	}
+}
+
+// loadComposeServicesCmd fetches compose resources (services, networks, volumes) for a project.
+func loadComposeServicesCmd(daemon docker.ContainerDaemon, project string) tea.Cmd {
+	return func() tea.Msg {
+		services := daemon.ComposeServices(project)
+
+		var composeNets []docker.ComposeNetwork
+		if nets, err := daemon.Networks(); err == nil {
+			for _, n := range nets {
+				if n.Labels["com.docker.compose.project"] == project {
+					composeNets = append(composeNets, docker.ComposeNetwork{
+						Name:   n.Name,
+						Driver: n.Driver,
+						Scope:  n.Scope,
+					})
+				}
+			}
+		}
+
+		var composeVols []docker.ComposeVolume
+		if vols, err := daemon.VolumeList(context.Background()); err == nil {
+			for _, v := range vols {
+				if v.Labels["com.docker.compose.project"] == project {
+					composeVols = append(composeVols, docker.ComposeVolume{
+						Name:   v.Name,
+						Driver: v.Driver,
+					})
+				}
+			}
+		}
+
+		return appcompose.ServicesLoadedMsg{
+			Services: services,
+			Networks: composeNets,
+			Volumes:  composeVols,
+			Project:  project,
+		}
+	}
+}
+
+// inspectComposeServiceCmd finds the first container for a compose service and inspects it.
+func inspectComposeServiceCmd(daemon docker.ContainerDaemon, project, service string) tea.Cmd {
+	return func() tea.Msg {
+		for _, c := range daemon.Containers(nil, docker.NoSort) {
+			if c.Labels["com.docker.compose.project"] == project &&
+				c.Labels["com.docker.compose.service"] == service {
+				return inspectContainerCmd(daemon, c.ID)()
+			}
+		}
+		return statusMessageMsg{
+			text:   fmt.Sprintf("No containers found for service %s", service),
+			expiry: 3 * time.Second,
+		}
+	}
+}
+
+// showComposeLogsCmd opens a merged streaming log viewer for compose
+// containers matching the given project and optional service.
+func showComposeLogsCmd(daemon docker.ContainerDaemon, project, service string) tea.Cmd {
+	return func() tea.Msg {
+		containers := daemon.Containers(nil, docker.NoSort)
+		var targets []*docker.Container
+		for _, c := range containers {
+			if c.Labels["com.docker.compose.project"] != project {
+				continue
+			}
+			if service != "" && c.Labels["com.docker.compose.service"] != service {
+				continue
+			}
+			if !docker.IsContainerRunning(c) {
+				continue
+			}
+			targets = append(targets, c)
+		}
+		if len(targets) == 0 {
+			return statusMessageMsg{
+				text:   "No running containers found",
+				expiry: 3 * time.Second,
+			}
+		}
+
+		// Count containers per service to decide prefix format.
+		svcCount := make(map[string]int)
+		for _, c := range targets {
+			svcCount[c.Labels["com.docker.compose.service"]]++
+		}
+
+		named := make(map[string]io.ReadCloser)
+		for _, c := range targets {
+			svcName := c.Labels["com.docker.compose.service"]
+			reader, err := daemon.Logs(c.ID, "", false)
+			if err != nil {
+				continue
+			}
+			key := svcName
+			if svcCount[svcName] > 1 {
+				key = svcName + "/" + shortID(c.ID)
+			}
+			named[key] = demuxDockerStream(reader)
+		}
+		if len(named) == 0 {
+			return statusMessageMsg{
+				text:   "Could not open any log streams",
+				expiry: 3 * time.Second,
+			}
+		}
+
+		merged := mergeLogReaders(named)
+		buf := make([]byte, 64*1024)
+		n, _ := merged.Read(buf)
+
+		title := fmt.Sprintf("Logs: %s", project)
+		if service != "" {
+			title = fmt.Sprintf("Logs: %s/%s", project, service)
+		}
+		return showStreamingLessMsg{
+			content: string(buf[:n]),
+			title:   title,
+			reader:  merged,
+		}
+	}
+}
+
+// mergeLogReaders multiplexes multiple named log readers into a single
+// reader, prefixing each line with its name (e.g. "api | <line>").
+func mergeLogReaders(named map[string]io.ReadCloser) io.ReadCloser {
+	pr, pw := io.Pipe()
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
+	for name, reader := range named {
+		wg.Add(1)
+		go func(prefix string, r io.ReadCloser) {
+			defer wg.Done()
+			defer func() { _ = r.Close() }()
+			scanner := bufio.NewScanner(r)
+			scanner.Buffer(make([]byte, 64*1024), 1024*1024)
+			for scanner.Scan() {
+				line := fmt.Sprintf("%s | %s\n", prefix, scanner.Text())
+				mu.Lock()
+				_, err := pw.Write([]byte(line))
+				mu.Unlock()
+				if err != nil {
+					return
+				}
+			}
+		}(name, reader)
+	}
+
+	go func() {
+		wg.Wait()
+		_ = pw.Close()
+	}()
+
+	return &demuxedReadCloser{
+		Reader: pr,
+		close:  pr.Close,
 	}
 }
 

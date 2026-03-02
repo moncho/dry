@@ -595,6 +595,21 @@ func networks(client dockerAPI.NetworkAPIClient) ([]network.Inspect, error) {
 	return detailedNetworks, nil
 }
 
+// ComposeProjects returns Docker Compose projects derived from container labels.
+func (daemon *DockerDaemon) ComposeProjects() []ComposeProject {
+	return AggregateComposeProjects(daemon.Containers(nil, SortByContainerID))
+}
+
+// ComposeProjectsWithServices returns Docker Compose projects with their services.
+func (daemon *DockerDaemon) ComposeProjectsWithServices() []ProjectWithServices {
+	return AggregateComposeAll(daemon.Containers(nil, SortByContainerID))
+}
+
+// ComposeServices returns Docker Compose services for a given project.
+func (daemon *DockerDaemon) ComposeServices(project string) []ComposeService {
+	return AggregateComposeServices(daemon.Containers(nil, SortByContainerID), project)
+}
+
 // IsContainerRunning returns true if the given container is running
 func IsContainerRunning(container *Container) bool {
 	if container != nil {
