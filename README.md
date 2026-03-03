@@ -175,7 +175,7 @@ brew install dry
 
 #### Arch Linux
 
-```yaourt -S dry-bin```
+```yay -S dry-bin```
 
 ### Usage
 
