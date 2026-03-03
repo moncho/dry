@@ -22,7 +22,14 @@ builds:
       - windows_amd64
 
 archives:
-  - formats: [binary]
+  - id: binaries
+    formats: [binary]
+    name_template: "dry-{{ .Os }}-{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}"
+  - id: tarballs
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
     name_template: "dry-{{ .Os }}-{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}"
 
 checksum:
@@ -32,6 +39,23 @@ release:
   github:
     owner: moncho
     name: dry
+
+brews:
+  - name: dry
+    ids: [tarballs]
+    repository:
+      owner: moncho
+      name: homebrew-dry
+    commit_author:
+      name: goreleaser
+      email: bot@goreleaser.com
+    homepage: https://moncho.github.io/dry/
+    description: A Docker manager for the terminal
+    license: MIT
+    test: |
+      system "#{bin}/dry", "--version"
+    install: |
+      bin.install "dry"
 
 dockers_v2:
   - dockerfile: Dockerfile.goreleaser
