@@ -46,6 +46,7 @@ brews:
     repository:
       owner: moncho
       name: homebrew-dry
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     commit_author:
       name: goreleaser
       email: bot@goreleaser.com
