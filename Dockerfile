@@ -13,6 +13,7 @@ RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o /dry .
 
 FROM alpine:latest
 WORKDIR /app
+ENV TERM=xterm-256color
 COPY --from=builder /dry /app/dry
 
-CMD ["sleep", "1", "&&", "/app/dry"]
+ENTRYPOINT ["/app/dry"]

@@ -1,5 +1,6 @@
 FROM alpine:latest
 ARG TARGETPLATFORM
+ENV TERM=xterm-256color
 WORKDIR /app
 COPY ${TARGETPLATFORM}/dry /app/dry
-CMD ["sleep", "1", "&&", "/app/dry"]
+ENTRYPOINT ["/app/dry"]
