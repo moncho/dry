@@ -98,6 +98,19 @@ var DryTheme = CrushDark
 // ColorThemes holds the list of dry color themes.
 var ColorThemes = []*ui.Theme{CrushLight, CrushDark}
 
+// SetThemeByName sets the active theme by name. Valid names: "dark", "light".
+func SetThemeByName(name string) bool {
+	switch name {
+	case "dark":
+		DryTheme = CrushDark
+	case "light":
+		DryTheme = CrushLight
+	default:
+		return false
+	}
+	return true
+}
+
 // RotateColorTheme changes the color theme to the next one in the
 // rotation order.
 func RotateColorTheme() {

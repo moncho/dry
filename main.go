@@ -13,6 +13,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/jessevdk/go-flags"
 	"github.com/moncho/dry/app"
+	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/version"
 	log "github.com/sirupsen/logrus"
@@ -26,8 +27,9 @@ type options struct {
 	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
 	Version bool `short:"v" long:"version" description:"Dry version"`
 	Splash int `short:"w" long:"splash" description:"Show loading screen for N seconds (max 10)" default:"0"`
+	Theme string `short:"T" long:"theme" description:"Color theme (dark, light)" default:"dark"`
 	//Docker-related properties
-	DockerHost      string `short:"H" long:"docker_host" description:"Docker Host"`
+	DockerHost string `short:"H" long:"docker_host" description:"Docker Host"`
 	DockerCertPath  string `short:"c" long:"docker_certpath" description:"Docker cert path"`
 	DockerTLSVerify string `short:"t" long:"docker_tls" description:"Docker TLS verify"`
 }
@@ -124,6 +126,12 @@ func main() {
 		log.Println(err.Error())
 		return
 	}
+
+	if !appui.SetThemeByName(opts.Theme) {
+		log.Printf("Unknown theme %q, valid options: dark, light", opts.Theme)
+		return
+	}
+	appui.InitStyles()
 
 	m := app.NewModel(cfg)
 	p := tea.NewProgram(m)

@@ -48,6 +48,7 @@ Keybinding           | Description
 <kbd>ArrowDown</kbd> or <kbd>j</kbd> | move the cursor one line down
 <kbd>g</kbd>         | move the cursor to the top
 <kbd>G</kbd>         | move the cursor to the bottom
+<kbd>Ctrl+0</kbd>   | cycle color theme (dark/light)
 <kbd>q</kbd>         | quit dry
 
 
@@ -186,6 +187,8 @@ Open a console, type ```dry```. It will try to connect to:
 * if not defined, to **unix:///var/run/docker.sock**.
 
 If no connection with a Docker host succeeds, **dry** will exit.
+
+```dry -T light``` launches dry with the light color theme. Available themes: `dark` (default), `light`.
 
 ```dry -p``` launches dry with [pprof](https://golang.org/pkg/net/http/pprof/) package active.
 

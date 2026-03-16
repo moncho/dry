@@ -34,6 +34,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Ctrl+c</>    Quits <white>dry</> immediately
 	<white>Q</>         Quits <white>dry</>
 	<white>esc</>       Goes back to the main screen
+	<white>Ctrl+0</>    Cycles color theme (dark/light)
 
 <yellow>Global list keybinds</>	
 	<white>F1</>        Cycles through sort modes
