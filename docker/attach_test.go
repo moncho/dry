@@ -140,8 +140,8 @@ func TestDockerDaemon_AttachInteractive_FileStdinReturnsPromptly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("os.Pipe: %v", err)
 	}
-	defer stdinR.Close()
-	defer stdinW.Close()
+	defer func() { _ = stdinR.Close() }()
+	defer func() { _ = stdinW.Close() }()
 
 	done := make(chan error, 1)
 	go func() {
