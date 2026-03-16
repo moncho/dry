@@ -81,3 +81,10 @@ type loadingTickMsg struct{}
 
 // splashDoneMsg signals the splash timer has elapsed.
 type splashDoneMsg struct{}
+
+// execEndedMsg signals that a tea.Exec session has completed.
+// It carries a status message and triggers a screen repaint.
+type execEndedMsg struct {
+	text   string
+	expiry time.Duration
+}

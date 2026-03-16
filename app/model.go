@@ -52,12 +52,12 @@ type model struct {
 	eventsCancel context.CancelFunc
 
 	// Sub-models
-	containers appui.ContainersModel
-	images     appui.ImagesModel
-	networks   appui.NetworksModel
-	volumes    appui.VolumesModel
-	diskUsage  appui.DiskUsageModel
-	monitor    appui.MonitorModel
+	containers      appui.ContainersModel
+	images          appui.ImagesModel
+	networks        appui.NetworksModel
+	volumes         appui.VolumesModel
+	diskUsage       appui.DiskUsageModel
+	monitor         appui.MonitorModel
 	nodes           appswarm.NodesModel
 	services        appswarm.ServicesModel
 	stacks          appswarm.StacksModel
@@ -66,7 +66,7 @@ type model struct {
 	composeServices appcompose.ServicesModel
 	selectedProject string
 	header          appui.HeaderModel
-	messageBar appui.MessageBarModel
+	messageBar      appui.MessageBarModel
 
 	// Overlay state
 	overlay       overlayType
@@ -92,24 +92,24 @@ type model struct {
 // NewModel creates a new top-level model.
 func NewModel(cfg Config) model {
 	return model{
-		config:         cfg,
-		view:           Main,
-		showHeader:     true,
-		containers:     appui.NewContainersModel(),
-		images:         appui.NewImagesModel(),
-		networks:       appui.NewNetworksModel(),
-		volumes:        appui.NewVolumesModel(),
-		diskUsage:      appui.NewDiskUsageModel(),
-		monitor:        appui.NewMonitorModel(),
-		nodes:          appswarm.NewNodesModel(),
-		services:       appswarm.NewServicesModel(),
+		config:          cfg,
+		view:            Main,
+		showHeader:      true,
+		containers:      appui.NewContainersModel(),
+		images:          appui.NewImagesModel(),
+		networks:        appui.NewNetworksModel(),
+		volumes:         appui.NewVolumesModel(),
+		diskUsage:       appui.NewDiskUsageModel(),
+		monitor:         appui.NewMonitorModel(),
+		nodes:           appswarm.NewNodesModel(),
+		services:        appswarm.NewServicesModel(),
 		stacks:          appswarm.NewStacksModel(),
 		tasks:           appswarm.NewTasksModel(),
 		composeProjects: appcompose.NewProjectsModel(),
 		composeServices: appcompose.NewServicesModel(),
-		pendingRefresh: make(map[docker.SourceType]bool),
-		loadingFwd:     true,
-		splashDone:     cfg.SplashDuration <= 0,
+		pendingRefresh:  make(map[docker.SourceType]bool),
+		loadingFwd:      true,
+		splashDone:      cfg.SplashDuration <= 0,
 	}
 }
 
@@ -350,6 +350,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Tick(msg.expiry, func(time.Time) tea.Msg {
 			return messageBarExpiredMsg{}
 		})
+	case execEndedMsg:
+		m.messageBar.SetMessage(msg.text, msg.expiry)
+		return m, tea.Batch(
+			tea.ClearScreen,
+			tea.Tick(msg.expiry, func(time.Time) tea.Msg {
+				return messageBarExpiredMsg{}
+			}),
+		)
 	case messageBarExpiredMsg:
 		return m, nil
 
@@ -1325,6 +1333,8 @@ func (m model) executeMenuCommand(containerID string, cmd docker.Command) (model
 		return m, inspectContainerCmd(m.daemon, containerID)
 	case docker.LOGS:
 		return m, showContainerLogsCmd(m.daemon, containerID)
+	case docker.ATTACH:
+		return m, attachContainerCmd(m.daemon, containerID)
 	case docker.KILL:
 		return m.showPrompt(
 			fmt.Sprintf("Kill container %s?", shortID(containerID)),

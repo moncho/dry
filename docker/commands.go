@@ -14,6 +14,8 @@ const (
 	KILL
 	//LOGS logs command
 	LOGS
+	//ATTACH attach to a running container
+	ATTACH
 	//RM remove command
 	RM
 	//RESTART restart command
@@ -27,6 +29,7 @@ const (
 // ContainerCommands is the list of container commands
 var ContainerCommands = []CommandDescription{
 	{LOGS, "Fetch logs"},
+	{ATTACH, "Attach"},
 	{INSPECT, "Inspect container"},
 	{KILL, "Kill container"},
 	{RM, "Remove container"},

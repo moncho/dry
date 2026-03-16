@@ -55,7 +55,7 @@ Keybinding           | Description
 
 Keybinding           | Description
 ---------------------|---------------------------------------
-<kbd>Enter</kbd>     | show container command menu
+<kbd>Enter</kbd>     | show container command menu (includes Attach for running containers)
 <kbd>F2</kbd>        | toggle on/off showing stopped containers
 <kbd>i</kbd>         | inspect
 <kbd>l</kbd>         | container logs

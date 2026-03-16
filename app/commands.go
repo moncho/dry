@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -18,6 +19,7 @@ import (
 	appswarm "github.com/moncho/dry/appui/swarm"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
+	"golang.org/x/term"
 )
 
 // demuxedReadCloser wraps a pipe reader and closes the underlying Docker stream.
@@ -79,6 +81,54 @@ func shortID(id string) string {
 		return id[:12]
 	}
 	return id
+}
+
+// attachExecCommand implements tea.ExecCommand to run an interactive attach.
+type attachExecCommand struct {
+	daemon docker.ContainerDaemon
+	id     string
+	stdin  io.Reader
+	stdout io.Writer
+	stderr io.Writer
+}
+
+func newAttachExecCommand(daemon docker.ContainerDaemon, id string) *attachExecCommand {
+	return &attachExecCommand{
+		daemon: daemon,
+		id:     id,
+	}
+}
+
+func (c *attachExecCommand) SetStdin(r io.Reader)  { c.stdin = r }
+func (c *attachExecCommand) SetStdout(w io.Writer) { c.stdout = w }
+func (c *attachExecCommand) SetStderr(w io.Writer) { c.stderr = w }
+
+func (c *attachExecCommand) Run() error {
+	// Bubbletea passes /dev/tty (not os.Stdin) as the input reader.
+	// Use its fd for raw mode so keystrokes are sent immediately.
+	var fd int
+	if f, ok := c.stdin.(*os.File); ok {
+		fd = int(f.Fd())
+	} else {
+		fd = int(os.Stdin.Fd())
+	}
+	oldState, err := term.MakeRaw(fd)
+	if err != nil {
+		return fmt.Errorf("failed to set terminal raw mode: %w", err)
+	}
+
+	attachErr := c.daemon.AttachInteractive(
+		context.Background(),
+		c.id,
+		c.stdin,
+		c.stdout,
+		c.stderr,
+		"ctrl-p,ctrl-q",
+	)
+
+	_ = term.Restore(fd, oldState)
+
+	return attachErr
 }
 
 // connectToDockerCmd connects to the Docker daemon asynchronously.
@@ -342,6 +392,23 @@ func showContainerLogsCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 			reader:  demuxed,
 		}
 	}
+}
+
+// attachContainerCmd opens an interactive attach session for a running container.
+func attachContainerCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+	cmd := newAttachExecCommand(daemon, id)
+	return tea.Exec(cmd, func(err error) tea.Msg {
+		if err != nil {
+			return execEndedMsg{
+				text:   fmt.Sprintf("Attach error: %s", err),
+				expiry: 5 * time.Second,
+			}
+		}
+		return execEndedMsg{
+			text:   fmt.Sprintf("Attach ended: %s", shortID(id)),
+			expiry: 3 * time.Second,
+		}
+	})
 }
 
 // showContainerStatsCmd fetches a snapshot of container stats.
