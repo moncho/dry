@@ -268,6 +268,11 @@ func (_m *DockerDaemonMock) AttachInteractive(ctx context.Context, id string, st
 	return nil
 }
 
+// ExecInteractive mocks interactive exec.
+func (_m *DockerDaemonMock) ExecInteractive(ctx context.Context, id string, command []string, stdin io.Reader, stdout, stderr io.Writer, forwardStdin bool) error {
+	return nil
+}
+
 // Prune mocks prune command
 func (_m *DockerDaemonMock) Prune() (*drydocker.PruneReport, error) {
 	return nil, nil

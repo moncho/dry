@@ -83,27 +83,22 @@ func shortID(id string) string {
 	return id
 }
 
-// attachExecCommand implements tea.ExecCommand to run an interactive attach.
-type attachExecCommand struct {
-	daemon docker.ContainerDaemon
-	id     string
-	stdin  io.Reader
-	stdout io.Writer
-	stderr io.Writer
+// interactiveExecCommand implements tea.ExecCommand for attach and exec sessions.
+type interactiveExecCommand struct {
+	daemon     docker.ContainerDaemon
+	id         string
+	command    []string // nil for attach, non-nil for exec
+	waitForKey bool     // pause for keypress after command finishes
+	stdin      io.Reader
+	stdout     io.Writer
+	stderr     io.Writer
 }
 
-func newAttachExecCommand(daemon docker.ContainerDaemon, id string) *attachExecCommand {
-	return &attachExecCommand{
-		daemon: daemon,
-		id:     id,
-	}
-}
+func (c *interactiveExecCommand) SetStdin(r io.Reader)  { c.stdin = r }
+func (c *interactiveExecCommand) SetStdout(w io.Writer) { c.stdout = w }
+func (c *interactiveExecCommand) SetStderr(w io.Writer) { c.stderr = w }
 
-func (c *attachExecCommand) SetStdin(r io.Reader)  { c.stdin = r }
-func (c *attachExecCommand) SetStdout(w io.Writer) { c.stdout = w }
-func (c *attachExecCommand) SetStderr(w io.Writer) { c.stderr = w }
-
-func (c *attachExecCommand) Run() error {
+func (c *interactiveExecCommand) Run() error {
 	// Bubbletea passes /dev/tty (not os.Stdin) as the input reader.
 	// Use its fd for raw mode so keystrokes are sent immediately.
 	var fd int
@@ -117,18 +112,40 @@ func (c *attachExecCommand) Run() error {
 		return fmt.Errorf("failed to set terminal raw mode: %w", err)
 	}
 
-	attachErr := c.daemon.AttachInteractive(
-		context.Background(),
-		c.id,
-		c.stdin,
-		c.stdout,
-		c.stderr,
-		"ctrl-p,ctrl-q",
-	)
+	var runErr error
+	if c.command != nil {
+		// When waitForKey is true, don't forward stdin to the exec
+		// session so it remains available for the "press any key" read.
+		runErr = c.daemon.ExecInteractive(
+			context.Background(),
+			c.id,
+			c.command,
+			c.stdin,
+			c.stdout,
+			c.stderr,
+			!c.waitForKey,
+		)
+	} else {
+		runErr = c.daemon.AttachInteractive(
+			context.Background(),
+			c.id,
+			c.stdin,
+			c.stdout,
+			c.stderr,
+			"ctrl-p,ctrl-q",
+		)
+	}
+
+	if c.waitForKey {
+		// Still in raw mode — single keypress is enough.
+		_, _ = fmt.Fprintf(c.stdout, "\n\r\033[7m Press any key to return to dry... \033[0m")
+		buf := make([]byte, 1)
+		_, _ = c.stdin.Read(buf)
+	}
 
 	_ = term.Restore(fd, oldState)
 
-	return attachErr
+	return runErr
 }
 
 // connectToDockerCmd connects to the Docker daemon asynchronously.
@@ -396,7 +413,7 @@ func showContainerLogsCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 
 // attachContainerCmd opens an interactive attach session for a running container.
 func attachContainerCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
-	cmd := newAttachExecCommand(daemon, id)
+	cmd := &interactiveExecCommand{daemon: daemon, id: id}
 	return tea.Exec(cmd, func(err error) tea.Msg {
 		if err != nil {
 			return execEndedMsg{
@@ -406,6 +423,47 @@ func attachContainerCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 		}
 		return execEndedMsg{
 			text:   fmt.Sprintf("Attach ended: %s", shortID(id)),
+			expiry: 3 * time.Second,
+		}
+	})
+}
+
+// isInteractiveShell returns true if the command looks like an interactive shell session.
+func isInteractiveShell(command []string) bool {
+	if len(command) == 0 {
+		return false
+	}
+	shells := map[string]bool{
+		"sh": true, "/bin/sh": true,
+		"bash": true, "/bin/bash": true,
+		"zsh": true, "/bin/zsh": true,
+		"ash": true, "/bin/ash": true,
+		"fish": true, "/usr/bin/fish": true,
+		"ksh": true, "/bin/ksh": true,
+		"csh": true, "/bin/csh": true,
+		"tcsh": true, "/bin/tcsh": true,
+	}
+	return len(command) == 1 && shells[command[0]]
+}
+
+// execContainerCmd opens an interactive exec session in a running container.
+func execContainerCmd(daemon docker.ContainerDaemon, id string, command []string) tea.Cmd {
+	waitForKey := !isInteractiveShell(command)
+	cmd := &interactiveExecCommand{
+		daemon:     daemon,
+		id:         id,
+		command:    command,
+		waitForKey: waitForKey,
+	}
+	return tea.Exec(cmd, func(err error) tea.Msg {
+		if err != nil {
+			return execEndedMsg{
+				text:   fmt.Sprintf("Exec error: %s", err),
+				expiry: 5 * time.Second,
+			}
+		}
+		return execEndedMsg{
+			text:   fmt.Sprintf("Exec ended: %s", shortID(id)),
 			expiry: 3 * time.Second,
 		}
 	})

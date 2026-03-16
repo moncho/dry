@@ -8,8 +8,8 @@ import (
 	"net"
 	"os"
 	"strings"
-	"time"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/pkg/stdcopy"
 )
@@ -44,62 +44,72 @@ func (daemon *DockerDaemon) AttachInteractive(ctx context.Context, id string, st
 	}
 	defer attach.Close()
 
-	// Copy stdin to the attach connection in a goroutine.
-	// When the output side finishes (container exits or detach), closing
-	// the attach connection will unblock the stdin copy.
-	var stdinDone chan error
-	if stdin != nil {
-		stdinDone = make(chan error, 1)
+	tty := inspect.Config != nil && inspect.Config.Tty
+	if tty {
+		return streamInteractive(attach, stdin, stdout, true)
+	}
+
+	// Non-TTY: demultiplex stdout/stderr via stdcopy.
+	return streamInteractiveStdcopy(attach, stdin, stdout, stderr)
+}
+
+// streamInteractive handles bidirectional stream copy for TTY sessions
+// (attach and exec). When forwardStdin is true, stdin is copied to the
+// connection in a background goroutine. Set forwardStdin to false for
+// non-interactive exec commands so that stdin remains available to the
+// caller after this function returns.
+func streamInteractive(attach types.HijackedResponse, stdin io.Reader, stdout io.Writer, forwardStdin bool) error {
+	// Copy stdin → connection in background.
+	// When the output side finishes, closing the connection causes a
+	// write error that terminates this goroutine.
+	if forwardStdin && stdin != nil {
 		go func() {
-			_, copyErr := io.Copy(attach.Conn, stdin)
+			_, _ = io.Copy(attach.Conn, stdin)
 			_ = attach.CloseWrite()
-			stdinDone <- copyErr
 		}()
 	}
 
-	// Copy container output to stdout/stderr (blocks until detach/exit).
-	var outErr error
-	if inspect.Config != nil && inspect.Config.Tty {
-		_, outErr = io.Copy(stdout, attach.Reader)
-	} else {
-		_, outErr = stdcopy.StdCopy(stdout, stderr, attach.Reader)
-	}
+	// Copy connection → stdout (blocks until detach/exit).
+	_, outErr := io.Copy(stdout, attach.Reader)
 
-	// Output ended — close the connection to unblock stdin goroutine.
+	// Close the connection so the stdin goroutine gets a write error.
 	_ = attach.CloseWrite()
 	attach.Close()
 
-	if stdinDone != nil {
-		// The stdin goroutine may be blocked on stdin.Read (waiting for
-		// user input). Setting a read deadline on the file unblocks it
-		// immediately so we don't hang until the user presses a key.
-		if f, ok := stdin.(*os.File); ok {
-			_ = f.SetReadDeadline(time.Now())
-		}
-		stdinErr := <-stdinDone
-		// Clear the deadline so Bubbletea can reuse the fd normally.
-		if f, ok := stdin.(*os.File); ok {
-			_ = f.SetReadDeadline(time.Time{})
-		}
-		if stdinErr != nil && !isExpectedAttachCloseError(stdinErr) && outErr == nil {
-			return stdinErr
-		}
-	}
-
-	if outErr != nil && !isExpectedAttachCloseError(outErr) {
+	if outErr != nil && !isExpectedCloseError(outErr) {
 		return outErr
 	}
 	return nil
 }
 
-func isExpectedAttachCloseError(err error) bool {
+// streamInteractiveStdcopy is like streamInteractive but demultiplexes
+// Docker's multiplexed stream for non-TTY containers.
+func streamInteractiveStdcopy(attach types.HijackedResponse, stdin io.Reader, stdout, stderr io.Writer) error {
+	if stdin != nil {
+		go func() {
+			_, _ = io.Copy(attach.Conn, stdin)
+			_ = attach.CloseWrite()
+		}()
+	}
+
+	_, outErr := stdcopy.StdCopy(stdout, stderr, attach.Reader)
+
+	_ = attach.CloseWrite()
+	attach.Close()
+
+	if outErr != nil && !isExpectedCloseError(outErr) {
+		return outErr
+	}
+	return nil
+}
+
+func isExpectedCloseError(err error) bool {
 	if err == nil {
 		return false
 	}
 	if errors.Is(err, io.EOF) || errors.Is(err, net.ErrClosed) || errors.Is(err, os.ErrDeadlineExceeded) {
 		return true
 	}
-	// Some platforms wrap closed connection errors as plain strings.
 	msg := strings.ToLower(err.Error())
 	return strings.Contains(msg, "use of closed network connection") ||
 		strings.Contains(msg, "read canceled")

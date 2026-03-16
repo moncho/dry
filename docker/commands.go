@@ -16,6 +16,8 @@ const (
 	LOGS
 	//ATTACH attach to a running container
 	ATTACH
+	//EXEC exec a command in a running container
+	EXEC
 	//RM remove command
 	RM
 	//RESTART restart command
@@ -30,6 +32,7 @@ const (
 var ContainerCommands = []CommandDescription{
 	{LOGS, "Fetch logs"},
 	{ATTACH, "Attach"},
+	{EXEC, "Exec command"},
 	{INSPECT, "Inspect container"},
 	{KILL, "Kill container"},
 	{RM, "Remove container"},
