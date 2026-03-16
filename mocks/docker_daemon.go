@@ -263,6 +263,11 @@ func (_m *DockerDaemonMock) StatsChannel(container *drydocker.Container) (*drydo
 	return nil, nil
 }
 
+// AttachInteractive mocks interactive attach.
+func (_m *DockerDaemonMock) AttachInteractive(ctx context.Context, id string, stdin io.Reader, stdout, stderr io.Writer, detachKeys string) error {
+	return nil
+}
+
 // Prune mocks prune command
 func (_m *DockerDaemonMock) Prune() (*drydocker.PruneReport, error) {
 	return nil, nil

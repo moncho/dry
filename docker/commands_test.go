@@ -28,6 +28,14 @@ func TestCommandFromDescription(t *testing.T) {
 			-1,
 			true,
 		},
+		{
+			"attach description returns attach command",
+			args{
+				"Attach",
+			},
+			ATTACH,
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

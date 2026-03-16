@@ -7,6 +7,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/moncho/dry/appui"
+	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/mocks"
 )
 
@@ -181,6 +182,14 @@ func TestModel_ContainerMenuOverlay(t *testing.T) {
 
 	if m.overlay != overlayContainerMenu {
 		t.Fatalf("expected overlayContainerMenu, got %d", m.overlay)
+	}
+}
+
+func TestModel_ExecuteMenuCommandAttach(t *testing.T) {
+	m := newTestModel()
+	_, cmd := m.executeMenuCommand("abc123def456", docker.ATTACH)
+	if cmd == nil {
+		t.Fatal("expected attach command to return non-nil cmd")
 	}
 }
 

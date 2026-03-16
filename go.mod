@@ -20,7 +20,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	go.uber.org/goleak v1.3.0
 	golang.org/x/crypto v0.48.0
-	golang.org/x/net v0.49.0
 )
 
 require (
@@ -34,6 +33,7 @@ require (
 	charm.land/lipgloss/v2 v2.0.0
 	github.com/charmbracelet/x/ansi v0.11.6
 	github.com/distribution/reference v0.6.0
+	golang.org/x/term v0.40.0
 )
 
 require (
