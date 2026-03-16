@@ -49,6 +49,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Ctrl+r</>    Restarts selected container
 	<white>s</>         Displays resource usage statistics of the selected container
 	<white>Ctrl+t</>    Stops selected container (noop if it is not running)
+	<white>x</>         Exec a command in the selected container (default /bin/sh)
 	<white>Enter</>     Opens the command menu for the selected container (includes Attach)
 
 <yellow>Image list keybinds</>

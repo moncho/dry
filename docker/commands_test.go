@@ -36,6 +36,14 @@ func TestCommandFromDescription(t *testing.T) {
 			ATTACH,
 			false,
 		},
+		{
+			"exec description returns exec command",
+			args{
+				"Exec command",
+			},
+			EXEC,
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

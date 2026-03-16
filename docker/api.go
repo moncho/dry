@@ -81,6 +81,7 @@ type ContainerAPI interface {
 // ContainerRuntime is the subset of the Docker API to query container runtime information
 type ContainerRuntime interface {
 	AttachInteractive(ctx context.Context, id string, stdin io.Reader, stdout, stderr io.Writer, detachKeys string) error
+	ExecInteractive(ctx context.Context, id string, command []string, stdin io.Reader, stdout, stderr io.Writer, forwardStdin bool) error
 	StatsChannel(container *Container) (*StatsChannel, error)
 	Top(ctx context.Context, id string) (container.TopResponse, error)
 }
