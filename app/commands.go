@@ -136,7 +136,7 @@ func (c *interactiveExecCommand) Run() error {
 		)
 	}
 
-	if c.waitForKey {
+	if c.waitForKey && runErr == nil {
 		// Still in raw mode — single keypress is enough.
 		_, _ = fmt.Fprintf(c.stdout, "\n\r\033[7m Press any key to return to dry... \033[0m")
 		buf := make([]byte, 1)
@@ -443,7 +443,7 @@ func isInteractiveShell(command []string) bool {
 		"csh": true, "/bin/csh": true,
 		"tcsh": true, "/bin/tcsh": true,
 	}
-	return len(command) == 1 && shells[command[0]]
+	return shells[command[0]]
 }
 
 // execContainerCmd opens an interactive exec session in a running container.
