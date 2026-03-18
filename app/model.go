@@ -148,7 +148,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Update overlay sizes
 		m.less.SetSize(m.width, m.height)
 		m.prompt.SetWidth(m.width)
-		m.inputPrompt.SetWidth(m.width)
+		m.inputPrompt.SetSize(m.width, m.height)
 		m.containerMenu.SetSize(m.width, m.height)
 		return m, nil
 
@@ -354,6 +354,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.messageBar.SetMessage(msg.text, msg.expiry)
 		return m, tea.Batch(
 			tea.ClearScreen,
+			tea.RequestWindowSize,
 			tea.Tick(msg.expiry, func(time.Time) tea.Msg {
 				return messageBarExpiredMsg{}
 			}),
@@ -593,6 +594,18 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				), nil
 			}
 			return m, nil
+		case "x":
+			if c := m.containers.SelectedContainer(); c != nil {
+				var cmd tea.Cmd
+				m.inputPrompt, cmd = appui.NewInputPromptModelWithLimit(
+					fmt.Sprintf("Exec in %s:", shortID(c.ID)),
+					"/bin/sh", "exec", c.ID, 120,
+				)
+				m.inputPrompt.SetSize(m.width, m.height)
+				m.overlay = overlayInputPrompt
+				return m, cmd
+			}
+			return m, nil
 		case "ctrl+e":
 			return m.showPrompt(
 				"Remove all stopped containers?",
@@ -825,7 +838,7 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 						fmt.Sprintf("Scale service %s to replicas:", s.Spec.Name),
 						"number", "service-scale", s.ID,
 					)
-					m.inputPrompt.SetWidth(m.width)
+					m.inputPrompt.SetSize(m.width, m.height)
 					m.overlay = overlayInputPrompt
 					return m, cmd
 				}
@@ -1043,7 +1056,7 @@ func (m model) View() tea.View {
 	} else if m.overlay == overlayPrompt {
 		content = m.renderMainScreenWithFooter(m.prompt.View())
 	} else if m.overlay == overlayInputPrompt {
-		content = m.renderMainScreenWithFooter(m.inputPrompt.View())
+		content = m.inputPrompt.View()
 	} else if m.overlay == overlayContainerMenu {
 		content = m.containerMenu.View()
 	} else {
@@ -1335,6 +1348,15 @@ func (m model) executeMenuCommand(containerID string, cmd docker.Command) (model
 		return m, showContainerLogsCmd(m.daemon, containerID)
 	case docker.ATTACH:
 		return m, attachContainerCmd(m.daemon, containerID)
+	case docker.EXEC:
+		var cmd tea.Cmd
+		m.inputPrompt, cmd = appui.NewInputPromptModelWithLimit(
+			fmt.Sprintf("Exec in %s:", shortID(containerID)),
+			"/bin/sh", "exec", containerID, 120,
+		)
+		m.inputPrompt.SetSize(m.width, m.height)
+		m.overlay = overlayInputPrompt
+		return m, cmd
 	case docker.KILL:
 		return m.showPrompt(
 			fmt.Sprintf("Kill container %s?", shortID(containerID)),
@@ -1488,6 +1510,13 @@ func (m model) executeContainerOp(tag, id string) tea.Cmd {
 func (m model) executeInputOp(tag, id, value string) tea.Cmd {
 	daemon := m.daemon
 	switch tag {
+	case "exec":
+		value = strings.TrimSpace(value)
+		if value == "" {
+			value = "/bin/sh"
+		}
+		command := strings.Fields(value)
+		return execContainerCmd(daemon, id, command)
 	case "service-scale":
 		var replicas uint64
 		if _, err := fmt.Sscanf(value, "%d", &replicas); err != nil {
