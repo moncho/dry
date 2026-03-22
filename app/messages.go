@@ -76,6 +76,29 @@ type appendLessMsg struct {
 // streamClosedMsg signals the streaming reader has ended.
 type streamClosedMsg struct{}
 
+type workspaceActivityLoadedMsg struct {
+	title   string
+	status  string
+	content string
+	reader  io.ReadCloser
+}
+
+type appendWorkspaceActivityMsg struct {
+	content string
+	reader  io.ReadCloser
+}
+
+type workspaceActivityClosedMsg struct{}
+
+type quickPeekLoadedMsg struct {
+	title       string
+	subtitle    string
+	detailTitle string
+	status      string
+	summary     []string
+	content     string
+}
+
 // Loading animation message
 type loadingTickMsg struct{}
 

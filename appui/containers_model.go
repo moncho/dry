@@ -12,18 +12,25 @@ type containerRow struct {
 	columns   []string
 }
 
-func newContainerRow(c *docker.Container) containerRow {
+func newContainerRow(c *docker.Container, compact bool) containerRow {
 	cf := formatter.NewContainerFormatter(c, true)
 	indicator := ColorFg("\u25A0", DryTheme.FgSubtle) // ■ stopped
 	if docker.IsContainerRunning(c) {
 		indicator = ColorFg("\u25B6", DryTheme.Key) // ▶ running
 	}
+	columns := []string{
+		indicator, cf.ID(), cf.Image(), cf.Command(),
+		cf.Status(), cf.Ports(), cf.Names(),
+	}
+	if compact {
+		columns = []string{
+			indicator, cf.ID(), cf.Image(),
+			cf.Status(), cf.Names(),
+		}
+	}
 	return containerRow{
 		container: c,
-		columns: []string{
-			indicator, cf.ID(), cf.Image(), cf.Command(),
-			cf.Status(), cf.Ports(), cf.Names(),
-		},
+		columns:   columns,
 	}
 }
 
@@ -35,13 +42,23 @@ type ContainersModel struct {
 	table    TableModel
 	filter   FilterInputModel
 	daemon   docker.ContainerDaemon
+	rows     []*docker.Container
 	showAll  bool
 	sortMode docker.SortMode
+	compact  bool
 }
 
-// NewContainersModel creates a container list model.
-func NewContainersModel() ContainersModel {
-	columns := []Column{
+func containerColumns(compact bool) []Column {
+	if compact {
+		return []Column{
+			{Title: "", Width: 2, Fixed: true},
+			{Title: "CONTAINER", Width: IDColumnWidth, Fixed: true},
+			{Title: "IMAGE"},
+			{Title: "STATUS", Width: 18, Fixed: true},
+			{Title: "NAMES"},
+		}
+	}
+	return []Column{
 		{Title: "", Width: 2, Fixed: true},
 		{Title: "CONTAINER", Width: IDColumnWidth, Fixed: true},
 		{Title: "IMAGE"},
@@ -50,8 +67,12 @@ func NewContainersModel() ContainersModel {
 		{Title: "PORTS"},
 		{Title: "NAMES"},
 	}
+}
+
+// NewContainersModel creates a container list model.
+func NewContainersModel() ContainersModel {
 	return ContainersModel{
-		table:    NewTableModel(columns),
+		table:    NewTableModel(containerColumns(false)),
 		filter:   NewFilterInputModel(),
 		sortMode: docker.SortByContainerID,
 	}
@@ -85,13 +106,19 @@ func (m ContainersModel) SortMode() docker.SortMode {
 	return m.sortMode
 }
 
+// SetCompact toggles the compact workspace column set.
+func (m *ContainersModel) SetCompact(compact bool) {
+	if m.compact == compact {
+		return
+	}
+	m.compact = compact
+	m.rebuildTable()
+}
+
 // SetContainers replaces the container list with new data.
 func (m *ContainersModel) SetContainers(containers []*docker.Container) {
-	rows := make([]TableRow, len(containers))
-	for i, c := range containers {
-		rows[i] = newContainerRow(c)
-	}
-	m.table.SetRows(rows)
+	m.rows = containers
+	m.rebuildRows()
 }
 
 // SelectedContainer returns the container under the cursor, or nil.
@@ -172,19 +199,52 @@ func (m *ContainersModel) nextSort() {
 	if m.sortMode > docker.SortByName {
 		m.sortMode = docker.NoSort
 	}
-	// Map Docker SortMode to the corresponding table column index.
-	// Columns: [0]=indicator, [1]=CONTAINER, [2]=IMAGE, [3]=COMMAND,
-	//          [4]=STATUS, [5]=PORTS, [6]=NAMES
-	col := -1 // no sort indicator for NoSort
+	m.applySortIndicator()
+}
+
+func (m *ContainersModel) applySortIndicator() {
+	col := -1
 	switch m.sortMode {
 	case docker.SortByContainerID:
 		col = 1
 	case docker.SortByImage:
 		col = 2
 	case docker.SortByStatus:
-		col = 4
+		if m.compact {
+			col = 3
+		} else {
+			col = 4
+		}
 	case docker.SortByName:
-		col = 6
+		if m.compact {
+			col = 4
+		} else {
+			col = 6
+		}
 	}
 	m.table.SetSortField(col)
+}
+
+func (m *ContainersModel) rebuildRows() {
+	rows := make([]TableRow, len(m.rows))
+	for i, c := range m.rows {
+		rows[i] = newContainerRow(c, m.compact)
+	}
+	m.table.SetRows(rows)
+	m.applySortIndicator()
+}
+
+func (m *ContainersModel) rebuildTable() {
+	width := m.table.width
+	height := m.table.height
+	filterText := m.filter.Value()
+
+	m.table = NewTableModel(containerColumns(m.compact))
+	if width > 0 && height > 0 {
+		m.table.SetSize(width, height)
+	}
+	m.rebuildRows()
+	if filterText != "" {
+		m.table.SetFilter(filterText)
+	}
 }

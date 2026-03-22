@@ -48,8 +48,24 @@ Keybinding           | Description
 <kbd>ArrowDown</kbd> or <kbd>j</kbd> | move the cursor one line down
 <kbd>g</kbd>         | move the cursor to the top
 <kbd>G</kbd>         | move the cursor to the bottom
+<kbd>:</kbd>         | open command palette
+<kbd>Space</kbd>     | open Quick Peek for the current selection
 <kbd>Ctrl+0</kbd>   | cycle color theme (dark/light)
 <kbd>q</kbd>         | quit dry
+
+### Workspace mode (`--workspace`)
+
+`dry --workspace` enables the Phase 1 workspace shell. This keeps the current list view visible together with a passive context pane and a bottom activity pane.
+
+- `Tab` and `Shift+Tab` switch focus between `Navigator`, `Context`, and `Activity` in the full workspace layout.
+- When `Context` is focused, you can scroll it with the usual navigation keys.
+- `p` / `P` pins or unpins the current preview.
+- `:` opens the command palette with global and context-aware actions.
+- `Space` opens `Quick Peek`, a temporary side panel with recent logs or inspect/details for the current selection.
+- `f` toggles follow mode in the activity pane.
+- Existing primary actions stay on their original keys. For example, `Enter` still opens the container command menu and still inspects resources in views where `Enter` already meant inspect/drill-down.
+- Embedded activity logs start from a recent tail instead of replaying the full log history.
+- On narrow or short terminals, workspace mode falls back to a compact single-pane layout and lets `Tab` switch between navigator and activity.
 
 
 #### Container commands
@@ -189,6 +205,8 @@ Open a console, type ```dry```. It will try to connect to:
 If no connection with a Docker host succeeds, **dry** will exit.
 
 ```dry -T light``` launches dry with the light color theme. Available themes: `dark` (default), `light`.
+
+```dry --workspace``` launches the experimental Phase 1 workspace layout.
 
 ```dry -p``` launches dry with [pprof](https://golang.org/pkg/net/http/pprof/) package active.
 

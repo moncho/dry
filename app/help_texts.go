@@ -35,6 +35,11 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Q</>         Quits <white>dry</>
 	<white>esc</>       Goes back to the main screen
 	<white>Ctrl+0</>    Cycles color theme (dark/light)
+	<white>:</>         Opens the command palette
+	<white>Space</>     Opens Quick Peek for the current selection
+	<white>Tab</>       Moves workspace focus forward between navigator, context, and activity
+	<white>Shift+Tab</> Moves workspace focus backward between navigator, context, and activity
+	<white>p/P</>       Toggles workspace pin/unpin for the current preview
 
 <yellow>Global list keybinds</>	
 	<white>F1</>        Cycles through sort modes
@@ -62,13 +67,24 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Enter</>     Shows low-level information of the selected image
 
 <yellow>Network list keybinds</>
+	<white>Ctrl+e</>    Removes the selected network
 	<white>Enter</>     Shows low-level information of the selected network
+
+<yellow>Volume list keybinds</>
+	<white>Ctrl+a</>    Removes all volumes
+	<white>Ctrl+e</>    Removes the selected volume
+	<white>Ctrl+f</>    Forces removal of the selected volume
+	<white>Ctrl+u</>    Removes unused volumes
+	<white>Enter</>     Shows low-level information of the selected volume
 
 <yellow>Node list keybinds</>
 	<white>Enter</>     Shows the list of tasks running on the selected node
+	<white>i</>         Shows low-level information of the selected node
+	<white>Ctrl+a</>    Cycles the selected node availability
 
 <yellow>Service list keybinds</>
 	<white>Enter</>     Shows the list of tasks that are part of the selected service
+	<white>i</>         Shows low-level information of the selected service
 	<white>l</>         Displays the logs of the selected service
 	<white>Ctrl+R</>    Removes the selected service
 	<white>Ctrl+S</>    Scales the selected service
@@ -80,6 +96,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 
 <yellow>Compose Projects</>
 	<white>Enter</>     Shows the services of the selected project
+	<white>l</>         Displays logs for the selected project or service
 	<white>F1</>        Sorts the list
 	<white>F5</>        Refreshes the list
 	<white>%</>         Filters the list
@@ -89,12 +106,24 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 
 <yellow>Compose Services</>
 	<white>Esc</>       Back to projects
+	<white>Enter</>     Shows low-level information of the selected service, network, or volume
+	<white>l</>         Displays logs of the selected service
 	<white>F1</>        Sorts the list
 	<white>%</>         Filters the list
 	<white>Ctrl+s</>    Start service containers
 	<white>Ctrl+t</>    Stop service containers
 	<white>Ctrl+r</>    Restart service containers
 	<white>Ctrl+e</>    Remove service containers
+
+<yellow>Workspace activity</>
+	<white>f</>         Toggles follow mode for embedded logs
+
+<yellow>Quick Peek</>
+	<white>Space</>     Opens or closes the Quick Peek panel
+	<white>ArrowUp</>   Scrolls the preview up
+	<white>ArrowDown</> Scrolls the preview down
+	<white>g</>         Jumps to the beginning of the preview
+	<white>G</>         Jumps to the end of the preview
 
 <yellow>Move around in lists</>
 	<white>ArrowUp</>   Moves the cursor one line up

@@ -24,12 +24,13 @@ type options struct {
 	Description bool   `short:"d" long:"description" description:"Shows the description"`
 	MonitorMode string `short:"m" long:"monitor" description:"Starts in monitor mode, given value (if any) is the refresh rate" optional:"yes" optional-value:"500"`
 	// enable profiling
-	Profile bool `short:"p" long:"profile" description:"Enable profiling"`
-	Version bool `short:"v" long:"version" description:"Dry version"`
-	Splash int `short:"w" long:"splash" description:"Show loading screen for N seconds (max 10)" default:"0"`
-	Theme string `short:"T" long:"theme" description:"Color theme (dark, light)" default:"dark"`
+	Profile   bool   `short:"p" long:"profile" description:"Enable profiling"`
+	Version   bool   `short:"v" long:"version" description:"Dry version"`
+	Splash    int    `short:"w" long:"splash" description:"Show loading screen for N seconds (max 10)" default:"0"`
+	Theme     string `short:"T" long:"theme" description:"Color theme (dark, light)" default:"dark"`
+	Workspace bool   `long:"workspace" description:"Enable experimental Phase 1 workspace layout"`
 	//Docker-related properties
-	DockerHost string `short:"H" long:"docker_host" description:"Docker Host"`
+	DockerHost      string `short:"H" long:"docker_host" description:"Docker Host"`
 	DockerCertPath  string `short:"c" long:"docker_certpath" description:"Docker cert path"`
 	DockerTLSVerify string `short:"t" long:"docker_tls" description:"Docker TLS verify"`
 }
@@ -68,6 +69,7 @@ func config(opts options) (app.Config, error) {
 		}
 		cfg.MonitorRefreshRate = refreshRate
 	}
+	cfg.WorkspaceMode = opts.Workspace
 	return cfg, nil
 }
 

@@ -10,4 +10,5 @@ type Config struct {
 	MonitorMode        bool
 	MonitorRefreshRate int
 	SplashDuration     time.Duration
+	WorkspaceMode      bool
 }

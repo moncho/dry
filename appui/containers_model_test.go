@@ -107,6 +107,33 @@ func TestContainersModel_SetAndSelect(t *testing.T) {
 	}
 }
 
+func TestContainersModel_SetCompactRebuildsColumns(t *testing.T) {
+	m := NewContainersModel()
+	m.SetSize(120, 30)
+	m.SetContainers(makeTestContainers(3))
+
+	m.SetCompact(true)
+
+	if len(m.table.columns) != 5 {
+		t.Fatalf("expected 5 compact columns, got %d", len(m.table.columns))
+	}
+	if m.table.columns[3].Title != "STATUS" {
+		t.Fatalf("expected STATUS at compact column 3, got %q", m.table.columns[3].Title)
+	}
+	if m.table.columns[4].Title != "NAMES" {
+		t.Fatalf("expected NAMES at compact column 4, got %q", m.table.columns[4].Title)
+	}
+	if m.SelectedContainer() == nil {
+		t.Fatal("expected selected container after compact rebuild")
+	}
+
+	m.sortMode = docker.SortByStatus
+	m.applySortIndicator()
+	if m.table.SortField() != 3 {
+		t.Fatalf("expected compact STATUS sort field 3, got %d", m.table.SortField())
+	}
+}
+
 func TestContainersModel_EmptySelected(t *testing.T) {
 	m := NewContainersModel()
 	m.SetSize(120, 30)
@@ -115,4 +142,3 @@ func TestContainersModel_EmptySelected(t *testing.T) {
 		t.Fatal("expected nil selected container for empty model")
 	}
 }
-

@@ -97,6 +97,18 @@ func (m *TasksModel) SetTasks(tasks []swarm.Task, title string) {
 	m.table.SetRows(rows)
 }
 
+// SelectedTask returns the task under the cursor, or nil.
+func (m TasksModel) SelectedTask() *swarm.Task {
+	row := m.table.SelectedRow()
+	if row == nil {
+		return nil
+	}
+	if tr, ok := row.(taskRow); ok {
+		return &tr.task
+	}
+	return nil
+}
+
 // Update handles key events.
 func (m TasksModel) Update(msg tea.Msg) (TasksModel, tea.Cmd) {
 	if m.filter.Active() {

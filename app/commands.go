@@ -4,16 +4,24 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"image/color"
 	"io"
+	"math"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"github.com/NimbleMarkets/ntcharts/canvas/runes"
+	timeserieslinechart "github.com/NimbleMarkets/ntcharts/linechart/timeserieslinechart"
+	ntlipgloss "github.com/charmbracelet/lipgloss"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/docker/go-units"
 	"github.com/moncho/dry/appui"
 	appcompose "github.com/moncho/dry/appui/compose"
 	appswarm "github.com/moncho/dry/appui/swarm"
@@ -22,11 +30,32 @@ import (
 	"golang.org/x/term"
 )
 
+const monitorChartWindow = 3 * time.Minute
+
 // demuxedReadCloser wraps a pipe reader and closes the underlying Docker stream.
 type demuxedReadCloser struct {
 	io.Reader
 	close func() error
 }
+
+type streamingContent struct {
+	title   string
+	content string
+	reader  io.ReadCloser
+}
+
+type logReadResult struct {
+	content string
+	err     error
+	eof     bool
+}
+
+const (
+	workspaceActivityLogTail = 512
+	quickPeekLogTail         = 128
+	quickPeekReadIdle        = 150 * time.Millisecond
+	quickPeekReadMax         = 750 * time.Millisecond
+)
 
 func (d *demuxedReadCloser) Close() error {
 	return d.close()
@@ -75,12 +104,169 @@ func readLogStreamCmd(reader io.ReadCloser) tea.Cmd {
 	}
 }
 
+func readWorkspaceActivityCmd(reader io.ReadCloser) tea.Cmd {
+	return func() tea.Msg {
+		buf := make([]byte, 32*1024)
+		n, err := reader.Read(buf)
+		if n > 0 {
+			return appendWorkspaceActivityMsg{
+				content: string(buf[:n]),
+				reader:  reader,
+			}
+		}
+		if err != nil {
+			_ = reader.Close()
+			return workspaceActivityClosedMsg{}
+		}
+		return readWorkspaceActivityCmd(reader)()
+	}
+}
+
+func collectQuickPeekLogContent(stream streamingContent) (string, error) {
+	content := stream.content
+	if stream.reader == nil {
+		return content, nil
+	}
+	defer func() {
+		_ = stream.reader.Close()
+	}()
+
+	results := make(chan logReadResult, 1)
+	readOnce := func() {
+		go func() {
+			buf := make([]byte, 32*1024)
+			n, err := stream.reader.Read(buf)
+			switch {
+			case n > 0:
+				results <- logReadResult{
+					content: string(buf[:n]),
+					err:     err,
+					eof:     errors.Is(err, io.EOF),
+				}
+			case err != nil:
+				results <- logReadResult{
+					err: err,
+					eof: errors.Is(err, io.EOF),
+				}
+			default:
+				results <- logReadResult{}
+			}
+		}()
+	}
+
+	readOnce()
+	idle := time.NewTimer(quickPeekReadIdle)
+	defer idle.Stop()
+	maxWait := time.NewTimer(quickPeekReadMax)
+	defer maxWait.Stop()
+
+	for {
+		select {
+		case result := <-results:
+			if result.content != "" {
+				content += result.content
+			}
+			if result.err != nil && !result.eof {
+				return content, result.err
+			}
+			if result.eof {
+				return content, nil
+			}
+			if !idle.Stop() {
+				select {
+				case <-idle.C:
+				default:
+				}
+			}
+			idle.Reset(quickPeekReadIdle)
+			readOnce()
+		case <-idle.C:
+			return content, nil
+		case <-maxWait.C:
+			return content, nil
+		}
+	}
+}
+
 // shortID safely truncates an ID to at most 12 characters.
 func shortID(id string) string {
 	if len(id) > 12 {
 		return id[:12]
 	}
 	return id
+}
+
+func loadContainerLogStream(daemon docker.ContainerDaemon, id string) (streamingContent, error) {
+	return loadContainerLogStreamWithTail(daemon, id, workspaceActivityLogTail)
+}
+
+func loadContainerLogStreamWithTail(daemon docker.ContainerDaemon, id string, tail int) (streamingContent, error) {
+	reader, err := daemon.Logs(id, fmt.Sprintf("tail:%d", tail), false)
+	if err != nil {
+		return streamingContent{}, err
+	}
+	if reader == nil {
+		return streamingContent{}, errors.New("log stream unavailable")
+	}
+	return streamingContent{
+		title:   fmt.Sprintf("Logs: %s", shortID(id)),
+		reader:  demuxDockerStream(reader),
+	}, nil
+}
+
+func loadComposeLogStream(daemon docker.ContainerDaemon, project, service string) (streamingContent, error) {
+	return loadComposeLogStreamWithTail(daemon, project, service, workspaceActivityLogTail)
+}
+
+func loadComposeLogStreamWithTail(daemon docker.ContainerDaemon, project, service string, tail int) (streamingContent, error) {
+	containers := daemon.Containers(nil, docker.NoSort)
+	var targets []*docker.Container
+	for _, c := range containers {
+		if c.Labels["com.docker.compose.project"] != project {
+			continue
+		}
+		if service != "" && c.Labels["com.docker.compose.service"] != service {
+			continue
+		}
+		if !docker.IsContainerRunning(c) {
+			continue
+		}
+		targets = append(targets, c)
+	}
+	if len(targets) == 0 {
+		return streamingContent{}, errors.New("no running containers found")
+	}
+
+	svcCount := make(map[string]int)
+	for _, c := range targets {
+		svcCount[c.Labels["com.docker.compose.service"]]++
+	}
+
+	named := make(map[string]io.ReadCloser)
+	for _, c := range targets {
+		svcName := c.Labels["com.docker.compose.service"]
+		reader, err := daemon.Logs(c.ID, fmt.Sprintf("tail:%d", tail), false)
+		if err != nil || reader == nil {
+			continue
+		}
+		key := svcName
+		if svcCount[svcName] > 1 {
+			key = svcName + "/" + shortID(c.ID)
+		}
+		named[key] = demuxDockerStream(reader)
+	}
+	if len(named) == 0 {
+		return streamingContent{}, errors.New("could not open any log streams")
+	}
+
+	title := fmt.Sprintf("Logs: %s", project)
+	if service != "" {
+		title = fmt.Sprintf("Logs: %s/%s", project, service)
+	}
+	return streamingContent{
+		title:   title,
+		reader:  mergeLogReaders(named),
+	}, nil
 }
 
 // interactiveExecCommand implements tea.ExecCommand for attach and exec sessions.
@@ -392,21 +578,17 @@ func inspectNetworkCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 // showContainerLogsCmd opens a streaming log viewer for a container.
 func showContainerLogsCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 	return func() tea.Msg {
-		reader, err := daemon.Logs(id, "", false)
+		stream, err := loadContainerLogStream(daemon, id)
 		if err != nil {
 			return statusMessageMsg{
 				text:   fmt.Sprintf("Logs error: %s", err),
 				expiry: 5 * time.Second,
 			}
 		}
-		demuxed := demuxDockerStream(reader)
-		// Read initial chunk to show immediately.
-		buf := make([]byte, 64*1024)
-		n, _ := demuxed.Read(buf)
 		return showStreamingLessMsg{
-			content: string(buf[:n]),
-			title:   fmt.Sprintf("Logs: %s", shortID(id)),
-			reader:  demuxed,
+			content: stream.content,
+			title:   stream.title,
+			reader:  stream.reader,
 		}
 	}
 }
@@ -633,67 +815,703 @@ func inspectComposeServiceCmd(daemon docker.ContainerDaemon, project, service st
 // containers matching the given project and optional service.
 func showComposeLogsCmd(daemon docker.ContainerDaemon, project, service string) tea.Cmd {
 	return func() tea.Msg {
-		containers := daemon.Containers(nil, docker.NoSort)
-		var targets []*docker.Container
-		for _, c := range containers {
-			if c.Labels["com.docker.compose.project"] != project {
-				continue
-			}
-			if service != "" && c.Labels["com.docker.compose.service"] != service {
-				continue
-			}
-			if !docker.IsContainerRunning(c) {
-				continue
-			}
-			targets = append(targets, c)
-		}
-		if len(targets) == 0 {
+		stream, err := loadComposeLogStream(daemon, project, service)
+		if err != nil {
 			return statusMessageMsg{
-				text:   "No running containers found",
+				text:   err.Error(),
 				expiry: 3 * time.Second,
 			}
-		}
-
-		// Count containers per service to decide prefix format.
-		svcCount := make(map[string]int)
-		for _, c := range targets {
-			svcCount[c.Labels["com.docker.compose.service"]]++
-		}
-
-		named := make(map[string]io.ReadCloser)
-		for _, c := range targets {
-			svcName := c.Labels["com.docker.compose.service"]
-			reader, err := daemon.Logs(c.ID, "", false)
-			if err != nil {
-				continue
-			}
-			key := svcName
-			if svcCount[svcName] > 1 {
-				key = svcName + "/" + shortID(c.ID)
-			}
-			named[key] = demuxDockerStream(reader)
-		}
-		if len(named) == 0 {
-			return statusMessageMsg{
-				text:   "Could not open any log streams",
-				expiry: 3 * time.Second,
-			}
-		}
-
-		merged := mergeLogReaders(named)
-		buf := make([]byte, 64*1024)
-		n, _ := merged.Read(buf)
-
-		title := fmt.Sprintf("Logs: %s", project)
-		if service != "" {
-			title = fmt.Sprintf("Logs: %s/%s", project, service)
 		}
 		return showStreamingLessMsg{
-			content: string(buf[:n]),
-			title:   title,
-			reader:  merged,
+			content: stream.content,
+			title:   stream.title,
+			reader:  stream.reader,
 		}
 	}
+}
+
+func loadQuickPeekCmd(daemon docker.ContainerDaemon, ctx workspaceContext) tea.Cmd {
+	return func() tea.Msg {
+		msg := quickPeekLoadedMsg{
+			title:       ctx.title,
+			subtitle:    ctx.subtitle,
+			detailTitle: "Preview",
+			status:      "Preview ready",
+			summary:     append([]string(nil), ctx.lines...),
+		}
+
+		switch ctx.kind {
+		case workspaceContextContainer:
+			stream, err := loadContainerLogStreamWithTail(daemon, ctx.containerID, quickPeekLogTail)
+			if err != nil {
+				msg.detailTitle = "Recent Logs"
+				msg.status = "Unavailable · no recent container logs"
+				msg.content = "No recent container logs available."
+				return msg
+			}
+			content, err := collectQuickPeekLogContent(stream)
+			if err != nil {
+				msg.detailTitle = "Recent Logs"
+				msg.status = "Read error · recent container logs"
+				msg.content = fmt.Sprintf("Log read error: %s", err)
+				return msg
+			}
+			msg.detailTitle = stream.title
+			msg.status = fmt.Sprintf("Recent logs · last %d lines", quickPeekLogTail)
+			msg.content = content
+			if strings.TrimSpace(msg.content) == "" {
+				msg.status = "Unavailable · no recent container logs"
+				msg.content = "No recent container logs available."
+			}
+			return msg
+		case workspaceContextComposeProject:
+			stream, err := loadComposeLogStreamWithTail(daemon, ctx.project, "", quickPeekLogTail)
+			if err != nil {
+				msg.detailTitle = "Recent Logs"
+				msg.status = "Unavailable · no recent project logs"
+				msg.content = "No recent project logs available."
+				return msg
+			}
+			content, err := collectQuickPeekLogContent(stream)
+			if err != nil {
+				msg.detailTitle = "Recent Logs"
+				msg.status = "Read error · recent project logs"
+				msg.content = fmt.Sprintf("Log read error: %s", err)
+				return msg
+			}
+			msg.detailTitle = stream.title
+			msg.status = fmt.Sprintf("Recent logs · last %d lines", quickPeekLogTail)
+			msg.content = content
+			if strings.TrimSpace(msg.content) == "" {
+				msg.status = "Unavailable · no recent project logs"
+				msg.content = "No recent project logs available."
+			}
+			return msg
+		case workspaceContextComposeService:
+			stream, err := loadComposeLogStreamWithTail(daemon, ctx.project, ctx.service, quickPeekLogTail)
+			if err != nil {
+				msg.detailTitle = "Recent Logs"
+				msg.status = "Unavailable · no recent service logs"
+				msg.content = "No recent service logs available."
+				return msg
+			}
+			content, err := collectQuickPeekLogContent(stream)
+			if err != nil {
+				msg.detailTitle = "Recent Logs"
+				msg.status = "Read error · recent service logs"
+				msg.content = fmt.Sprintf("Log read error: %s", err)
+				return msg
+			}
+			msg.detailTitle = stream.title
+			msg.status = fmt.Sprintf("Recent logs · last %d lines", quickPeekLogTail)
+			msg.content = content
+			if strings.TrimSpace(msg.content) == "" {
+				msg.status = "Unavailable · no recent service logs"
+				msg.content = "No recent service logs available."
+			}
+			return msg
+		}
+
+		var activity workspaceActivityLoadedMsg
+		switch {
+		case ctx.imageID != "":
+			activity = loadWorkspaceImageInspectCmd(daemon, ctx.imageID)().(workspaceActivityLoadedMsg)
+		case ctx.monitorCID != "":
+			activity = loadWorkspaceMonitorDetailsFromContext(ctx, 64, 12)().(workspaceActivityLoadedMsg)
+		case ctx.networkID != "":
+			activity = loadWorkspaceNetworkInspectCmd(daemon, ctx.networkID)().(workspaceActivityLoadedMsg)
+		case ctx.nodeID != "":
+			activity = loadWorkspaceNodeInspectCmd(daemon, ctx.nodeID)().(workspaceActivityLoadedMsg)
+		case ctx.serviceID != "":
+			activity = loadWorkspaceServiceInspectCmd(daemon, ctx.serviceID)().(workspaceActivityLoadedMsg)
+		case ctx.stackName != "":
+			activity = loadWorkspaceStackDetailsCmd(daemon, docker.Stack{
+				Name:     ctx.stackName,
+				Services: parseWorkspaceCount(ctx.lines, "services"),
+				Networks: parseWorkspaceCount(ctx.lines, "networks"),
+				Configs:  parseWorkspaceCount(ctx.lines, "configs"),
+				Secrets:  parseWorkspaceCount(ctx.lines, "secrets"),
+			})().(workspaceActivityLoadedMsg)
+		case ctx.taskID != "":
+			activity = loadWorkspaceTaskInspectCmd(daemon, ctx.taskID)().(workspaceActivityLoadedMsg)
+		case ctx.volumeName != "":
+			activity = loadWorkspaceVolumeInspectCmd(daemon, ctx.volumeName)().(workspaceActivityLoadedMsg)
+		default:
+			msg.status = "Summary only"
+			msg.content = workspaceKeyValueContent(ctx.title, ctx.subtitle, ctx.lines)
+			return msg
+		}
+
+		msg.detailTitle = activity.title
+		msg.status = activity.status
+		msg.content = activity.content
+		return msg
+	}
+}
+
+func loadWorkspaceActivityCmd(daemon docker.ContainerDaemon, ctx workspaceContext, activityWidth, activityHeight int) tea.Cmd {
+	return func() tea.Msg {
+		switch ctx.kind {
+		case workspaceContextContainer:
+			stream, err := loadContainerLogStream(daemon, ctx.containerID)
+			if err != nil {
+				return workspaceActivityLoadedMsg{
+					title:   "Container Logs",
+					status:  "Unavailable · pinned container has no live logs",
+					content: "No live container logs available.",
+				}
+			}
+			return workspaceActivityLoadedMsg{
+				title:   stream.title,
+				status:  "Live logs · follows pinned container",
+				content: stream.content,
+				reader:  stream.reader,
+			}
+		case workspaceContextComposeProject:
+			stream, err := loadComposeLogStream(daemon, ctx.project, "")
+			if err != nil {
+				return workspaceActivityLoadedMsg{
+					title:   "Project Logs",
+					status:  "Unavailable · pinned project has no live logs",
+					content: "No live project logs available.",
+				}
+			}
+			return workspaceActivityLoadedMsg{
+				title:   stream.title,
+				status:  "Live logs · follows pinned project",
+				content: stream.content,
+				reader:  stream.reader,
+			}
+		case workspaceContextComposeService:
+			stream, err := loadComposeLogStream(daemon, ctx.project, ctx.service)
+			if err != nil {
+				return workspaceActivityLoadedMsg{
+					title:   "Service Logs",
+					status:  "Unavailable · pinned service has no live logs",
+					content: "No live service logs available.",
+				}
+			}
+			return workspaceActivityLoadedMsg{
+				title:   stream.title,
+				status:  "Live logs · follows pinned service",
+				content: stream.content,
+				reader:  stream.reader,
+			}
+		case workspaceContextNone:
+			return workspaceActivityLoadedMsg{
+				title:   "Activity",
+				status:  "Idle",
+				content: "Pin a container or Compose project/service to stream logs here.",
+			}
+		default:
+			if ctx.imageID != "" {
+				return loadWorkspaceImageInspectCmd(daemon, ctx.imageID)()
+			}
+			if ctx.monitorCID != "" {
+				return loadWorkspaceMonitorDetailsFromContext(ctx, activityWidth, activityHeight)()
+			}
+			if ctx.networkID != "" {
+				return loadWorkspaceNetworkInspectCmd(daemon, ctx.networkID)()
+			}
+			if ctx.nodeID != "" {
+				return loadWorkspaceNodeInspectCmd(daemon, ctx.nodeID)()
+			}
+			if ctx.serviceID != "" {
+				return loadWorkspaceServiceInspectCmd(daemon, ctx.serviceID)()
+			}
+			if ctx.stackName != "" {
+				return loadWorkspaceStackDetailsCmd(daemon, docker.Stack{
+					Name:     ctx.stackName,
+					Services: parseWorkspaceCount(ctx.lines, "services"),
+					Networks: parseWorkspaceCount(ctx.lines, "networks"),
+					Configs:  parseWorkspaceCount(ctx.lines, "configs"),
+					Secrets:  parseWorkspaceCount(ctx.lines, "secrets"),
+				})()
+			}
+			if ctx.taskID != "" {
+				return loadWorkspaceTaskInspectCmd(daemon, ctx.taskID)()
+			}
+			if ctx.volumeName != "" {
+				return loadWorkspaceVolumeInspectCmd(daemon, ctx.volumeName)()
+			}
+			return workspaceActivityLoadedMsg{
+				title:   "Activity",
+				status:  "Pinned context has no activity binding",
+				content: "This pinned context only affects the context pane in Phase 1.",
+			}
+		}
+	}
+}
+
+func loadWorkspaceImageInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+	return func() tea.Msg {
+		info, err := daemon.InspectImage(id)
+		if err != nil {
+			return workspaceActivityLoadedMsg{
+				title:   "Image Inspect",
+				status:  "Inspect error · follows current image selection",
+				content: fmt.Sprintf("Inspect error: %s", err),
+			}
+		}
+		data, err := json.MarshalIndent(info, "", "  ")
+		if err != nil {
+			return workspaceActivityLoadedMsg{
+				title:   "Image Inspect",
+				status:  "JSON error · follows current image selection",
+				content: fmt.Sprintf("JSON error: %s", err),
+			}
+		}
+		return workspaceActivityLoadedMsg{
+			title:   fmt.Sprintf("Image Inspect: %s", shortID(id)),
+			status:  "Inspect · follows current image selection",
+			content: string(data),
+		}
+	}
+}
+
+func loadWorkspaceNetworkInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+	return func() tea.Msg {
+		info, err := daemon.NetworkInspect(id)
+		if err != nil {
+			return workspaceActivityLoadedMsg{
+				title:   "Network Inspect",
+				status:  "Inspect error · follows current network selection",
+				content: fmt.Sprintf("Inspect error: %s", err),
+			}
+		}
+		data, err := json.MarshalIndent(info, "", "  ")
+		if err != nil {
+			return workspaceActivityLoadedMsg{
+				title:   "Network Inspect",
+				status:  "JSON error · follows current network selection",
+				content: fmt.Sprintf("JSON error: %s", err),
+			}
+		}
+		return workspaceActivityLoadedMsg{
+			title:   fmt.Sprintf("Network Inspect: %s", shortID(id)),
+			status:  "Inspect · follows current network selection",
+			content: string(data),
+		}
+	}
+}
+
+func loadWorkspaceVolumeInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+	return func() tea.Msg {
+		info, err := daemon.VolumeInspect(context.Background(), id)
+		if err != nil {
+			return workspaceActivityLoadedMsg{
+				title:   "Volume Inspect",
+				status:  "Inspect error · follows current volume selection",
+				content: fmt.Sprintf("Inspect error: %s", err),
+			}
+		}
+		data, err := json.MarshalIndent(info, "", "  ")
+		if err != nil {
+			return workspaceActivityLoadedMsg{
+				title:   "Volume Inspect",
+				status:  "JSON error · follows current volume selection",
+				content: fmt.Sprintf("JSON error: %s", err),
+			}
+		}
+		return workspaceActivityLoadedMsg{
+			title:   fmt.Sprintf("Volume Inspect: %s", id),
+			status:  "Inspect · follows current volume selection",
+			content: string(data),
+		}
+	}
+}
+
+func loadWorkspaceMonitorDetails(lookup monitorContainerLookup, stats *docker.Stats, series appui.MonitorSeries, chartWidth, chartHeight int) tea.Cmd {
+	ctx := workspaceContextFromStats(stats, lookup, series)
+	return loadWorkspaceMonitorDetailsFromContext(ctx, chartWidth, chartHeight)
+}
+
+func loadWorkspaceMonitorDetailsFromContext(ctx workspaceContext, chartWidth, chartHeight int) tea.Cmd {
+	return func() tea.Msg {
+		cpuHistory := ctx.monitorHistory(ctx.monitorCPUHistory, ctx.monitorCPU)
+		content := workspaceMonitorDetailContent(ctx, chartWidth, chartHeight)
+		return workspaceActivityLoadedMsg{
+			title:   fmt.Sprintf("Monitor Details: %s", ctx.title),
+			status:  fmt.Sprintf("Live stats · %s/%s window", formatMonitorDuration(monitorCollectedDuration(cpuHistory, monitorChartWindow)), formatMonitorDuration(monitorChartWindow)),
+			content: content,
+		}
+	}
+}
+
+func workspaceMonitorDetailContent(ctx workspaceContext, chartWidth, chartHeight int) string {
+	cpuHistory := ctx.monitorHistory(ctx.monitorCPUHistory, ctx.monitorCPU)
+	memHistory := ctx.monitorHistory(ctx.monitorMemHistory, ctx.monitorPct)
+	sections := []string{
+		monitorLegendLine(),
+		monitorHistorySection(
+			"CPU",
+			cpuHistory,
+			fmt.Sprintf("now %5.1f%%", ctx.monitorCPU),
+			appui.DryTheme.Info,
+			chartWidth,
+			chartHeight,
+			runes.ArcLineStyle,
+		),
+		monitorHistorySection(
+			"Memory",
+			memHistory,
+			fmt.Sprintf("%s / %s  (%5.1f%%)", units.BytesSize(ctx.monitorMem), units.BytesSize(ctx.monitorMax), ctx.monitorPct),
+			appui.DryTheme.Secondary,
+			chartWidth,
+			chartHeight,
+			runes.ThinLineStyle,
+		),
+	}
+	return strings.Join(sections, "\n\n")
+}
+
+func (ctx workspaceContext) monitorHistory(history []appui.MonitorPoint, current float64) []appui.MonitorPoint {
+	if len(history) > 0 {
+		return history
+	}
+	return []appui.MonitorPoint{{At: time.Now(), Value: current}}
+}
+
+func monitorHistorySection(title string, samples []appui.MonitorPoint, detail string, accent color.Color, chartWidth, bodyHeight int, lineStyle runes.LineStyle) string {
+	labelStyle := lipgloss.NewStyle().Bold(true).Foreground(appui.DryTheme.Fg)
+	detailStyle := lipgloss.NewStyle().Foreground(appui.DryTheme.FgMuted)
+	graph := monitorHistoryChart(samples, monitorChartWidth(chartWidth), monitorChartHeight(chartWidth, bodyHeight), accent, lineStyle)
+	return strings.Join([]string{
+		labelStyle.Render(title),
+		detailStyle.Render(detail),
+		graph,
+	}, "\n")
+}
+
+func monitorHistoryChart(samples []appui.MonitorPoint, width, height int, accent color.Color, lineStyle runes.LineStyle) string {
+	if len(samples) == 0 {
+		samples = []appui.MonitorPoint{{At: time.Now(), Value: 0}}
+	}
+	samples = trimMonitorHistory(samples, monitorChartWindow)
+	minTime := samples[0].At
+	maxTime := samples[len(samples)-1].At
+	if !maxTime.After(minTime) {
+		maxTime = minTime.Add(time.Second)
+	}
+	minY, maxY := monitorChartYRange(samples)
+	style := ntlipgloss.NewStyle().Foreground(ntlipgloss.Color(colorToHex(accent)))
+	axisStyle := ntlipgloss.NewStyle().Foreground(ntlipgloss.Color(colorToHex(appui.DryTheme.FgSubtle)))
+	labelStyle := ntlipgloss.NewStyle().Foreground(ntlipgloss.Color(colorToHex(appui.DryTheme.FgMuted)))
+	chart := timeserieslinechart.New(
+		width,
+		height,
+		timeserieslinechart.WithTimeRange(minTime, maxTime),
+		timeserieslinechart.WithYRange(minY, maxY),
+		timeserieslinechart.WithXLabelFormatter(timeserieslinechart.HourTimeLabelFormatter()),
+		timeserieslinechart.WithXYSteps(0, 2),
+		timeserieslinechart.WithLineStyle(lineStyle),
+		timeserieslinechart.WithStyle(style),
+		timeserieslinechart.WithAxesStyles(axisStyle, labelStyle),
+	)
+	for _, sample := range samples {
+		chart.Push(timeserieslinechart.TimePoint{
+			Time:  sample.At,
+			Value: sample.Value,
+		})
+	}
+	chart.DrawBraille()
+	return strings.TrimRight(chart.View(), "\n")
+}
+
+func monitorLegendLine() string {
+	labelStyle := lipgloss.NewStyle().
+		Foreground(appui.DryTheme.FgSubtle)
+	cpuStyle := lipgloss.NewStyle().
+		Foreground(appui.DryTheme.Info)
+	memStyle := lipgloss.NewStyle().
+		Foreground(appui.DryTheme.Secondary)
+	return strings.Join([]string{
+		labelStyle.Render("Legend:"),
+		cpuStyle.Render("CPU arc"),
+		memStyle.Render("Memory line"),
+		labelStyle.Render("Y auto-scaled"),
+	}, labelStyle.Render("  ·  "))
+}
+
+func trimMonitorHistory(samples []appui.MonitorPoint, window time.Duration) []appui.MonitorPoint {
+	if len(samples) == 0 {
+		return nil
+	}
+	cutoff := samples[len(samples)-1].At.Add(-window)
+	start := 0
+	for start < len(samples)-1 && samples[start].At.Before(cutoff) {
+		start++
+	}
+	return append([]appui.MonitorPoint(nil), samples[start:]...)
+}
+
+func monitorCollectedDuration(samples []appui.MonitorPoint, limit time.Duration) time.Duration {
+	if len(samples) < 2 {
+		return 0
+	}
+	d := samples[len(samples)-1].At.Sub(samples[0].At)
+	if d < 0 {
+		return 0
+	}
+	if d > limit {
+		return limit
+	}
+	return d
+}
+
+func formatMonitorDuration(d time.Duration) string {
+	d = d.Truncate(time.Second)
+	if d <= 0 {
+		return "0s"
+	}
+	if d%time.Minute == 0 {
+		return fmt.Sprintf("%dm", int(d/time.Minute))
+	}
+	if d >= time.Minute {
+		return fmt.Sprintf("%dm%02ds", int(d/time.Minute), int((d%time.Minute)/time.Second))
+	}
+	return fmt.Sprintf("%ds", int(d/time.Second))
+}
+
+func monitorChartYRange(samples []appui.MonitorPoint) (float64, float64) {
+	if len(samples) == 0 {
+		return 0, 100
+	}
+	minY := samples[0].Value
+	maxY := samples[0].Value
+	for _, sample := range samples[1:] {
+		if sample.Value < minY {
+			minY = sample.Value
+		}
+		if sample.Value > maxY {
+			maxY = sample.Value
+		}
+	}
+
+	span := maxY - minY
+	if span < 5 {
+		center := (maxY + minY) / 2
+		minY = center - 2.5
+		maxY = center + 2.5
+	} else {
+		padding := math.Max(1, span*0.15)
+		minY -= padding
+		maxY += padding
+	}
+
+	if minY < 0 {
+		minY = 0
+	}
+	if maxY > 100 {
+		maxY = 100
+	}
+	if maxY-minY < 1 {
+		maxY = math.Min(100, minY+1)
+	}
+	return minY, maxY
+}
+
+func colorToHex(c color.Color) string {
+	r, g, b, _ := c.RGBA()
+	return fmt.Sprintf("#%02x%02x%02x", r>>8, g>>8, b>>8)
+}
+
+func monitorChartWidth(activityWidth int) int {
+	if activityWidth <= 0 {
+		return 56
+	}
+	width := activityWidth - 4
+	if width < 40 {
+		width = 40
+	}
+	if width > 96 {
+		width = 96
+	}
+	return width
+}
+
+func monitorChartHeight(activityWidth, bodyHeight int) int {
+	height := 8
+	if activityWidth >= 110 {
+		height = 12
+	} else if activityWidth >= 80 {
+		height = 10
+	}
+	maxFit := (bodyHeight - 5) / 2
+	if maxFit < 3 {
+		maxFit = 3
+	}
+	if height > maxFit {
+		height = maxFit
+	}
+	return height
+}
+
+func loadWorkspaceNodeInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+	return func() tea.Msg {
+		node, err := daemon.Node(id)
+		if err != nil {
+			return workspaceActivityLoadedMsg{
+				title:   "Node Inspect",
+				status:  "Inspect error · follows current node selection",
+				content: fmt.Sprintf("Inspect error: %s", err),
+			}
+		}
+		data, err := json.MarshalIndent(node, "", "  ")
+		if err != nil {
+			return workspaceActivityLoadedMsg{
+				title:   "Node Inspect",
+				status:  "JSON error · follows current node selection",
+				content: fmt.Sprintf("JSON error: %s", err),
+			}
+		}
+		return workspaceActivityLoadedMsg{
+			title:   fmt.Sprintf("Node Inspect: %s", shortID(id)),
+			status:  "Inspect · follows current node selection",
+			content: string(data),
+		}
+	}
+}
+
+func loadWorkspaceServiceInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+	return func() tea.Msg {
+		svc, err := daemon.Service(id)
+		if err != nil {
+			return workspaceActivityLoadedMsg{
+				title:   "Service Inspect",
+				status:  "Inspect error · follows current service selection",
+				content: fmt.Sprintf("Inspect error: %s", err),
+			}
+		}
+		data, err := json.MarshalIndent(svc, "", "  ")
+		if err != nil {
+			return workspaceActivityLoadedMsg{
+				title:   "Service Inspect",
+				status:  "JSON error · follows current service selection",
+				content: fmt.Sprintf("JSON error: %s", err),
+			}
+		}
+		return workspaceActivityLoadedMsg{
+			title:   fmt.Sprintf("Service Inspect: %s", shortID(id)),
+			status:  "Inspect · follows current service selection",
+			content: string(data),
+		}
+	}
+}
+
+func loadWorkspaceTaskInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+	return func() tea.Msg {
+		task, err := daemon.Task(id)
+		if err != nil {
+			return workspaceActivityLoadedMsg{
+				title:   "Task Inspect",
+				status:  "Inspect error · follows current task selection",
+				content: fmt.Sprintf("Inspect error: %s", err),
+			}
+		}
+		data, err := json.MarshalIndent(task, "", "  ")
+		if err != nil {
+			return workspaceActivityLoadedMsg{
+				title:   "Task Inspect",
+				status:  "JSON error · follows current task selection",
+				content: fmt.Sprintf("JSON error: %s", err),
+			}
+		}
+		return workspaceActivityLoadedMsg{
+			title:   fmt.Sprintf("Task Inspect: %s", shortID(id)),
+			status:  "Inspect · follows current task selection",
+			content: string(data),
+		}
+	}
+}
+
+func loadWorkspaceStackDetailsCmd(daemon docker.ContainerDaemon, stack docker.Stack) tea.Cmd {
+	return func() tea.Msg {
+		var lines []string
+		lines = append(lines, fmt.Sprintf("name: %s", stack.Name))
+		lines = append(lines, fmt.Sprintf("services: %d", stack.Services))
+
+		networks, netErr := daemon.StackNetworks(stack.Name)
+		if netErr != nil {
+			lines = append(lines, fmt.Sprintf("network inspect error: %s", netErr))
+		} else {
+			lines = append(lines, fmt.Sprintf("networks: %d", len(networks)))
+			for _, n := range networks {
+				if n.Name != "" {
+					lines = append(lines, fmt.Sprintf("network: %s", n.Name))
+				}
+			}
+		}
+
+		configs, cfgErr := daemon.StackConfigs(stack.Name)
+		if cfgErr != nil {
+			lines = append(lines, fmt.Sprintf("config inspect error: %s", cfgErr))
+		} else {
+			lines = append(lines, fmt.Sprintf("configs: %d", len(configs)))
+			for _, c := range configs {
+				if c.Spec.Name != "" {
+					lines = append(lines, fmt.Sprintf("config: %s", c.Spec.Name))
+				}
+			}
+		}
+
+		secrets, secErr := daemon.StackSecrets(stack.Name)
+		if secErr != nil {
+			lines = append(lines, fmt.Sprintf("secret inspect error: %s", secErr))
+		} else {
+			lines = append(lines, fmt.Sprintf("secrets: %d", len(secrets)))
+			for _, s := range secrets {
+				if s.Spec.Name != "" {
+					lines = append(lines, fmt.Sprintf("secret: %s", s.Spec.Name))
+				}
+			}
+		}
+
+		tasks, taskErr := daemon.StackTasks(stack.Name)
+		if taskErr != nil {
+			lines = append(lines, fmt.Sprintf("task inspect error: %s", taskErr))
+		} else {
+			lines = append(lines, fmt.Sprintf("tasks: %d", len(tasks)))
+			for _, t := range tasks {
+				lines = append(lines, fmt.Sprintf("task: %s (%s)", shortID(t.ID), t.Status.State))
+			}
+		}
+
+		return workspaceActivityLoadedMsg{
+			title:   fmt.Sprintf("Stack Details: %s", stack.Name),
+			status:  "Details · follows current stack selection",
+			content: workspaceKeyValueContent(stack.Name, "Stack", lines),
+		}
+	}
+}
+
+func workspaceKeyValueContent(title, subtitle string, lines []string) string {
+	parts := make([]string, 0, len(lines)+2)
+	if title != "" {
+		parts = append(parts, title)
+	}
+	if subtitle != "" {
+		parts = append(parts, subtitle)
+	}
+	if len(parts) > 0 && len(lines) > 0 {
+		parts = append(parts, "")
+	}
+	parts = append(parts, lines...)
+	return strings.Join(parts, "\n")
+}
+
+func parseWorkspaceCount(lines []string, key string) int {
+	for _, line := range lines {
+		prefix := key + ": "
+		if !strings.HasPrefix(line, prefix) {
+			continue
+		}
+		var value int
+		if _, err := fmt.Sscanf(strings.TrimPrefix(line, prefix), "%d", &value); err == nil {
+			return value
+		}
+	}
+	return 0
 }
 
 // mergeLogReaders multiplexes multiple named log readers into a single
@@ -872,6 +1690,30 @@ func inspectServiceCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 		return showLessMsg{
 			content: string(data),
 			title:   fmt.Sprintf("Service: %s", shortID(id)),
+		}
+	}
+}
+
+// inspectTaskCmd shows task inspect JSON.
+func inspectTaskCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+	return func() tea.Msg {
+		task, err := daemon.Task(id)
+		if err != nil {
+			return statusMessageMsg{
+				text:   fmt.Sprintf("Inspect error: %s", err),
+				expiry: 5 * time.Second,
+			}
+		}
+		data, err := json.MarshalIndent(task, "", "  ")
+		if err != nil {
+			return statusMessageMsg{
+				text:   fmt.Sprintf("JSON error: %s", err),
+				expiry: 5 * time.Second,
+			}
+		}
+		return showLessMsg{
+			content: string(data),
+			title:   fmt.Sprintf("Task: %s", shortID(id)),
 		}
 	}
 }
