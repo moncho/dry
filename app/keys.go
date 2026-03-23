@@ -5,6 +5,7 @@ import "charm.land/bubbles/v2/key"
 type globalKeyMap struct {
 	Quit         key.Binding
 	Help         key.Binding
+	Navigate     key.Binding
 	Containers   key.Binding
 	Images       key.Binding
 	Networks     key.Binding
@@ -18,6 +19,8 @@ type globalKeyMap struct {
 	DiskUsage    key.Binding
 	Events       key.Binding
 	DockerInfo   key.Binding
+	Palette      key.Binding
+	QuickPeek    key.Binding
 	Theme        key.Binding
 }
 
@@ -29,6 +32,10 @@ var globalKeys = globalKeyMap{
 	Help: key.NewBinding(
 		key.WithKeys("?", "h", "H"),
 		key.WithHelp("h", "help"),
+	),
+	Navigate: key.NewBinding(
+		key.WithKeys("1-8", "m"),
+		key.WithHelp("1-8/m", "navigate"),
 	),
 	Containers: key.NewBinding(
 		key.WithKeys("1"),
@@ -81,6 +88,14 @@ var globalKeys = globalKeyMap{
 	DockerInfo: key.NewBinding(
 		key.WithKeys("f10"),
 		key.WithHelp("F10", "docker info"),
+	),
+	Palette: key.NewBinding(
+		key.WithKeys(":"),
+		key.WithHelp(":", "palette"),
+	),
+	QuickPeek: key.NewBinding(
+		key.WithKeys("space"),
+		key.WithHelp("space", "peek"),
 	),
 	Theme: key.NewBinding(
 		key.WithKeys("ctrl+0"),
@@ -254,7 +269,7 @@ type volumesKeyMap struct {
 	Help, Quit                                             key.Binding
 	Sort, Refresh, Filter                                  key.Binding
 	Containers, Images, Nets, Nodes, Svcs, Stacks, Compose key.Binding
-	RmAll, Rm, ForceRm, RmUnused, Inspect                 key.Binding
+	RmAll, Rm, ForceRm, RmUnused, Inspect                  key.Binding
 }
 
 var volumesKeys = volumesKeyMap{
@@ -469,6 +484,7 @@ type composeProjectsKeyMap struct {
 	Sort, Refresh, Filter                                                 key.Binding
 	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks, Compose key.Binding
 	Enter                                                                 key.Binding
+	Logs                                                                  key.Binding
 	Stop, Restart, Remove                                                 key.Binding
 }
 
@@ -488,6 +504,7 @@ var composeProjectsKeys = composeProjectsKeyMap{
 	Stacks:     key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
 	Compose:    key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
 	Enter:      key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "services")),
+	Logs:       key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "logs")),
 	Stop:       key.NewBinding(key.WithKeys("ctrl+t"), key.WithHelp("^t", "stop")),
 	Restart:    key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("^r", "restart")),
 	Remove:     key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("^e", "remove")),
@@ -497,7 +514,7 @@ func (k composeProjectsKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		k.Help, k.Quit, k.Sort, k.Refresh, k.Filter,
 		k.Monitor, k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks, k.Compose,
-		k.Enter, k.Stop, k.Restart, k.Remove,
+		k.Enter, k.Logs, k.Stop, k.Restart, k.Remove,
 	}
 }
 
@@ -506,10 +523,10 @@ func (k composeProjectsKeyMap) FullHelp() [][]key.Binding { return [][]key.Bindi
 // --- compose services -----------------------------------------------------
 
 type composeServicesKeyMap struct {
-	Help, Quit                      key.Binding
-	Sort, Filter                    key.Binding
-	Back                            key.Binding
-	Start, Stop, Restart, Remove    key.Binding
+	Help, Quit                   key.Binding
+	Sort, Filter                 key.Binding
+	Back, Enter, Logs            key.Binding
+	Start, Stop, Restart, Remove key.Binding
 }
 
 var composeServicesKeys = composeServicesKeyMap{
@@ -518,6 +535,8 @@ var composeServicesKeys = composeServicesKeyMap{
 	Sort:    key.NewBinding(key.WithKeys("f1"), key.WithHelp("F1", "sort")),
 	Filter:  key.NewBinding(key.WithKeys("%"), key.WithHelp("%", "filter")),
 	Back:    key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
+	Enter:   key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "inspect")),
+	Logs:    key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "logs")),
 	Start:   key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("^s", "start")),
 	Stop:    key.NewBinding(key.WithKeys("ctrl+t"), key.WithHelp("^t", "stop")),
 	Restart: key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("^r", "restart")),
@@ -525,7 +544,7 @@ var composeServicesKeys = composeServicesKeyMap{
 }
 
 func (k composeServicesKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit, k.Sort, k.Filter, k.Back, k.Start, k.Stop, k.Restart, k.Remove}
+	return []key.Binding{k.Help, k.Quit, k.Sort, k.Filter, k.Back, k.Enter, k.Logs, k.Start, k.Stop, k.Restart, k.Remove}
 }
 
 func (k composeServicesKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.ShortHelp()} }

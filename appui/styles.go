@@ -45,32 +45,37 @@ func InitStyles() {
 type WidgetHeaderOpts struct {
 	Icon     string      // e.g. "🐳"
 	Title    string      // e.g. "Containers"
-	Total    int         // total row count
+	Total    int         // total row count; negative hides counts entirely
 	Filtered int         // visible (filtered) row count; same as Total when no filter
 	Filter   string      // active filter text, empty if none
 	Width    int         // full terminal width for padding
 	Accent   color.Color // icon/filter accent color
+	HeaderBg color.Color // optional header background override
 }
 
 // RenderWidgetHeader renders a full-width accent bar with icon, title, and count.
 func RenderWidgetHeader(o WidgetHeaderOpts) string {
-	bg := lipgloss.NewStyle().Background(DryTheme.Header)
+	headerBg := DryTheme.Header
+	if o.HeaderBg != nil {
+		headerBg = o.HeaderBg
+	}
+	bg := lipgloss.NewStyle().Background(headerBg)
 	iconStyle := lipgloss.NewStyle().
 		Foreground(o.Accent).
-		Background(DryTheme.Header)
+		Background(headerBg)
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(DryTheme.Fg).
-		Background(DryTheme.Header)
+		Background(headerBg)
 	countStyle := lipgloss.NewStyle().
 		Foreground(DryTheme.FgMuted).
-		Background(DryTheme.Header)
+		Background(headerBg)
 	filterStyle := lipgloss.NewStyle().
 		Foreground(o.Accent).
-		Background(DryTheme.Header)
+		Background(headerBg)
 	sepStyle := lipgloss.NewStyle().
 		Foreground(DryTheme.FgSubtle).
-		Background(DryTheme.Header)
+		Background(headerBg)
 
 	var b strings.Builder
 	b.WriteString(bg.Render(" "))
@@ -79,12 +84,14 @@ func RenderWidgetHeader(o WidgetHeaderOpts) string {
 	b.WriteString(titleStyle.Render(o.Title))
 	b.WriteString(bg.Render("  "))
 
-	if o.Total != o.Filtered {
-		b.WriteString(countStyle.Render(fmt.Sprintf("%d", o.Total)))
-		b.WriteString(sepStyle.Render(" › "))
-		b.WriteString(countStyle.Render(fmt.Sprintf("%d", o.Filtered)))
-	} else {
-		b.WriteString(countStyle.Render(fmt.Sprintf("%d", o.Total)))
+	if o.Total >= 0 && o.Filtered >= 0 {
+		if o.Total != o.Filtered {
+			b.WriteString(countStyle.Render(fmt.Sprintf("%d", o.Total)))
+			b.WriteString(sepStyle.Render(" › "))
+			b.WriteString(countStyle.Render(fmt.Sprintf("%d", o.Filtered)))
+		} else {
+			b.WriteString(countStyle.Render(fmt.Sprintf("%d", o.Total)))
+		}
 	}
 
 	if o.Filter != "" {

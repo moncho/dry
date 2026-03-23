@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -29,7 +30,6 @@ const (
 
 // timeout in seconds for docker operations
 var defaultOperationTimeout = time.Duration(10) * time.Second
-
 
 // Defaults for listing images
 var defaultImageListOptions = image.ListOptions{
@@ -214,6 +214,13 @@ func (daemon *DockerDaemon) Logs(id string, since string, withTimeStamps bool) (
 		Follow:     true,
 		Details:    false,
 		Since:      since,
+	}
+	if strings.HasPrefix(since, "tail:") {
+		options.Since = ""
+		options.Tail = strings.TrimPrefix(since, "tail:")
+		if _, err := strconv.Atoi(options.Tail); err != nil {
+			return nil, fmt.Errorf("invalid log tail value %q: %w", options.Tail, err)
+		}
 	}
 	return daemon.client.ContainerLogs(context.Background(), id, options)
 }

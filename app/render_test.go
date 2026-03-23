@@ -122,3 +122,122 @@ func TestRenderMainScreen_SmallTerminal(t *testing.T) {
 		t.Errorf("Expected %d total lines, got %d", m.height, totalLines)
 	}
 }
+
+func TestRenderWorkspaceScreen_ContextOverflowDoesNotHideFooter(t *testing.T) {
+	appui.InitStyles()
+	m := NewModel(Config{WorkspaceMode: true})
+	m.width = 120
+	m.height = 30
+	m.daemon = &mocks.DockerDaemonMock{}
+	m.ready = true
+	m.containers.SetDaemon(m.daemon)
+	m.header = appui.NewHeaderModel(m.daemon, m.width)
+	m.resizeContentModels()
+
+	m.pinnedContext = &workspaceContext{
+		title:    "overflow",
+		subtitle: "Context",
+		lines: []string{
+			"one: 1", "two: 2", "three: 3", "four: 4", "five: 5",
+			"six: 6", "seven: 7", "eight: 8", "nine: 9", "ten: 10",
+			"eleven: 11", "twelve: 12", "thirteen: 13", "fourteen: 14",
+		},
+	}
+
+	v := m.renderMainScreen()
+	totalLines := len(strings.Split(v, "\n"))
+	if totalLines != m.height {
+		t.Fatalf("expected %d total lines, got %d", m.height, totalLines)
+	}
+}
+
+func TestRenderWorkspaceScreen_LongContextLinesDoNotHideFooter(t *testing.T) {
+	appui.InitStyles()
+	m := NewModel(Config{WorkspaceMode: true})
+	m.width = 120
+	m.height = 24
+	m.daemon = &mocks.DockerDaemonMock{}
+	m.ready = true
+	m.containers.SetDaemon(m.daemon)
+	m.header = appui.NewHeaderModel(m.daemon, m.width)
+	m.resizeContentModels()
+
+	m.pinnedContext = &workspaceContext{
+		title:    "wrapped",
+		subtitle: "Context",
+		lines: []string{
+			"labels: this-is-a-very-long-context-value-that-should-be-truncated-before-it-wraps-and-pushes-the-footer-off-screen",
+			"mounts: /a/very/long/path/that/keeps/going/and/going/until-it-would-normally-wrap-inside-the-pane",
+		},
+	}
+
+	v := m.renderMainScreen()
+	totalLines := len(strings.Split(v, "\n"))
+	if totalLines != m.height {
+		t.Fatalf("expected %d total lines, got %d", m.height, totalLines)
+	}
+	if strings.Contains(v, "pushes-the-footer-off-screen") {
+		t.Fatal("expected long context value to be truncated before wrapping")
+	}
+}
+
+func TestRenderWorkspaceScreen_NarrowTerminalUsesCompactFallback(t *testing.T) {
+	appui.InitStyles()
+	m := NewModel(Config{WorkspaceMode: true})
+	m.width = 90
+	m.height = 28
+	m.daemon = &mocks.DockerDaemonMock{}
+	m.ready = true
+	m.containers.SetDaemon(m.daemon)
+	m.header = appui.NewHeaderModel(m.daemon, m.width)
+	m.resizeContentModels()
+
+	containers := m.daemon.Containers(nil, docker.SortByContainerID)
+	result, _ := m.Update(containersLoadedMsg{containers: containers})
+	m = result.(model)
+
+	if !m.workspaceCompactMode() {
+		t.Fatal("expected narrow workspace screen to use compact fallback")
+	}
+
+	v := m.renderMainScreen()
+	totalLines := len(strings.Split(v, "\n"))
+	if totalLines != m.height {
+		t.Fatalf("expected %d total lines, got %d", m.height, totalLines)
+	}
+	if !strings.Contains(v, "Navigator") || !strings.Contains(v, "Activity") {
+		t.Fatal("expected workspace tabs in compact mode")
+	}
+	if strings.Contains(v, "Context ·") {
+		t.Fatal("did not expect context pane to render in compact workspace mode")
+	}
+}
+
+func TestRenderWorkspaceScreen_ShortTerminalShowsActivityPaneInCompactMode(t *testing.T) {
+	appui.InitStyles()
+	m := NewModel(Config{WorkspaceMode: true})
+	m.width = 120
+	m.height = 14
+	m.daemon = &mocks.DockerDaemonMock{}
+	m.ready = true
+	m.header = appui.NewHeaderModel(m.daemon, m.width)
+	m.activePane = workspacePaneActivity
+	m.resizeContentModels()
+	m.workspaceLogs.SetContent("Activity", "Pinned activity", "line one\nline two")
+
+	if !m.workspaceCompactMode() {
+		t.Fatal("expected short workspace screen to use compact fallback")
+	}
+
+	v := m.renderMainScreen()
+	totalLines := len(strings.Split(v, "\n"))
+	if totalLines != m.height {
+		t.Fatalf("expected %d total lines, got %d", m.height, totalLines)
+	}
+	if !strings.Contains(v, "Pinned activity") {
+		t.Fatal("expected activity pane content in compact mode")
+	}
+	if strings.Contains(v, "Context ·") {
+		t.Fatal("did not expect context pane to render in short compact mode")
+	}
+}

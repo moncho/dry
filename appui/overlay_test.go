@@ -1,6 +1,7 @@
 package appui
 
 import (
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -169,6 +170,151 @@ func TestLessModel_FollowToggle(t *testing.T) {
 	}
 }
 
+func TestQuickPeekModel_SpaceCloses(t *testing.T) {
+	m := NewQuickPeekModel()
+	m.SetSize(120, 40)
+
+	_, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeySpace})
+	if cmd == nil {
+		t.Fatal("expected cmd from space")
+	}
+	msg := cmd()
+	if _, ok := msg.(CloseOverlayMsg); !ok {
+		t.Fatalf("expected CloseOverlayMsg, got %T", msg)
+	}
+}
+
+func TestQuickPeekModel_View(t *testing.T) {
+	m := NewQuickPeekModel()
+	m.SetSize(120, 40)
+	m.SetContent(
+		"api-1",
+		"Container",
+		"Recent Logs",
+		"Recent logs · last 128 lines",
+		[]string{"status: running", "image: nginx:latest"},
+		"line one\nline two",
+	)
+
+	v := m.View()
+	if !strings.Contains(v, "Quick Peek") {
+		t.Fatal("expected quick peek title")
+	}
+	if !strings.Contains(v, "api-1") {
+		t.Fatal("expected selected item title")
+	}
+	if !strings.Contains(v, "Recent Logs") {
+		t.Fatal("expected detail title")
+	}
+	if !strings.Contains(v, "────") {
+		t.Fatal("expected visual divider between summary and preview")
+	}
+}
+
+func TestQuickPeekModel_StaysNearTop(t *testing.T) {
+	m := NewQuickPeekModel()
+	m.SetSize(120, 40)
+	m.SetContent(
+		"api-1",
+		"Container",
+		"Recent Logs",
+		"Recent logs · last 128 lines",
+		[]string{"status: running", "image: nginx:latest"},
+		"line one\nline two",
+	)
+
+	lines := strings.Split(m.View(), "\n")
+	firstBoxLine := -1
+	for i, line := range lines {
+		if strings.Contains(line, "╭") {
+			firstBoxLine = i
+			break
+		}
+	}
+	if firstBoxLine == -1 {
+		t.Fatal("expected quick peek dialog border")
+	}
+	if firstBoxLine > 2 {
+		t.Fatalf("expected quick peek to stay near the top, got top margin of %d lines", firstBoxLine)
+	}
+}
+
+func TestQuickPeekModel_GAndGJump(t *testing.T) {
+	m := NewQuickPeekModel()
+	m.SetSize(120, 24)
+	m.SetContent(
+		"api-1",
+		"Container",
+		"Recent Logs",
+		"Recent logs · last 128 lines",
+		[]string{"status: running"},
+		strings.Repeat("line\n", 80),
+	)
+
+	m, _ = m.Update(tea.KeyPressMsg{Code: 'G'})
+	if m.viewport.YOffset() == 0 {
+		t.Fatal("expected G to jump to the bottom")
+	}
+
+	m, _ = m.Update(tea.KeyPressMsg{Code: 'g'})
+	if m.viewport.YOffset() != 0 {
+		t.Fatal("expected g to jump to the top")
+	}
+}
+
+func TestQuickPeekModel_GKeepsStableHeightWithTrailingNewline(t *testing.T) {
+	m := NewQuickPeekModel()
+	m.SetSize(120, 24)
+	m.SetContent(
+		"api-1",
+		"Container",
+		"Recent Logs",
+		"Recent logs · last 128 lines",
+		[]string{"status: running"},
+		strings.Repeat("line\n", 80),
+	)
+
+	before := strings.Split(m.View(), "\n")
+	if len(before) != 24 {
+		t.Fatalf("expected 24 lines before G, got %d", len(before))
+	}
+
+	m, _ = m.Update(tea.KeyPressMsg{Code: 'G'})
+
+	after := strings.Split(m.View(), "\n")
+	if len(after) != 24 {
+		t.Fatalf("expected 24 lines after G, got %d", len(after))
+	}
+}
+
+func TestQuickPeekModel_ReservesBottomLine(t *testing.T) {
+	m := NewQuickPeekModel()
+	m.SetSize(120, 24)
+	m.SetContent(
+		"api-1",
+		"Container",
+		"Recent Logs",
+		"Recent logs · last 128 lines",
+		[]string{
+			"status: running",
+			"image: nginx:latest",
+			"command: nginx -g daemon off;",
+			"ports: 8080->80/tcp",
+			"id: abcdef123456",
+			"labels: 6",
+			"mounts: 2",
+			"health: healthy",
+		},
+		strings.Repeat("line\n", 40),
+	)
+
+	v := m.View()
+	lines := strings.Split(v, "\n")
+	if len(lines) != 24 {
+		t.Fatalf("expected 24 lines, got %d", len(lines))
+	}
+}
+
 // --- FilterInputModel tests ---
 
 func TestFilterInput_ActivateDeactivate(t *testing.T) {
@@ -274,5 +420,86 @@ func TestInputPrompt_View(t *testing.T) {
 	v := m.View()
 	if v == "" {
 		t.Fatal("View() should not be empty")
+	}
+}
+
+// --- CommandPaletteModel tests ---
+
+func TestCommandPaletteModel_EnterSelectsFirstAction(t *testing.T) {
+	m, _ := NewCommandPaletteModel([]CommandPaletteItem{
+		{ID: "switch:images", Title: "Go to images"},
+		{ID: "global:help", Title: "Open help"},
+	})
+
+	_, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	if cmd == nil {
+		t.Fatal("expected cmd from enter")
+	}
+	msg := cmd()
+	result, ok := msg.(CommandPaletteResultMsg)
+	if !ok {
+		t.Fatalf("expected CommandPaletteResultMsg, got %T", msg)
+	}
+	if result.ActionID != "switch:images" {
+		t.Fatalf("expected first action id, got %q", result.ActionID)
+	}
+}
+
+func TestCommandPaletteModel_FilterNarrowsResults(t *testing.T) {
+	m, _ := NewCommandPaletteModel([]CommandPaletteItem{
+		{ID: "container:logs", Group: "Container", Title: "Logs", Search: "logs output"},
+		{ID: "switch:images", Group: "Go To", Title: "Images", Search: "switch images"},
+	})
+	m.input.SetValue("logs")
+	m.applyFilter()
+
+	if len(m.filtered) != 1 {
+		t.Fatalf("expected one filtered item, got %d", len(m.filtered))
+	}
+	if m.filtered[0].ID != "container:logs" {
+		t.Fatalf("expected logs action, got %q", m.filtered[0].ID)
+	}
+}
+
+func TestCommandPaletteModel_FuzzyRankingPrefersPrefixMatches(t *testing.T) {
+	m, _ := NewCommandPaletteModel([]CommandPaletteItem{
+		{ID: "global:prune", Group: "Docker", Title: "Prune Unused Resources", Search: "cleanup prune"},
+		{ID: "switch:compose-projects", Group: "Go To", Title: "Compose Projects", Search: "switch compose"},
+	})
+	m.input.SetValue("prun")
+	m.applyFilter()
+
+	if len(m.filtered) == 0 {
+		t.Fatal("expected fuzzy-ranked results")
+	}
+	if m.filtered[0].ID != "global:prune" {
+		t.Fatalf("expected prune action first, got %q", m.filtered[0].ID)
+	}
+}
+
+func TestCommandPaletteModel_EscCloses(t *testing.T) {
+	m, _ := NewCommandPaletteModel([]CommandPaletteItem{{ID: "global:help", Title: "Open help"}})
+	_, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
+	if cmd == nil {
+		t.Fatal("expected cmd from esc")
+	}
+	msg := cmd()
+	if _, ok := msg.(CloseOverlayMsg); !ok {
+		t.Fatalf("expected CloseOverlayMsg, got %T", msg)
+	}
+}
+
+func TestCommandPaletteModel_ViewShowsGroupAndFitsNarrowWidth(t *testing.T) {
+	m, _ := NewCommandPaletteModel([]CommandPaletteItem{
+		{ID: "container:logs", Group: "Container", Title: "Logs", Description: "api-1"},
+	})
+	m.SetSize(28, 12)
+
+	v := m.View()
+	if v == "" {
+		t.Fatal("expected non-empty palette view")
+	}
+	if !strings.Contains(v, "Container") {
+		t.Fatal("expected group label in palette view")
 	}
 }

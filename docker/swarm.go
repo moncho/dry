@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -107,6 +109,13 @@ func (daemon *DockerDaemon) ServiceLogs(id string, since string, withTimestamps 
 		Follow:     true,
 		Details:    true,
 		Since:      since,
+	}
+	if strings.HasPrefix(since, "tail:") {
+		options.Since = ""
+		options.Tail = strings.TrimPrefix(since, "tail:")
+		if _, err := strconv.Atoi(options.Tail); err != nil {
+			return nil, fmt.Errorf("invalid service log tail value %q: %w", options.Tail, err)
+		}
 	}
 	return daemon.client.ServiceLogs(context.Background(), id, options)
 }
