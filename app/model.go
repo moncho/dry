@@ -1593,7 +1593,7 @@ func (m model) renderCurrentView() string {
 }
 
 func (m model) renderWorkspaceBody() string {
-	navigatorW, _, topH, activityH := m.workspaceLayout()
+	_, _, topH, activityH := m.workspaceLayout()
 	tabs := m.renderWorkspaceTabs()
 	if topH <= 0 {
 		return tabs
@@ -1616,9 +1616,6 @@ func (m model) renderWorkspaceBody() string {
 		return lipgloss.JoinVertical(lipgloss.Left, tabs, top)
 	}
 	activity := m.workspaceLogs.View()
-	if navigatorW <= 0 {
-		return lipgloss.JoinVertical(lipgloss.Left, tabs, top, activity)
-	}
 	return lipgloss.JoinVertical(lipgloss.Left, tabs, top, activity)
 }
 

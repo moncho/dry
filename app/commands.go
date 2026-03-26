@@ -16,9 +16,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/NimbleMarkets/ntcharts/canvas/runes"
-	timeserieslinechart "github.com/NimbleMarkets/ntcharts/linechart/timeserieslinechart"
-	ntlipgloss "github.com/charmbracelet/lipgloss"
+	"github.com/NimbleMarkets/ntcharts/v2/canvas/runes"
+	timeserieslinechart "github.com/NimbleMarkets/ntcharts/v2/linechart/timeserieslinechart"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-units"
@@ -99,7 +98,8 @@ func readLogStreamCmd(reader io.ReadCloser) tea.Cmd {
 			_ = reader.Close()
 			return streamClosedMsg{}
 		}
-		// n == 0 && err == nil: valid per io.Reader contract, retry.
+		// n == 0 && err == nil: valid per io.Reader contract, retry after brief pause.
+		time.Sleep(10 * time.Millisecond)
 		return readLogStreamCmd(reader)()
 	}
 }
@@ -118,6 +118,8 @@ func readWorkspaceActivityCmd(reader io.ReadCloser) tea.Cmd {
 			_ = reader.Close()
 			return workspaceActivityClosedMsg{}
 		}
+		// n == 0 && err == nil: valid per io.Reader contract, retry after brief pause.
+		time.Sleep(10 * time.Millisecond)
 		return readWorkspaceActivityCmd(reader)()
 	}
 }
@@ -154,6 +156,13 @@ func collectQuickPeekLogContent(stream streamingContent) (string, error) {
 		}()
 	}
 
+	// drainReadGoroutine closes the reader to unblock a pending Read,
+	// then drains the goroutine's result so it can exit.
+	drainReadGoroutine := func() {
+		_ = stream.reader.Close()
+		<-results
+	}
+
 	readOnce()
 	idle := time.NewTimer(quickPeekReadIdle)
 	defer idle.Stop()
@@ -181,8 +190,10 @@ func collectQuickPeekLogContent(stream streamingContent) (string, error) {
 			idle.Reset(quickPeekReadIdle)
 			readOnce()
 		case <-idle.C:
+			drainReadGoroutine()
 			return content, nil
 		case <-maxWait.C:
+			drainReadGoroutine()
 			return content, nil
 		}
 	}
@@ -1194,9 +1205,9 @@ func monitorHistoryChart(samples []appui.MonitorPoint, width, height int, accent
 		maxTime = minTime.Add(time.Second)
 	}
 	minY, maxY := monitorChartYRange(samples)
-	style := ntlipgloss.NewStyle().Foreground(ntlipgloss.Color(colorToHex(accent)))
-	axisStyle := ntlipgloss.NewStyle().Foreground(ntlipgloss.Color(colorToHex(appui.DryTheme.FgSubtle)))
-	labelStyle := ntlipgloss.NewStyle().Foreground(ntlipgloss.Color(colorToHex(appui.DryTheme.FgMuted)))
+	style := lipgloss.NewStyle().Foreground(lipgloss.Color(colorToHex(accent)))
+	axisStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(colorToHex(appui.DryTheme.FgSubtle)))
+	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(colorToHex(appui.DryTheme.FgMuted)))
 	chart := timeserieslinechart.New(
 		width,
 		height,
