@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -239,5 +240,70 @@ func TestRenderWorkspaceScreen_ShortTerminalShowsActivityPaneInCompactMode(t *te
 	}
 	if strings.Contains(v, "Context ·") {
 		t.Fatal("did not expect context pane to render in short compact mode")
+	}
+}
+
+func TestRenderWorkspaceScreen_MonitorViewDoesNotGrowPastTopPane(t *testing.T) {
+	appui.InitStyles()
+	m := NewModel(Config{WorkspaceMode: true})
+	m.width = 120
+	m.height = 30
+	m.daemon = &mocks.DockerDaemonMock{}
+	m.ready = true
+	m.view = Monitor
+	m.header = appui.NewHeaderModel(m.daemon, m.width)
+	m.resizeContentModels()
+
+	_, _, topH, activityH := m.workspaceLayout()
+	if topH != 5 {
+		t.Fatalf("expected empty monitor top pane height 5, got %d", topH)
+	}
+	if activityH <= 0 {
+		t.Fatalf("expected positive activity height, got %d", activityH)
+	}
+
+	screen := m.renderMainScreen()
+	if got := len(strings.Split(screen, "\n")); got != m.height {
+		t.Fatalf("expected rendered screen height %d, got %d", m.height, got)
+	}
+
+	body := m.renderWorkspaceBody()
+	bodyLines := strings.Split(body, "\n")
+	if len(bodyLines) != m.contentHeight() {
+		t.Fatalf("expected workspace body to fill %d lines, got %d", m.contentHeight(), len(bodyLines))
+	}
+}
+
+func TestRenderWorkspaceScreen_MonitorFooterVisibleAfterStatsArrive(t *testing.T) {
+	appui.InitStyles()
+	m := NewModel(Config{WorkspaceMode: true})
+	m.width = 120
+	m.height = 30
+	m.daemon = &mocks.DockerDaemonMock{}
+	m.ready = true
+	m.view = Monitor
+	m.header = appui.NewHeaderModel(m.daemon, m.width)
+	m.resizeContentModels()
+
+	// Simulate stats arriving for several containers so RowCount changes.
+	ch := make(chan *docker.Stats)
+	for i := 0; i < 5; i++ {
+		cid := fmt.Sprintf("cid%02d", i)
+		msg := appui.MonitorStatsMsg{
+			CID:     cid,
+			Stats:   &docker.Stats{CID: cid, CPUPercentage: float64(i * 10)},
+			StatsCh: ch,
+		}
+		updated, _ := m.Update(msg)
+		m = updated.(model)
+	}
+
+	if m.monitor.RowCount() != 5 {
+		t.Fatalf("expected 5 monitor rows, got %d", m.monitor.RowCount())
+	}
+
+	screen := m.renderMainScreen()
+	if got := len(strings.Split(screen, "\n")); got != m.height {
+		t.Fatalf("expected rendered screen height %d, got %d", m.height, got)
 	}
 }

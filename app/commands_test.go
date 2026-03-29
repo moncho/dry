@@ -93,13 +93,13 @@ func TestLoadWorkspaceMonitorDetailsStatusShowsCollectedDuration(t *testing.T) {
 }
 
 func TestMonitorChartWidthUsesAvailableActivityWidth(t *testing.T) {
-	if got, want := monitorChartWidth(120), 96; got != want {
-		t.Fatalf("expected wide activity chart width %d, got %d", want, got)
+	if got, want := monitorChartWidth(60), 56; got != want {
+		t.Fatalf("expected wide half-width chart width %d, got %d", want, got)
 	}
-	if got, want := monitorChartWidth(72), 68; got != want {
-		t.Fatalf("expected medium activity chart width %d, got %d", want, got)
+	if got, want := monitorChartWidth(36), 32; got != want {
+		t.Fatalf("expected medium half-width chart width %d, got %d", want, got)
 	}
-	if got, want := monitorChartWidth(20), 40; got != want {
+	if got, want := monitorChartWidth(10), 20; got != want {
 		t.Fatalf("expected minimum chart width %d, got %d", want, got)
 	}
 }
@@ -130,13 +130,14 @@ func TestMonitorChartYRangeTracksObservedValues(t *testing.T) {
 }
 
 func TestMonitorChartHeightFitsAvailableBody(t *testing.T) {
-	if got, want := monitorChartHeight(120, 18), 6; got != want {
-		t.Fatalf("expected chart height %d to fit body, got %d", want, got)
+	// Proportional: chartHeightPct of (bodyHeight - chartOverhead), clamped to [minChartHeight, available].
+	if got, want := monitorChartHeight(12), 4; got != want {
+		t.Fatalf("expected chart height %d for moderate body, got %d", want, got)
 	}
-	if got, want := monitorChartHeight(120, 30), 12; got != want {
+	if got, want := monitorChartHeight(20), 9; got != want {
 		t.Fatalf("expected taller chart height %d for roomy pane, got %d", want, got)
 	}
-	if got, want := monitorChartHeight(70, 9), 3; got != want {
+	if got, want := monitorChartHeight(7), 3; got != want {
 		t.Fatalf("expected minimum chart height %d for tight pane, got %d", want, got)
 	}
 }

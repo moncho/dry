@@ -91,7 +91,7 @@ func (m *MonitorModel) SetDaemon(d docker.ContainerDaemon) {
 func (m *MonitorModel) SetSize(w, h int) {
 	m.width = w
 	m.height = h
-	m.table.SetSize(w, maxInt(h-2, 1)) // -2 for header + summary
+	m.table.SetSize(w, maxInt(h-WidgetHeaderLines-1, 1)) // header + summary line
 }
 
 // Active returns whether monitoring is active.
@@ -223,6 +223,10 @@ func (m MonitorModel) SeriesFor(cid string) MonitorSeries {
 
 func (m MonitorModel) StatsByID(cid string) *docker.Stats {
 	return m.stats[cid]
+}
+
+func (m MonitorModel) RowCount() int {
+	return m.table.RowCount()
 }
 
 // Update handles key events.
@@ -434,19 +438,24 @@ func monitorRowColumns(s *docker.Stats) []string {
 func (m MonitorModel) renderTableView() string {
 	view := m.table.View()
 	row := m.table.SelectedRow()
-	if row == nil {
-		return view
+	if row != nil {
+		mr, ok := row.(monitorRow)
+		if ok {
+			lines := strings.Split(view, "\n")
+			selectedLine := m.table.Cursor() + 1
+			if selectedLine > 0 && selectedLine < len(lines) {
+				lines[selectedLine] = m.renderSelectedRow(lines[selectedLine], mr)
+			}
+			view = strings.Join(lines, "\n")
+		}
 	}
-	mr, ok := row.(monitorRow)
-	if !ok {
+	if m.width <= 0 {
 		return view
 	}
 	lines := strings.Split(view, "\n")
-	selectedLine := m.table.Cursor() + 1
-	if selectedLine <= 0 || selectedLine >= len(lines) {
-		return view
+	for i := range lines {
+		lines[i] = ansi.Truncate(lines[i], m.width, "")
 	}
-	lines[selectedLine] = m.renderSelectedRow(lines[selectedLine], mr)
 	return strings.Join(lines, "\n")
 }
 

@@ -26,6 +26,24 @@ func TestActivityModel_MonitorDetailsHeaderHidesFollowAndCounts(t *testing.T) {
 	}
 }
 
+func TestActivityModel_MonitorDetailsViewTruncatesToHeight(t *testing.T) {
+	m := NewActivityModel()
+	m.SetSize(80, 12)
+
+	// Create content taller than the body (12 - 2 = 10 lines for body).
+	var lines []string
+	for i := 0; i < 30; i++ {
+		lines = append(lines, "line")
+	}
+	m.SetContent("Monitor Details: redis", "Live stats", strings.Join(lines, "\n"))
+
+	view := m.View()
+	got := len(strings.Split(view, "\n"))
+	if got != m.Height() {
+		t.Fatalf("expected view to produce exactly %d lines, got %d", m.Height(), got)
+	}
+}
+
 func TestActivityModel_MonitorDetailsIgnoreScrollKeys(t *testing.T) {
 	m := NewActivityModel()
 	m.SetSize(80, 12)

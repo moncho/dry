@@ -229,6 +229,34 @@ func TestMonitor_ViewUsesFullAllocatedHeight(t *testing.T) {
 	}
 }
 
+func TestMonitor_ViewTruncatesRowsToPaneWidth(t *testing.T) {
+	stats := map[string]*docker.Stats{
+		"aaa": {
+			CID:              "aaa",
+			CPUPercentage:    82.1,
+			Memory:           512 * 1024 * 1024,
+			MemoryLimit:      2 * 1024 * 1024 * 1024,
+			MemoryPercentage: 33.0,
+			NetworkRx:        120 * 1024 * 1024,
+			NetworkTx:        8 * 1024 * 1024,
+			BlockRead:        480 * 1024 * 1024,
+			BlockWrite:       32 * 1024 * 1024,
+			Command:          "worker",
+		},
+	}
+	m := NewMonitorModel()
+	m.SetSize(72, 8)
+	m.stats = stats
+	m.refreshTable()
+
+	view := m.View()
+	for _, line := range strings.Split(view, "\n") {
+		if got := ansi.StringWidth(line); got > 72 {
+			t.Fatalf("expected rendered monitor line width <= %d, got %d in %q", 72, got, ansi.Strip(line))
+		}
+	}
+}
+
 func TestMonitor_ViewMarksSelectedRowWithArrow(t *testing.T) {
 	stats := map[string]*docker.Stats{
 		"aaa": {CID: "aaa", CPUPercentage: 12.5, MemoryPercentage: 45.0, Command: "api"},

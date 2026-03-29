@@ -61,6 +61,24 @@ const (
 	workspaceContextMonitor
 )
 
+// Workspace layout constants.
+const (
+	minWorkspaceW    = 100 // terminal width below which workspace uses compact mode
+	minWorkspaceH    = 12  // content height below which workspace uses compact mode
+	minTopH          = 3   // minimum top pane height to show split layout
+	minActivityH     = 4   // minimum usable activity pane height
+	defaultActivityH = 8   // activity pane height on normal terminals
+	compactActivityH = 5   // activity pane height on shorter terminals
+	navigatorPct     = 58  // navigator width as percentage of terminal width
+	minNavigatorW    = 40  // minimum navigator pane width
+	minContextW      = 24  // minimum context pane width
+
+	// Top pane caps per view.
+	containerTopPaneCap = 9 // 5 data rows + widget/table framing
+	monitorFramingLines = 4 // widget header + summary + table header + blank
+	maxMonitorRows      = 5 // max visible monitor rows in workspace top pane
+)
+
 type workspaceContext struct {
 	kind              workspaceContextKind
 	title             string
@@ -275,12 +293,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case appui.MonitorStatsMsg:
+		prevRows := m.monitor.RowCount()
 		cmd := m.monitor.UpdateStats(msg.CID, msg.Stats, msg.StatsCh)
+		if m.workspaceEnabled() && m.monitor.RowCount() != prevRows {
+			m.resizeContentModels()
+		}
 		m.refreshPinnedWorkspaceContext()
 		return m, tea.Batch(cmd, m.workspaceMonitorActivityCmd(msg.CID))
 
 	case appui.MonitorErrorMsg:
+		prevRows := m.monitor.RowCount()
 		m.monitor.RemoveContainer(msg.CID)
+		if m.workspaceEnabled() && m.monitor.RowCount() != prevRows {
+			m.resizeContentModels()
+		}
 		m.refreshPinnedWorkspaceContext()
 		return m, m.workspaceMonitorActivityCmd(msg.CID)
 
@@ -1469,59 +1495,51 @@ func (m model) workspaceEnabled() bool {
 }
 
 func (m model) workspaceCompactMode() bool {
-	return m.width < 100 || m.contentHeight() < 12
+	return m.width < minWorkspaceW || m.contentHeight() < minWorkspaceH
 }
 
 func (m model) workspaceLayout() (navigatorW, contextW, topH, activityH int) {
-	contentH := m.contentHeight()
-	usableH := contentH - 1 // reserve one line for workspace tabs
+	usableH := m.contentHeight() - 1 // reserve one line for workspace tabs
 	if usableH < 1 {
 		return m.width, 0, 0, 0
 	}
-	if m.workspaceCompactMode() {
-		return m.width, 0, usableH, 0
-	}
-	if usableH < 7 {
+	if m.workspaceCompactMode() || usableH < minActivityH+minTopH {
 		return m.width, 0, usableH, 0
 	}
 
-	activityH = 8
-	if usableH < 18 {
-		activityH = 5
+	// Base activity pane height, then derive topH.
+	activityH = defaultActivityH
+	if usableH < defaultActivityH+containerTopPaneCap+1 {
+		activityH = compactActivityH
 	}
 	topH = usableH - activityH
-	if topH < 3 {
-		topH = usableH
-		activityH = 0
+	if topH < minTopH {
+		return m.width, 0, usableH, 0
 	}
 
-	// In workspace mode, favor the activity pane in the container view.
-	// ContainersModel currently needs 9 lines to show at most 5 data rows:
-	// 5 rows + widget/table framing.
-	if m.view == Main && topH > 9 {
-		topH = 9
-		activityH = usableH - topH
-	}
-	if m.view == Monitor && topH > 10 {
-		topH = 10
-		activityH = usableH - topH
-	}
+	// Per-view cap: shrink top pane, give remainder to activity.
+	topH = min(topH, m.topPaneCap())
+	activityH = usableH - topH
 
-	navigatorW = m.width * 58 / 100
-	if navigatorW < 40 {
-		navigatorW = 40
+	// Horizontal split for navigator / context panes.
+	navigatorW = max(1, min(m.width*navigatorPct/100, m.width-minContextW))
+	if navigatorW < minNavigatorW && m.width >= minNavigatorW+minContextW {
+		navigatorW = minNavigatorW
 	}
-	if navigatorW > m.width-24 {
-		navigatorW = m.width - 24
+	contextW = max(1, m.width-navigatorW)
+	return
+}
+
+// topPaneCap returns the maximum top pane height for the current view.
+func (m model) topPaneCap() int {
+	switch m.view {
+	case Main:
+		return containerTopPaneCap
+	case Monitor:
+		return monitorFramingLines + max(1, min(m.monitor.RowCount(), maxMonitorRows))
+	default:
+		return int(^uint(0) >> 1) // max int — no cap
 	}
-	if navigatorW < 1 {
-		navigatorW = m.width
-	}
-	contextW = m.width - navigatorW
-	if contextW < 1 {
-		contextW = 1
-	}
-	return navigatorW, contextW, topH, activityH
 }
 
 func (m *model) resizeContentModels() {

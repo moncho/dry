@@ -31,6 +31,17 @@ import (
 
 const monitorChartWindow = 3 * time.Minute
 
+// Monitor chart layout constants.
+const (
+	chartGap       = 4  // horizontal gap between side-by-side charts
+	chartPadding   = 4  // horizontal padding within each chart panel
+	minChartWidth  = 20 // minimum chart render width
+	maxChartWidth  = 56 // maximum chart render width
+	minChartHeight = 3  // minimum chart render height
+	chartOverhead  = 4  // non-chart lines: legend + blank + title + detail
+	chartHeightPct = 60 // percentage of available body height used for chart
+)
+
 // demuxedReadCloser wraps a pipe reader and closes the underlying Docker stream.
 type demuxedReadCloser struct {
 	io.Reader
@@ -1152,28 +1163,29 @@ func loadWorkspaceMonitorDetailsFromContext(ctx workspaceContext, chartWidth, ch
 func workspaceMonitorDetailContent(ctx workspaceContext, chartWidth, chartHeight int) string {
 	cpuHistory := ctx.monitorHistory(ctx.monitorCPUHistory, ctx.monitorCPU)
 	memHistory := ctx.monitorHistory(ctx.monitorMemHistory, ctx.monitorPct)
-	sections := []string{
-		monitorLegendLine(),
-		monitorHistorySection(
-			"CPU",
-			cpuHistory,
-			fmt.Sprintf("now %5.1f%%", ctx.monitorCPU),
-			appui.DryTheme.Info,
-			chartWidth,
-			chartHeight,
-			runes.ArcLineStyle,
-		),
-		monitorHistorySection(
-			"Memory",
-			memHistory,
-			fmt.Sprintf("%s / %s  (%5.1f%%)", units.BytesSize(ctx.monitorMem), units.BytesSize(ctx.monitorMax), ctx.monitorPct),
-			appui.DryTheme.Secondary,
-			chartWidth,
-			chartHeight,
-			runes.ThinLineStyle,
-		),
-	}
-	return strings.Join(sections, "\n\n")
+	halfWidth := chartWidth / 2
+	cpu := monitorHistorySection(
+		"CPU",
+		cpuHistory,
+		fmt.Sprintf("now %5.1f%%", ctx.monitorCPU),
+		appui.DryTheme.Info,
+		halfWidth,
+		chartHeight,
+		runes.ArcLineStyle,
+	)
+	mem := monitorHistorySection(
+		"Memory",
+		memHistory,
+		fmt.Sprintf("%s / %s  (%5.1f%%)", units.BytesSize(ctx.monitorMem), units.BytesSize(ctx.monitorMax), ctx.monitorPct),
+		appui.DryTheme.Secondary,
+		halfWidth,
+		chartHeight,
+		runes.ThinLineStyle,
+	)
+	indent := lipgloss.NewStyle().PaddingLeft(2)
+	cpuPane := lipgloss.PlaceHorizontal(halfWidth, lipgloss.Left, indent.Render(cpu))
+	memPane := lipgloss.PlaceHorizontal(halfWidth, lipgloss.Left, indent.Render(mem))
+	return monitorLegendLine() + "\n\n" + lipgloss.JoinHorizontal(lipgloss.Top, cpuPane, memPane)
 }
 
 func (ctx workspaceContext) monitorHistory(history []appui.MonitorPoint, current float64) []appui.MonitorPoint {
@@ -1186,7 +1198,7 @@ func (ctx workspaceContext) monitorHistory(history []appui.MonitorPoint, current
 func monitorHistorySection(title string, samples []appui.MonitorPoint, detail string, accent color.Color, chartWidth, bodyHeight int, lineStyle runes.LineStyle) string {
 	labelStyle := lipgloss.NewStyle().Bold(true).Foreground(appui.DryTheme.Fg)
 	detailStyle := lipgloss.NewStyle().Foreground(appui.DryTheme.FgMuted)
-	graph := monitorHistoryChart(samples, monitorChartWidth(chartWidth), monitorChartHeight(chartWidth, bodyHeight), accent, lineStyle)
+	graph := monitorHistoryChart(samples, monitorChartWidth(chartWidth), monitorChartHeight(bodyHeight), accent, lineStyle)
 	return strings.Join([]string{
 		labelStyle.Render(title),
 		detailStyle.Render(detail),
@@ -1327,35 +1339,20 @@ func colorToHex(c color.Color) string {
 	return fmt.Sprintf("#%02x%02x%02x", r>>8, g>>8, b>>8)
 }
 
-func monitorChartWidth(activityWidth int) int {
-	if activityWidth <= 0 {
-		return 56
+func monitorChartWidth(halfWidth int) int {
+	if halfWidth <= 0 {
+		return minChartWidth + chartPadding
 	}
-	width := activityWidth - 4
-	if width < 40 {
-		width = 40
-	}
-	if width > 96 {
-		width = 96
-	}
-	return width
+	return max(minChartWidth, min(halfWidth-chartPadding, maxChartWidth))
 }
 
-func monitorChartHeight(activityWidth, bodyHeight int) int {
-	height := 8
-	if activityWidth >= 110 {
-		height = 12
-	} else if activityWidth >= 80 {
-		height = 10
+func monitorChartHeight(bodyHeight int) int {
+	available := bodyHeight - chartOverhead
+	height := max(minChartHeight, available*chartHeightPct/100)
+	if height > available {
+		height = available
 	}
-	maxFit := (bodyHeight - 5) / 2
-	if maxFit < 3 {
-		maxFit = 3
-	}
-	if height > maxFit {
-		height = maxFit
-	}
-	return height
+	return max(minChartHeight, height)
 }
 
 func loadWorkspaceNodeInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {

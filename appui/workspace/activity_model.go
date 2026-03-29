@@ -38,7 +38,7 @@ func NewActivityModel() ActivityModel {
 func (m *ActivityModel) SetSize(w, h int) {
 	m.width = w
 	m.height = h
-	bodyHeight := h - 2
+	bodyHeight := h - appui.WidgetHeaderLines - 1 // header + status line
 	if bodyHeight < 1 {
 		bodyHeight = 1
 	}
@@ -98,7 +98,7 @@ func (m ActivityModel) Height() int {
 
 // BodyHeight returns the usable content height below the header and status line.
 func (m ActivityModel) BodyHeight() int {
-	bodyHeight := m.height - 2
+	bodyHeight := m.height - appui.WidgetHeaderLines - 1
 	if bodyHeight < 1 {
 		return 1
 	}
@@ -168,6 +168,9 @@ func (m ActivityModel) View() string {
 	bodyContent := m.viewport.View()
 	if m.isStaticMonitorDetails() {
 		bodyContent = m.content
+		if lines := strings.Split(bodyContent, "\n"); len(lines) > bodyHeight {
+			bodyContent = strings.Join(lines[:bodyHeight], "\n")
+		}
 	}
 	body := lipgloss.NewStyle().
 		Width(m.width).

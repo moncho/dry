@@ -451,8 +451,8 @@ func TestModel_WorkspaceMonitorViewKeepsExtraF7SpaceForActivity(t *testing.T) {
 	m.resizeContentModels()
 
 	_, _, topBefore, activityBefore := m.workspaceLayout()
-	if topBefore != 10 {
-		t.Fatalf("expected monitor workspace top pane height 10, got %d", topBefore)
+	if topBefore != 5 {
+		t.Fatalf("expected empty monitor workspace top pane height 5, got %d", topBefore)
 	}
 
 	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyF7})
@@ -464,6 +464,21 @@ func TestModel_WorkspaceMonitorViewKeepsExtraF7SpaceForActivity(t *testing.T) {
 	}
 	if activityAfter <= activityBefore {
 		t.Fatalf("expected extra height after F7 to go to activity pane, got %d -> %d", activityBefore, activityAfter)
+	}
+}
+
+func TestModel_WorkspaceMonitorViewShrinksToVisibleRowCount(t *testing.T) {
+	m := newWorkspaceTestModel()
+	m.view = Monitor
+	m.resizeContentModels()
+
+	ch := make(chan *docker.Stats)
+	m.monitor.UpdateStats("aaa", &docker.Stats{CID: "aaa", CPUPercentage: 10, MemoryPercentage: 20}, ch)
+	m.monitor.UpdateStats("bbb", &docker.Stats{CID: "bbb", CPUPercentage: 30, MemoryPercentage: 40}, ch)
+
+	_, _, topH, _ := m.workspaceLayout()
+	if topH != 6 {
+		t.Fatalf("expected monitor workspace top pane height 6 for two rows, got %d", topH)
 	}
 }
 
