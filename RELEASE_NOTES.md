@@ -1,3 +1,21 @@
+## v0.13.0
+
+This release expands interactive container workflows and introduces the first modern workspace layout, while keeping the tag-driven release process unchanged.
+
+#### Highlights
+
+* Add the new `--workspace` mode with navigator, context, and activity panes plus a compact fallback for smaller terminals. (#267)
+* Add interactive container `exec` support from the command menu and command palette. (#264)
+* Add interactive container `attach` support for running containers. (#263)
+* Add `--theme` / `-T` startup theme selection and in-app theme cycling. (#265)
+* Update Bubble Tea and Lip Gloss to `v2.0.2`. (#266)
+
+#### Release prep notes
+
+* Release version should be tagged as `v0.13.0`, based on the new features added since `v0.12.2`.
+* Release automation is still triggered by pushing a `v*` tag and handled by GoReleaser via `.github/workflows/release.yml`.
+* The current release candidate also includes local stability fixes for workspace stream handling and the `ntcharts/v2` dependency migration.
+
 ## v0.6-alpha.1
 
 This version of **dry** is the first one built using Go 1.7, which has resulted in a smaller binary size and maybe in some performance improvements (no measure has been done on this).
