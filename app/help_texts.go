@@ -56,7 +56,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>s</>         Displays resource usage statistics of the selected container
 	<white>Ctrl+t</>    Stops selected container (noop if it is not running)
 	<white>x</>         Exec a command in the selected container (default /bin/sh)
-	<white>Enter</>     Opens the command menu for the selected container (includes Attach)
+	<white>Enter</>     Opens the command menu for the selected container (includes Attach and Exec)
 
 <yellow>Image list keybinds</>
 	<white>Ctrl+d</>    Removes dangling images

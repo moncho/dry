@@ -1,3 +1,32 @@
+## v0.13.0
+
+This is the biggest **dry** release so far.
+
+`v0.13.0` changes the app from a single-pane Docker browser into a more capable workspace for active container operations. The new workspace mode keeps navigation, context, and activity visible together, and the new interactive `exec` flow makes it possible to jump directly into a running container without leaving **dry**.
+
+#### Workspace Mode
+
+The new `--workspace` mode is the headline feature of this release.
+
+Instead of forcing you to bounce between list views, inspect screens, and log buffers, workspace mode keeps the current selection in view while showing a passive context pane and a live activity pane at the same time. You can move focus between `Navigator`, `Context`, and `Activity`, pin a preview, open Quick Peek, and keep recent logs visible while you continue navigating.
+
+For smaller terminals, the workspace layout also degrades cleanly into a compact single-pane mode instead of breaking the UI.
+
+#### Interactive Exec
+
+`dry` now supports interactive container `exec`.
+
+You can launch a shell directly from the container command menu, from the command palette, or with the existing container shortcut. The default command is `/bin/sh`, which makes the common case fast, but the important change is broader: operational workflows that previously required leaving **dry** and falling back to `docker exec` can now stay inside the TUI.
+
+This release also includes interactive `attach` support for running containers, which makes the container workflow feel substantially more complete.
+
+#### Also In This Release
+
+* Add startup theme selection with `--theme` / `-T`, plus in-app theme cycling. (#265)
+* Update Bubble Tea and Lip Gloss to `v2.0.2`. (#266)
+* Upgrade `ntcharts` to `v2` and clean up stale dependencies. (#268)
+* Fix workspace monitor pane sizing and chart rendering issues. (#269)
+
 ## v0.6-alpha.1
 
 This version of **dry** is the first one built using Go 1.7, which has resulted in a smaller binary size and maybe in some performance improvements (no measure has been done on this).

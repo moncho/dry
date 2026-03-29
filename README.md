@@ -78,6 +78,7 @@ Keybinding           | Description
 <kbd>l</kbd>         | container logs
 <kbd>e</kbd>         | remove
 <kbd>s</kbd>         | stats
+<kbd>x</kbd>         | exec a command in the selected container (default `/bin/sh`)
 <kbd>Ctrl+e</kbd>    | remove all stopped containers
 <kbd>Ctrl+k</kbd>    | kill
 <kbd>Ctrl+r</kbd>    | start/restart
