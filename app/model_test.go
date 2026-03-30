@@ -475,6 +475,7 @@ func TestModel_WorkspaceMonitorViewShrinksToVisibleRowCount(t *testing.T) {
 	ch := make(chan *docker.Stats)
 	m.monitor.UpdateStats("aaa", &docker.Stats{CID: "aaa", CPUPercentage: 10, MemoryPercentage: 20}, ch)
 	m.monitor.UpdateStats("bbb", &docker.Stats{CID: "bbb", CPUPercentage: 30, MemoryPercentage: 40}, ch)
+	m.monitor.FlushTable()
 
 	_, _, topH, _ := m.workspaceLayout()
 	if topH != 6 {

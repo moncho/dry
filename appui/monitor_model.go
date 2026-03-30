@@ -149,14 +149,19 @@ func (m *MonitorModel) startContainerStats(c *docker.Container) (<-chan *docker.
 	return ch, cancel, nil
 }
 
-// UpdateStats updates stats for a container and refreshes the table.
+// UpdateStats stores stats and records history without rebuilding the table.
+// Call FlushTable to apply accumulated updates to the table.
 // Returns a command to continue listening on the same channel.
 func (m *MonitorModel) UpdateStats(cid string, stats *docker.Stats, ch <-chan *docker.Stats) tea.Cmd {
 	m.stats[cid] = stats
 	m.recordHistory(cid, stats)
-	m.refreshTable()
 	// Re-subscribe to the same channel
 	return listenContainerStats(cid, ch)
+}
+
+// FlushTable rebuilds the table rows from the current stats.
+func (m *MonitorModel) FlushTable() {
+	m.refreshTable()
 }
 
 // RemoveContainer removes a container from monitoring.
@@ -227,6 +232,11 @@ func (m MonitorModel) StatsByID(cid string) *docker.Stats {
 
 func (m MonitorModel) RowCount() int {
 	return m.table.RowCount()
+}
+
+// StatsCount returns the number of containers with stored stats.
+func (m MonitorModel) StatsCount() int {
+	return len(m.stats)
 }
 
 // Update handles key events.

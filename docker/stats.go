@@ -37,12 +37,12 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 		responseBody := containerStats.Body
 		defer responseBody.Close()
 
-		var statsJSON container.StatsResponse
 		dec := jsoniter.NewDecoder(responseBody)
 	loop:
 		for {
 			select {
 			default:
+				var statsJSON container.StatsResponse
 				if err := dec.Decode(&statsJSON); err != nil {
 					if err == io.EOF {
 						nonBlockingSend(stats, &Stats{

@@ -160,6 +160,9 @@ type model struct {
 	pendingRefresh map[docker.SourceType]bool
 	refreshTimer   bool
 
+	// Monitor stats workspace throttling
+	monitorStatsTimer bool
+
 	// Loading animation
 	loadingFrame int
 	loadingFwd   bool
@@ -293,13 +296,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case appui.MonitorStatsMsg:
-		prevRows := m.monitor.RowCount()
+		prevCount := m.monitor.StatsCount()
 		cmd := m.monitor.UpdateStats(msg.CID, msg.Stats, msg.StatsCh)
-		if m.workspaceEnabled() && m.monitor.RowCount() != prevRows {
-			m.resizeContentModels()
+		newContainer := m.monitor.StatsCount() != prevCount
+		if newContainer {
+			m.monitor.FlushTable()
+			if m.workspaceEnabled() {
+				m.resizeContentModels()
+			}
 		}
-		m.refreshPinnedWorkspaceContext()
-		return m, tea.Batch(cmd, m.workspaceMonitorActivityCmd(msg.CID))
+		cmds := []tea.Cmd{cmd}
+		if !m.monitorStatsTimer {
+			m.monitorStatsTimer = true
+			cmds = append(cmds, tea.Tick(500*time.Millisecond, func(time.Time) tea.Msg {
+				return flushMonitorStatsMsg{}
+			}))
+		}
+		return m, tea.Batch(cmds...)
 
 	case appui.MonitorErrorMsg:
 		prevRows := m.monitor.RowCount()
@@ -451,6 +464,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.pendingRefresh = make(map[docker.SourceType]bool)
 		return m, tea.Batch(cmds...)
+
+	case flushMonitorStatsMsg:
+		m.monitorStatsTimer = false
+		m.monitor.FlushTable()
+		m.refreshPinnedWorkspaceContext()
+		return m, m.workspaceMonitorActivityCmdThrottled()
 
 	case operationSuccessMsg:
 		m.messageBar.SetMessage(msg.message, 3*time.Second)
@@ -3004,6 +3023,19 @@ func (m model) loadViewData(v viewMode) tea.Cmd {
 		return loadComposeServicesCmd(m.daemon, m.selectedProject)
 	}
 	return nil
+}
+
+func (m model) workspaceMonitorActivityCmdThrottled() tea.Cmd {
+	if !m.workspaceEnabled() || m.daemon == nil {
+		return nil
+	}
+	if m.pinnedContext != nil {
+		if m.pinnedContext.kind == workspaceContextMonitor {
+			return loadWorkspaceActivityCmd(m.daemon, *m.pinnedContext, m.workspaceLogs.Width(), m.workspaceLogs.BodyHeight())
+		}
+		return nil
+	}
+	return m.workspaceSelectionActivityCmd()
 }
 
 func (m model) workspaceMonitorActivityCmd(cid string) tea.Cmd {

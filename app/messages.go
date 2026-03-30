@@ -49,6 +49,8 @@ type statusMessageMsg struct {
 
 type flushRefreshMsg struct{}
 
+type flushMonitorStatsMsg struct{}
+
 // messageBarExpiredMsg triggers a re-render so the expired message clears.
 type messageBarExpiredMsg struct{}
 

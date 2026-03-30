@@ -312,6 +312,7 @@ func TestMonitor_SelectedSeriesTracksRecentSamples(t *testing.T) {
 	} {
 		m.UpdateStats("abc", &docker.Stats{CID: "abc", CPUPercentage: sample.cpu, MemoryPercentage: sample.mem}, ch)
 	}
+	m.FlushTable()
 
 	series := m.SelectedSeries()
 	if got, want := len(series.CPU), 3; got != want {
