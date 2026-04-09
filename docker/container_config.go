@@ -3,9 +3,8 @@ package docker
 import (
 	"strings"
 
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/strslice"
-	"github.com/docker/go-connections/nat"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/network"
 )
 
 type containerConfigBuilder struct {
@@ -34,30 +33,30 @@ func (cc *containerConfigBuilder) command(command string) *containerConfigBuilde
 	if command != "" {
 		splitCommand := strings.Split(command, " ")
 		if len(splitCommand) > 0 {
-			cc.config.Cmd = strslice.StrSlice(splitCommand)
+			cc.config.Cmd = splitCommand
 		}
 	}
 	return cc
 }
 
-func (cc *containerConfigBuilder) ports(portSet nat.PortSet) *containerConfigBuilder {
+func (cc *containerConfigBuilder) ports(portSet map[string]struct{}) *containerConfigBuilder {
 	if len(portSet) > 0 {
-		cc.config.ExposedPorts = portSet
-		bindings := make(map[nat.Port][]nat.PortBinding)
+		exposedPorts := make(network.PortSet)
+		bindings := make(network.PortMap)
 		for rawPort := range portSet {
-			portMappings, err := nat.ParsePortSpec(rawPort.Port())
+			pr, err := network.ParsePortRange(rawPort)
 			if err != nil {
 				cc.err = err
 				break
 			}
-
-			for _, portMapping := range portMappings {
-				port := portMapping.Port
-				bindings[port] = append(bindings[port], nat.PortBinding{
-					HostPort: rawPort.Port(),
-				})
+			for p := range pr.All() {
+				exposedPorts[p] = struct{}{}
+				bindings[p] = []network.PortBinding{{
+					HostPort: p.Port(),
+				}}
 			}
 		}
+		cc.config.ExposedPorts = exposedPorts
 		cc.hostConfig.PortBindings = bindings
 
 	}

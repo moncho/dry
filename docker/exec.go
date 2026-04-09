@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/docker/docker/api/types/container"
+	"github.com/moby/moby/client"
 )
 
 // ExecInteractive creates an exec instance in a running container and
@@ -22,25 +22,24 @@ func (daemon *DockerDaemon) ExecInteractive(ctx context.Context, id string, comm
 
 	// Always allocate a TTY for exec — the user is running an interactive
 	// command (like docker exec -it), regardless of how the container was started.
-	execCfg := container.ExecOptions{
+	execResp, err := daemon.client.ExecCreate(ctx, id, client.ExecCreateOptions{
 		AttachStdin:  true,
 		AttachStdout: true,
 		AttachStderr: true,
-		Tty:          true,
+		TTY:          true,
 		Cmd:          command,
-	}
-	execResp, err := daemon.client.ContainerExecCreate(ctx, id, execCfg)
+	})
 	if err != nil {
 		return fmt.Errorf("exec create %s: %w", shortContainerID(id), err)
 	}
 
-	attach, err := daemon.client.ContainerExecAttach(ctx, execResp.ID, container.ExecAttachOptions{
-		Tty: true,
+	attach, err := daemon.client.ExecAttach(ctx, execResp.ID, client.ExecAttachOptions{
+		TTY: true,
 	})
 	if err != nil {
 		return fmt.Errorf("exec attach %s: %w", shortContainerID(id), err)
 	}
 	defer attach.Close()
 
-	return streamInteractive(attach, stdin, stdout, forwardStdin)
+	return streamInteractive(attach.HijackedResponse, stdin, stdout, forwardStdin)
 }

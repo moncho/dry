@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/docker/docker/api/types/events"
+	"github.com/moby/moby/api/types/events"
 )
 
 var noop = func(ctx context.Context, event events.Message) {}
@@ -155,7 +155,7 @@ func Test_notifyCallbacks(t *testing.T) {
 				r:       &registry{actions: make(map[SourceType][]EventCallback)},
 				sources: []SourceType{ContainerSource},
 				messages: []events.Message{
-					{Type: "container"},
+					{Type: events.ContainerEventType},
 				},
 			},
 			map[SourceType]int{
@@ -168,8 +168,8 @@ func Test_notifyCallbacks(t *testing.T) {
 				r:       &registry{actions: make(map[SourceType][]EventCallback)},
 				sources: []SourceType{ContainerSource},
 				messages: []events.Message{
-					{Type: "container"},
-					{Type: "container"},
+					{Type: events.ContainerEventType},
+					{Type: events.ContainerEventType},
 				},
 			},
 			map[SourceType]int{
@@ -182,12 +182,12 @@ func Test_notifyCallbacks(t *testing.T) {
 				r:       &registry{actions: make(map[SourceType][]EventCallback)},
 				sources: []SourceType{ContainerSource, ImageSource},
 				messages: []events.Message{
-					{Type: "container"},
-					{Type: "container"},
-					{Type: "container"},
-					{Type: "container"},
-					{Type: "container"},
-					{Type: "image"},
+					{Type: events.ContainerEventType},
+					{Type: events.ContainerEventType},
+					{Type: events.ContainerEventType},
+					{Type: events.ContainerEventType},
+					{Type: events.ContainerEventType},
+					{Type: events.ImageEventType},
 				},
 			},
 			map[SourceType]int{

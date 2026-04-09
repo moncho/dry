@@ -6,9 +6,9 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
-	dockerTypes "github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/system"
-	units "github.com/docker/go-units"
+	"github.com/docker/go-units"
+	"github.com/moby/moby/api/types/system"
+	"github.com/moby/moby/client"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 )
@@ -20,7 +20,7 @@ type HeaderModel struct {
 
 	// Cached Docker info
 	info    system.Info
-	ver     *dockerTypes.Version
+	ver     *client.ServerVersionResult
 	infoErr error
 	verErr  error
 }

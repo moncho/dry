@@ -3,8 +3,8 @@ package mocks
 import (
 	"strings"
 
-	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/api/types/system"
+	"github.com/moby/moby/api/types/swarm"
+	"github.com/moby/moby/api/types/system"
 )
 
 const (

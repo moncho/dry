@@ -7,8 +7,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/docker/docker/api/types/swarm"
-	dockerAPI "github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/swarm"
+	dockerAPI "github.com/moby/moby/client"
 	"github.com/moncho/dry/docker/mock"
 )
 

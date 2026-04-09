@@ -5,58 +5,58 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/docker/docker/api/types/container"
-	dockerAPI "github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/client"
 )
 
 // composeTestClient is a mock Docker API client for compose action tests.
 type composeTestClient struct {
-	dockerAPI.APIClient
+	client.APIClient
 	startErr   map[string]error
 	stopErr    map[string]error
 	restartErr map[string]error
 	removeErr  map[string]error
 }
 
-func (c *composeTestClient) ContainerStart(ctx context.Context, id string, opts container.StartOptions) error {
+func (c *composeTestClient) ContainerStart(ctx context.Context, id string, opts client.ContainerStartOptions) (client.ContainerStartResult, error) {
 	if c.startErr != nil {
 		if err, ok := c.startErr[id]; ok {
-			return err
+			return client.ContainerStartResult{}, err
 		}
 	}
-	return nil
+	return client.ContainerStartResult{}, nil
 }
 
-func (c *composeTestClient) ContainerStop(ctx context.Context, id string, opts container.StopOptions) error {
+func (c *composeTestClient) ContainerStop(ctx context.Context, id string, opts client.ContainerStopOptions) (client.ContainerStopResult, error) {
 	if c.stopErr != nil {
 		if err, ok := c.stopErr[id]; ok {
-			return err
+			return client.ContainerStopResult{}, err
 		}
 	}
-	return nil
+	return client.ContainerStopResult{}, nil
 }
 
-func (c *composeTestClient) ContainerRestart(ctx context.Context, id string, opts container.StopOptions) error {
+func (c *composeTestClient) ContainerRestart(ctx context.Context, id string, opts client.ContainerRestartOptions) (client.ContainerRestartResult, error) {
 	if c.restartErr != nil {
 		if err, ok := c.restartErr[id]; ok {
-			return err
+			return client.ContainerRestartResult{}, err
 		}
 	}
-	return nil
+	return client.ContainerRestartResult{}, nil
 }
 
-func (c *composeTestClient) ContainerRemove(ctx context.Context, id string, opts container.RemoveOptions) error {
+func (c *composeTestClient) ContainerRemove(ctx context.Context, id string, opts client.ContainerRemoveOptions) (client.ContainerRemoveResult, error) {
 	if c.removeErr != nil {
 		if err, ok := c.removeErr[id]; ok {
-			return err
+			return client.ContainerRemoveResult{}, err
 		}
 	}
-	return nil
+	return client.ContainerRemoveResult{}, nil
 }
 
 // ContainerList is needed for refreshAndWait → NewDockerContainerStore.
-func (c *composeTestClient) ContainerList(ctx context.Context, opts container.ListOptions) ([]container.Summary, error) {
-	return nil, nil
+func (c *composeTestClient) ContainerList(ctx context.Context, opts client.ContainerListOptions) (client.ContainerListResult, error) {
+	return client.ContainerListResult{}, nil
 }
 
 // simpleStore implements ContainerStore for test pre-population.

@@ -4,11 +4,8 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/network"
-	dockerAPI "github.com/docker/docker/client"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/client"
 )
 
 // Docker repo is vendoring x/net/context and it seems that it conflicts
@@ -19,61 +16,51 @@ import (
 
 // ContainerAPIClientMock mocks docker ContainerAPIClient
 type ContainerAPIClientMock struct {
-	dockerAPI.ContainerAPIClient
+	client.ContainerAPIClient
 	Containers []container.Summary
 }
 
 // NetworkAPIClientMock mocks docker NetworkAPIClient
 type NetworkAPIClientMock struct {
-	dockerAPI.NetworkAPIClient
+	client.NetworkAPIClient
 }
 
 // ImageAPIClientMock mocks docker ImageAPIClient
 type ImageAPIClientMock struct {
-	dockerAPI.APIClient
+	client.APIClient
 }
 
 // ContainerList returns a list with 10 container with IDs from 0 to 9.
-func (m ContainerAPIClientMock) ContainerList(ctx context.Context, options container.ListOptions) ([]container.Summary, error) {
+func (m ContainerAPIClientMock) ContainerList(ctx context.Context, options client.ContainerListOptions) (client.ContainerListResult, error) {
 	if len(m.Containers) > 0 {
-		return m.Containers, nil
+		return client.ContainerListResult{Items: m.Containers}, nil
 	}
-	var containers []container.Summary
-
+	var res client.ContainerListResult
 	for i := 0; i < 10; i++ {
-		containers = append(containers, container.Summary{
+		res.Items = append(res.Items, container.Summary{
 			ID: strconv.Itoa(i),
 		})
 	}
 
-	return containers, nil
+	return res, nil
 }
 
 // ContainerInspect returns an empty inspection result.
-func (m ContainerAPIClientMock) ContainerInspect(ctx context.Context, ctr string) (container.InspectResponse, error) {
-	return container.InspectResponse{}, nil
+func (m ContainerAPIClientMock) ContainerInspect(ctx context.Context, ctr string, options client.ContainerInspectOptions) (client.ContainerInspectResult, error) {
+	return client.ContainerInspectResult{}, nil
 }
 
 // ContainerCreate mocks container creation
-func (mock ImageAPIClientMock) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, platform *v1.Platform, containerName string) (container.CreateResponse, error) {
-	return container.CreateResponse{ID: "NewContainer"}, nil
+func (mock ImageAPIClientMock) ContainerCreate(context.Context, client.ContainerCreateOptions) (client.ContainerCreateResult, error) {
+	return client.ContainerCreateResult{ID: "NewContainer"}, nil
 }
 
 // ContainerStart mock, accepts everything without complains
-func (mock ImageAPIClientMock) ContainerStart(ctx context.Context, container string, options container.StartOptions) error {
-	return nil
+func (mock ImageAPIClientMock) ContainerStart(context.Context, string, client.ContainerStartOptions) (client.ContainerStartResult, error) {
+	return client.ContainerStartResult{}, nil
 }
 
 // InspectImage mock
-func (mock ImageAPIClientMock) InspectImage(ctx context.Context, img string) (image.InspectResponse, error) {
-	return image.InspectResponse{
-		ContainerConfig: &container.Config{},
-	}, nil
-}
-
-// ImageInspectWithRaw mock
-func (mock ImageAPIClientMock) ImageInspectWithRaw(ctx context.Context, img string) (image.InspectResponse, []byte, error) {
-	return image.InspectResponse{
-		ContainerConfig: &container.Config{},
-	}, nil, nil
+func (mock ImageAPIClientMock) ImageInspect(ctx context.Context, img string, inspectOpts ...client.ImageInspectOption) (client.ImageInspectResult, error) {
+	return client.ImageInspectResult{}, nil
 }

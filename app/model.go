@@ -12,13 +12,13 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
-	dockercontainer "github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/go-units"
+	dockercontainer "github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/events"
+	"github.com/moby/moby/api/types/image"
+	"github.com/moby/moby/api/types/network"
+	"github.com/moby/moby/api/types/swarm"
+	"github.com/moby/moby/api/types/volume"
 	"github.com/moncho/dry/appui"
 	appcompose "github.com/moncho/dry/appui/compose"
 	appswarm "github.com/moncho/dry/appui/swarm"
@@ -2022,7 +2022,7 @@ func workspaceContextFromContainer(c *docker.Container) workspaceContext {
 	if c.Created > 0 {
 		lines = append(lines, fmt.Sprintf("created: %s", workspaceFormatUnix(c.Created)))
 	}
-	if c.Detail.ContainerJSONBase != nil && c.Detail.State != nil {
+	if c.Detail.State != nil {
 		if status := c.Detail.State.Status; status != "" {
 			lines = append(lines, fmt.Sprintf("state: %s", status))
 		}
@@ -2036,7 +2036,7 @@ func workspaceContextFromContainer(c *docker.Container) workspaceContext {
 			lines = append(lines, fmt.Sprintf("finished: %s", finished))
 		}
 	}
-	if c.Detail.ContainerJSONBase != nil && c.Detail.RestartCount > 0 {
+	if c.Detail.RestartCount > 0 {
 		lines = append(lines, fmt.Sprintf("restarts: %d", c.Detail.RestartCount))
 	}
 	if project := c.Labels["com.docker.compose.project"]; project != "" {
@@ -2200,11 +2200,11 @@ func workspaceContextFromNetwork(n network.Inspect) workspaceContext {
 	if n.IPAM.Driver != "" {
 		lines = append(lines, fmt.Sprintf("ipam: %s", n.IPAM.Driver))
 	}
-	if len(n.IPAM.Config) > 0 && n.IPAM.Config[0].Subnet != "" {
-		lines = append(lines, fmt.Sprintf("subnet: %s", n.IPAM.Config[0].Subnet))
+	if len(n.IPAM.Config) > 0 && n.IPAM.Config[0].Subnet.IsValid() {
+		lines = append(lines, "subnet: "+n.IPAM.Config[0].Subnet.String())
 	}
-	if len(n.IPAM.Config) > 0 && n.IPAM.Config[0].Gateway != "" {
-		lines = append(lines, fmt.Sprintf("gateway: %s", n.IPAM.Config[0].Gateway))
+	if len(n.IPAM.Config) > 0 && n.IPAM.Config[0].Gateway.IsValid() {
+		lines = append(lines, "gateway: "+n.IPAM.Config[0].Gateway.String())
 	}
 	if n.Internal {
 		lines = append(lines, "internal: true")
@@ -2300,11 +2300,11 @@ func workspaceContextFromStats(s *docker.Stats, lookup monitorContainerLookup, s
 		if c.Image != "" {
 			lines = append(lines, fmt.Sprintf("image: %s", c.Image))
 		}
-		if c.Detail.ContainerJSONBase != nil && c.Detail.State != nil &&
+		if c.Detail.State != nil &&
 			c.Detail.State.Health != nil && c.Detail.State.Health.Status != "" {
 			lines = append(lines, fmt.Sprintf("health: %s", c.Detail.State.Health.Status))
 		}
-		if c.Detail.ContainerJSONBase != nil && c.Detail.RestartCount > 0 {
+		if c.Detail.RestartCount > 0 {
 			lines = append(lines, fmt.Sprintf("restarts: %d", c.Detail.RestartCount))
 		}
 		if ports := workspaceContainerPorts(c); ports != "" {

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/go-units"
 	"github.com/mattn/go-runewidth"
+	"github.com/moby/moby/api/types/container"
 	"github.com/moncho/dry/docker"
 )
 
@@ -158,7 +158,7 @@ func stripNamePrefix(ss []string) []string {
 }
 
 // DisplayablePorts formats the given ports information for displaying
-func DisplayablePorts(ports []types.Port) string {
+func DisplayablePorts(ports []container.PortSummary) string {
 	type portGroup struct {
 		first int
 		last  int
@@ -171,10 +171,10 @@ func DisplayablePorts(ports []types.Port) string {
 	for _, port := range ports {
 		current := int(port.PrivatePort)
 		portKey := port.Type
-		if port.IP != "" {
+		if port.IP.IsValid() {
 			if int(port.PublicPort) != current {
 				hostMappings = append(hostMappings,
-					fmt.Sprintf("%s:%d->%d/%s", port.IP, port.PublicPort, port.PrivatePort, port.Type))
+					fmt.Sprintf("%s:%d->%d/%s", port.IP.String(), port.PublicPort, port.PrivatePort, port.Type))
 				continue
 			}
 			portKey = fmt.Sprintf("%s/%s", port.IP, port.Type)
@@ -204,7 +204,7 @@ func DisplayablePorts(ports []types.Port) string {
 }
 
 // byPortInfo is a temporary type used to sort types.Port by its fields
-type byPortInfo []types.Port
+type byPortInfo []container.PortSummary
 
 func (r byPortInfo) Len() int      { return len(r) }
 func (r byPortInfo) Swap(i, j int) { r[i], r[j] = r[j], r[i] }
@@ -214,7 +214,7 @@ func (r byPortInfo) Less(i, j int) bool {
 	}
 
 	if r[i].IP != r[j].IP {
-		return r[i].IP < r[j].IP
+		return r[i].IP.Compare(r[j].IP) < 0
 	}
 
 	if r[i].PublicPort != r[j].PublicPort {

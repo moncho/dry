@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/swarm"
+	"github.com/moby/moby/client"
 )
 
 // idResolver provides ID to Name resolution.
@@ -28,23 +27,23 @@ func newResolver(client client.APIClient, noResolve bool) *idResolver {
 func (r *idResolver) get(ctx context.Context, t interface{}, id string) (string, error) {
 	switch t.(type) {
 	case swarm.Node:
-		node, _, err := r.client.NodeInspectWithRaw(ctx, id)
+		res, err := r.client.NodeInspect(ctx, id, client.NodeInspectOptions{})
 		if err != nil {
 			return id, nil
 		}
-		if node.Spec.Name != "" {
-			return node.Spec.Name, nil
+		if n := res.Node.Spec.Name; n != "" {
+			return n, nil
 		}
-		if node.Description.Hostname != "" {
-			return node.Description.Hostname, nil
+		if hn := res.Node.Description.Hostname; hn != "" {
+			return hn, nil
 		}
 		return id, nil
 	case swarm.Service:
-		service, _, err := r.client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{})
+		res, err := r.client.ServiceInspect(ctx, id, client.ServiceInspectOptions{})
 		if err != nil {
 			return id, nil
 		}
-		return service.Spec.Name, nil
+		return res.Service.Spec.Name, nil
 	default:
 		return "", errors.New("unsupported type")
 	}

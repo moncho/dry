@@ -3,7 +3,7 @@ package docker
 import (
 	"sort"
 
-	"github.com/docker/docker/api/types/image"
+	"github.com/moby/moby/api/types/image"
 )
 
 // Allowed sort methods

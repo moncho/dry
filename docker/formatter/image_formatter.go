@@ -3,8 +3,8 @@ package formatter
 import (
 	"strings"
 
-	"github.com/docker/docker/api/types/image"
 	"github.com/docker/go-units"
+	"github.com/moby/moby/api/types/image"
 	"github.com/moncho/dry/docker"
 )
 
@@ -97,8 +97,8 @@ func (formatter *ImageFormatter) Size() string {
 	// srw := units.HumanSize(float64(formatter.image.Size))
 	// sf := srw
 
-	if formatter.image.VirtualSize > 0 {
-		sv := units.HumanSize(float64(formatter.image.VirtualSize))
+	if formatter.image.Size > 0 {
+		sv := units.HumanSize(float64(formatter.image.Size))
 		// sf = fmt.Sprintf("%s (virtual %s)", srw, sv)
 		return sv
 	}

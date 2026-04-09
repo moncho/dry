@@ -2,7 +2,7 @@ package appui
 
 import (
 	tea "charm.land/bubbletea/v2"
-	"github.com/docker/docker/api/types/image"
+	"github.com/moby/moby/api/types/image"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/docker/formatter"
 )

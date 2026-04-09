@@ -11,39 +11,38 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	dockerAPI "github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/client"
 )
 
 type execAPIClientMock struct {
-	dockerAPI.APIClient
+	client.APIClient
 	inspect   container.InspectResponse
 	insErr    error
 	createErr error
 	attachErr error
 	output    string
 
-	lastExecOpts   container.ExecOptions
-	lastAttachOpts container.ExecAttachOptions
+	lastExecOpts   client.ExecCreateOptions
+	lastAttachOpts client.ExecAttachOptions
 }
 
-func (m *execAPIClientMock) ContainerInspect(ctx context.Context, ctr string) (container.InspectResponse, error) {
-	return m.inspect, m.insErr
+func (m *execAPIClientMock) ContainerInspect(ctx context.Context, ctr string, options client.ContainerInspectOptions) (client.ContainerInspectResult, error) {
+	return client.ContainerInspectResult{Container: m.inspect}, m.insErr
 }
 
-func (m *execAPIClientMock) ContainerExecCreate(ctx context.Context, containerID string, config container.ExecOptions) (container.ExecCreateResponse, error) {
+func (m *execAPIClientMock) ExecCreate(ctx context.Context, containerID string, config client.ExecCreateOptions) (client.ExecCreateResult, error) {
 	m.lastExecOpts = config
 	if m.createErr != nil {
-		return container.ExecCreateResponse{}, m.createErr
+		return client.ExecCreateResult{}, m.createErr
 	}
-	return container.ExecCreateResponse{ID: "exec-123"}, nil
+	return client.ExecCreateResult{ID: "exec-123"}, nil
 }
 
-func (m *execAPIClientMock) ContainerExecAttach(ctx context.Context, _ string, config container.ExecAttachOptions) (types.HijackedResponse, error) {
+func (m *execAPIClientMock) ExecAttach(ctx context.Context, _ string, config client.ExecAttachOptions) (client.ExecAttachResult, error) {
 	m.lastAttachOpts = config
 	if m.attachErr != nil {
-		return types.HijackedResponse{}, m.attachErr
+		return client.ExecAttachResult{}, m.attachErr
 	}
 	clientConn, serverConn := net.Pipe()
 	go func() {
@@ -52,19 +51,18 @@ func (m *execAPIClientMock) ContainerExecAttach(ctx context.Context, _ string, c
 		}
 		_ = serverConn.Close()
 	}()
-	return types.NewHijackedResponse(clientConn, "application/vnd.docker.raw-stream"), nil
+	return client.ExecAttachResult{
+		HijackedResponse: client.NewHijackedResponse(clientConn, "application/vnd.docker.raw-stream"),
+	}, nil
 }
 
 func TestDockerDaemon_ExecInteractive_NonRunning(t *testing.T) {
-	client := &execAPIClientMock{
+	daemon := &DockerDaemon{client: &execAPIClientMock{
 		inspect: container.InspectResponse{
-			ContainerJSONBase: &container.ContainerJSONBase{
-				State: &container.State{Running: false},
-			},
+			State:  &container.State{Running: false},
 			Config: &container.Config{Tty: true},
 		},
-	}
-	daemon := &DockerDaemon{client: client}
+	}}
 
 	err := daemon.ExecInteractive(context.Background(), "abc123def456789", []string{"/bin/sh"}, nil, io.Discard, io.Discard, true)
 	if err == nil {
@@ -76,16 +74,13 @@ func TestDockerDaemon_ExecInteractive_NonRunning(t *testing.T) {
 }
 
 func TestDockerDaemon_ExecInteractive_CreateError(t *testing.T) {
-	client := &execAPIClientMock{
+	daemon := &DockerDaemon{client: &execAPIClientMock{
 		inspect: container.InspectResponse{
-			ContainerJSONBase: &container.ContainerJSONBase{
-				State: &container.State{Running: true},
-			},
+			State:  &container.State{Running: true},
 			Config: &container.Config{Tty: true},
 		},
 		createErr: errors.New("create boom"),
-	}
-	daemon := &DockerDaemon{client: client}
+	}}
 
 	err := daemon.ExecInteractive(context.Background(), "abc123def456789", []string{"/bin/sh"}, nil, io.Discard, io.Discard, true)
 	if err == nil {
@@ -97,16 +92,13 @@ func TestDockerDaemon_ExecInteractive_CreateError(t *testing.T) {
 }
 
 func TestDockerDaemon_ExecInteractive_AttachError(t *testing.T) {
-	client := &execAPIClientMock{
+	daemon := &DockerDaemon{client: &execAPIClientMock{
 		inspect: container.InspectResponse{
-			ContainerJSONBase: &container.ContainerJSONBase{
-				State: &container.State{Running: true},
-			},
+			State:  &container.State{Running: true},
 			Config: &container.Config{Tty: true},
 		},
 		attachErr: errors.New("attach boom"),
-	}
-	daemon := &DockerDaemon{client: client}
+	}}
 
 	err := daemon.ExecInteractive(context.Background(), "abc123def456789", []string{"/bin/sh"}, nil, io.Discard, io.Discard, true)
 	if err == nil {
@@ -120,9 +112,7 @@ func TestDockerDaemon_ExecInteractive_AttachError(t *testing.T) {
 func TestDockerDaemon_ExecInteractive_TTYSuccess(t *testing.T) {
 	client := &execAPIClientMock{
 		inspect: container.InspectResponse{
-			ContainerJSONBase: &container.ContainerJSONBase{
-				State: &container.State{Running: true},
-			},
+			State:  &container.State{Running: true},
 			Config: &container.Config{Tty: true},
 		},
 		output: "exec output\n",
@@ -145,10 +135,10 @@ func TestDockerDaemon_ExecInteractive_TTYSuccess(t *testing.T) {
 	if !strings.Contains(out.String(), "exec output") {
 		t.Fatalf("unexpected output: %q", out.String())
 	}
-	if !client.lastExecOpts.Tty {
+	if !client.lastExecOpts.TTY {
 		t.Fatal("expected TTY to be true")
 	}
-	if !client.lastAttachOpts.Tty {
+	if !client.lastAttachOpts.TTY {
 		t.Fatal("expected attach TTY to be true")
 	}
 	if len(client.lastExecOpts.Cmd) != 3 || client.lastExecOpts.Cmd[0] != "/bin/sh" {
@@ -160,9 +150,7 @@ func TestDockerDaemon_ExecInteractive_AlwaysAllocatesTTY(t *testing.T) {
 	// Exec should allocate a TTY even when the container was started without one.
 	client := &execAPIClientMock{
 		inspect: container.InspectResponse{
-			ContainerJSONBase: &container.ContainerJSONBase{
-				State: &container.State{Running: true},
-			},
+			State:  &container.State{Running: true},
 			Config: &container.Config{Tty: false},
 		},
 		output: "no-tty container\n",
@@ -182,25 +170,22 @@ func TestDockerDaemon_ExecInteractive_AlwaysAllocatesTTY(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !client.lastExecOpts.Tty {
+	if !client.lastExecOpts.TTY {
 		t.Fatal("expected exec TTY to be true even for non-TTY container")
 	}
-	if !client.lastAttachOpts.Tty {
+	if !client.lastAttachOpts.TTY {
 		t.Fatal("expected exec attach TTY to be true even for non-TTY container")
 	}
 }
 
 func TestDockerDaemon_ExecInteractive_FileStdinReturnsPromptly(t *testing.T) {
-	client := &execAPIClientMock{
+	daemon := &DockerDaemon{client: &execAPIClientMock{
 		inspect: container.InspectResponse{
-			ContainerJSONBase: &container.ContainerJSONBase{
-				State: &container.State{Running: true},
-			},
+			State:  &container.State{Running: true},
 			Config: &container.Config{Tty: true},
 		},
 		output: "hello\n",
-	}
-	daemon := &DockerDaemon{client: client}
+	}}
 
 	stdinR, stdinW, err := os.Pipe()
 	if err != nil {

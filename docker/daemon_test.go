@@ -6,41 +6,40 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/image"
-	dockerAPI "github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/image"
+	"github.com/moby/moby/client"
 )
 
 type imageAPIClientMock struct {
-	dockerAPI.APIClient
+	client.APIClient
 	err           error
 	imagesDeleted []image.DeleteResponse
 }
 
-func (c imageAPIClientMock) ImagesPrune(ctx context.Context, f filters.Args) (image.PruneReport, error) {
-	return image.PruneReport{
+func (c imageAPIClientMock) ImagePrune(context.Context, client.ImagePruneOptions) (client.ImagePruneResult, error) {
+	return client.ImagePruneResult{Report: image.PruneReport{
 		ImagesDeleted: c.imagesDeleted,
-	}, c.err
+	}}, c.err
 }
 
 type timedOutImageAPIClientMock struct {
-	dockerAPI.APIClient
+	client.APIClient
 }
 
-func (c timedOutImageAPIClientMock) ImagesPrune(ctx context.Context, f filters.Args) (image.PruneReport, error) {
+func (c timedOutImageAPIClientMock) ImagePrune(ctx context.Context, _ client.ImagePruneOptions) (client.ImagePruneResult, error) {
 	ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 	defer cancel()
 	select {
 	case <-time.After(600 * time.Millisecond):
-		return image.PruneReport{}, nil
+		return client.ImagePruneResult{}, nil
 	case <-ctx.Done(): // This should always happen
-		return image.PruneReport{}, ctx.Err()
+		return client.ImagePruneResult{}, ctx.Err()
 	}
 }
 
 func TestDockerDaemon_RemoveUnusedImages(t *testing.T) {
 	type fields struct {
-		client dockerAPI.APIClient
+		client client.APIClient
 	}
 	tests := []struct {
 		name    string

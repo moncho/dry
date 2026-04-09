@@ -4,7 +4,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/docker/docker/api/types/events"
+	"github.com/moby/moby/api/types/events"
 	"github.com/moncho/dry/docker"
 )
 

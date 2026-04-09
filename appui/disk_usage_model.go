@@ -8,19 +8,19 @@ import (
 	"charm.land/bubbles/v2/progress"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/go-units"
+	"github.com/moby/moby/client"
 	"github.com/moncho/dry/docker"
 )
 
 // DiskUsageLoadedMsg carries the loaded disk usage data.
 type DiskUsageLoadedMsg struct {
-	Usage types.DiskUsage
+	Usage client.DiskUsageResult
 }
 
 // DiskUsageModel displays Docker disk usage information.
 type DiskUsageModel struct {
-	usage  *types.DiskUsage
+	usage  *client.DiskUsageResult
 	daemon docker.ContainerDaemon
 	width  int
 	height int
@@ -43,7 +43,7 @@ func (m *DiskUsageModel) SetSize(w, h int) {
 }
 
 // SetUsage replaces the disk usage data.
-func (m *DiskUsageModel) SetUsage(usage types.DiskUsage) {
+func (m *DiskUsageModel) SetUsage(usage client.DiskUsageResult) {
 	m.usage = &usage
 }
 
@@ -70,21 +70,21 @@ func (m DiskUsageModel) View() string {
 
 	// Calculate sizes per category
 	var imageSize int64
-	for _, img := range du.Images {
+	for _, img := range du.Images.Items {
 		imageSize += img.Size
 	}
 	var containerSize int64
-	for _, c := range du.Containers {
+	for _, c := range du.Containers.Items {
 		containerSize += c.SizeRw
 	}
 	var volumeSize int64
-	for _, v := range du.Volumes {
+	for _, v := range du.Volumes.Items {
 		if v.UsageData != nil {
 			volumeSize += v.UsageData.Size
 		}
 	}
 	var buildCacheSize int64
-	for _, bc := range du.BuildCache {
+	for _, bc := range du.BuildCache.Items {
 		buildCacheSize += bc.Size
 	}
 
@@ -102,10 +102,10 @@ func (m DiskUsageModel) View() string {
 		color color.Color
 	}
 	cats := []category{
-		{"Images", len(du.Images), imageSize, DryTheme.Tertiary},
-		{"Containers", len(du.Containers), containerSize, DryTheme.Secondary},
-		{"Volumes", len(du.Volumes), volumeSize, DryTheme.Info},
-		{"Build Cache", len(du.BuildCache), buildCacheSize, DryTheme.Warning},
+		{"Images", len(du.Images.Items), imageSize, DryTheme.Tertiary},
+		{"Containers", len(du.Containers.Items), containerSize, DryTheme.Secondary},
+		{"Volumes", len(du.Volumes.Items), volumeSize, DryTheme.Info},
+		{"Build Cache", len(du.BuildCache.Items), buildCacheSize, DryTheme.Warning},
 	}
 
 	labelWidth := 14

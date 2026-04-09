@@ -6,14 +6,14 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/api/types/system"
-	"github.com/docker/docker/api/types/volume"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/events"
+	"github.com/moby/moby/api/types/image"
+	"github.com/moby/moby/api/types/network"
+	"github.com/moby/moby/api/types/swarm"
+	"github.com/moby/moby/api/types/system"
+	"github.com/moby/moby/api/types/volume"
+	"github.com/moby/moby/client"
 	drydocker "github.com/moncho/dry/docker"
 )
 
@@ -89,8 +89,8 @@ func (_m *DockerDaemonMock) Containers(filters []drydocker.ContainerFilter, _ dr
 }
 
 // DiskUsage mock
-func (_m *DockerDaemonMock) DiskUsage() (types.DiskUsage, error) {
-	return types.DiskUsage{}, nil
+func (_m *DockerDaemonMock) DiskUsage() (client.DiskUsageResult, error) {
+	return client.DiskUsageResult{}, nil
 }
 
 // DockerEnv provides a mock function with given fields:
@@ -447,13 +447,12 @@ func (_m *DockerDaemonMock) Top(ctx context.Context, id string) (container.TopRe
 }
 
 // Version provides a mock function with given fields:
-func (_m *DockerDaemonMock) Version() (*types.Version, error) {
-	return &types.Version{
-		Version:       "1.0",
-		APIVersion:    "1.27",
-		Os:            "dry",
-		Arch:          "amd64",
-		KernelVersion: "42",
+func (_m *DockerDaemonMock) Version() (*client.ServerVersionResult, error) {
+	return &client.ServerVersionResult{
+		Version:    "1.0",
+		APIVersion: "1.27",
+		Os:         "dry",
+		Arch:       "amd64",
 	}, nil
 }
 
@@ -463,7 +462,7 @@ func (_m *DockerDaemonMock) VolumeInspect(ctx context.Context, volumeID string) 
 }
 
 // VolumeList mock
-func (_m *DockerDaemonMock) VolumeList(ctx context.Context) ([]*volume.Volume, error) {
+func (_m *DockerDaemonMock) VolumeList(ctx context.Context) ([]volume.Volume, error) {
 	return nil, nil
 }
 

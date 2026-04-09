@@ -9,9 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/moby/moby/api/pkg/stdcopy"
+	"github.com/moby/moby/client"
 )
 
 const defaultDetachKeys = "ctrl-p,ctrl-q"
@@ -31,7 +30,7 @@ func (daemon *DockerDaemon) AttachInteractive(ctx context.Context, id string, st
 		detachKeys = defaultDetachKeys
 	}
 
-	attach, err := daemon.client.ContainerAttach(ctx, id, container.AttachOptions{
+	attach, err := daemon.client.ContainerAttach(ctx, id, client.ContainerAttachOptions{
 		Stream:     true,
 		Stdin:      true,
 		Stdout:     true,
@@ -46,11 +45,11 @@ func (daemon *DockerDaemon) AttachInteractive(ctx context.Context, id string, st
 
 	tty := inspect.Config != nil && inspect.Config.Tty
 	if tty {
-		return streamInteractive(attach, stdin, stdout, true)
+		return streamInteractive(attach.HijackedResponse, stdin, stdout, true)
 	}
 
 	// Non-TTY: demultiplex stdout/stderr via stdcopy.
-	return streamInteractiveStdcopy(attach, stdin, stdout, stderr)
+	return streamInteractiveStdcopy(attach.HijackedResponse, stdin, stdout, stderr)
 }
 
 // streamInteractive handles bidirectional stream copy for TTY sessions
@@ -58,7 +57,7 @@ func (daemon *DockerDaemon) AttachInteractive(ctx context.Context, id string, st
 // connection in a background goroutine. Set forwardStdin to false for
 // non-interactive exec commands so that stdin remains available to the
 // caller after this function returns.
-func streamInteractive(attach types.HijackedResponse, stdin io.Reader, stdout io.Writer, forwardStdin bool) error {
+func streamInteractive(attach client.HijackedResponse, stdin io.Reader, stdout io.Writer, forwardStdin bool) error {
 	// Copy stdin → connection in background.
 	// When the output side finishes, closing the connection causes a
 	// write error that terminates this goroutine.
@@ -84,7 +83,7 @@ func streamInteractive(attach types.HijackedResponse, stdin io.Reader, stdout io
 
 // streamInteractiveStdcopy is like streamInteractive but demultiplexes
 // Docker's multiplexed stream for non-TTY containers.
-func streamInteractiveStdcopy(attach types.HijackedResponse, stdin io.Reader, stdout, stderr io.Writer) error {
+func streamInteractiveStdcopy(attach client.HijackedResponse, stdin io.Reader, stdout, stderr io.Writer) error {
 	if stdin != nil {
 		go func() {
 			_, _ = io.Copy(attach.Conn, stdin)

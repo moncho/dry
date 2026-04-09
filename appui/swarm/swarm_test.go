@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/docker/docker/api/types/swarm"
+	"github.com/moby/moby/api/types/swarm"
 	"github.com/moncho/dry/docker"
 )
 
@@ -82,7 +82,7 @@ func TestNodesModel_SetAndSelect(t *testing.T) {
 	// Navigate down
 	m, _ = m.Update(tea.KeyPressMsg{Code: 'j'})
 	sel = m.SelectedNode()
-	if sel.ID != nodes[1].ID {
+	if sel != nil && sel.ID != nodes[1].ID {
 		t.Fatalf("expected second node after j, got %q", sel.ID)
 	}
 }
@@ -150,14 +150,14 @@ func TestServicesModel_Navigation(t *testing.T) {
 	// Navigate to end
 	m, _ = m.Update(tea.KeyPressMsg{Code: 'G'})
 	sel := m.SelectedService()
-	if sel.ID != makeTestServices(5)[4].ID {
+	if sel == nil || sel.ID != makeTestServices(5)[4].ID {
 		t.Fatalf("expected last service after G")
 	}
 
 	// Navigate to beginning
 	m, _ = m.Update(tea.KeyPressMsg{Code: 'g'})
 	sel = m.SelectedService()
-	if sel.ID != makeTestServices(5)[0].ID {
+	if sel == nil || sel.ID != makeTestServices(5)[0].ID {
 		t.Fatalf("expected first service after g")
 	}
 }

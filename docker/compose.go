@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/docker/docker/api/types/container"
+	"github.com/moby/moby/api/types/container"
 )
 
 // ComposeProject represents a Docker Compose project aggregated from container labels.
@@ -118,7 +118,7 @@ func AggregateComposeServices(containers []*Container, project string) []Compose
 		exited     int
 		image      string
 		healths    []string
-		ports      []container.Port
+		ports      []container.PortSummary
 	}
 	services := make(map[string]*serviceAcc)
 	for _, c := range containers {
@@ -147,8 +147,8 @@ func AggregateComposeServices(containers []*Container, project string) []Compose
 			acc.image = c.Image
 		}
 		health := ""
-		if c.Detail.ContainerJSONBase != nil && c.Detail.State != nil && c.Detail.State.Health != nil {
-			health = c.Detail.State.Health.Status
+		if c.Detail.State != nil && c.Detail.State.Health != nil {
+			health = string(c.Detail.State.Health.Status)
 		}
 		acc.healths = append(acc.healths, health)
 		acc.ports = append(acc.ports, c.Ports...)
@@ -198,7 +198,7 @@ func aggregateHealth(healths []string) string {
 }
 
 // aggregatePorts deduplicates and formats ports from all containers in a service.
-func aggregatePorts(ports []container.Port) string {
+func aggregatePorts(ports []container.PortSummary) string {
 	if len(ports) == 0 {
 		return ""
 	}
@@ -210,9 +210,13 @@ func aggregatePorts(ports []container.Port) string {
 		Type        string
 	}
 	seen := make(map[portKey]bool)
-	var unique []container.Port
+	var unique []container.PortSummary
 	for _, p := range ports {
-		k := portKey{p.IP, p.PublicPort, p.PrivatePort, p.Type}
+		var ipAddr string
+		if p.IP.IsValid() {
+			ipAddr = p.IP.String()
+		}
+		k := portKey{ipAddr, p.PublicPort, p.PrivatePort, p.Type}
 		if !seen[k] {
 			seen[k] = true
 			unique = append(unique, p)

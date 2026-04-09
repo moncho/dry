@@ -10,9 +10,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/client"
 	"go.uber.org/goleak"
 )
 
@@ -22,14 +21,14 @@ type statsClientMock struct {
 	statsErr  error
 }
 
-func (s statsClientMock) ContainerStats(ctx context.Context, id string, stream bool) (container.StatsResponseReader, error) {
-	return container.StatsResponseReader{
+func (s statsClientMock) ContainerStats(context.Context, string, client.ContainerStatsOptions) (client.ContainerStatsResult, error) {
+	return client.ContainerStatsResult{
 		Body: s.statsBody,
 	}, s.statsErr
 }
 
-func (s statsClientMock) ContainerTop(ctx context.Context, ctr string, arguments []string) (container.TopResponse, error) {
-	return container.TopResponse{}, nil
+func (s statsClientMock) ContainerTop(context.Context, string, client.ContainerTopOptions) (client.ContainerTopResult, error) {
+	return client.ContainerTopResult{}, nil
 }
 
 func TestStatsChannel_cancellingContextClosesResources(t *testing.T) {
@@ -40,7 +39,7 @@ func TestStatsChannel_cancellingContextClosesResources(t *testing.T) {
 				Names: []string{"1234"},
 			},
 		},
-		version: &types.Version{
+		version: &client.ServerVersionResult{
 			Os: "Not windows",
 		},
 		client: statsClientMock{
@@ -67,7 +66,7 @@ func TestStatsChannel_statsArePublished(t *testing.T) {
 				Names: []string{"1234"},
 			},
 		},
-		version: &types.Version{
+		version: &client.ServerVersionResult{
 			Os: "Not windows",
 		},
 		client: statsClientMock{
@@ -98,7 +97,7 @@ func TestStatsChannel_noErrors_goroutineExitsOnCtxCancel(t *testing.T) {
 				Names: []string{"1234"},
 			},
 		},
-		version: &types.Version{
+		version: &client.ServerVersionResult{
 			Os: "Not windows",
 		},
 		client: statsClientMock{
@@ -119,7 +118,7 @@ func TestStatsChannel_errorBuildingStats_goroutineExitsOnCtxCancel(t *testing.T)
 				Names: []string{"1234"},
 			},
 		},
-		version: &types.Version{
+		version: &client.ServerVersionResult{
 			Os: "Not windows",
 		},
 		client: statsClientMock{
@@ -141,11 +140,11 @@ func TestStatsChannel_errorOpeningStream_goroutineExits(t *testing.T) {
 				Names: []string{"1234"},
 			},
 		},
-		version: &types.Version{
+		version: &client.ServerVersionResult{
 			Os: "Not windows",
 		},
 		client: statsClientMock{
-			statsErr: errors.New("No stats for you, my friend"),
+			statsErr: errors.New("no stats for you, my friend"),
 		},
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -237,7 +236,7 @@ func TestCalculateCPUPercentUnix(t *testing.T) {
 func asJSON(stats container.StatsResponse) string {
 	var buffer bytes.Buffer
 	enc := json.NewEncoder(&buffer)
-	enc.Encode(stats)
+	_ = enc.Encode(stats)
 
 	return buffer.String()
 }

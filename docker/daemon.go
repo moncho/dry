@@ -10,16 +10,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	dockerTypes "github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	dockerEvents "github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/api/types/system"
-	"github.com/docker/docker/api/types/volume"
-	dockerAPI "github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/events"
+	"github.com/moby/moby/api/types/image"
+	"github.com/moby/moby/api/types/network"
+	"github.com/moby/moby/api/types/swarm"
+	"github.com/moby/moby/api/types/system"
+	"github.com/moby/moby/api/types/volume"
+	"github.com/moby/moby/client"
 )
 
 const (
@@ -32,17 +30,17 @@ const (
 var defaultOperationTimeout = time.Duration(10) * time.Second
 
 // Defaults for listing images
-var defaultImageListOptions = image.ListOptions{
+var defaultImageListOptions = client.ImageListOptions{
 	All: false,
 }
 
 // DockerDaemon knows how to talk to the Docker daemon
 type DockerDaemon struct {
-	client    dockerAPI.APIClient // client used to to connect to the Docker daemon
+	client    client.APIClient // client used to connect to the Docker daemon
 	s         ContainerStore
 	err       error // Errors, if any.
 	dockerEnv Env
-	version   *dockerTypes.Version
+	version   *client.ServerVersionResult
 	swarmMode bool
 	storeLock sync.RWMutex
 	resolver  Resolver
@@ -65,10 +63,10 @@ func (daemon *DockerDaemon) ContainerByID(cid string) *Container {
 }
 
 // DiskUsage returns reported Docker disk usage
-func (daemon *DockerDaemon) DiskUsage() (dockerTypes.DiskUsage, error) {
+func (daemon *DockerDaemon) DiskUsage() (client.DiskUsageResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	return daemon.client.DiskUsage(ctx, dockerTypes.DiskUsageOptions{})
+	return daemon.client.DiskUsage(ctx, client.DiskUsageOptions{})
 }
 
 // DockerEnv returns Docker-related environment variables
@@ -80,19 +78,16 @@ func (daemon *DockerDaemon) DockerEnv() Env {
 // The caller owns cancellation via the provided context.
 // The returned channel is closed when the context is cancelled or the
 // Docker daemon disconnects (error on the event stream).
-func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan dockerEvents.Message, error) {
+func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan events.Message, error) {
 	// Derive an internal context so error on either event stream
 	// cancels all goroutines and closes the output channel.
 	innerCtx, innerCancel := context.WithCancel(ctx)
 
-	args := filters.NewArgs()
-	args.Add("scope", "local")
-	options := dockerEvents.ListOptions{
-		Filters: args,
-	}
-	events, err := daemon.client.Events(innerCtx, options)
+	res := daemon.client.Events(innerCtx, client.EventsListOptions{
+		Filters: make(client.Filters).Add("scope", "local"),
+	})
 
-	eventC := make(chan dockerEvents.Message)
+	eventC := make(chan events.Message)
 
 	var wg sync.WaitGroup
 
@@ -101,7 +96,7 @@ func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan dockerEvents.Mes
 		defer wg.Done()
 		for {
 			select {
-			case event := <-events:
+			case event := <-res.Messages:
 				if event.Action != "top" {
 					handleEvent(
 						innerCtx,
@@ -110,7 +105,7 @@ func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan dockerEvents.Mes
 						logEvents(daemon.eventLog),
 						callbackNotifier)
 				}
-			case <-err:
+			case <-res.Err:
 				innerCancel()
 				return
 			case <-innerCtx.Done():
@@ -120,26 +115,23 @@ func (daemon *DockerDaemon) Events(ctx context.Context) (<-chan dockerEvents.Mes
 	}()
 
 	if daemon.swarmMode {
-		swarmArgs := filters.NewArgs()
-		swarmArgs.Add("scope", "swarm")
-		swarmOptions := dockerEvents.ListOptions{
-			Filters: swarmArgs,
-		}
-		swarmEvents, swarmErr := daemon.client.Events(innerCtx, swarmOptions)
+		swarmEvents := daemon.client.Events(innerCtx, client.EventsListOptions{
+			Filters: make(client.Filters).Add("scope", "swarm"),
+		})
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for {
 				select {
-				case event := <-swarmEvents:
+				case event := <-swarmEvents.Messages:
 					handleEvent(
 						innerCtx,
 						event,
 						streamEvents(eventC),
 						logEvents(daemon.eventLog),
 						callbackNotifier)
-				case <-swarmErr:
+				case <-swarmEvents.Err:
 					innerCancel()
 					return
 				case <-innerCtx.Done():
@@ -171,7 +163,11 @@ func (daemon *DockerDaemon) Info() (system.Info, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
-	return daemon.client.Info(ctx)
+	res, err := daemon.client.Info(ctx, client.InfoOptions{})
+	if err != nil {
+		return system.Info{}, err
+	}
+	return res.Info, nil
 }
 
 // Inspect the container with the given id
@@ -179,15 +175,22 @@ func (daemon *DockerDaemon) Inspect(id string) (container.InspectResponse, error
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
-	return daemon.client.ContainerInspect(ctx, id)
+	res, err := daemon.client.ContainerInspect(ctx, id, client.ContainerInspectOptions{})
+	if err != nil {
+		return container.InspectResponse{}, err
+	}
+	return res.Container, nil
 }
 
 // InspectImage the image with the name
 func (daemon *DockerDaemon) InspectImage(name string) (image.InspectResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	inspect, _, err := daemon.client.ImageInspectWithRaw(ctx, name)
-	return inspect, err
+	res, err := daemon.client.ImageInspect(ctx, name)
+	if err != nil {
+		return image.InspectResponse{}, err
+	}
+	return res.InspectResponse, err
 }
 
 // IsContainerRunning returns true if the container with the given  is running
@@ -199,7 +202,7 @@ func (daemon *DockerDaemon) IsContainerRunning(id string) bool {
 func (daemon *DockerDaemon) Kill(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	err := daemon.client.ContainerKill(ctx, id, "")
+	_, err := daemon.client.ContainerKill(ctx, id, client.ContainerKillOptions{})
 	if err != nil {
 		return err
 	}
@@ -208,7 +211,7 @@ func (daemon *DockerDaemon) Kill(id string) error {
 
 // Logs shows the logs of the container with the given id
 func (daemon *DockerDaemon) Logs(id string, since string, withTimeStamps bool) (io.ReadCloser, error) {
-	options := container.LogsOptions{
+	options := client.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Timestamps: withTimeStamps,
@@ -236,11 +239,13 @@ func (daemon *DockerDaemon) NetworkInspect(id string) (network.Inspect, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
-	options := network.InspectOptions{
+	res, err := daemon.client.NetworkInspect(ctx, id, client.NetworkInspectOptions{
 		Verbose: true,
+	})
+	if err != nil {
+		return network.Inspect{}, err
 	}
-	return daemon.client.NetworkInspect(
-		ctx, id, options)
+	return res.Network, nil
 }
 
 // Ok is true if connecting to the Docker daemon went fine
@@ -259,28 +264,27 @@ func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	args := filters.NewArgs()
-	cReport, err := daemon.client.ContainersPrune(ctx, args)
+	cReport, err := daemon.client.ContainerPrune(ctx, client.ContainerPruneOptions{})
 	if err != nil {
 		return nil, err
 	}
-	iReport, err := daemon.client.ImagesPrune(ctx, args)
+	iReport, err := daemon.client.ImagePrune(ctx, client.ImagePruneOptions{})
 	if err != nil {
 		return nil, err
 	}
-	nReport, err := daemon.client.NetworksPrune(ctx, args)
+	nReport, err := daemon.client.NetworkPrune(ctx, client.NetworkPruneOptions{})
 	if err != nil {
 		return nil, err
 	}
-	vReport, err := daemon.client.VolumesPrune(ctx, args)
+	vReport, err := daemon.client.VolumePrune(ctx, client.VolumePruneOptions{})
 	if err != nil {
 		return nil, err
 	}
 	return &PruneReport{
-		ContainerReport: cReport,
-		ImagesReport:    iReport,
-		NetworksReport:  nReport,
-		VolumesReport:   vReport,
+		ContainerReport: cReport.Report,
+		ImagesReport:    iReport.Report,
+		NetworksReport:  nReport.Report,
+		VolumesReport:   vReport.Report,
 	}, nil
 }
 
@@ -290,7 +294,7 @@ func (daemon *DockerDaemon) RestartContainer(id string) error {
 	defer cancel()
 
 	// Default timeout is 10 seconds
-	if err := daemon.client.ContainerRestart(ctx, id, container.StopOptions{}); err != nil {
+	if _, err := daemon.client.ContainerRestart(ctx, id, client.ContainerRestartOptions{}); err != nil {
 		return err
 	}
 
@@ -361,17 +365,15 @@ func (daemon *DockerDaemon) RemoveAllStoppedContainers() (int, error) {
 
 // RemoveDanglingImages removes dangling images
 func (daemon *DockerDaemon) RemoveDanglingImages() (int, error) {
-	danglingfilters := filters.NewArgs()
-	danglingfilters.Add("dangling", "true")
-	images, err := images(daemon.client, image.ListOptions{
-		Filters: danglingfilters,
+	res, err := images(daemon.client, client.ImageListOptions{
+		Filters: make(client.Filters).Add("dangling", "true"),
 	})
 	var count uint32
 	errs := make(chan error, 1)
 	defer close(errs)
 	if err == nil {
 		var wg sync.WaitGroup
-		for _, image := range images {
+		for _, image := range res.Items {
 			wg.Add(1)
 			go func(id string) {
 				defer wg.Done()
@@ -402,31 +404,28 @@ func (daemon *DockerDaemon) RemoveUnusedImages() (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	args := filters.NewArgs()
-	args.Add("dangling", "false")
+	res, err := daemon.client.ImagePrune(ctx, client.ImagePruneOptions{
+		Filters: make(client.Filters).Add("dangling", "false"),
+	})
 
-	report, err := daemon.client.ImagesPrune(ctx, args)
-
-	return len(report.ImagesDeleted), err
+	return len(res.Report.ImagesDeleted), err
 }
 
 // RemoveNetwork removes the network with the given id
 func (daemon *DockerDaemon) RemoveNetwork(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	return daemon.client.NetworkRemove(ctx, id)
+	_, err := daemon.client.NetworkRemove(ctx, id, client.NetworkRemoveOptions{})
+	return err
 }
 
 // Rm removes the container with the given id
 func (daemon *DockerDaemon) Rm(id string) error {
-	opts := container.RemoveOptions{
-		RemoveVolumes: false,
-		RemoveLinks:   false,
-		Force:         true,
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	err := daemon.client.ContainerRemove(ctx, id, opts)
+	_, err := daemon.client.ContainerRemove(ctx, id, client.ContainerRemoveOptions{
+		Force: true,
+	})
 	if err == nil {
 		daemon.store().Remove(id)
 	}
@@ -435,12 +434,15 @@ func (daemon *DockerDaemon) Rm(id string) error {
 
 // Rmi removes the image with the given name
 func (daemon *DockerDaemon) Rmi(name string, force bool) ([]image.DeleteResponse, error) {
-	options := image.RemoveOptions{
-		Force: force,
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	return daemon.client.ImageRemove(ctx, name, options)
+	res, err := daemon.client.ImageRemove(ctx, name, client.ImageRemoveOptions{
+		Force: force,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res.Items, nil
 }
 
 func (daemon *DockerDaemon) setStore(store ContainerStore) {
@@ -459,7 +461,7 @@ func (daemon *DockerDaemon) store() ContainerStore {
 func (daemon *DockerDaemon) StartContainer(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	if err := daemon.client.ContainerStart(ctx, id, container.StartOptions{}); err != nil {
+	if _, err := daemon.client.ContainerStart(ctx, id, client.ContainerStartOptions{}); err != nil {
 		return err
 	}
 	return daemon.refreshAndWait()
@@ -469,7 +471,7 @@ func (daemon *DockerDaemon) StartContainer(id string) error {
 func (daemon *DockerDaemon) StopContainer(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	err := daemon.client.ContainerStop(ctx, id, container.StopOptions{})
+	_, err := daemon.client.ContainerStop(ctx, id, client.ContainerStopOptions{})
 	if err != nil {
 		return err
 	}
@@ -479,33 +481,47 @@ func (daemon *DockerDaemon) StopContainer(id string) error {
 
 // Top returns Top information for the given container
 func (daemon *DockerDaemon) Top(ctx context.Context, id string) (container.TopResponse, error) {
-	return daemon.client.ContainerTop(ctx, id, nil)
+	res, err := daemon.client.ContainerTop(ctx, id, client.ContainerTopOptions{})
+	if err != nil {
+		return container.TopResponse{}, err
+	}
+	return container.TopResponse{
+		Titles:    res.Titles,
+		Processes: res.Processes,
+	}, nil
 }
 
 // VolumeInspect returns the details of the given volume.
 func (daemon *DockerDaemon) VolumeInspect(ctx context.Context, volumeID string) (volume.Volume, error) {
-	return daemon.client.VolumeInspect(ctx, volumeID)
+	res, err := daemon.client.VolumeInspect(ctx, volumeID, client.VolumeInspectOptions{})
+	if err != nil {
+		return volume.Volume{}, err
+	}
+	return res.Volume, nil
 }
 
 // VolumeList returns the list of volumes.
-func (daemon *DockerDaemon) VolumeList(ctx context.Context) ([]*volume.Volume, error) {
-	volumeOkBody, err := daemon.client.VolumeList(ctx, volume.ListOptions{})
+func (daemon *DockerDaemon) VolumeList(ctx context.Context) ([]volume.Volume, error) {
+	res, err := daemon.client.VolumeList(ctx, client.VolumeListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	return volumeOkBody.Volumes, nil
+	return res.Items, nil
 }
 
 // VolumePrune removes unused volumes.
 func (daemon *DockerDaemon) VolumePrune(ctx context.Context) (int, error) {
-	pruneReport, err := daemon.client.VolumesPrune(ctx, filters.Args{})
+	res, err := daemon.client.VolumePrune(ctx, client.VolumePruneOptions{})
 
-	return len(pruneReport.VolumesDeleted), err
+	return len(res.Report.VolumesDeleted), err
 }
 
 // VolumeRemove removes the given volume.
 func (daemon *DockerDaemon) VolumeRemove(ctx context.Context, volumeID string, force bool) error {
-	return daemon.client.VolumeRemove(ctx, volumeID, force)
+	_, err := daemon.client.VolumeRemove(ctx, volumeID, client.VolumeRemoveOptions{
+		Force: force,
+	})
+	return err
 }
 
 // VolumeRemoveAll removes all the volumes.
@@ -526,11 +542,11 @@ func (daemon *DockerDaemon) VolumeRemoveAll(ctx context.Context) (int, error) {
 }
 
 // Version returns version information about the Docker Engine
-func (daemon *DockerDaemon) Version() (*dockerTypes.Version, error) {
+func (daemon *DockerDaemon) Version() (*client.ServerVersionResult, error) {
 	if daemon.version == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 		defer cancel()
-		v, err := daemon.client.ServerVersion(ctx)
+		v, err := daemon.client.ServerVersion(ctx, client.ServerVersionOptions{})
 		if err == nil {
 			daemon.version = &v
 			return daemon.version, nil
@@ -555,57 +571,53 @@ func (daemon *DockerDaemon) init() error {
 	}
 	GlobalRegistry.Register(
 		ContainerSource,
-		func(ctx context.Context, message dockerEvents.Message) {
+		func(ctx context.Context, message events.Message) {
 			_ = daemon.refreshAndWait()
 		})
 	return nil
 }
 
-func containers(client dockerAPI.ContainerAPIClient) ([]*Container, error) {
+func containers(apiClient client.ContainerAPIClient) ([]*Container, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultConnectionTimeout)
 	defer cancel()
-	containers, err := client.ContainerList(ctx, container.ListOptions{All: true, Size: true})
+	res, err := apiClient.ContainerList(ctx, client.ContainerListOptions{All: true, Size: true})
 	if err != nil {
 		return nil, fmt.Errorf("retrieve container list: %w", err)
 	}
 
 	var cc []*Container
-	for i, c := range containers {
-		details, err := client.ContainerInspect(ctx, c.ID)
+	for i, c := range res.Items {
+		details, err := apiClient.ContainerInspect(ctx, c.ID, client.ContainerInspectOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("inspect container %s: %w", c.ID, err)
 		}
-		cc = append(cc, &Container{Summary: containers[i], Detail: details})
+		cc = append(cc, &Container{Summary: res.Items[i], Detail: details.Container})
 	}
 	return cc, nil
 }
 
-func images(client dockerAPI.ImageAPIClient, opts image.ListOptions) ([]image.Summary, error) {
+func images(apiClient client.ImageAPIClient, opts client.ImageListOptions) (client.ImageListResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	return client.ImageList(ctx, opts)
+	return apiClient.ImageList(ctx, opts)
 }
 
-func networks(client dockerAPI.NetworkAPIClient) ([]network.Inspect, error) {
+func networks(apiClient client.NetworkAPIClient) ([]network.Inspect, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	networks, err := client.NetworkList(ctx, network.ListOptions{})
+	res, err := apiClient.NetworkList(ctx, client.NetworkListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	detailedNetworks := make([]network.Inspect, len(networks))
-	options := network.InspectOptions{
-		Verbose: true,
-	}
-	for i, n := range networks {
-		detailedNetwork, err := client.NetworkInspect(ctx, n.ID, options)
+	detailedNetworks := make([]network.Inspect, len(res.Items))
+	for i, n := range res.Items {
+		inspect, err := apiClient.NetworkInspect(ctx, n.ID, client.NetworkInspectOptions{Verbose: true})
 		if err != nil {
 			return nil, err
 		}
 
-		detailedNetworks[i] = detailedNetwork
-
+		detailedNetworks[i] = inspect.Network
 	}
 
 	return detailedNetworks, nil

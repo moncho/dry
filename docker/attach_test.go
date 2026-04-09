@@ -11,29 +11,28 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	dockerAPI "github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/client"
 )
 
 type attachAPIClientMock struct {
-	dockerAPI.APIClient
+	client.APIClient
 	inspect   container.InspectResponse
 	insErr    error
 	attachErr error
 	output    string
 
-	lastAttachOpts container.AttachOptions
+	lastAttachOpts client.ContainerAttachOptions
 }
 
-func (m *attachAPIClientMock) ContainerInspect(ctx context.Context, ctr string) (container.InspectResponse, error) {
-	return m.inspect, m.insErr
+func (m *attachAPIClientMock) ContainerInspect(context.Context, string, client.ContainerInspectOptions) (client.ContainerInspectResult, error) {
+	return client.ContainerInspectResult{Container: m.inspect}, m.insErr
 }
 
-func (m *attachAPIClientMock) ContainerAttach(ctx context.Context, containerID string, options container.AttachOptions) (types.HijackedResponse, error) {
+func (m *attachAPIClientMock) ContainerAttach(ctx context.Context, containerID string, options client.ContainerAttachOptions) (client.ContainerAttachResult, error) {
 	m.lastAttachOpts = options
 	if m.attachErr != nil {
-		return types.HijackedResponse{}, m.attachErr
+		return client.ContainerAttachResult{}, m.attachErr
 	}
 
 	clientConn, serverConn := net.Pipe()
@@ -44,19 +43,18 @@ func (m *attachAPIClientMock) ContainerAttach(ctx context.Context, containerID s
 		_ = serverConn.Close()
 	}()
 
-	return types.NewHijackedResponse(clientConn, "application/vnd.docker.raw-stream"), nil
+	return client.ContainerAttachResult{
+		HijackedResponse: client.NewHijackedResponse(clientConn, "application/vnd.docker.raw-stream"),
+	}, nil
 }
 
 func TestDockerDaemon_AttachInteractive_NonRunning(t *testing.T) {
-	client := &attachAPIClientMock{
+	daemon := &DockerDaemon{client: &attachAPIClientMock{
 		inspect: container.InspectResponse{
-			ContainerJSONBase: &container.ContainerJSONBase{
-				State: &container.State{Running: false},
-			},
+			State:  &container.State{Running: false},
 			Config: &container.Config{Tty: true},
 		},
-	}
-	daemon := &DockerDaemon{client: client}
+	}}
 
 	err := daemon.AttachInteractive(context.Background(), "abc123def456789", nil, io.Discard, io.Discard, "")
 	if err == nil {
@@ -68,16 +66,13 @@ func TestDockerDaemon_AttachInteractive_NonRunning(t *testing.T) {
 }
 
 func TestDockerDaemon_AttachInteractive_AttachError(t *testing.T) {
-	client := &attachAPIClientMock{
+	daemon := &DockerDaemon{client: &attachAPIClientMock{
 		inspect: container.InspectResponse{
-			ContainerJSONBase: &container.ContainerJSONBase{
-				State: &container.State{Running: true},
-			},
+			State:  &container.State{Running: true},
 			Config: &container.Config{Tty: true},
 		},
 		attachErr: errors.New("boom"),
-	}
-	daemon := &DockerDaemon{client: client}
+	}}
 
 	err := daemon.AttachInteractive(context.Background(), "abc123def456789", nil, io.Discard, io.Discard, "")
 	if err == nil {
@@ -89,16 +84,14 @@ func TestDockerDaemon_AttachInteractive_AttachError(t *testing.T) {
 }
 
 func TestDockerDaemon_AttachInteractive_TTYSuccess(t *testing.T) {
-	client := &attachAPIClientMock{
+	mockClient := &attachAPIClientMock{
 		inspect: container.InspectResponse{
-			ContainerJSONBase: &container.ContainerJSONBase{
-				State: &container.State{Running: true},
-			},
+			State:  &container.State{Running: true},
 			Config: &container.Config{Tty: true},
 		},
 		output: "hello from container\n",
 	}
-	daemon := &DockerDaemon{client: client}
+	daemon := &DockerDaemon{client: mockClient}
 
 	var out bytes.Buffer
 	err := daemon.AttachInteractive(
@@ -115,8 +108,8 @@ func TestDockerDaemon_AttachInteractive_TTYSuccess(t *testing.T) {
 	if !strings.Contains(out.String(), "hello from container") {
 		t.Fatalf("unexpected output: %q", out.String())
 	}
-	if client.lastAttachOpts.DetachKeys != defaultDetachKeys {
-		t.Fatalf("expected default detach keys %q, got %q", defaultDetachKeys, client.lastAttachOpts.DetachKeys)
+	if mockClient.lastAttachOpts.DetachKeys != defaultDetachKeys {
+		t.Fatalf("expected default detach keys %q, got %q", defaultDetachKeys, mockClient.lastAttachOpts.DetachKeys)
 	}
 }
 
@@ -124,16 +117,13 @@ func TestDockerDaemon_AttachInteractive_FileStdinReturnsPromptly(t *testing.T) {
 	// When stdin is an *os.File (as with Bubbletea's /dev/tty), attach
 	// must return promptly after the output side closes — even though
 	// nothing further will arrive on stdin.
-	client := &attachAPIClientMock{
+	daemon := &DockerDaemon{client: &attachAPIClientMock{
 		inspect: container.InspectResponse{
-			ContainerJSONBase: &container.ContainerJSONBase{
-				State: &container.State{Running: true},
-			},
+			State:  &container.State{Running: true},
 			Config: &container.Config{Tty: true},
 		},
 		output: "hello\n",
-	}
-	daemon := &DockerDaemon{client: client}
+	}}
 
 	// Use an os.Pipe so stdin is an *os.File that blocks on read.
 	stdinR, stdinW, err := os.Pipe()

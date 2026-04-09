@@ -4,8 +4,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/swarm"
+	"github.com/moby/moby/api/types/network"
+	"github.com/moby/moby/api/types/swarm"
 	"github.com/moncho/dry/docker"
 )
 

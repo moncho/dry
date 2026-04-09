@@ -3,7 +3,7 @@ package docker
 import (
 	"testing"
 
-	"github.com/docker/docker/api/types/image"
+	"github.com/moby/moby/api/types/image"
 	"github.com/moncho/dry/docker/mock"
 )
 

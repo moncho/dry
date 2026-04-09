@@ -2,17 +2,17 @@ package appui
 
 import (
 	tea "charm.land/bubbletea/v2"
-	"github.com/docker/docker/api/types/volume"
+	"github.com/moby/moby/api/types/volume"
 	"github.com/moncho/dry/docker"
 )
 
 // volumeRow wraps a Docker volume as a TableRow.
 type volumeRow struct {
-	volume  *volume.Volume
+	volume  volume.Volume
 	columns []string
 }
 
-func newVolumeRow(v *volume.Volume) volumeRow {
+func newVolumeRow(v volume.Volume) volumeRow {
 	return volumeRow{
 		volume: v,
 		columns: []string{
@@ -26,7 +26,7 @@ func (r volumeRow) ID() string        { return r.volume.Name }
 
 // VolumesLoadedMsg carries the loaded volumes.
 type VolumesLoadedMsg struct {
-	Volumes []*volume.Volume
+	Volumes []volume.Volume
 }
 
 // VolumesModel is the volumes list view sub-model.
@@ -68,7 +68,7 @@ func (m *VolumesModel) SetSize(w, h int) {
 }
 
 // SetVolumes replaces the volume list.
-func (m *VolumesModel) SetVolumes(volumes []*volume.Volume) {
+func (m *VolumesModel) SetVolumes(volumes []volume.Volume) {
 	rows := make([]TableRow, len(volumes))
 	for i, v := range volumes {
 		rows[i] = newVolumeRow(v)
@@ -83,7 +83,7 @@ func (m VolumesModel) SelectedVolume() *volume.Volume {
 		return nil
 	}
 	if vr, ok := row.(volumeRow); ok {
-		return vr.volume
+		return &vr.volume
 	}
 	return nil
 }

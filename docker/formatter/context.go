@@ -75,7 +75,7 @@ func (c *Context) postFormat(tmpl *template.Template, subContext subContext) {
 		_, _ = buffer.WriteTo(t)
 		_, _ = t.Write([]byte("\n"))
 		_, _ = c.buffer.WriteTo(t)
-		t.Flush()
+		_ = t.Flush()
 	} else {
 		_, _ = c.buffer.WriteTo(c.Output)
 	}

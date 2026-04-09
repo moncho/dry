@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/docker/cli/opts"
-	"github.com/docker/docker/client"
 	"github.com/kevinburke/ssh_config"
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/moby/moby/client"
 	drytls "github.com/moncho/dry/tls"
 	"golang.org/x/crypto/ssh"
 )
@@ -85,41 +85,39 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 		env.DockerCertPath = defaultDockerPath
 	}
 
-	opts := []client.Opt{
-		client.WithAPIVersionNegotiation(),
-	}
+	var clientOpts []client.Opt
 	if options != nil {
-		opts = append(opts, client.WithTLSClientConfig(options.CAFile, options.CertFile, options.KeyFile))
+		clientOpts = append(clientOpts, client.WithTLSClientConfig(options.CAFile, options.CertFile, options.KeyFile))
 	}
 
 	if host != "" && strings.HasPrefix(host, "ssh") {
 		// if it starts with ssh, its an ssh connection, and we need to handle this specially
 		// github.com/docker/docker does not handle ssh, as an upgrade to go-connections need to be made
 		// see https://github.com/docker/go-connections/pull/39
-		url, err := url.Parse(host)
+		hostURL, err := url.Parse(host)
 		if err != nil {
 			return nil, err
 		}
 
-		pass, _ := url.User.Password()
-		sshConfig, err := configureSSHTransport(url.Host, url.User.Username(), pass)
+		pass, _ := hostURL.User.Password()
+		sshConfig, err := configureSSHTransport(hostURL.Host, hostURL.User.Username(), pass)
 		if err != nil {
 			return nil, err
 		}
-		opts = append(opts, client.WithDialContext(
+		clientOpts = append(clientOpts, client.WithDialContext(
 			func(ctx context.Context, network, addr string) (net.Conn, error) {
-				return connectSSHTransport(url.Host, url.Path, sshConfig)
+				return connectSSHTransport(hostURL.Host, hostURL.Path, sshConfig)
 			}))
 	} else if host != "" {
 		// default uses the docker library to connect to hosts
-		opts = append(opts, client.WithHost(host))
+		clientOpts = append(clientOpts, client.WithHost(host))
 	}
 
-	client, err := client.NewClientWithOpts(opts...)
+	apiClient, err := client.New(clientOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("create Docker client: %w", err)
 	}
-	return connect(client, env)
+	return connect(apiClient, env)
 }
 
 func configureSSHTransport(host string, user string, pass string) (*ssh.ClientConfig, error) {

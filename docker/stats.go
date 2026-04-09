@@ -7,16 +7,15 @@ import (
 	"io"
 	"strings"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/client"
 )
 
 // StatsChannel manages the stats channel of a container
 type StatsChannel struct {
 	Container *Container
-	version   *types.Version
+	version   *client.ServerVersionResult
 	client    client.ContainerAPIClient
 }
 
@@ -26,7 +25,9 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 
 	go func() {
 		defer close(stats)
-		containerStats, err := s.client.ContainerStats(ctx, s.Container.Names[0], true)
+		containerStats, err := s.client.ContainerStats(ctx, s.Container.Names[0], client.ContainerStatsOptions{
+			Stream: true,
+		})
 		if err != nil {
 			nonBlockingSend(stats, &Stats{
 				Error: fmt.Errorf("create stats stream for container %s: %w", s.Container.ID, err),
@@ -56,7 +57,7 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 					break loop
 				}
 
-				top, err := s.client.ContainerTop(ctx, s.Container.ID, nil)
+				top, err := s.client.ContainerTop(ctx, s.Container.ID, client.ContainerTopOptions{})
 				if err != nil {
 					nonBlockingSend(stats, &Stats{
 						Error: fmt.Errorf("retrieve top info for container %s: %w", s.Container.ID, err),
@@ -73,7 +74,7 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 }
 
 // newStatsChannel creates a ready to use stats channel
-func newStatsChannel(version *types.Version, client client.ContainerAPIClient, container *Container) (*StatsChannel, error) {
+func newStatsChannel(version *client.ServerVersionResult, client client.ContainerAPIClient, container *Container) (*StatsChannel, error) {
 	if container == nil {
 		return nil, errors.New("Container cannot be null")
 	} else if !IsContainerRunning(container) {
@@ -87,7 +88,7 @@ func newStatsChannel(version *types.Version, client client.ContainerAPIClient, c
 }
 
 // buildStats builds Stats with the given information
-func buildStats(version *types.Version, container *Container, stats *container.StatsResponse, topResult *container.TopResponse) *Stats {
+func buildStats(version *client.ServerVersionResult, container *Container, stats *container.StatsResponse, topResult *client.ContainerTopResult) *Stats {
 	s := &Stats{
 		CID:         TruncateID(container.ID),
 		Command:     container.Command,

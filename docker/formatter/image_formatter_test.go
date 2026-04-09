@@ -3,7 +3,7 @@ package formatter
 import (
 	"testing"
 
-	"github.com/docker/docker/api/types/image"
+	"github.com/moby/moby/api/types/image"
 )
 
 func TestImageNameFormatting(t *testing.T) {

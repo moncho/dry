@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/docker/docker/api/types/network"
+	"github.com/moby/moby/api/types/network"
 	"github.com/moncho/dry/docker"
 )
 
@@ -89,8 +89,8 @@ func (formatter *NetworkFormatter) Subnet() string {
 	formatter.addHeader(subnet)
 	var subnets []string
 	for _, config := range formatter.network.IPAM.Config {
-		if config.Subnet != "" {
-			subnets = append(subnets, config.Subnet)
+		if config.Subnet.IsValid() {
+			subnets = append(subnets, config.Subnet.String())
 		}
 	}
 	// display IPv4 subnets first
@@ -105,8 +105,8 @@ func (formatter *NetworkFormatter) Gateway() string {
 	formatter.addHeader(gateway)
 	var gateways []string
 	for _, config := range formatter.network.IPAM.Config {
-		if config.Gateway != "" {
-			gateways = append(gateways, config.Gateway)
+		if config.Gateway.IsValid() {
+			gateways = append(gateways, config.Gateway.String())
 		}
 	}
 	// display IPv4 gateways first

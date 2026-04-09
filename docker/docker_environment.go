@@ -3,7 +3,7 @@ package docker
 import (
 	"os"
 
-	"github.com/docker/docker/api"
+	"github.com/moby/moby/client"
 )
 
 // Env holds Docker-related environment variables
@@ -18,7 +18,7 @@ type Env struct {
 func NewEnv() Env {
 	version := os.Getenv("DOCKER_API_VERSION")
 	if version == "" {
-		version = api.DefaultVersion
+		version = client.MaxAPIVersion
 	}
 	return Env{DockerAPIVersion: version}
 }

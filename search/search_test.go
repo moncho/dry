@@ -63,13 +63,13 @@ func TestResultIteration(t *testing.T) {
 		t.Errorf("Expected line: %d, got: %d", 8, line)
 	}
 
-	rs.InitialLine(5)
+	_, _ = rs.InitialLine(5)
 	line, _ = rs.NextLine()
 	if line != 8 {
 		t.Errorf("Expected line: %d, got: %d", 8, line)
 	}
 
-	rs.InitialLine(9)
+	_, _ = rs.InitialLine(9)
 	line, _ = rs.NextLine()
 	if line != 9 {
 		t.Errorf("Expected line: %d, got: %d", 9, line)

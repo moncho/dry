@@ -2,16 +2,17 @@ package app
 
 import (
 	"fmt"
+	"net/netip"
 	"strings"
 	"testing"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	dockercontainer "github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/api/types/volume"
+	dockercontainer "github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/image"
+	"github.com/moby/moby/api/types/network"
+	"github.com/moby/moby/api/types/swarm"
+	"github.com/moby/moby/api/types/volume"
 	"github.com/moncho/dry/appui"
 	appcompose "github.com/moncho/dry/appui/compose"
 	appswarm "github.com/moncho/dry/appui/swarm"
@@ -185,7 +186,7 @@ func TestWorkspaceContextFromStatsUsesNameAndPortsWithoutCpuMemory(t *testing.T)
 			Summary: dockercontainer.Summary{
 				ID:    "abc123",
 				Names: []string{"/redis"},
-				Ports: []dockercontainer.Port{{PublicPort: 6379, PrivatePort: 6379, Type: "tcp"}},
+				Ports: []dockercontainer.PortSummary{{PublicPort: 6379, PrivatePort: 6379, Type: "tcp"}},
 			},
 		},
 	}
@@ -590,21 +591,19 @@ func TestWorkspaceContextFromContainerIncludesRicherSummary(t *testing.T) {
 			Status:  "Up 5 minutes",
 			Labels:  map[string]string{"app": "api", "tier": "web"},
 			Created: 1710000000,
-			Ports: []dockercontainer.Port{
+			Ports: []dockercontainer.PortSummary{
 				{PublicPort: 8080, PrivatePort: 80, Type: "tcp"},
 			},
 		},
 		Detail: dockercontainer.InspectResponse{
-			ContainerJSONBase: &dockercontainer.ContainerJSONBase{
-				State: &dockercontainer.State{
-					Status: "running",
-					Health: &dockercontainer.Health{
-						Status: "healthy",
-					},
-					StartedAt: "2026-03-20T12:00:00Z",
+			State: &dockercontainer.State{
+				Status: "running",
+				Health: &dockercontainer.Health{
+					Status: "healthy",
 				},
-				RestartCount: 2,
+				StartedAt: "2026-03-20T12:00:00Z",
 			},
+			RestartCount: 2,
 			Config: &dockercontainer.Config{
 				WorkingDir: "/srv/app",
 				User:       "app",
@@ -646,19 +645,21 @@ func TestWorkspaceContextFromContainerIncludesRicherSummary(t *testing.T) {
 
 func TestWorkspaceContextFromNetworkIncludesAttachedEndpoints(t *testing.T) {
 	ctx := workspaceContextFromNetwork(network.Inspect{
-		ID:         "abc123456789",
-		Name:       "app-net",
-		Driver:     "bridge",
-		Scope:      "local",
-		Attachable: true,
-		Internal:   true,
-		Labels:     map[string]string{"project": "api"},
-		IPAM: network.IPAM{
-			Driver: "default",
-			Config: []network.IPAMConfig{{
-				Subnet:  "172.20.0.0/16",
-				Gateway: "172.20.0.1",
-			}},
+		Network: network.Network{
+			ID:         "abc123456789",
+			Name:       "app-net",
+			Driver:     "bridge",
+			Scope:      "local",
+			Attachable: true,
+			Internal:   true,
+			Labels:     map[string]string{"project": "api"},
+			IPAM: network.IPAM{
+				Driver: "default",
+				Config: []network.IPAMConfig{{
+					Subnet:  netip.MustParsePrefix("172.20.0.0/16"),
+					Gateway: netip.MustParseAddr("172.20.0.1"),
+				}},
+			},
 		},
 		Containers: map[string]network.EndpointResource{
 			"1": {Name: "api-1"},
@@ -729,7 +730,7 @@ func TestWorkspaceContextFromSwarmServiceIncludesOperationalSummary(t *testing.T
 			RollbackConfig: &swarm.UpdateConfig{FailureAction: "rollback"},
 		},
 		Endpoint: swarm.Endpoint{
-			Ports: []swarm.PortConfig{{PublishedPort: 8080, TargetPort: 80, Protocol: swarm.PortConfigProtocolTCP}},
+			Ports: []swarm.PortConfig{{PublishedPort: 8080, TargetPort: 80, Protocol: network.TCP}},
 		},
 		ServiceStatus: &swarm.ServiceStatus{RunningTasks: 2, DesiredTasks: 3},
 		UpdateStatus:  &swarm.UpdateStatus{State: swarm.UpdateStateUpdating, Message: "rolling"},

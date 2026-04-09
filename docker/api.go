@@ -4,14 +4,14 @@ import (
 	"context"
 	"io"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/api/types/system"
-	"github.com/docker/docker/api/types/volume"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/events"
+	"github.com/moby/moby/api/types/image"
+	"github.com/moby/moby/api/types/network"
+	"github.com/moby/moby/api/types/swarm"
+	"github.com/moby/moby/api/types/system"
+	"github.com/moby/moby/api/types/volume"
+	"github.com/moby/moby/client"
 )
 
 // Container holds a detailed view of a container.
@@ -50,7 +50,7 @@ type ContainerDaemon interface {
 	ComposeAPI
 	ComposeActionsAPI
 	ContainerRuntime
-	DiskUsage() (types.DiskUsage, error)
+	DiskUsage() (client.DiskUsageResult, error)
 	DockerEnv() Env
 	Events(ctx context.Context) (<-chan events.Message, error)
 	EventLog() *EventLog
@@ -61,7 +61,7 @@ type ContainerDaemon interface {
 	Rm(id string) error
 	Refresh(notify func(error))
 	RemoveNetwork(id string) error
-	Version() (*types.Version, error)
+	Version() (*client.ServerVersionResult, error)
 }
 
 // ContainerAPI is a subset of the Docker API to manage containers
@@ -141,7 +141,7 @@ type Stats struct {
 	BlockWrite       float64
 	PidsCurrent      uint64
 	Stats            *container.StatsResponse
-	ProcessList      *container.TopResponse
+	ProcessList      *client.ContainerTopResult
 	Error            error
 }
 
@@ -153,7 +153,7 @@ type Resolver interface {
 // VolumesAPI defines the API for Docker volumes.
 type VolumesAPI interface {
 	VolumeInspect(ctx context.Context, volumeID string) (volume.Volume, error)
-	VolumeList(ctx context.Context) ([]*volume.Volume, error)
+	VolumeList(ctx context.Context) ([]volume.Volume, error)
 	VolumePrune(ctx context.Context) (int, error)
 	VolumeRemove(ctx context.Context, volumeID string, force bool) error
 	VolumeRemoveAll(ctx context.Context) (int, error)

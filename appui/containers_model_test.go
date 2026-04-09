@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/docker/docker/api/types/container"
+	"github.com/moby/moby/api/types/container"
 	"github.com/moncho/dry/docker"
 )
 
@@ -102,7 +102,7 @@ func TestContainersModel_SetAndSelect(t *testing.T) {
 	// Navigate down
 	m, _ = m.Update(tea.KeyPressMsg{Code: 'j'})
 	sel = m.SelectedContainer()
-	if sel.ID != containers[1].ID {
+	if sel != nil && sel.ID != containers[1].ID {
 		t.Fatalf("expected second container after j, got %q", sel.ID)
 	}
 }

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/image"
+	"github.com/moby/moby/api/types/image"
+	"github.com/moby/moby/client"
 )
 
 // History returns image history
@@ -14,8 +14,11 @@ func (daemon *DockerDaemon) History(id string) ([]image.HistoryResponseItem, err
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
-	return daemon.client.ImageHistory(
-		ctx, id)
+	res, err := daemon.client.ImageHistory(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return res.Items, nil
 }
 
 // ImageByID returns the image with the given ID
@@ -36,7 +39,11 @@ func (daemon *DockerDaemon) ImageByID(id string) (image.Summary, error) {
 
 // Images returns the list of Docker images
 func (daemon *DockerDaemon) Images() ([]image.Summary, error) {
-	return images(daemon.client, defaultImageListOptions)
+	res, err := images(daemon.client, defaultImageListOptions)
+	if err != nil {
+		return []image.Summary{}, err
+	}
+	return res.Items, nil
 }
 
 // RunImage creates a container based on the given image and runs the given command
@@ -59,17 +66,24 @@ func (daemon *DockerDaemon) RunImage(image image.Summary, command string) error 
 		return fmt.Errorf("run image: inspect image %s: %w", imageName, err)
 	}
 
-	cc, hc, err := newCCB().image(imageName).command(command).ports(imageDetails.ContainerConfig.ExposedPorts).build()
+	var exposedPorts map[string]struct{}
+	if imageDetails.Config != nil && imageDetails.Config.ExposedPorts != nil {
+		exposedPorts = imageDetails.Config.ExposedPorts
+	}
+	cc, hc, err := newCCB().image(imageName).command(command).ports(exposedPorts).build()
 	if err != nil {
 		return fmt.Errorf("run image: %w", err)
 	}
 
-	cCreated, err := daemon.client.ContainerCreate(ctx, &cc, &hc, nil, nil, "")
+	cCreated, err := daemon.client.ContainerCreate(ctx, client.ContainerCreateOptions{
+		Config:     &cc,
+		HostConfig: &hc,
+	})
 	if err != nil {
 		return fmt.Errorf("run image: create container for image %s: %w", imageName, err)
 	}
 
-	if err := daemon.client.ContainerStart(ctx, cCreated.ID, container.StartOptions{}); err != nil {
+	if _, err := daemon.client.ContainerStart(ctx, cCreated.ID, client.ContainerStartOptions{}); err != nil {
 		return fmt.Errorf("run image: start container for image %s: %w", imageName, err)
 	}
 	return nil

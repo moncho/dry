@@ -3,7 +3,7 @@ package docker
 import (
 	"sync"
 
-	dockerAPI "github.com/docker/docker/client"
+	"github.com/moby/moby/client"
 )
 
 // ContainerStore defines a container storage.
@@ -18,20 +18,20 @@ type ContainerStore interface {
 type inMemoryContainerStore struct {
 	s      map[string]*Container
 	c      []*Container
-	client dockerAPI.ContainerAPIClient
+	client client.ContainerAPIClient
 	sync.RWMutex
 }
 
 // NewDockerContainerStore creates a new Docker container store that will use the given Docker
 // daemon client to retrieve container information.
-func NewDockerContainerStore(client dockerAPI.ContainerAPIClient) (ContainerStore, error) {
-	containers, err := containers(client)
+func NewDockerContainerStore(apiClient client.ContainerAPIClient) (ContainerStore, error) {
+	containers, err := containers(apiClient)
 	if err != nil {
 		return nil, err
 	}
 	store := &inMemoryContainerStore{
 		s:      make(map[string]*Container),
-		client: client,
+		client: apiClient,
 	}
 	for _, container := range containers {
 		store.add(container)

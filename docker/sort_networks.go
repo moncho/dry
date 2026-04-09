@@ -3,7 +3,7 @@ package docker
 import (
 	"sort"
 
-	"github.com/docker/docker/api/types/network"
+	"github.com/moby/moby/api/types/network"
 )
 
 // Allowed sort methods
@@ -61,7 +61,7 @@ type networksBySubnet struct{ dockerNetworks }
 func (s networksBySubnet) Less(i, j int) bool {
 	if len(s.dockerNetworks[i].IPAM.Config) > 0 {
 		if len(s.dockerNetworks[j].IPAM.Config) > 0 {
-			return s.dockerNetworks[i].IPAM.Config[0].Subnet < s.dockerNetworks[j].IPAM.Config[0].Subnet
+			return s.dockerNetworks[i].IPAM.Config[0].Subnet.Compare(s.dockerNetworks[j].IPAM.Config[0].Subnet) < 0
 		}
 		return true
 	}

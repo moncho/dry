@@ -5,16 +5,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/go-connections/nat"
-
-	"github.com/docker/docker/api/types/container"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/network"
 )
 
 func Test_containerConfigBuilder_build(t *testing.T) {
 	type fields struct {
 		image   string
 		command string
-		ports   nat.PortSet
+		ports   map[string]struct{}
 	}
 	tests := []struct {
 		name    string
@@ -28,7 +27,7 @@ func Test_containerConfigBuilder_build(t *testing.T) {
 			fields{
 				"",
 				"",
-				nat.PortSet{},
+				make(map[string]struct{}),
 			},
 			container.Config{},
 			container.HostConfig{},
@@ -39,7 +38,7 @@ func Test_containerConfigBuilder_build(t *testing.T) {
 			fields{
 				"image",
 				"command",
-				nat.PortSet{},
+				make(map[string]struct{}),
 			},
 			container.Config{
 				Image: "image",
@@ -53,21 +52,21 @@ func Test_containerConfigBuilder_build(t *testing.T) {
 			fields{
 				"image",
 				"command",
-				map[nat.Port]struct{}{
-					"8080:8080": {},
+				map[string]struct{}{
+					"8080": {},
 				},
 			},
 			container.Config{
 				Image: "image",
 				Cmd:   strings.Split("command", " "),
-				ExposedPorts: map[nat.Port]struct{}{
-					"8080:8080": {},
+				ExposedPorts: network.PortSet{
+					network.MustParsePort("8080"): {},
 				},
 			},
 			container.HostConfig{
-				PortBindings: map[nat.Port][]nat.PortBinding{
-					"8080/tcp": {{
-						HostPort: "8080:8080",
+				PortBindings: network.PortMap{
+					network.MustParsePort("8080/tcp"): {{
+						HostPort: "8080",
 					}},
 				},
 			},
@@ -78,7 +77,7 @@ func Test_containerConfigBuilder_build(t *testing.T) {
 			fields{
 				"image",
 				"command",
-				map[nat.Port]struct{}{
+				map[string]struct{}{
 					"asd": {},
 				},
 			},

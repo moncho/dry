@@ -3,10 +3,8 @@ package mock
 import (
 	"context"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/swarm"
-	dockerAPI "github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/swarm"
+	"github.com/moby/moby/client"
 )
 
 const (
@@ -17,34 +15,37 @@ const (
 
 // SwarmAPIClientMock mocks docker SwarmAPIClient
 type SwarmAPIClientMock struct {
-	dockerAPI.APIClient
+	client.APIClient
 }
 
 // NodeList returns a list with one Node
-func (mock SwarmAPIClientMock) NodeList(context context.Context, options types.NodeListOptions) ([]swarm.Node, error) {
-	return []swarm.Node{{
-		ID: "1",
-	}}, nil
+func (mock SwarmAPIClientMock) NodeList(context.Context, client.NodeListOptions) (client.NodeListResult, error) {
+	return client.NodeListResult{
+		Items: []swarm.Node{{
+			ID: "1",
+		}},
+	}, nil
 }
 
 // TaskList returns a list of tasks, node with id 1 will return a non empty list
-func (mock SwarmAPIClientMock) TaskList(context context.Context, options types.TaskListOptions) ([]swarm.Task, error) {
-	nodeID := options.Filters.Get("node")[0]
-	if nodeID == "1" {
-		return []swarm.Task{
-			{
-				ID:     "1",
-				NodeID: "1",
+func (mock SwarmAPIClientMock) TaskList(_ context.Context, options client.TaskListOptions) (client.TaskListResult, error) {
+	if f := options.Filters["node"]; f["1"] {
+		return client.TaskListResult{
+			Items: []swarm.Task{
+				{
+					ID:     "1",
+					NodeID: "1",
+				},
 			},
 		}, nil
 	}
 
-	return nil, nil
+	return client.TaskListResult{}, nil
 }
 
 // ServiceList returns a list of services
-func (mock SwarmAPIClientMock) ServiceList(context context.Context, options types.ServiceListOptions) ([]swarm.Service, error) {
-	return []swarm.Service{
+func (mock SwarmAPIClientMock) ServiceList(context.Context, client.ServiceListOptions) (client.ServiceListResult, error) {
+	return client.ServiceListResult{Items: []swarm.Service{
 		{
 			ID: "1",
 			Spec: swarm.ServiceSpec{
@@ -69,26 +70,20 @@ func (mock SwarmAPIClientMock) ServiceList(context context.Context, options type
 				},
 			},
 		},
-	}, nil
+	}}, nil
 }
 
 // ConfigList mock
-func (mock SwarmAPIClientMock) ConfigList(
-	context context.Context, opts types.ConfigListOptions,
-) ([]swarm.Config, error) {
-	return nil, nil
+func (mock SwarmAPIClientMock) ConfigList(context.Context, client.ConfigListOptions) (client.ConfigListResult, error) {
+	return client.ConfigListResult{}, nil
 }
 
 // NetworkList mock
-func (mock SwarmAPIClientMock) NetworkList(
-	context context.Context, opts network.ListOptions,
-) ([]network.Summary, error) {
-	return nil, nil
+func (mock SwarmAPIClientMock) NetworkList(context.Context, client.NetworkListOptions) (client.NetworkListResult, error) {
+	return client.NetworkListResult{}, nil
 }
 
 // SecretList mock
-func (mock SwarmAPIClientMock) SecretList(
-	context context.Context, opts types.SecretListOptions,
-) ([]swarm.Secret, error) {
-	return nil, nil
+func (mock SwarmAPIClientMock) SecretList(context.Context, client.SecretListOptions) (client.SecretListResult, error) {
+	return client.SecretListResult{}, nil
 }

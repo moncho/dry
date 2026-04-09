@@ -8,11 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/swarm"
+	"github.com/moby/moby/api/types/network"
+	"github.com/moby/moby/api/types/swarm"
+	"github.com/moby/moby/client"
 )
 
 const (
@@ -25,24 +23,27 @@ const (
 func (daemon *DockerDaemon) Node(id string) (*swarm.Node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	node, _, err := daemon.client.NodeInspectWithRaw(ctx, id)
+	res, err := daemon.client.NodeInspect(ctx, id, client.NodeInspectOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("retrieve node with id %s: %w", id, err)
 	}
-	return &node, nil
+	return &res.Node, nil
 }
 
 // NodeChangeAvailability changes the availability of the given node
 func (daemon *DockerDaemon) NodeChangeAvailability(nodeID string, availability swarm.NodeAvailability) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	node, _, err := daemon.client.NodeInspectWithRaw(ctx, nodeID)
+	res, err := daemon.client.NodeInspect(ctx, nodeID, client.NodeInspectOptions{})
 	if err != nil {
 		return err
 	}
 
-	node.Spec.Availability = availability
-	err = daemon.client.NodeUpdate(ctx, nodeID, node.Version, node.Spec)
+	res.Node.Spec.Availability = availability
+	_, err = daemon.client.NodeUpdate(ctx, nodeID, client.NodeUpdateOptions{
+		Version: res.Node.Version,
+		Spec:    res.Node.Spec,
+	})
 	if err != nil {
 		return fmt.Errorf("change node %s availability: %w", nodeID, err)
 	}
@@ -53,25 +54,24 @@ func (daemon *DockerDaemon) NodeChangeAvailability(nodeID string, availability s
 func (daemon *DockerDaemon) Nodes() ([]swarm.Node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	nodes, err := daemon.client.NodeList(ctx, types.NodeListOptions{})
+	res, err := daemon.client.NodeList(ctx, client.NodeListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("retrieve node list: %w", err)
 	}
-	return nodes, nil
+	return res.Items, nil
 }
 
 // NodeTasks returns the tasks being run by the given node
 func (daemon *DockerDaemon) NodeTasks(nodeID string) ([]swarm.Task, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	filter := filters.NewArgs()
-	filter.Add("node", nodeID)
-
-	nodeTasks, err := daemon.client.TaskList(ctx, types.TaskListOptions{Filters: filter})
+	res, err := daemon.client.TaskList(ctx, client.TaskListOptions{
+		Filters: make(client.Filters).Add("node", nodeID),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("retrieve tasks for node %s: %w", nodeID, err)
 	}
-	return nodeTasks, nil
+	return res.Items, nil
 }
 
 // ResolveNode will attempt to resolve the given node ID to a name.
@@ -94,16 +94,16 @@ func (daemon *DockerDaemon) resolve(t interface{}, id string) (string, error) {
 func (daemon *DockerDaemon) Service(id string) (*swarm.Service, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	service, _, err := daemon.client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{InsertDefaults: true})
+	res, err := daemon.client.ServiceInspect(ctx, id, client.ServiceInspectOptions{InsertDefaults: true})
 	if err != nil {
 		return nil, fmt.Errorf("retrieve service with id %s: %w", id, err)
 	}
-	return &service, nil
+	return &res.Service, nil
 }
 
 // ServiceLogs returns logs of the service with the given id
 func (daemon *DockerDaemon) ServiceLogs(id string, since string, withTimestamps bool) (io.ReadCloser, error) {
-	options := container.LogsOptions{
+	options := client.ServiceLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Timestamps: withTimestamps,
@@ -125,14 +125,19 @@ func (daemon *DockerDaemon) ServiceLogs(id string, since string, withTimestamps 
 func (daemon *DockerDaemon) Services() ([]swarm.Service, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	return daemon.client.ServiceList(ctx, types.ServiceListOptions{})
+	res, err := daemon.client.ServiceList(ctx, client.ServiceListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return res.Items, nil
 }
 
 // ServiceRemove removes the service with the given in
 func (daemon *DockerDaemon) ServiceRemove(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	return daemon.client.ServiceRemove(ctx, id)
+	_, err := daemon.client.ServiceRemove(ctx, id, client.ServiceRemoveOptions{})
+	return err
 }
 
 // ServiceScale scales the given service by the given number of replicas
@@ -140,24 +145,22 @@ func (daemon *DockerDaemon) ServiceScale(id string, replicas uint64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
-	service, _, err := daemon.client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{})
+	res, err := daemon.client.ServiceInspect(ctx, id, client.ServiceInspectOptions{})
 	if err != nil {
 		return err
 	}
 
-	serviceMode := &service.Spec.Mode
+	serviceMode := &res.Service.Spec.Mode
 	if serviceMode.Replicated == nil {
 		return errors.New("scale can only be used with replicated mode")
 	}
 
 	serviceMode.Replicated.Replicas = &replicas
 
-	_, err = daemon.client.ServiceUpdate(
-		ctx,
-		id,
-		service.Version,
-		service.Spec,
-		types.ServiceUpdateOptions{})
+	_, err = daemon.client.ServiceUpdate(ctx, id, client.ServiceUpdateOptions{
+		Version: res.Service.Version,
+		Spec:    res.Service.Spec,
+	})
 	return err
 }
 
@@ -166,19 +169,17 @@ func (daemon *DockerDaemon) ServiceUpdate(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
-	service, _, err := daemon.client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{})
+	res, err := daemon.client.ServiceInspect(ctx, id, client.ServiceInspectOptions{})
 	if err != nil {
 		return err
 	}
 
-	service.Spec.TaskTemplate.ForceUpdate++
+	res.Service.Spec.TaskTemplate.ForceUpdate++
 
-	_, err = daemon.client.ServiceUpdate(
-		ctx,
-		id,
-		service.Version,
-		service.Spec,
-		types.ServiceUpdateOptions{})
+	_, err = daemon.client.ServiceUpdate(ctx, id, client.ServiceUpdateOptions{
+		Version: res.Service.Version,
+		Spec:    res.Service.Spec,
+	})
 	return err
 }
 
@@ -186,16 +187,13 @@ func (daemon *DockerDaemon) ServiceUpdate(id string) error {
 func (daemon *DockerDaemon) ServiceTasks(services ...string) ([]swarm.Task, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	filter := filters.NewArgs()
-	for _, service := range services {
-		filter.Add("service", service)
-	}
-
-	nodeTasks, err := daemon.client.TaskList(ctx, types.TaskListOptions{Filters: filter})
+	res, err := daemon.client.TaskList(ctx, client.TaskListOptions{
+		Filters: make(client.Filters).Add("service", services...),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("retrieve task list: %w", err)
 	}
-	return nodeTasks, nil
+	return res.Items, nil
 }
 
 // Stacks returns the stack list
@@ -203,15 +201,15 @@ func (daemon *DockerDaemon) Stacks() ([]Stack, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
-	services, err := daemon.client.ServiceList(
-		ctx,
-		types.ServiceListOptions{Filters: getAllStacksFilter()})
+	res, err := daemon.client.ServiceList(ctx, client.ServiceListOptions{
+		Filters: getAllStacksFilter(),
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	m := make(map[string]*Stack)
-	for _, service := range services {
+	for _, service := range res.Items {
 		labels := service.Spec.Labels
 		name, ok := labels[LabelNamespace]
 		if !ok {
@@ -256,53 +254,72 @@ func (daemon *DockerDaemon) Stacks() ([]Stack, error) {
 func (daemon *DockerDaemon) StackConfigs(stack string) ([]swarm.Config, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	return daemon.client.ConfigList(
-		ctx,
-		types.ConfigListOptions{Filters: buildStackFilter(stack)})
+	res, err := daemon.client.ConfigList(ctx, client.ConfigListOptions{
+		Filters: make(client.Filters).Add("stack", stack),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res.Items, err
 }
 
 // StackNetworks returns the networks created for the given stack
 func (daemon *DockerDaemon) StackNetworks(stack string) ([]network.Inspect, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	return daemon.client.NetworkList(
-		ctx,
-		network.ListOptions{Filters: buildStackFilter(stack)})
+	res, err := daemon.client.NetworkList(ctx, client.NetworkListOptions{
+		Filters: buildStackFilter(stack),
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]network.Inspect, 0, len(res.Items))
+	for _, nw := range res.Items {
+		out = append(out, network.Inspect{
+			Network: nw.Network,
+		})
+	}
+	return out, nil
 }
 
 // StackSecrets return the secrets created for the given stack
 func (daemon *DockerDaemon) StackSecrets(stack string) ([]swarm.Secret, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	return daemon.client.SecretList(
-		ctx,
-		types.SecretListOptions{Filters: buildStackFilter(stack)})
+	res, err := daemon.client.SecretList(ctx, client.SecretListOptions{
+		Filters: buildStackFilter(stack),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res.Items, nil
 }
 
 // StackServices returns the given stack service list
 func (daemon *DockerDaemon) StackServices(stack string) ([]swarm.Service, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	filter := buildStackFilter(stack)
-
-	stackServices, err := daemon.client.ServiceList(ctx, types.ServiceListOptions{Filters: filter})
+	res, err := daemon.client.ServiceList(ctx, client.ServiceListOptions{
+		Filters: buildStackFilter(stack),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("retrieve stack service list: %w", err)
 	}
-	return stackServices, nil
+	return res.Items, nil
 }
 
 // StackTasks returns the given stack task list
 func (daemon *DockerDaemon) StackTasks(stack string) ([]swarm.Task, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
-	filter := buildStackFilter(stack)
 
-	stackTasks, err := daemon.client.TaskList(ctx, types.TaskListOptions{Filters: filter})
+	res, err := daemon.client.TaskList(ctx, client.TaskListOptions{
+		Filters: buildStackFilter(stack),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("retrieve stack task list: %w", err)
 	}
-	return stackTasks, nil
+	return res.Items, nil
 }
 
 // Task returns the task with the given id
@@ -310,23 +327,19 @@ func (daemon *DockerDaemon) Task(id string) (swarm.Task, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
 
-	task, _, err := daemon.client.TaskInspectWithRaw(ctx, id)
+	res, err := daemon.client.TaskInspect(ctx, id, client.TaskInspectOptions{})
 	if err != nil {
 		return swarm.Task{}, fmt.Errorf("retrieve task with id %s: %w", id, err)
 	}
-	return task, nil
+	return res.Task, nil
 }
 
-func buildStackFilter(stack string) filters.Args {
-	filter := filters.NewArgs()
-	filter.Add("label", "com.docker.stack.namespace="+stack)
-	return filter
+func buildStackFilter(stack string) client.Filters {
+	return make(client.Filters).Add("label", "com.docker.stack.namespace="+stack)
 }
 
-func getAllStacksFilter() filters.Args {
-	filter := filters.NewArgs()
-	filter.Add("label", LabelNamespace)
-	return filter
+func getAllStacksFilter() client.Filters {
+	return make(client.Filters).Add("label", LabelNamespace)
 }
 
 // NewNodeAvailability builds NodeAvailability from the given string

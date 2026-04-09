@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/distribution/reference"
-	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/go-units"
+	"github.com/moby/moby/api/types/swarm"
 	"github.com/moncho/dry/docker"
 )
 
