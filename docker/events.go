@@ -31,8 +31,8 @@ func logEvents(log *EventLog) EventCallback {
 func handleEvent(
 	ctx context.Context,
 	event events.Message,
-	processors ...EventCallback) {
-
+	processors ...EventCallback,
+) {
 	for _, ep := range processors {
 		ep(ctx, event)
 	}

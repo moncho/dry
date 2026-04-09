@@ -46,7 +46,6 @@ func (s tasksByDesiredState) Less(i, j int) bool {
 
 // SortTasks sorts the given Task slice using the given mode
 func SortTasks(tasks []swarm.Task, mode SortMode) {
-
 	switch mode {
 	case SortByTaskImage:
 		sortingAlg := tasksByImage{tasks}
@@ -61,5 +60,4 @@ func SortTasks(tasks []swarm.Task, mode SortMode) {
 		sortingAlg := tasksByDesiredState{tasks}
 		sort.SliceStable(sortingAlg.swarmTasks, sortingAlg.Less)
 	}
-
 }

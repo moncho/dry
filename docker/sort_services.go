@@ -21,7 +21,6 @@ func (s swarmServices) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 type servicesByName struct{ swarmServices }
 
 func (s servicesByName) Less(i, j int) bool {
-
 	return s.swarmServices[i].Spec.Name < s.swarmServices[j].Spec.Name
 }
 
@@ -40,5 +39,4 @@ func SortServices(services []swarm.Service, mode SortMode) {
 		sort.SliceStable(servicesByImage{services}.swarmServices, servicesByImage{services}.Less)
 
 	}
-
 }

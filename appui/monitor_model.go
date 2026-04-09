@@ -182,7 +182,7 @@ func (m *MonitorModel) refreshTable() {
 			continue
 		}
 		rows = append(rows, monitorRow{
-			cid: cid,
+			cid:     cid,
 			columns: monitorRowColumns(s),
 		})
 	}

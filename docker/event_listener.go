@@ -11,31 +11,31 @@ import (
 type SourceType string
 
 const (
-	//ContainerSource for events emitted by Docker containers
+	// ContainerSource for events emitted by Docker containers
 	ContainerSource = SourceType("container")
 
-	//DaemonSource for events emitted by the Docker daemon
+	// DaemonSource for events emitted by the Docker daemon
 	DaemonSource = SourceType("daemon")
 
-	//ImageSource for events emitted by Docker images
+	// ImageSource for events emitted by Docker images
 	ImageSource = SourceType("image")
 
-	//NetworkSource for events emitted by Docker networks
+	// NetworkSource for events emitted by Docker networks
 	NetworkSource = SourceType("network")
 
-	//PluginSource for events emitted by Docker plugins
+	// PluginSource for events emitted by Docker plugins
 	PluginSource = SourceType("plugin")
 
-	//VolumeSource for events emitted by Docker volumes
+	// VolumeSource for events emitted by Docker volumes
 	VolumeSource = SourceType("volume")
 
-	//ServiceSource for events emitted by Docker services
+	// ServiceSource for events emitted by Docker services
 	ServiceSource = SourceType("service")
 
-	//NodeSource for events emitted by Docker nodes
+	// NodeSource for events emitted by Docker nodes
 	NodeSource = SourceType("node")
 
-	//SecretSource for events emitted by Docker secrets
+	// SecretSource for events emitted by Docker secrets
 	SecretSource = SourceType("secret")
 )
 

@@ -11,7 +11,7 @@ import (
 
 const (
 	// LabelNamespace is the label used to track stack resources
-	//Copied from https://github.com/docker/cli/blob/master/cli/compose/convert/compose.go
+	// Copied from https://github.com/docker/cli/blob/master/cli/compose/convert/compose.go
 	LabelNamespace = "com.docker.stack.namespace"
 )
 
@@ -44,7 +44,6 @@ func (mock SwarmAPIClientMock) TaskList(context context.Context, options types.T
 
 // ServiceList returns a list of services
 func (mock SwarmAPIClientMock) ServiceList(context context.Context, options types.ServiceListOptions) ([]swarm.Service, error) {
-
 	return []swarm.Service{
 		{
 			ID: "1",
@@ -71,23 +70,25 @@ func (mock SwarmAPIClientMock) ServiceList(context context.Context, options type
 			},
 		},
 	}, nil
-
 }
 
 // ConfigList mock
 func (mock SwarmAPIClientMock) ConfigList(
-	context context.Context, opts types.ConfigListOptions) ([]swarm.Config, error) {
+	context context.Context, opts types.ConfigListOptions,
+) ([]swarm.Config, error) {
 	return nil, nil
 }
 
 // NetworkList mock
 func (mock SwarmAPIClientMock) NetworkList(
-	context context.Context, opts network.ListOptions) ([]network.Summary, error) {
+	context context.Context, opts network.ListOptions,
+) ([]network.Summary, error) {
 	return nil, nil
 }
 
 // SecretList mock
 func (mock SwarmAPIClientMock) SecretList(
-	context context.Context, opts types.SecretListOptions) ([]swarm.Secret, error) {
+	context context.Context, opts types.SecretListOptions,
+) ([]swarm.Secret, error) {
 	return nil, nil
 }

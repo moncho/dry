@@ -48,7 +48,6 @@ func (r *idResolver) get(ctx context.Context, t interface{}, id string) (string,
 	default:
 		return "", errors.New("unsupported type")
 	}
-
 }
 
 // Resolve will attempt to resolve an ID to a Name by querying the manager.

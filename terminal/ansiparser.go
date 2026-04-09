@@ -52,11 +52,11 @@ func (p *ansiParser) handleEscape(char rune) {
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		// Part of an instruction
 	case ';':
-		//p.addInstruction()
+		// p.addInstruction()
 		p.instructionStartedAt = p.cursor + utf8.RuneLen(';')
 	case 'Q', 'K', 'G', 'A', 'B', 'C', 'D', 'M':
-		//p.addInstruction()
-		//p.applyEscape(char, p.instructions)
+		// p.addInstruction()
+		// p.applyEscape(char, p.instructions)
 		p.mode = modeNormal
 	default:
 		// unrecognized character, abort the escapeCode
@@ -67,10 +67,10 @@ func (p *ansiParser) handleEscape(char rune) {
 
 func (p *ansiParser) handleNormal(char rune) {
 	switch char {
-	case '\n': //newLine
-	case '\r': //carriageReturn
-	case '\b': //backspace
-	case '\x1b': //Esc+[
+	case '\n': // newLine
+	case '\r': // carriageReturn
+	case '\b': // backspace
+	case '\x1b': // Esc+[
 		p.escapeStartedAt = p.cursor
 		p.mode = modePreEscape
 	default:

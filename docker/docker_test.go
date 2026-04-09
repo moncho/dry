@@ -38,6 +38,7 @@ func TestContainerConversionToPointerList(t *testing.T) {
 		}
 	}
 }
+
 func createClient() dockerAPI.ContainerAPIClient {
 	return mock.ContainerAPIClientMock{}
 }

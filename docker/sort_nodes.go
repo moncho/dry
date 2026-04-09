@@ -65,5 +65,4 @@ func SortNodes(nodes []swarm.Node, mode SortMode) {
 	case SortByNodeStatus:
 		sort.Sort(nodesByStatus{nodes})
 	}
-
 }

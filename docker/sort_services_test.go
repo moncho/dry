@@ -91,7 +91,6 @@ func TestSortServices(t *testing.T) {
 }
 
 func toSortInterface(services []swarm.Service, mode SortMode) sort.Interface {
-
 	switch mode {
 	case SortByServiceName:
 		return servicesByName{services}
@@ -100,5 +99,4 @@ func toSortInterface(services []swarm.Service, mode SortMode) sort.Interface {
 	default:
 		return nil
 	}
-
 }

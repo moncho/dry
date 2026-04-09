@@ -72,9 +72,9 @@ func (s *simpleStore) Get(id string) *Container {
 	}
 	return nil
 }
-func (s *simpleStore) List() []*Container       { return s.containers }
-func (s *simpleStore) Remove(id string)         {}
-func (s *simpleStore) Size() int                { return len(s.containers) }
+func (s *simpleStore) List() []*Container { return s.containers }
+func (s *simpleStore) Remove(id string)   {}
+func (s *simpleStore) Size() int          { return len(s.containers) }
 
 func newTestDaemon(containers []*Container, client *composeTestClient) *DockerDaemon {
 	return &DockerDaemon{

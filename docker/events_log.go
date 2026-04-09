@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	//DefaultCapacity of a new EventLog.
+	// DefaultCapacity of a new EventLog.
 	DefaultCapacity = 50
 )
 

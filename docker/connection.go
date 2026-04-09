@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	//DefaultConnectionTimeout is the timeout for connecting with the Docker daemon
+	// DefaultConnectionTimeout is the timeout for connecting with the Docker daemon
 	DefaultConnectionTimeout = 32 * time.Second
 )
 
@@ -28,6 +28,7 @@ var defaultDockerPath string
 func init() {
 	defaultDockerPath, _ = homedir.Expand("~/.docker")
 }
+
 func connect(client client.APIClient, env Env) (*DockerDaemon, error) {
 	store, err := NewDockerContainerStore(client)
 	if err != nil {
@@ -47,7 +48,6 @@ func connect(client client.APIClient, env Env) (*DockerDaemon, error) {
 }
 
 func getServerHost(env Env) (string, error) {
-
 	host := env.DockerHost
 	if host == "" {
 		host = DefaultDockerHost
@@ -63,7 +63,7 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 		return nil, fmt.Errorf("invalid host: %w", err)
 	}
 	var options *drytls.Options
-	//If a path to certificates is given use the path to read certificates from
+	// If a path to certificates is given use the path to read certificates from
 	if dockerCertPath := env.DockerCertPath; dockerCertPath != "" {
 		options = &drytls.Options{
 			CAFile:             filepath.Join(dockerCertPath, "ca.pem"),
@@ -72,10 +72,10 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 			InsecureSkipVerify: !env.DockerTLSVerify,
 		}
 	} else if env.DockerTLSVerify {
-		//No cert path is given but TLS verify is set, default location for
-		//docker certs will be used.
-		//See https://docs.docker.com/engine/security/https/#secure-by-default
-		//Fixes #23
+		// No cert path is given but TLS verify is set, default location for
+		// docker certs will be used.
+		// See https://docs.docker.com/engine/security/https/#secure-by-default
+		// Fixes #23
 		options = &drytls.Options{
 			CAFile:             filepath.Join(defaultDockerPath, "ca.pem"),
 			CertFile:           filepath.Join(defaultDockerPath, "cert.pem"),
@@ -93,9 +93,9 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 	}
 
 	if host != "" && strings.HasPrefix(host, "ssh") {
-		//if it starts with ssh, its an ssh connection, and we need to handle this specially
-		//github.com/docker/docker does not handle ssh, as an upgrade to go-connections need to be made
-		//see https://github.com/docker/go-connections/pull/39
+		// if it starts with ssh, its an ssh connection, and we need to handle this specially
+		// github.com/docker/docker does not handle ssh, as an upgrade to go-connections need to be made
+		// see https://github.com/docker/go-connections/pull/39
 		url, err := url.Parse(host)
 		if err != nil {
 			return nil, err
@@ -111,7 +111,7 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 				return connectSSHTransport(url.Host, url.Path, sshConfig)
 			}))
 	} else if host != "" {
-		//default uses the docker library to connect to hosts
+		// default uses the docker library to connect to hosts
 		opts = append(opts, client.WithHost(host))
 	}
 
@@ -120,7 +120,6 @@ func ConnectToDaemon(env Env) (*DockerDaemon, error) {
 		return nil, fmt.Errorf("create Docker client: %w", err)
 	}
 	return connect(client, env)
-
 }
 
 func configureSSHTransport(host string, user string, pass string) (*ssh.ClientConfig, error) {
@@ -134,7 +133,7 @@ func configureSSHTransport(host string, user string, pass string) (*ssh.ClientCo
 	foundIdentityFile := false
 	files := ssh_config.GetAll(host, "IdentityFile")
 	for _, v := range files {
-		//see https://github.com/docker/go-connections/pull/39#issuecomment-312765226
+		// see https://github.com/docker/go-connections/pull/39#issuecomment-312765226
 		if _, err := os.Stat(v); err == nil {
 			methods, err = readPk(v, methods, dirname)
 			if err != nil {
@@ -190,7 +189,6 @@ func connectSSHTransport(host string, path string, sshConfig *ssh.ClientConfig) 
 	}
 
 	ncc, chans, reqs, err := ssh.NewClientConn(remoteConn, "", sshConfig)
-
 	if err != nil {
 		return nil, err
 	}

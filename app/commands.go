@@ -231,8 +231,8 @@ func loadContainerLogStreamWithTail(daemon docker.ContainerDaemon, id string, ta
 		return streamingContent{}, errors.New("log stream unavailable")
 	}
 	return streamingContent{
-		title:   fmt.Sprintf("Logs: %s", shortID(id)),
-		reader:  demuxDockerStream(reader),
+		title:  fmt.Sprintf("Logs: %s", shortID(id)),
+		reader: demuxDockerStream(reader),
 	}, nil
 }
 
@@ -286,8 +286,8 @@ func loadComposeLogStreamWithTail(daemon docker.ContainerDaemon, project, servic
 		title = fmt.Sprintf("Logs: %s/%s", project, service)
 	}
 	return streamingContent{
-		title:   title,
-		reader:  mergeLogReaders(named),
+		title:  title,
+		reader: mergeLogReaders(named),
 	}, nil
 }
 

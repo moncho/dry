@@ -15,7 +15,6 @@ import (
 func TestSwarmNodeRetrieval(t *testing.T) {
 	daemon := DockerDaemon{client: mock.SwarmAPIClientMock{}}
 	nodes, err := daemon.Nodes()
-
 	if err != nil {
 		t.Errorf("Retrieving the list of swarm nodes resulted in error: %s", err.Error())
 	}
@@ -27,7 +26,6 @@ func TestSwarmNodeRetrieval(t *testing.T) {
 func TestTaskRetrieval(t *testing.T) {
 	daemon := DockerDaemon{client: mock.SwarmAPIClientMock{}}
 	tasks, err := daemon.NodeTasks("1")
-
 	if err != nil {
 		t.Errorf("Retrieving the list of task of node 1 resulted in error: %s", err.Error())
 	}
@@ -36,7 +34,6 @@ func TestTaskRetrieval(t *testing.T) {
 	}
 
 	tasks, err = daemon.NodeTasks("Nope")
-
 	if err != nil {
 		t.Errorf("Retrieving the list of task of non-existing node resulted in error: %s", err.Error())
 	}
@@ -49,18 +46,15 @@ func TestIDResolution(t *testing.T) {
 	r := &resolverMock{}
 	daemon := DockerDaemon{resolver: r}
 	name, err := daemon.ResolveNode("1")
-
 	if err != nil {
 		t.Errorf("Resolving node with ID 1 resulted in error: %s", err.Error())
 	}
 	if name != "Node1" {
 		t.Errorf("Resolving node with ID 1 resulted in %s , expected %s", name, "Node1")
 	}
-
 }
 
-type resolverMock struct {
-}
+type resolverMock struct{}
 
 func (r *resolverMock) Resolve(ctx context.Context, t interface{}, id string) (string, error) {
 	switch t.(type) {

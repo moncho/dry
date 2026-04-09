@@ -46,51 +46,44 @@ func TestResultIteration(t *testing.T) {
 	line, _ = rs.NextLine()
 	if line != 4 {
 		t.Errorf("Expected line: %d, got: %d", 4, line)
-
 	}
 
 	line, _ = rs.PreviousLine()
 	if line != 3 {
 		t.Errorf("Expected line: %d, got: %d", 3, line)
-
 	}
 
 	line, _ = rs.NextLine()
 	if line != 4 {
 		t.Errorf("Expected line: %d, got: %d", 4, line)
-
 	}
 
 	line, _ = rs.NextLine()
 	if line != 8 {
 		t.Errorf("Expected line: %d, got: %d", 8, line)
-
 	}
 
 	rs.InitialLine(5)
 	line, _ = rs.NextLine()
 	if line != 8 {
 		t.Errorf("Expected line: %d, got: %d", 8, line)
-
 	}
 
 	rs.InitialLine(9)
 	line, _ = rs.NextLine()
 	if line != 9 {
 		t.Errorf("Expected line: %d, got: %d", 9, line)
-
 	}
 
 	line, _ = rs.NextLine()
 	if line != 9 {
 		t.Errorf("Expected line: %d, got: %d", 9, line)
-
 	}
-
 }
 
 func testText() [][]rune {
-	return [][]rune{[]rune("one 1 nope"),
+	return [][]rune{
+		[]rune("one 1 nope"),
 		[]rune("lien 2 nope"),
 		[]rune("line3 yes"),
 		[]rune("line 4"),
@@ -100,5 +93,6 @@ func testText() [][]rune {
 		[]rune("Really, nope 8"),
 		[]rune("yes line 9"),
 		[]rune("line 10"),
-		[]rune("lin 11")}
+		[]rune("lin 11"),
+	}
 }

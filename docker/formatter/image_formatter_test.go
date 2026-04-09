@@ -22,6 +22,7 @@ func TestImageNameFormatting(t *testing.T) {
 		t.Errorf("Tag value not what expected after formatting: %s", tag)
 	}
 }
+
 func TestImageNameFormattingPrivateRegistry(t *testing.T) {
 	formatter := ImageFormatter{
 		trunc: false,

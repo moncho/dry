@@ -7,7 +7,6 @@ import (
 )
 
 func TestFilterByName(t *testing.T) {
-
 	c := &Container{
 		Summary: container.Summary{Names: []string{"bla"}},
 	}
@@ -29,13 +28,10 @@ func TestFilterByName(t *testing.T) {
 	}
 	if !filter(c) {
 		t.Error("Filter by name is filtering out when it should not")
-
 	}
-
 }
 
 func TestFilterByID(t *testing.T) {
-
 	c := &Container{
 		Summary: container.Summary{ID: "bla"},
 	}
@@ -57,7 +53,5 @@ func TestFilterByID(t *testing.T) {
 	}
 	if !filter(c) {
 		t.Error("Filter by ID is filtering out when it should not")
-
 	}
-
 }

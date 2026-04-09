@@ -33,7 +33,6 @@ func (s statsClientMock) ContainerTop(ctx context.Context, ctr string, arguments
 }
 
 func TestStatsChannel_cancellingContextClosesResources(t *testing.T) {
-
 	sc := StatsChannel{
 		Container: &Container{
 			Summary: container.Summary{
@@ -46,7 +45,8 @@ func TestStatsChannel_cancellingContextClosesResources(t *testing.T) {
 		},
 		client: statsClientMock{
 			statsBody: io.NopCloser(strings.NewReader("")),
-		}}
+		},
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	stats := sc.Start(ctx)
 	var wg sync.WaitGroup
@@ -60,7 +60,6 @@ func TestStatsChannel_cancellingContextClosesResources(t *testing.T) {
 }
 
 func TestStatsChannel_statsArePublished(t *testing.T) {
-
 	sc := StatsChannel{
 		Container: &Container{
 			Summary: container.Summary{
@@ -73,7 +72,8 @@ func TestStatsChannel_statsArePublished(t *testing.T) {
 		},
 		client: statsClientMock{
 			statsBody: io.NopCloser(strings.NewReader(asJSON(container.StatsResponse{}))),
-		}}
+		},
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	stats := sc.Start(ctx)
 	var wg sync.WaitGroup
@@ -103,7 +103,8 @@ func TestStatsChannel_noErrors_goroutineExitsOnCtxCancel(t *testing.T) {
 		},
 		client: statsClientMock{
 			statsBody: io.NopCloser(strings.NewReader(asJSON(container.StatsResponse{}))),
-		}}
+		},
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	sc.Start(ctx)
 	cancel()
@@ -122,9 +123,10 @@ func TestStatsChannel_errorBuildingStats_goroutineExitsOnCtxCancel(t *testing.T)
 			Os: "Not windows",
 		},
 		client: statsClientMock{
-			//Empty reader results in EOF error
+			// Empty reader results in EOF error
 			statsBody: io.NopCloser(strings.NewReader("")),
-		}}
+		},
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	sc.Start(ctx)
 	cancel()
@@ -144,7 +146,8 @@ func TestStatsChannel_errorOpeningStream_goroutineExits(t *testing.T) {
 		},
 		client: statsClientMock{
 			statsErr: errors.New("No stats for you, my friend"),
-		}}
+		},
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	sc.Start(ctx)
@@ -159,7 +162,6 @@ func TestCalculateMemUsageUnixNoCache(t *testing.T) {
 }
 
 func TestCalculateMemPercentUnixNoCache(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		limit    float64
@@ -188,11 +190,9 @@ func TestCalculateMemPercentUnixNoCache(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestCalculateCPUPercentUnix(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		stats    *container.StatsResponse
@@ -232,7 +232,6 @@ func TestCalculateCPUPercentUnix(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func asJSON(stats container.StatsResponse) string {

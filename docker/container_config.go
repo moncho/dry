@@ -20,6 +20,7 @@ func newCCB() *containerConfigBuilder {
 		hostConfig: container.HostConfig{},
 	}
 }
+
 func (cc *containerConfigBuilder) build() (container.Config, container.HostConfig, error) {
 	return cc.config, cc.hostConfig, cc.err
 }

@@ -9,9 +9,11 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-const quickPeekVerticalChrome = 4
-const quickPeekMinContentHeight = 2
-const quickPeekFixedBodyLines = 9
+const (
+	quickPeekVerticalChrome   = 4
+	quickPeekMinContentHeight = 2
+	quickPeekFixedBodyLines   = 9
+)
 
 // QuickPeekModel renders a temporary side-panel preview for the current
 // selection without leaving the active list.

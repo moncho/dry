@@ -9,7 +9,7 @@ import (
 // Env holds Docker-related environment variables
 type Env struct {
 	DockerHost       string
-	DockerTLSVerify  bool //tls must be verified
+	DockerTLSVerify  bool // tls must be verified
 	DockerCertPath   string
 	DockerAPIVersion string
 }

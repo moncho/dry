@@ -5,17 +5,17 @@ import (
 )
 
 const (
-	//DownArrow character
+	// DownArrow character
 	DownArrow = string('\U00002193')
 
-	//MainScreenHeaderSize is the number of lines the header info rows use (excluding separator)
+	// MainScreenHeaderSize is the number of lines the header info rows use (excluding separator)
 	MainScreenHeaderSize = 3
-	//MainScreenFooterLength is the number of lines the footer of the main screen uses
+	// MainScreenFooterLength is the number of lines the footer of the main screen uses
 	MainScreenFooterLength = 1
-	//WidgetHeaderLines is the number of lines RenderWidgetHeader produces
+	// WidgetHeaderLines is the number of lines RenderWidgetHeader produces
 	WidgetHeaderLines = 1
-	//DefaultColumnSpacing defines the minimum space between columns
+	// DefaultColumnSpacing defines the minimum space between columns
 	DefaultColumnSpacing = 1
-	//IDColumnWidth defines a fixed width for ID columns
+	// IDColumnWidth defines a fixed width for ID columns
 	IDColumnWidth = docker.ShortLen
 )

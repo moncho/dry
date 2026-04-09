@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	//DefaultDockerHost is used as a default docker host to connect to
-	//if no other value is given.
+	// DefaultDockerHost is used as a default docker host to connect to
+	// if no other value is given.
 	DefaultDockerHost = "unix:///var/run/docker.sock"
 )
 
@@ -33,11 +33,12 @@ var defaultOperationTimeout = time.Duration(10) * time.Second
 
 // Defaults for listing images
 var defaultImageListOptions = image.ListOptions{
-	All: false}
+	All: false,
+}
 
 // DockerDaemon knows how to talk to the Docker daemon
 type DockerDaemon struct {
-	client    dockerAPI.APIClient //client used to to connect to the Docker daemon
+	client    dockerAPI.APIClient // client used to to connect to the Docker daemon
 	s         ContainerStore
 	err       error // Errors, if any.
 	dockerEnv Env
@@ -279,7 +280,8 @@ func (daemon *DockerDaemon) Prune() (*PruneReport, error) {
 		ContainerReport: cReport,
 		ImagesReport:    iReport,
 		NetworksReport:  nReport,
-		VolumesReport:   vReport}, nil
+		VolumesReport:   vReport,
+	}, nil
 }
 
 // RestartContainer restarts the container with the given id
@@ -361,9 +363,9 @@ func (daemon *DockerDaemon) RemoveAllStoppedContainers() (int, error) {
 func (daemon *DockerDaemon) RemoveDanglingImages() (int, error) {
 	danglingfilters := filters.NewArgs()
 	danglingfilters.Add("dangling", "true")
-	images, err := images(daemon.client,
-		image.ListOptions{
-			Filters: danglingfilters})
+	images, err := images(daemon.client, image.ListOptions{
+		Filters: danglingfilters,
+	})
 	var count uint32
 	errs := make(chan error, 1)
 	defer close(errs)
@@ -417,7 +419,6 @@ func (daemon *DockerDaemon) RemoveNetwork(id string) error {
 
 // Rm removes the container with the given id
 func (daemon *DockerDaemon) Rm(id string) error {
-
 	opts := container.RemoveOptions{
 		RemoveVolumes: false,
 		RemoveLinks:   false,
@@ -489,7 +490,6 @@ func (daemon *DockerDaemon) VolumeInspect(ctx context.Context, volumeID string) 
 // VolumeList returns the list of volumes.
 func (daemon *DockerDaemon) VolumeList(ctx context.Context) ([]*volume.Volume, error) {
 	volumeOkBody, err := daemon.client.VolumeList(ctx, volume.ListOptions{})
-
 	if err != nil {
 		return nil, err
 	}
@@ -543,7 +543,7 @@ func (daemon *DockerDaemon) Version() (*dockerTypes.Version, error) {
 // init initializes the internals of the docker daemon.
 func (daemon *DockerDaemon) init() error {
 	daemon.eventLog = NewEventLog()
-	//This loads Docker Version information
+	// This loads Docker Version information
 	if _, err := daemon.Version(); err != nil {
 		return fmt.Errorf("get Docker version: %w", err)
 	}
@@ -578,7 +578,6 @@ func containers(client dockerAPI.ContainerAPIClient) ([]*Container, error) {
 		cc = append(cc, &Container{Summary: containers[i], Detail: details})
 	}
 	return cc, nil
-
 }
 
 func images(client dockerAPI.ImageAPIClient, opts image.ListOptions) ([]image.Summary, error) {

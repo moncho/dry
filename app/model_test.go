@@ -585,10 +585,10 @@ func TestModel_WorkspaceContextPaneScrollsWhenFocused(t *testing.T) {
 func TestWorkspaceContextFromContainerIncludesRicherSummary(t *testing.T) {
 	c := &docker.Container{
 		Summary: dockercontainer.Summary{
-			ID:     "0123456789abcdef",
-			Image:  "nginx:latest",
-			Status: "Up 5 minutes",
-			Labels: map[string]string{"app": "api", "tier": "web"},
+			ID:      "0123456789abcdef",
+			Image:   "nginx:latest",
+			Status:  "Up 5 minutes",
+			Labels:  map[string]string{"app": "api", "tier": "web"},
 			Created: 1710000000,
 			Ports: []dockercontainer.Port{
 				{PublicPort: 8080, PrivatePort: 80, Type: "tcp"},

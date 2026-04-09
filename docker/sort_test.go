@@ -14,10 +14,8 @@ func TestSortById(t *testing.T) {
 	SortContainers(c, SortByContainerID)
 	if c[0].ID != "6dfafdbc3a40" {
 		t.Errorf("Sorting by CID did not work. Sorted to: %s", strings.Join(containersAsString(c), ","))
-
 	} else if c[1].ID != "7dfafdbc3a40" {
 		t.Errorf("Sorting by CID did not work. Sorted to: %s", strings.Join(containersAsString(c), ","))
-
 	}
 }
 
@@ -29,10 +27,8 @@ func TestSortByName(t *testing.T) {
 	SortContainers(c, SortByName)
 	if c[0].ID != "6dfafdbc3a40" {
 		t.Errorf("Sorting by Name did not work. Sorted to: %s", strings.Join(containersAsString(c), ","))
-
 	} else if c[1].ID != "7dfafdbc3a40" {
 		t.Errorf("Sorting by Name did not work. Sorted to: %s", strings.Join(containersAsString(c), ","))
-
 	}
 }
 
@@ -44,7 +40,6 @@ func TestSortByImage(t *testing.T) {
 	SortContainers(c, SortByImage)
 	if c[0].ID != "6dfafdbc3a40" {
 		t.Errorf("Sorting by image did not work. Sorted to: %s", strings.Join(containersAsString(c), ","))
-
 	} else if c[1].ID != "7dfafdbc3a40" {
 		t.Errorf("Sorting by image did not work. Sorted to: %s", strings.Join(containersAsString(c), ","))
 	}
@@ -58,7 +53,6 @@ func TestSortByStatus(t *testing.T) {
 	SortContainers(c, SortByStatus)
 	if c[0].ID != "6dfafdbc3a40" {
 		t.Errorf("Sorting by status did not work. Sorted to: %s", strings.Join(containersAsString(c), ","))
-
 	} else if c[1].ID != "7dfafdbc3a40" {
 		t.Errorf("Sorting by status did not work. Sorted to: %s", strings.Join(containersAsString(c), ","))
 	}
@@ -95,6 +89,7 @@ func containersToSort() ([]*Container, error) {
 	err := json.Unmarshal([]byte(jsonContainers), &containers)
 	return containers, err
 }
+
 func containersAsString(containers []*Container) []string {
 	result := make([]string, len(containers))
 	for i, c := range containers {

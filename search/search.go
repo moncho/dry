@@ -11,7 +11,7 @@ type Result struct {
 	Hits    int
 	Lines   []int
 	Pattern string
-	index   int //the current index i to iterate Lines
+	index   int // the current index i to iterate Lines
 }
 
 // NewSearch searches in a multiline string for lines that match the given pattern,

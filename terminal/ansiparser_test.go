@@ -33,5 +33,4 @@ func BenchmarkRemoveEscapeCharacters(b *testing.B) {
 	if len(last) == 0 {
 		b.Errorf("Parsing returned wrong number of lines, expected: %d, got: %d", 1, len(last))
 	}
-
 }

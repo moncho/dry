@@ -11,11 +11,11 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-//Docker repo is vendoring x/net/context and it seems that it conflicts
-//with whatever version of the same package the vendoring tools retrieve
-//A way to fix this is by removing the vendored package from the docker
-//directory of the vendor tool of dry, so:
-//rm -rf vendor/github.com/moby/moby/vendor/golang.org/x/net
+// Docker repo is vendoring x/net/context and it seems that it conflicts
+// with whatever version of the same package the vendoring tools retrieve
+// A way to fix this is by removing the vendored package from the docker
+// directory of the vendor tool of dry, so:
+// rm -rf vendor/github.com/moby/moby/vendor/golang.org/x/net
 
 // ContainerAPIClientMock mocks docker ContainerAPIClient
 type ContainerAPIClientMock struct {

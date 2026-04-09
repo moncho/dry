@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	//TestNodeID defines the ID of the swarm node for testing
+	// TestNodeID defines the ID of the swarm node for testing
 	TestNodeID = "1"
 )
 
@@ -24,12 +24,14 @@ func (_m *SwarmDockerDaemon) Info() (system.Info, error) {
 		LocalNodeState:   swarm.LocalNodeStateActive,
 		NodeID:           "ThisNodeID",
 		Cluster:          &clusterInfo,
-		ControlAvailable: true}
+		ControlAvailable: true,
+	}
 	return system.Info{
 		Name:     "test",
 		NCPU:     2,
 		MemTotal: 1024,
-		Swarm:    swarmInfo}, nil
+		Swarm:    swarmInfo,
+	}, nil
 }
 
 // Node returns a node with the given id
@@ -60,7 +62,8 @@ func (_m *SwarmDockerDaemon) ResolveService(id string) (string, error) {
 // Services returns a list of services with 1 element
 func (_m *SwarmDockerDaemon) Services() ([]swarm.Service, error) {
 	return []swarm.Service{
-		{ID: "ServiceID"}}, nil
+		{ID: "ServiceID"},
+	}, nil
 }
 
 // ServiceTasks returns one task per service, the task belongs to node with id "1"

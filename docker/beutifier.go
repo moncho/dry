@@ -9,7 +9,7 @@ import (
 
 const (
 	imagePrefixForV10 = "sha256:"
-	//ShortLen defines the default size of shortened ID
+	// ShortLen defines the default size of shortened ID
 	ShortLen = 12
 )
 
@@ -18,7 +18,6 @@ const (
 func DurationForHumans(duration int64) string {
 	return units.HumanDuration(time.Now().UTC().Sub(
 		time.Unix(duration, 0)))
-
 }
 
 // ImageID removes anything that is not part of the ID but is being added

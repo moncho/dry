@@ -118,10 +118,10 @@ type invocations struct {
 }
 
 func Test_notifyCallbacks(t *testing.T) {
-
-	var callback = func(
+	callback := func(
 		wg *sync.WaitGroup,
-		i *invocations) EventCallback {
+		i *invocations,
+	) EventCallback {
 		return func(ctx context.Context, event events.Message) {
 			defer wg.Done()
 			i.Lock()

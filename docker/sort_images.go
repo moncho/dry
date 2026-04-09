@@ -45,7 +45,7 @@ func (s bySize) Less(i, j int) bool {
 type byCreationDate struct{ apiImages }
 
 func (s byCreationDate) Less(i, j int) bool {
-	//More recent first
+	// More recent first
 	return s.apiImages[i].Created > s.apiImages[j].Created
 }
 

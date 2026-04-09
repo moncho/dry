@@ -29,7 +29,7 @@ type options struct {
 	Splash    int    `short:"w" long:"splash" description:"Show loading screen for N seconds (max 10)" default:"0"`
 	Theme     string `short:"T" long:"theme" description:"Color theme (dark, light)" default:"dark"`
 	Workspace bool   `long:"workspace" description:"Enable experimental Phase 1 workspace layout"`
-	//Docker-related properties
+	// Docker-related properties
 	DockerHost      string `short:"H" long:"docker_host" description:"Docker Host"`
 	DockerCertPath  string `short:"c" long:"docker_certpath" description:"Docker cert path"`
 	DockerTLSVerify string `short:"t" long:"docker_tls" description:"Docker TLS verify"`

@@ -41,7 +41,7 @@ func NewDockerContainerStore(client dockerAPI.ContainerAPIClient) (ContainerStor
 
 func (c *inMemoryContainerStore) add(cont *Container) {
 	c.Lock()
-	//If a container with the given ID exists already it is replaced
+	// If a container with the given ID exists already it is replaced
 	if _, ok := c.s[cont.ID]; ok {
 		for pos, container := range c.c {
 			if container.ID == cont.ID {

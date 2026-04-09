@@ -33,10 +33,11 @@ func (c timedOutImageAPIClientMock) ImagesPrune(ctx context.Context, f filters.A
 	select {
 	case <-time.After(600 * time.Millisecond):
 		return image.PruneReport{}, nil
-	case <-ctx.Done(): //This should always happen
+	case <-ctx.Done(): // This should always happen
 		return image.PruneReport{}, ctx.Err()
 	}
 }
+
 func TestDockerDaemon_RemoveUnusedImages(t *testing.T) {
 	type fields struct {
 		client dockerAPI.APIClient

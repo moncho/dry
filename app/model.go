@@ -12,8 +12,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/docker/docker/api/types/events"
 	dockercontainer "github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/swarm"
@@ -2103,7 +2103,7 @@ func workspaceContextFromComposeProject(p docker.ComposeProject) workspaceContex
 		title:    p.Name,
 		subtitle: "Compose Project",
 		lines:    lines,
-		project: p.Name,
+		project:  p.Name,
 	}
 }
 

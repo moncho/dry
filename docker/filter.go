@@ -19,7 +19,6 @@ func (cf ContainerFilter) Unfiltered() ContainerFilter {
 func (cf ContainerFilter) ByName(name string) ContainerFilter {
 	return func(c *Container) bool {
 		for _, containerName := range c.Names {
-
 			if strings.Contains(containerName, name) {
 				return true
 			}

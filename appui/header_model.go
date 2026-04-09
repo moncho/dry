@@ -6,9 +6,9 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
-	units "github.com/docker/go-units"
 	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/system"
+	units "github.com/docker/go-units"
 	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/ui"
 )

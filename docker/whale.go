@@ -1,7 +1,7 @@
 package docker
 
 const (
-	//Whale ascii art
+	// Whale ascii art
 	Whale = `
                   ##          .
             ## ## ##         ==
@@ -12,7 +12,7 @@ const (
        \    \        __/
         \____\______/
 `
-	//Whale0 ascii art for animations
+	// Whale0 ascii art for animations
 	Whale0 = `
                               .
                              ==
@@ -24,7 +24,7 @@ const (
         \____\______/
 `
 
-	//Whale1 ascii art for animations
+	// Whale1 ascii art for animations
 	Whale1 = `
                               .
                              ==
@@ -35,7 +35,7 @@ const (
        \    \        __/
         \____\______/
 `
-	//Whale2 ascii art for animations
+	// Whale2 ascii art for animations
 	Whale2 = `
                               .
                              ==
@@ -46,7 +46,7 @@ const (
        \    \        __/
         \____\______/
 `
-	//Whale3 ascii art for animations
+	// Whale3 ascii art for animations
 	Whale3 = `
                               .
                              ==
@@ -57,7 +57,7 @@ const (
        \    \        __/
         \____\______/
 `
-	//Whale4 ascii art for animations
+	// Whale4 ascii art for animations
 	Whale4 = `
                               .
                              ==
@@ -68,7 +68,7 @@ const (
        \    \        __/
         \____\______/
 `
-	//Whale5 ascii art for animations
+	// Whale5 ascii art for animations
 	Whale5 = `
                               .
                   ##         ==
@@ -79,7 +79,7 @@ const (
        \    \        __/
         \____\______/
 `
-	//Whale6 ascii art for animations
+	// Whale6 ascii art for animations
 	Whale6 = `
                               .
                ## ##         ==
@@ -90,7 +90,7 @@ const (
        \    \        __/
         \____\______/
 `
-	//Whale7 ascii art for animations
+	// Whale7 ascii art for animations
 	Whale7 = `
                               .
             ## ## ##         ==

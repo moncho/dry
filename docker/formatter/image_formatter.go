@@ -73,7 +73,6 @@ func (formatter *ImageFormatter) Tag() string {
 		return formatter.image.RepoTags[0][tagPos+1:]
 	}
 	return "<none>"
-
 }
 
 // Digest prettifies the image digestv
@@ -94,14 +93,13 @@ func (formatter *ImageFormatter) CreatedSince() string {
 
 // Size prettifies the image size
 func (formatter *ImageFormatter) Size() string {
-
 	formatter.addHeader(size)
-	//srw := units.HumanSize(float64(formatter.image.Size))
-	//sf := srw
+	// srw := units.HumanSize(float64(formatter.image.Size))
+	// sf := srw
 
 	if formatter.image.VirtualSize > 0 {
 		sv := units.HumanSize(float64(formatter.image.VirtualSize))
-		//sf = fmt.Sprintf("%s (virtual %s)", srw, sv)
+		// sf = fmt.Sprintf("%s (virtual %s)", srw, sv)
 		return sv
 	}
 	return ""

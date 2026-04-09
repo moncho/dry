@@ -18,8 +18,7 @@ import (
 )
 
 // DockerDaemonMock mocks a DockerDaemon
-type DockerDaemonMock struct {
-}
+type DockerDaemonMock struct{}
 
 // ComposeProjects mock
 func (_m *DockerDaemonMock) ComposeProjects() []drydocker.ComposeProject {
@@ -69,14 +68,18 @@ func (_m *DockerDaemonMock) Containers(filters []drydocker.ContainerFilter, _ dr
 	var containers []*drydocker.Container
 	for index := range 10 {
 		containers = append(containers, &drydocker.Container{
-			Summary: container.Summary{ID: strconv.Itoa(index), Names: []string{"Name"},
-				Status: "Up and running"},
+			Summary: container.Summary{
+				ID: strconv.Itoa(index), Names: []string{"Name"},
+				Status: "Up and running",
+			},
 		})
 	}
 	for index := range 10 {
 		containers = append(containers, &drydocker.Container{
-			Summary: container.Summary{ID: strconv.Itoa(index), Names: []string{"Name"},
-				Status: "Never worked"},
+			Summary: container.Summary{
+				ID: strconv.Itoa(index), Names: []string{"Name"},
+				Status: "Never worked",
+			},
 		})
 	}
 	for _, filter := range filters {
@@ -97,7 +100,6 @@ func (_m *DockerDaemonMock) DockerEnv() drydocker.Env {
 
 // Events provides a mock function with given fields:
 func (_m *DockerDaemonMock) Events(ctx context.Context) (<-chan events.Message, error) {
-
 	return nil, nil
 }
 
@@ -118,7 +120,6 @@ func (_m *DockerDaemonMock) ImageByID(id string) (image.Summary, error) {
 
 // Images mock
 func (_m *DockerDaemonMock) Images() ([]image.Summary, error) {
-
 	imagesJSON := `[
 		 {
 						 "ID": "8dfafdbc3a40",
@@ -184,7 +185,8 @@ func (_m *DockerDaemonMock) Info() (system.Info, error) {
 		Name:     "test",
 		NCPU:     2,
 		MemTotal: 1024,
-		Swarm:    swarmInfo}, nil
+		Swarm:    swarmInfo,
+	}, nil
 }
 
 // Inspect provides a mock function with given fields: id
@@ -254,7 +256,6 @@ func (_m *DockerDaemonMock) NodeTasks(nodeID string) ([]swarm.Task, error) {
 
 // Ok mocks OK
 func (_m *DockerDaemonMock) Ok() (bool, error) {
-
 	return false, nil
 }
 
@@ -280,7 +281,6 @@ func (_m *DockerDaemonMock) Prune() (*drydocker.PruneReport, error) {
 
 // RestartContainer provides a mock function with given fields: id
 func (_m *DockerDaemonMock) RestartContainer(id string) error {
-
 	return nil
 }
 
@@ -312,7 +312,6 @@ func (_m *DockerDaemonMock) RefreshNetworks() error {
 // RemoveAllStoppedContainers provides a mock function with given fields:
 func (_m *DockerDaemonMock) RemoveAllStoppedContainers() (int, error) {
 	return 0, nil
-
 }
 
 // RemoveDanglingImages mock
@@ -392,7 +391,6 @@ func (_m *DockerDaemonMock) StopContainer(id string) error {
 
 // Sort provides a mock function with given fields: sortMode
 func (_m *DockerDaemonMock) Sort(sortMode drydocker.SortMode) {
-
 }
 
 // SortImages mock

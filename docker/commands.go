@@ -6,25 +6,25 @@ import "errors"
 type Command int
 
 const (
-	//HISTORY Image history command
+	// HISTORY Image history command
 	HISTORY Command = iota
-	//INSPECT Inspect command
+	// INSPECT Inspect command
 	INSPECT
-	//KILL kill command
+	// KILL kill command
 	KILL
-	//LOGS logs command
+	// LOGS logs command
 	LOGS
-	//ATTACH attach to a running container
+	// ATTACH attach to a running container
 	ATTACH
-	//EXEC exec a command in a running container
+	// EXEC exec a command in a running container
 	EXEC
-	//RM remove command
+	// RM remove command
 	RM
-	//RESTART restart command
+	// RESTART restart command
 	RESTART
-	//STATS stats command
+	// STATS stats command
 	STATS
-	//STOP stop command
+	// STOP stop command
 	STOP
 )
 

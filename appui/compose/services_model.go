@@ -73,7 +73,7 @@ type volumeRow struct {
 
 func newVolumeRow(v docker.ComposeVolume) volumeRow {
 	return volumeRow{
-		volume: v,
+		volume:  v,
 		columns: []string{"  " + v.Name, "", "", "", v.Driver, "", ""},
 	}
 }

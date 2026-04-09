@@ -18,7 +18,6 @@ func (s swarmStacks) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 type stacksByName struct{ swarmStacks }
 
 func (s stacksByName) Less(i, j int) bool {
-
 	return s.swarmStacks[i].Name < s.swarmStacks[j].Name
 }
 
@@ -28,5 +27,4 @@ func SortStacks(stacks []Stack, mode SortMode) {
 	case SortByStackName:
 		sort.SliceStable(stacksByName{stacks}.swarmStacks, stacksByName{stacks}.Less)
 	}
-
 }

@@ -17,7 +17,7 @@ import (
 
 const (
 	// LabelNamespace is the label used to track stack resources
-	//Copied from https://github.com/docker/cli/blob/master/cli/compose/convert/compose.go
+	// Copied from https://github.com/docker/cli/blob/master/cli/compose/convert/compose.go
 	LabelNamespace = "com.docker.stack.namespace"
 )
 
@@ -83,6 +83,7 @@ func (daemon *DockerDaemon) ResolveNode(id string) (string, error) {
 func (daemon *DockerDaemon) ResolveService(id string) (string, error) {
 	return daemon.resolve(swarm.Service{}, id)
 }
+
 func (daemon *DockerDaemon) resolve(t interface{}, id string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultOperationTimeout)
 	defer cancel()
@@ -191,7 +192,6 @@ func (daemon *DockerDaemon) ServiceTasks(services ...string) ([]swarm.Task, erro
 	}
 
 	nodeTasks, err := daemon.client.TaskList(ctx, types.TaskListOptions{Filters: filter})
-
 	if err != nil {
 		return nil, fmt.Errorf("retrieve task list: %w", err)
 	}
@@ -286,7 +286,6 @@ func (daemon *DockerDaemon) StackServices(stack string) ([]swarm.Service, error)
 	filter := buildStackFilter(stack)
 
 	stackServices, err := daemon.client.ServiceList(ctx, types.ServiceListOptions{Filters: filter})
-
 	if err != nil {
 		return nil, fmt.Errorf("retrieve stack service list: %w", err)
 	}
@@ -300,7 +299,6 @@ func (daemon *DockerDaemon) StackTasks(stack string) ([]swarm.Task, error) {
 	filter := buildStackFilter(stack)
 
 	stackTasks, err := daemon.client.TaskList(ctx, types.TaskListOptions{Filters: filter})
-
 	if err != nil {
 		return nil, fmt.Errorf("retrieve stack task list: %w", err)
 	}
@@ -313,17 +311,18 @@ func (daemon *DockerDaemon) Task(id string) (swarm.Task, error) {
 	defer cancel()
 
 	task, _, err := daemon.client.TaskInspectWithRaw(ctx, id)
-
 	if err != nil {
 		return swarm.Task{}, fmt.Errorf("retrieve task with id %s: %w", id, err)
 	}
 	return task, nil
 }
+
 func buildStackFilter(stack string) filters.Args {
 	filter := filters.NewArgs()
 	filter.Add("label", "com.docker.stack.namespace="+stack)
 	return filter
 }
+
 func getAllStacksFilter() filters.Args {
 	filter := filters.NewArgs()
 	filter.Add("label", LabelNamespace)
