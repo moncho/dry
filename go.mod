@@ -2,6 +2,8 @@ module github.com/moncho/dry
 
 go 1.26
 
+toolchain go1.26.2
+
 require (
 	charm.land/bubbles/v2 v2.0.0
 	charm.land/bubbletea/v2 v2.0.2
