@@ -57,3 +57,6 @@ Godeps/_workspace/
 .realize
 dist
 .beads
+
+# repowise local index, databases, and API keys
+.repowise/

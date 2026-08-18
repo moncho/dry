@@ -85,12 +85,26 @@ func (m HeaderModel) View() string {
 	cellW1 := m.width * 38 / 100 // ~38% for column 1
 	cellW2 := m.width * 32 / 100 // ~32% for column 2
 
-	// renderCell pads or truncates styled content to exactly cellWidth visual chars.
+	// renderCell pads or truncates styled content to exactly cellWidth visual
+	// chars, always reserving a one-column gap so adjacent columns never butt
+	// together at narrow widths.
+	const cellGap = 1
 	renderCell := func(l, v string, cellWidth int) string {
-		content := label.Render(l) + value.Render(v)
+		if cellWidth <= cellGap {
+			return strings.Repeat(" ", max(cellWidth, 0))
+		}
+		styledLabel := label.Render(l)
+		content := styledLabel + value.Render(v)
 		w := ansi.StringWidth(content)
-		if w > cellWidth {
-			return ansi.Truncate(content, cellWidth, "")
+		if budget := cellWidth - cellGap; w > budget {
+			// Spend a column on the ellipsis only when at least one value
+			// character survives it; otherwise a plain cut shows more.
+			tail := "…"
+			if budget <= ansi.StringWidth(styledLabel)+1 {
+				tail = ""
+			}
+			content = ansi.Truncate(content, budget, tail)
+			w = ansi.StringWidth(content)
 		}
 		if w < cellWidth {
 			return content + strings.Repeat(" ", cellWidth-w)

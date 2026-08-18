@@ -118,13 +118,13 @@ func TestMonitor_SortPreservedAcrossRefresh(t *testing.T) {
 		t.Fatalf("expected first row 'aaa' with default sort, got %v", first)
 	}
 
-	// Cycle sort to column 4 (NET RX/TX) via F1 presses.
-	// Columns: 0=CONTAINER, 1=CPU LOAD, 2=MEM USAGE, 3=MEM LOAD, 4=NET
-	for range 4 {
+	// Cycle sort to column 5 (NET RX/TX) via F1 presses.
+	// Columns: 0=CONTAINER, 1=NAME, 2=CPU LOAD, 3=MEM USAGE, 4=MEM LOAD, 5=NET
+	for range 5 {
 		m, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyF1})
 	}
-	if m.table.SortField() != 4 {
-		t.Fatalf("expected sort field 4 (NET RX/TX), got %d", m.table.SortField())
+	if m.table.SortField() != 5 {
+		t.Fatalf("expected sort field 5 (NET RX/TX), got %d", m.table.SortField())
 	}
 
 	// Ascending network IO should keep aaa first.
@@ -159,8 +159,8 @@ func TestMonitor_SortChangesRowOrder(t *testing.T) {
 		t.Fatalf("expected first row 'aaa' sorted by CONTAINER, got %v", first)
 	}
 
-	// Sort by NET RX/TX (column 4) → lowest network IO (aaa) first
-	for range 4 {
+	// Sort by NET RX/TX (column 5) → lowest network IO (aaa) first
+	for range 5 {
 		m, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyF1})
 	}
 
@@ -194,6 +194,65 @@ func TestMonitor_RefreshWithNewContainer(t *testing.T) {
 	}
 	if m.table.RowCount() != 3 {
 		t.Fatalf("expected 3 rows, got %d", m.table.RowCount())
+	}
+}
+
+func TestMonitor_ViewShowsContainerNames(t *testing.T) {
+	stats := map[string]*docker.Stats{
+		"aaa": {CID: "aaa", Name: "nginx-proxy", CPUPercentage: 12.5},
+		"bbb": {CID: "bbb", Name: "postgres-db", CPUPercentage: 82.1},
+	}
+	m := newTestMonitor(stats)
+
+	view := ansi.Strip(m.View())
+	for _, want := range []string{"NAME", "nginx-proxy", "postgres-db"} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("expected %q in monitor view, got %q", want, view)
+		}
+	}
+}
+
+func TestMonitor_ViewShowsContainerNamesOnNarrowTerminals(t *testing.T) {
+	// The fixed columns alone consume 142 columns; the proportional NAME
+	// column must still be visible (possibly truncated) below that width.
+	stats := map[string]*docker.Stats{
+		"aaa": {CID: "aaa", Name: "nginx-proxy", CPUPercentage: 12.5},
+		"bbb": {CID: "bbb", Name: "postgres-db", CPUPercentage: 82.1},
+	}
+	for _, width := range []int{80, 120, 132} {
+		m := NewMonitorModel()
+		m.SetSize(width, 25)
+		m.stats = stats
+		m.refreshTable()
+
+		view := ansi.Strip(m.View())
+		for _, want := range []string{"NAME", "nginx-pro", "postgres-"} {
+			if !strings.Contains(view, want) {
+				t.Fatalf("width %d: expected %q in monitor view, got %q", width, want, view)
+			}
+		}
+	}
+}
+
+func TestMonitor_SortByNameShowsIndicatorOnNarrowTerminals(t *testing.T) {
+	// F1 moves the sort to the NAME column; the column and its sort arrow
+	// must be visible even on terminals narrower than the fixed columns.
+	stats := map[string]*docker.Stats{
+		"aaa": {CID: "aaa", Name: "nginx-proxy"},
+		"bbb": {CID: "bbb", Name: "postgres-db"},
+	}
+	m := NewMonitorModel()
+	m.SetSize(120, 25)
+	m.stats = stats
+	m.refreshTable()
+
+	m, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyF1})
+	if got := m.table.SortField(); got != 1 {
+		t.Fatalf("expected sort field 1 (NAME) after F1, got %d", got)
+	}
+	view := ansi.Strip(m.View())
+	if !strings.Contains(view, "NAME "+DownArrow) {
+		t.Fatalf("expected visible NAME sort indicator at width 120, got %q", view)
 	}
 }
 

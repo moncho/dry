@@ -39,7 +39,8 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Space</>     Opens Quick Peek for the current selection
 	<white>Tab</>       Moves workspace focus forward between navigator, context, and activity
 	<white>Shift+Tab</> Moves workspace focus backward between navigator, context, and activity
-	<white>p/P</>       Toggles workspace pin/unpin for the current preview
+	<white>p/P</>       Pins the selection to activity; press again to re-pin as the cursor moves, or on the pinned item to unpin
+	<white>Esc</>       Unpins the pinned preview
 
 <yellow>Global list keybinds</>	
 	<white>F1</>        Cycles through sort modes

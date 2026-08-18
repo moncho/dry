@@ -62,12 +62,13 @@ type MonitorModel struct {
 	height  int
 }
 
-var monitorSortableFields = []int{0, 1, 2, 3, 4}
+var monitorSortableFields = []int{0, 1, 2, 3, 4, 5}
 
 // NewMonitorModel creates a monitor model.
 func NewMonitorModel() MonitorModel {
 	columns := []Column{
 		{Title: "CONTAINER", Width: IDColumnWidth + 2, Fixed: true},
+		{Title: "NAME"},
 		{Title: "CPU LOAD", Width: 20, Fixed: true},
 		{Title: "MEM USAGE/LIMIT", Width: 30, Fixed: true},
 		{Title: "MEM LOAD", Width: 20, Fixed: true},
@@ -91,7 +92,7 @@ func (m *MonitorModel) SetDaemon(d docker.ContainerDaemon) {
 func (m *MonitorModel) SetSize(w, h int) {
 	m.width = w
 	m.height = h
-	m.table.SetSize(w, maxInt(h-WidgetHeaderLines-1, 1)) // header + summary line
+	m.table.SetSize(w, max(h-WidgetHeaderLines-1, 1)) // header + summary line
 }
 
 // Active returns whether monitoring is active.
@@ -346,7 +347,7 @@ func monitorLoadColor(pct float64, base color.Color) color.Color {
 }
 
 func monitorContainerCell(s *docker.Stats) string {
-	dot := ColorFg("●", monitorLoadColor(maxFloat(s.CPUPercentage, s.MemoryPercentage), DryTheme.Info))
+	dot := ColorFg("●", monitorLoadColor(max(s.CPUPercentage, s.MemoryPercentage), DryTheme.Info))
 	return dot + " " + ColorFg(s.CID, DryTheme.Fg)
 }
 
@@ -420,23 +421,10 @@ func padMonitorLine(line string, width int, bg lipgloss.Style) string {
 	return line
 }
 
-func maxFloat(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 func monitorRowColumns(s *docker.Stats) []string {
 	return []string{
 		monitorContainerCell(s),
+		ColorFg(s.Name, DryTheme.Fg),
 		monitorBar(s.CPUPercentage, 12),
 		monitorMemoryCell(s),
 		monitorBarWithBase(s.MemoryPercentage, 12, DryTheme.Secondary),

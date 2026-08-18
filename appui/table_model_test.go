@@ -1,9 +1,11 @@
 package appui
 
 import (
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 type testRow struct {
@@ -326,6 +328,49 @@ func TestTableModel_SortPreservedAfterSetRows(t *testing.T) {
 	r = table.SelectedRow()
 	if r == nil || r.Columns()[1] != "a" {
 		t.Fatalf("expected first row value 'a' after Sort(), got %v", r)
+	}
+}
+
+func TestTableModel_ProportionalColumnNeverCollapses(t *testing.T) {
+	// When fixed columns consume the full width, a proportional column must
+	// keep a minimum width — bubbles' table silently drops zero-width
+	// columns from the rendered view.
+	cols := []Column{
+		{Title: "A", Width: 60, Fixed: true},
+		{Title: "NAME"},
+		{Title: "B", Width: 60, Fixed: true},
+	}
+	table := NewTableModel(cols)
+	table.SetSize(100, 10)
+	if got := table.colWidths[1]; got < minProportionalColumnWidth {
+		t.Fatalf("expected proportional column width >= %d when fixed columns overflow, got %d",
+			minProportionalColumnWidth, got)
+	}
+
+	// With room to spare, the proportional column takes the remainder.
+	table.SetSize(200, 10)
+	want := 200 - (60 + DefaultColumnSpacing) - (60 + DefaultColumnSpacing)
+	if got := table.colWidths[1]; got != want {
+		t.Fatalf("expected proportional column width %d at width 200, got %d", want, got)
+	}
+}
+
+func TestTableModel_ViewTruncatesOverflowLines(t *testing.T) {
+	cols := []Column{
+		{Title: "A", Width: 60, Fixed: true},
+		{Title: "NAME"},
+		{Title: "B", Width: 60, Fixed: true},
+	}
+	table := NewTableModel(cols)
+	table.SetSize(100, 10)
+	table.SetRows([]TableRow{testRow{id: "1", cols: []string{
+		strings.Repeat("x", 60), "name-1", strings.Repeat("y", 60),
+	}}})
+
+	for i, line := range strings.Split(table.View(), "\n") {
+		if got := ansi.StringWidth(line); got > 100 {
+			t.Fatalf("line %d: width %d exceeds table width 100", i, got)
+		}
 	}
 }
 
