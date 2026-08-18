@@ -170,8 +170,14 @@ func TestWorkspaceContextFromStatsUsesNameAndPortsWithoutCpuMemory(t *testing.T)
 		},
 	}
 
+	// The daemon store is keyed by the full 64-char container ID while
+	// Stats.CID carries the truncated one; the context builder must look the
+	// container up with the full ID or the lookup always misses.
+	fullID := "abc123" + strings.Repeat("0", 58)
 	stats := &docker.Stats{
 		CID:              "abc123",
+		ID:               fullID,
+		Name:             "redis",
 		Command:          "redis-server",
 		CPUPercentage:    23.4,
 		Memory:           128 * 1024 * 1024,
@@ -184,7 +190,7 @@ func TestWorkspaceContextFromStatsUsesNameAndPortsWithoutCpuMemory(t *testing.T)
 	lookup := monitorContainerLookupStub{
 		container: &docker.Container{
 			Summary: dockercontainer.Summary{
-				ID:    "abc123",
+				ID:    fullID,
 				Names: []string{"/redis"},
 				Ports: []dockercontainer.PortSummary{{PublicPort: 6379, PrivatePort: 6379, Type: "tcp"}},
 			},
@@ -212,7 +218,7 @@ func TestWorkspaceContextFromStatsUsesNameAndPortsWithoutCpuMemory(t *testing.T)
 		"command: redis-server",
 		"stats.name: redis",
 		"stats.id: abc123",
-		"stats.read: 2026-03-22 10:00:00",
+		"stats.read: " + rawStats.Read.Local().Format("2006-01-02 15:04:05"),
 		"pids_stats.limit: 32",
 		"cpu_stats.online_cpus: 8",
 		"cpu_stats.cpu_usage.percpu_usage: 400, 600",
@@ -229,6 +235,9 @@ func TestWorkspaceContextFromStatsUsesNameAndPortsWithoutCpuMemory(t *testing.T)
 	}
 	if ctx.monitorCPU != 23.4 || ctx.monitorPct != 12.5 {
 		t.Fatalf("expected monitor gauge fields to be preserved, got %+v", ctx)
+	}
+	if ctx.monitorCID != fullID {
+		t.Fatalf("expected monitorCID to carry the full container ID for stats/series lookups, got %q", ctx.monitorCID)
 	}
 	if len(ctx.monitorCPUHistory) != 2 || len(ctx.monitorMemHistory) != 2 {
 		t.Fatalf("expected monitor history to be preserved, got %+v", ctx)
@@ -377,6 +386,200 @@ func TestModel_WorkspaceLowercasePTogglesPin(t *testing.T) {
 	}
 	if cmd != nil {
 		_ = cmd()
+	}
+}
+
+func TestWorkspaceFormatTimestamp_ConsistentWithUnix(t *testing.T) {
+	// workspaceFormatUnix (used for "created") and workspaceFormatTimestamp
+	// (used for "started"/"finished") must render the same instant identically,
+	// so a started time never appears before its created time.
+	instant := time.Date(2026, 6, 7, 21, 7, 0, 0, time.UTC)
+	fromUnix := workspaceFormatUnix(instant.Unix())
+	fromRFC := workspaceFormatTimestamp(instant.Format(time.RFC3339Nano))
+	if fromUnix != fromRFC {
+		t.Fatalf("timestamp formatters disagree for the same instant: unix=%q rfc=%q", fromUnix, fromRFC)
+	}
+}
+
+func TestModel_WorkspacePinFollowsCursorOnRepin(t *testing.T) {
+	m := newWorkspaceTestModel()
+	containers := m.daemon.Containers(nil, 0)
+	m.containers.SetContainers(containers)
+
+	// Pin the first container.
+	result, _ := m.Update(tea.KeyPressMsg{Code: 'p'})
+	m = result.(model)
+	if m.pinnedContext == nil {
+		t.Fatal("expected a pinned context after first p")
+	}
+	firstID := m.pinnedContext.containerID
+
+	// Move the cursor to another container.
+	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = result.(model)
+	cursor, ok := m.currentWorkspacePreview()
+	if !ok || cursor.containerID == firstID {
+		t.Fatalf("expected cursor to move to a different container, got ok=%v id=%q", ok, cursor.containerID)
+	}
+
+	// Pressing p again should re-pin to the cursor, not unpin.
+	result, _ = m.Update(tea.KeyPressMsg{Code: 'p'})
+	m = result.(model)
+	if m.pinnedContext == nil {
+		t.Fatal("expected pin to follow cursor (re-pin), but it was cleared")
+	}
+	if m.pinnedContext.containerID != cursor.containerID {
+		t.Fatalf("expected pin to move to %q, got %q", cursor.containerID, m.pinnedContext.containerID)
+	}
+
+	// Pressing p on the pinned item unpins.
+	result, _ = m.Update(tea.KeyPressMsg{Code: 'p'})
+	m = result.(model)
+	if m.pinnedContext != nil {
+		t.Fatal("expected pin to clear when p pressed on the pinned item")
+	}
+}
+
+func TestModel_CommandPaletteUnpinDoesNotMovePin(t *testing.T) {
+	m := newWorkspaceTestModel()
+	containers := m.daemon.Containers(nil, 0)
+	m.containers.SetContainers(containers)
+
+	// Pin the first container, then move the cursor to another one.
+	result, _ := m.Update(tea.KeyPressMsg{Code: 'p'})
+	m = result.(model)
+	if m.pinnedContext == nil {
+		t.Fatal("expected pinned context after p")
+	}
+	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = result.(model)
+
+	// Both actions must be offered: unpin, and moving the pin to the cursor.
+	var hasUnpin, hasPin bool
+	for _, a := range m.commandPaletteActions() {
+		switch a.ID {
+		case "workspace:unpin":
+			hasUnpin = true
+		case "workspace:pin":
+			hasPin = true
+		}
+	}
+	if !hasUnpin || !hasPin {
+		t.Fatalf("expected unpin and pin palette actions with cursor off the pinned item, got unpin=%v pin=%v", hasUnpin, hasPin)
+	}
+
+	// "Unpin Preview" must unpin, not move the pin to the cursor.
+	result, cmd := m.executePaletteAction("workspace:unpin")
+	m = result.(model)
+	if m.pinnedContext != nil {
+		t.Fatal("expected workspace:unpin to clear the pin even when the cursor moved")
+	}
+	if cmd != nil {
+		_ = cmd()
+	}
+}
+
+func TestModel_WorkspaceEscapeUnpinReloadsSelectionActivity(t *testing.T) {
+	m := newWorkspaceTestModel()
+	m.view = Images
+	imgs, err := m.daemon.Images()
+	if err != nil {
+		t.Fatalf("unexpected images error: %v", err)
+	}
+	m.images.SetImages(imgs)
+	ctx, ok := m.currentWorkspacePreview()
+	if !ok {
+		t.Fatal("expected image preview context")
+	}
+	m.pinnedContext = &ctx
+
+	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
+	m = result.(model)
+	if m.pinnedContext != nil {
+		t.Fatal("expected escape to clear the pin")
+	}
+	// The activity pane must reload the current selection, exactly like the
+	// p-unpin path; a nil cmd would leave it stuck on the idle placeholder.
+	if cmd == nil {
+		t.Fatal("expected escape unpin to return a selection activity cmd")
+	}
+}
+
+func TestModel_WorkspacePinnedHeaderShowsCursorTarget(t *testing.T) {
+	m := newWorkspaceTestModel()
+	containers := m.daemon.Containers(nil, 0)
+	m.containers.SetContainers(containers)
+
+	result, _ := m.Update(tea.KeyPressMsg{Code: 'p'})
+	m = result.(model)
+	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = result.(model)
+
+	body := m.renderWorkspaceBody()
+	if !strings.Contains(body, "pinned · cursor: ") {
+		t.Fatalf("expected pinned header to surface the cursor target, got %q", body)
+	}
+}
+
+func TestModel_WorkspacePinnedCursorMoveKeepsContextScroll(t *testing.T) {
+	m := newWorkspaceTestModel()
+	containers := m.daemon.Containers(nil, 0)
+	m.containers.SetContainers(containers)
+
+	// Pin a context long enough to scroll.
+	ctx := workspaceContextFromContainer(containers[0])
+	lines := make([]string, 40)
+	for i := range lines {
+		lines[i] = fmt.Sprintf("line %d: value", i+1)
+	}
+	ctx.lines = lines
+	m.pinnedContext = &ctx
+
+	// Focus the context pane and capture the unscrolled view.
+	m.activePane = workspacePaneContext
+	result, _ := m.Update(tea.KeyPressMsg{Code: 'g'})
+	m = result.(model)
+	top := m.workspaceContext.View()
+
+	// Scroll down a couple of lines.
+	for range 2 {
+		result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+		m = result.(model)
+	}
+	scrolled := m.workspaceContext.View()
+	if top == scrolled {
+		t.Fatal("expected context pane to scroll")
+	}
+
+	// Move the navigator cursor off the pinned item and re-render: the
+	// pinned pane must keep its scroll position instead of snapping to top.
+	m.activePane = workspacePaneNavigator
+	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = result.(model)
+	m.populateWorkspaceContextPane()
+	if got := m.workspaceContext.View(); got == top {
+		t.Fatal("expected pinned context pane to keep its scroll position after a cursor move")
+	}
+}
+
+func TestWorkspaceContextTimestampsRenderLocalTime(t *testing.T) {
+	instant := time.Date(2026, 6, 7, 21, 7, 0, 0, time.UTC)
+	want := "created: " + instant.Local().Format("2006-01-02 15:04")
+
+	netCtx := workspaceContextFromNetwork(network.Inspect{
+		Network: network.Network{Name: "web", ID: "net123", Created: instant},
+	})
+	if body := strings.Join(netCtx.lines, "\n"); !strings.Contains(body, want) {
+		t.Fatalf("expected network created time in local time (%q), got %q", want, body)
+	}
+
+	taskCtx := workspaceContextFromTask(swarm.Task{
+		ID:     "task123",
+		Status: swarm.TaskStatus{State: swarm.TaskStateRunning, Timestamp: instant},
+	})
+	wantUpdated := "updated: " + instant.Local().Format("2006-01-02 15:04")
+	if body := strings.Join(taskCtx.lines, "\n"); !strings.Contains(body, wantUpdated) {
+		t.Fatalf("expected task updated time in local time (%q), got %q", wantUpdated, body)
 	}
 }
 

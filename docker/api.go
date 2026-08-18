@@ -129,7 +129,9 @@ type SwarmAPI interface {
 
 // Stats holds runtime stats for a container
 type Stats struct {
-	CID              string
+	CID              string // truncated container ID, for display
+	ID               string // full container ID, for daemon lookups
+	Name             string
 	Command          string
 	CPUPercentage    float64
 	Memory           float64

@@ -91,6 +91,8 @@ func newStatsChannel(version *client.ServerVersionResult, client client.Containe
 func buildStats(version *client.ServerVersionResult, container *Container, stats *container.StatsResponse, topResult *client.ContainerTopResult) *Stats {
 	s := &Stats{
 		CID:         TruncateID(container.ID),
+		ID:          container.ID,
+		Name:        containerName(container),
 		Command:     container.Command,
 		Stats:       stats,
 		ProcessList: topResult,
@@ -127,6 +129,14 @@ func buildStats(version *client.ServerVersionResult, container *Container, stats
 	s.BlockWrite = float64(blkWrite)
 	s.PidsCurrent = pidsStatsCurrent
 	return s
+}
+
+// containerName returns the first container name without the leading slash.
+func containerName(container *Container) string {
+	if len(container.Names) == 0 {
+		return ""
+	}
+	return strings.TrimPrefix(container.Names[0], "/")
 }
 
 func calculateBlockIO(blkio container.BlkioStats) (blkRead uint64, blkWrite uint64) {
