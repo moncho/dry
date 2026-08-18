@@ -152,6 +152,25 @@ func TestStatsChannel_errorOpeningStream_goroutineExits(t *testing.T) {
 	sc.Start(ctx)
 }
 
+func TestContainerName(t *testing.T) {
+	tests := []struct {
+		name      string
+		container *Container
+		want      string
+	}{
+		{"strips leading slash", &Container{Summary: container.Summary{Names: []string{"/nginx-proxy"}}}, "nginx-proxy"},
+		{"no slash prefix", &Container{Summary: container.Summary{Names: []string{"postgres"}}}, "postgres"},
+		{"no names", &Container{}, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := containerName(tt.container); got != tt.want {
+				t.Errorf("containerName() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestCalculateMemUsageUnixNoCache(t *testing.T) {
 	stats := container.MemoryStats{Usage: 500, Stats: map[string]uint64{"cache": 400}}
 	result := calculateMemUsageUnixNoCache(stats)

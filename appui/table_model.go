@@ -19,6 +19,10 @@ type Column struct {
 	Fixed bool // fixed-width column
 }
 
+// minProportionalColumnWidth is the smallest width a proportional column may
+// get when fixed columns leave no remaining space.
+const minProportionalColumnWidth = 10
+
 // TableRow represents one row of data in the table.
 type TableRow interface {
 	Columns() []string
@@ -195,7 +199,9 @@ func (m TableModel) View() string {
 	selectedLine := m.inner.Cursor() + 1 // +1 for header row
 	for i, line := range lines {
 		w := ansi.StringWidth(line)
-		if w < m.width {
+		if w > m.width {
+			lines[i] = ansi.Truncate(line, m.width, "")
+		} else if w < m.width {
 			pad := strings.Repeat(" ", m.width-w)
 			if i == selectedLine {
 				pad = SelectedRowStyle.Render(pad)
@@ -351,12 +357,22 @@ func (m *TableModel) calculateColumnWidths() {
 		}
 	}
 
-	if proportionalCount > 0 && remaining > 0 {
-		propWidth := remaining / proportionalCount
+	if proportionalCount > 0 {
+		propWidth := 0
+		if remaining > 0 {
+			propWidth = remaining / proportionalCount
+		}
+		// A proportional column must never collapse to zero width: bubbles'
+		// table silently drops zero-width columns, making them invisible.
+		// When fixed columns already consume the full width, give each
+		// proportional column a minimum and let View truncate the overflow.
+		if propWidth < minProportionalColumnWidth {
+			propWidth = minProportionalColumnWidth
+		}
 		assigned := 0
 		for i, col := range m.columns {
 			if !col.Fixed || col.Width == 0 {
-				if i == lastProportional {
+				if i == lastProportional && remaining-assigned > propWidth {
 					// Give the last proportional column the remainder
 					// to avoid rounding gaps.
 					m.colWidths[i] = remaining - assigned

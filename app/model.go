@@ -707,7 +707,8 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m.switchView(ComposeProjects)
 	case "esc":
 		if m.workspaceEnabled() && m.pinnedContext != nil {
-			return m.clearPinnedContext(), nil
+			cleared := m.clearPinnedContext()
+			return cleared, cleared.workspaceSelectionActivityCmd()
 		}
 		// Escape goes back to main from any non-main, non-task, non-compose-services view
 		if m.view != Main && m.view != ServiceTasks && m.view != Tasks && m.view != StackTasks && m.view != ComposeServices {
@@ -1097,7 +1098,8 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "esc":
 			if m.workspaceEnabled() && m.pinnedContext != nil {
-				return m.clearPinnedContext(), nil
+				cleared := m.clearPinnedContext()
+				return cleared, cleared.workspaceSelectionActivityCmd()
 			}
 			m.view = ComposeProjects
 			return m, loadComposeProjectsCmd(m.daemon)
@@ -1659,14 +1661,24 @@ func (m model) renderWorkspaceBody() string {
 func (m *model) populateWorkspaceContextPane() {
 	context := m.pinnedContext
 	if context == nil {
-		if current, ok := m.currentWorkspacePreview(); ok {
+		// The pane only renders title, subtitle, and lines, so the cheaper
+		// series-free preview is enough here.
+		if current, ok := m.currentWorkspacePreviewTarget(); ok {
 			context = &current
 		}
 	}
 	if context != nil {
 		m.workspaceContext.SetEmptyMessage("")
 		if m.pinnedContext != nil {
-			m.workspaceContext.SetMode("pinned")
+			mode := "pinned"
+			// While pinned the preview no longer follows the cursor. Surface
+			// what the cursor is on (and that p re-pins) in the pane header,
+			// which never scrolls; putting it in the subtitle would reset the
+			// body's scroll position on every cursor move.
+			if current, ok := m.currentWorkspacePreviewTarget(); ok && current.identity() != context.identity() {
+				mode = "pinned · cursor: " + current.title + " (p re-pins)"
+			}
+			m.workspaceContext.SetMode(mode)
 		} else {
 			m.workspaceContext.SetMode("preview")
 		}
@@ -1790,6 +1802,17 @@ func (m model) currentWorkspaceSelection() (workspaceContext, bool) {
 }
 
 func (m model) currentWorkspacePreview() (workspaceContext, bool) {
+	return m.workspacePreview(true)
+}
+
+// currentWorkspacePreviewTarget is a cheaper variant used on every render
+// while pinned, and by the command palette, where only the identity and
+// title are needed: it skips deep-copying monitor history series.
+func (m model) currentWorkspacePreviewTarget() (workspaceContext, bool) {
+	return m.workspacePreview(false)
+}
+
+func (m model) workspacePreview(includeSeries bool) (workspaceContext, bool) {
 	if ctx, ok := m.currentWorkspaceSelection(); ok {
 		return ctx, true
 	}
@@ -1808,7 +1831,11 @@ func (m model) currentWorkspacePreview() (workspaceContext, bool) {
 		}
 	case Monitor:
 		if s := m.monitor.SelectedStats(); s != nil {
-			return workspaceContextFromStats(s, m.daemon, m.monitor.SelectedSeries()), true
+			var series appui.MonitorSeries
+			if includeSeries {
+				series = m.monitor.SelectedSeries()
+			}
+			return workspaceContextFromStats(s, m.daemon, series), true
 		}
 	case Nodes:
 		if n := m.nodes.SelectedNode(); n != nil {
@@ -1835,13 +1862,25 @@ func (m model) currentWorkspacePreview() (workspaceContext, bool) {
 	return workspaceContext{}, false
 }
 
+// identity returns a stable string identifying the target of this context so
+// the cursor's current selection can be compared against the pinned one.
+func (c workspaceContext) identity() string {
+	return fmt.Sprintf("%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s/%s",
+		c.kind, c.containerID, c.imageID, c.monitorCID, c.networkID,
+		c.nodeID, c.serviceID, c.stackName, c.taskID, c.volumeName,
+		c.project, c.service)
+}
+
 func (m model) toggleWorkspacePin() (tea.Model, tea.Cmd) {
-	if m.pinnedContext != nil {
-		cleared := m.clearPinnedContext()
-		return cleared, cleared.workspaceSelectionActivityCmd()
-	}
 	ctx, ok := m.currentWorkspacePreview()
-	if !ok {
+	if m.pinnedContext != nil {
+		// Pin already set: unpin when the cursor is still on the pinned item,
+		// otherwise move the pin to follow the cursor's current selection.
+		if !ok || ctx.identity() == m.pinnedContext.identity() {
+			cleared := m.clearPinnedContext()
+			return cleared, cleared.workspaceSelectionActivityCmd()
+		}
+	} else if !ok {
 		return m, nil
 	}
 	m.pinnedContext = &ctx
@@ -2195,7 +2234,7 @@ func workspaceContextFromNetwork(n network.Inspect) workspaceContext {
 		fmt.Sprintf("containers: %d", len(n.Containers)),
 	}
 	if !n.Created.IsZero() {
-		lines = append(lines, fmt.Sprintf("created: %s", n.Created.Format("2006-01-02 15:04")))
+		lines = append(lines, fmt.Sprintf("created: %s", workspaceFormatLocalTime(n.Created)))
 	}
 	if n.IPAM.Driver != "" {
 		lines = append(lines, fmt.Sprintf("ipam: %s", n.IPAM.Driver))
@@ -2281,7 +2320,17 @@ func workspaceContextFromStats(s *docker.Stats, lookup monitorContainerLookup, s
 	if s == nil {
 		return workspaceContext{}
 	}
-	title := s.CID
+	// The daemon store is keyed by the full container ID, so lookups (and the
+	// monitorCID used later for stats/series lookups) must use s.ID; the
+	// truncated s.CID never matches.
+	id := s.ID
+	if id == "" {
+		id = s.CID
+	}
+	title := s.Name
+	if title == "" {
+		title = s.CID
+	}
 	lines := []string{
 		fmt.Sprintf("container: %s", s.CID),
 		fmt.Sprintf("command: %s", s.Command),
@@ -2289,8 +2338,11 @@ func workspaceContextFromStats(s *docker.Stats, lookup monitorContainerLookup, s
 		fmt.Sprintf("block io: %s / %s", units.BytesSize(s.BlockRead), units.BytesSize(s.BlockWrite)),
 		fmt.Sprintf("pids: %d", s.PidsCurrent),
 	}
-	if c := workspaceMonitorContainer(lookup, s.CID); c != nil {
-		if name := workspaceContainerPrimaryName(c); name != "" {
+	if s.Name != "" {
+		lines = append([]string{fmt.Sprintf("name: %s", s.Name)}, lines...)
+	}
+	if c := workspaceMonitorContainer(lookup, id); c != nil {
+		if name := workspaceContainerPrimaryName(c); name != "" && s.Name == "" {
 			title = name
 			lines = append([]string{fmt.Sprintf("name: %s", name)}, lines...)
 		}
@@ -2340,7 +2392,7 @@ func workspaceContextFromStats(s *docker.Stats, lookup monitorContainerLookup, s
 		title:             title,
 		subtitle:          "Monitor",
 		lines:             lines,
-		monitorCID:        s.CID,
+		monitorCID:        id,
 		monitorCPU:        s.CPUPercentage,
 		monitorMem:        s.Memory,
 		monitorMax:        s.MemoryLimit,
@@ -2531,7 +2583,7 @@ func workspaceContextFromTask(t swarm.Task) workspaceContext {
 		fmt.Sprintf("current: %s", t.Status.State),
 	}
 	if !t.Status.Timestamp.IsZero() {
-		lines = append(lines, fmt.Sprintf("updated: %s", t.Status.Timestamp.Format("2006-01-02 15:04")))
+		lines = append(lines, fmt.Sprintf("updated: %s", workspaceFormatLocalTime(t.Status.Timestamp)))
 	}
 	if t.Slot != 0 {
 		lines = append(lines, fmt.Sprintf("slot: %d", t.Slot))
@@ -2652,10 +2704,10 @@ func workspaceDockerStatsLines(stats *dockercontainer.StatsResponse) []string {
 		lines = append(lines, fmt.Sprintf("stats.id: %s", stats.ID))
 	}
 	if !stats.Read.IsZero() {
-		lines = append(lines, fmt.Sprintf("stats.read: %s", stats.Read.Format("2006-01-02 15:04:05")))
+		lines = append(lines, fmt.Sprintf("stats.read: %s", stats.Read.Local().Format("2006-01-02 15:04:05")))
 	}
 	if !stats.PreRead.IsZero() {
-		lines = append(lines, fmt.Sprintf("stats.preread: %s", stats.PreRead.Format("2006-01-02 15:04:05")))
+		lines = append(lines, fmt.Sprintf("stats.preread: %s", stats.PreRead.Local().Format("2006-01-02 15:04:05")))
 	}
 	lines = append(lines, workspacePidsStatsLines(stats.PidsStats)...)
 	lines = append(lines, workspaceCPUStatsLines("cpu_stats", stats.CPUStats)...)
@@ -2837,7 +2889,16 @@ func workspaceFormatTimestamp(value string) string {
 	if err != nil {
 		return value
 	}
-	return t.Format("2006-01-02 15:04")
+	// Docker emits UTC timestamps; render in local time to stay consistent
+	// with workspaceFormatUnix so e.g. "started" never appears before "created".
+	return workspaceFormatLocalTime(t)
+}
+
+// workspaceFormatLocalTime renders a Docker-decoded (UTC) time.Time in local
+// time. Every context-pane timestamp must go through this or
+// workspaceFormatTimestamp so no pane mixes UTC and local renderings.
+func workspaceFormatLocalTime(t time.Time) string {
+	return t.Local().Format("2006-01-02 15:04")
 }
 
 func workspaceFormatUnix(ts int64) string {

@@ -150,9 +150,12 @@ func (m model) commandPaletteActions() []paletteAction {
 
 	if m.workspaceEnabled() {
 		if m.pinnedContext != nil {
-			add("Workspace", "workspace:pin-toggle", "Unpin Preview", "", "unpin unlock")
-		} else if _, ok := m.currentWorkspacePreview(); ok {
-			add("Workspace", "workspace:pin-toggle", "Pin Current Preview", "", "pin lock")
+			add("Workspace", "workspace:unpin", "Unpin Preview", "", "unpin unlock")
+			if ctx, ok := m.currentWorkspacePreviewTarget(); ok && ctx.identity() != m.pinnedContext.identity() {
+				add("Workspace", "workspace:pin", "Pin Current Preview", "", "pin lock move")
+			}
+		} else if _, ok := m.currentWorkspacePreviewTarget(); ok {
+			add("Workspace", "workspace:pin", "Pin Current Preview", "", "pin lock")
 		}
 		if action, ok := m.workspaceOpenInspectAction(); ok {
 			actions = append(actions, action)
@@ -224,8 +227,13 @@ func (m model) executePaletteAction(id string) (tea.Model, tea.Cmd) {
 	case "global:theme":
 		m.rotateTheme()
 		return m, nil
-	case "workspace:pin-toggle":
+	case "workspace:pin":
 		return m.toggleWorkspacePin()
+	case "workspace:unpin":
+		// Always unpin, even when the cursor has moved to a different item;
+		// toggleWorkspacePin would move the pin instead.
+		cleared := m.clearPinnedContext()
+		return cleared, cleared.workspaceSelectionActivityCmd()
 	case "workspace:open-inspect":
 		return m.executeWorkspaceOpenInspect()
 	case "workspace:open-logs":
@@ -496,7 +504,7 @@ func (m model) workspacePaletteContext() (*workspaceContext, bool) {
 	if m.pinnedContext != nil {
 		return m.pinnedContext, true
 	}
-	ctx, ok := m.currentWorkspacePreview()
+	ctx, ok := m.currentWorkspacePreviewTarget()
 	if !ok {
 		return nil, false
 	}
