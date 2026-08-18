@@ -2,7 +2,7 @@ module github.com/moncho/dry
 
 go 1.26
 
-toolchain go1.26.2
+toolchain go1.26.6
 
 require (
 	charm.land/bubbles/v2 v2.0.0
@@ -22,8 +22,8 @@ require (
 	github.com/moby/moby/client v0.4.0
 	github.com/sirupsen/logrus v1.9.4
 	go.uber.org/goleak v1.3.0
-	golang.org/x/crypto v0.48.0
-	golang.org/x/term v0.40.0
+	golang.org/x/crypto v0.55.0
+	golang.org/x/term v0.45.0
 )
 
 require (
@@ -60,5 +60,5 @@ require (
 	go.opentelemetry.io/otel/metric v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 )
