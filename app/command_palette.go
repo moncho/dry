@@ -228,7 +228,10 @@ func (m model) executePaletteAction(id string) (tea.Model, tea.Cmd) {
 		m.rotateTheme()
 		return m, nil
 	case "workspace:pin":
-		return m.toggleWorkspacePin()
+		// Pin unconditionally: the palette is a snapshot, and by execution
+		// time the cursor may be back on the pinned item, where the toggle
+		// would unpin instead.
+		return m.pinWorkspacePreview()
 	case "workspace:unpin":
 		// Always unpin, even when the cursor has moved to a different item;
 		// toggleWorkspacePin would move the pin instead.
@@ -349,18 +352,18 @@ func (m model) executePaletteAction(id string) (tea.Model, tea.Cmd) {
 		}
 	case "monitor:logs":
 		if s := m.monitor.SelectedStats(); s != nil {
-			return m, showContainerLogsCmd(m.daemon, s.CID)
+			return m, showContainerLogsCmd(m.daemon, statsContainerID(s))
 		}
 	case "monitor:stats":
 		if s := m.monitor.SelectedStats(); s != nil {
-			return m, showContainerStatsCmd(m.daemon, s.CID)
+			return m, showContainerStatsCmd(m.daemon, statsContainerID(s))
 		}
 	case "monitor:exec":
 		if s := m.monitor.SelectedStats(); s != nil {
 			var cmd tea.Cmd
 			m.inputPrompt, cmd = appui.NewInputPromptModelWithLimit(
 				fmt.Sprintf("Exec in %s:", shortID(s.CID)),
-				"/bin/sh", "exec", s.CID, 120,
+				"/bin/sh", "exec", statsContainerID(s), 120,
 			)
 			m.inputPrompt.SetSize(m.width, m.height)
 			m.overlay = overlayInputPrompt

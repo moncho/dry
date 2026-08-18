@@ -117,6 +117,7 @@ func TestModel_HelpOverlay(t *testing.T) {
 }
 
 func TestWorkspaceContextFromStatsUsesNameAndPortsWithoutCpuMemory(t *testing.T) {
+	loc := withTimeZone(t, "America/New_York")
 	rawStats := &dockercontainer.StatsResponse{
 		Name: "redis",
 		ID:   "abc123",
@@ -218,7 +219,7 @@ func TestWorkspaceContextFromStatsUsesNameAndPortsWithoutCpuMemory(t *testing.T)
 		"command: redis-server",
 		"stats.name: redis",
 		"stats.id: abc123",
-		"stats.read: " + rawStats.Read.Local().Format("2006-01-02 15:04:05"),
+		"stats.read: " + rawStats.Read.In(loc).Format("2006-01-02 15:04:05"),
 		"pids_stats.limit: 32",
 		"cpu_stats.online_cpus: 8",
 		"cpu_stats.cpu_usage.percpu_usage: 400, 600",
@@ -389,15 +390,37 @@ func TestModel_WorkspaceLowercasePTogglesPin(t *testing.T) {
 	}
 }
 
+// withTimeZone pins time.Local to a non-UTC zone for the duration of a test.
+// CI runners are UTC, where .Local() is the identity transform; without this
+// the local-time regression tests are tautologies that pass with .Local()
+// removed from production code.
+func withTimeZone(t *testing.T, name string) *time.Location {
+	t.Helper()
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		t.Fatalf("load location %s: %v", name, err)
+	}
+	old := time.Local
+	time.Local = loc
+	t.Cleanup(func() { time.Local = old })
+	return loc
+}
+
 func TestWorkspaceFormatTimestamp_ConsistentWithUnix(t *testing.T) {
 	// workspaceFormatUnix (used for "created") and workspaceFormatTimestamp
 	// (used for "started"/"finished") must render the same instant identically,
 	// so a started time never appears before its created time.
+	loc := withTimeZone(t, "America/New_York")
 	instant := time.Date(2026, 6, 7, 21, 7, 0, 0, time.UTC)
 	fromUnix := workspaceFormatUnix(instant.Unix())
 	fromRFC := workspaceFormatTimestamp(instant.Format(time.RFC3339Nano))
 	if fromUnix != fromRFC {
 		t.Fatalf("timestamp formatters disagree for the same instant: unix=%q rfc=%q", fromUnix, fromRFC)
+	}
+	// The expected value is computed with In(loc), not the production
+	// transform, so dropping .Local() from production fails this test.
+	if want := instant.In(loc).Format("2006-01-02 15:04"); fromRFC != want {
+		t.Fatalf("expected local rendering %q, got %q", want, fromRFC)
 	}
 }
 
@@ -535,36 +558,141 @@ func TestModel_WorkspacePinnedCursorMoveKeepsContextScroll(t *testing.T) {
 	ctx.lines = lines
 	m.pinnedContext = &ctx
 
-	// Focus the context pane and capture the unscrolled view.
+	// Compare only the pane body: the header line legitimately changes on a
+	// cursor move (it gains the "cursor: ..." hint), so a whole-view
+	// comparison could never fail and would not catch a scroll reset.
+	body := func(view string) string {
+		_, rest, _ := strings.Cut(view, "\n")
+		return rest
+	}
+
+	// Focus the context pane and capture the unscrolled body.
 	m.activePane = workspacePaneContext
 	result, _ := m.Update(tea.KeyPressMsg{Code: 'g'})
 	m = result.(model)
-	top := m.workspaceContext.View()
+	top := body(m.workspaceContext.View())
 
 	// Scroll down a couple of lines.
 	for range 2 {
 		result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
 		m = result.(model)
 	}
-	scrolled := m.workspaceContext.View()
+	scrolled := body(m.workspaceContext.View())
 	if top == scrolled {
 		t.Fatal("expected context pane to scroll")
 	}
 
 	// Move the navigator cursor off the pinned item and re-render: the
-	// pinned pane must keep its scroll position instead of snapping to top.
+	// pinned pane body must keep its scroll position, not snap back to top.
 	m.activePane = workspacePaneNavigator
 	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
 	m = result.(model)
 	m.populateWorkspaceContextPane()
-	if got := m.workspaceContext.View(); got == top {
-		t.Fatal("expected pinned context pane to keep its scroll position after a cursor move")
+	if got := body(m.workspaceContext.View()); got != scrolled {
+		t.Fatalf("expected pinned context pane to keep its scroll position after a cursor move, got body %q want %q", got, scrolled)
+	}
+}
+
+func TestModel_CommandPalettePinNeverUnpins(t *testing.T) {
+	m := newWorkspaceTestModel()
+	m.containers.SetContainers(m.daemon.Containers(nil, 0))
+
+	// Pin the first container; the cursor stays on it, which is exactly the
+	// stale-palette state where the old toggle wiring would unpin.
+	result, _ := m.Update(tea.KeyPressMsg{Code: 'p'})
+	m = result.(model)
+	if m.pinnedContext == nil {
+		t.Fatal("expected pinned context after p")
+	}
+	pinnedID := m.pinnedContext.containerID
+
+	result, cmd := m.executePaletteAction("workspace:pin")
+	m = result.(model)
+	if m.pinnedContext == nil {
+		t.Fatal("expected workspace:pin to keep the pin when the cursor is on the pinned item")
+	}
+	if m.pinnedContext.containerID != pinnedID {
+		t.Fatalf("expected pin to stay on %q, got %q", pinnedID, m.pinnedContext.containerID)
+	}
+	if cmd != nil {
+		_ = cmd()
+	}
+}
+
+func TestStatsContainerID(t *testing.T) {
+	// Daemon lookups (palette monitor actions, workspace context) must use
+	// the full ID: the container store is keyed by it and never matches the
+	// truncated CID.
+	fullID := "abc123" + strings.Repeat("0", 58)
+	if got := statsContainerID(&docker.Stats{CID: "abc123", ID: fullID}); got != fullID {
+		t.Fatalf("expected full ID for lookups, got %q", got)
+	}
+	if got := statsContainerID(&docker.Stats{CID: "abc123"}); got != "abc123" {
+		t.Fatalf("expected CID fallback when ID is empty, got %q", got)
+	}
+}
+
+func TestWorkspaceMonitorTargetMatchesFullContext(t *testing.T) {
+	// The pinned pane compares the cheap target against the full pinned
+	// context on every render; if their identities or titles diverge, the
+	// cursor hint appears for the pinned item itself.
+	fullID := "abc123" + strings.Repeat("0", 58)
+	s := &docker.Stats{CID: "abc123", ID: fullID, Name: "web"}
+	target := workspaceMonitorTarget(s)
+	full := workspaceContextFromStats(s, nil, appui.MonitorSeries{})
+	if target.identity() != full.identity() {
+		t.Fatalf("monitor target identity diverged from full context: %q vs %q", target.identity(), full.identity())
+	}
+	if target.title != full.title {
+		t.Fatalf("monitor target title diverged from full context: %q vs %q", target.title, full.title)
+	}
+}
+
+func TestModel_PinnedMonitorRefreshKeyedByFullID(t *testing.T) {
+	m := newWorkspaceTestModel()
+	m.view = Monitor
+
+	// Production keys the stats stream by the full container ID
+	// (listenContainerStats(c.ID, ch) in appui/monitor_model.go).
+	fullID := "abc123" + strings.Repeat("0", 58)
+	ch := make(chan *docker.Stats)
+	stats := &docker.Stats{CID: docker.TruncateID(fullID), ID: fullID, Name: "web", CPUPercentage: 10}
+	result, _ := m.Update(appui.MonitorStatsMsg{CID: fullID, Stats: stats, StatsCh: ch})
+	m = result.(model)
+	m.monitor.FlushTable()
+
+	ctx, ok := m.currentWorkspacePreview()
+	if !ok {
+		t.Fatal("expected monitor preview context")
+	}
+	if ctx.monitorCID != fullID {
+		t.Fatalf("expected monitorCID to be the full stream key, got %q", ctx.monitorCID)
+	}
+	m.pinnedContext = &ctx
+
+	// The consumer half of the keying: pinned refresh must resolve stats and
+	// history through the same key the stream writes under.
+	if m.monitor.StatsByID(ctx.monitorCID) == nil {
+		t.Fatal("StatsByID misses with the pinned monitorCID")
+	}
+	if len(m.monitor.SeriesFor(ctx.monitorCID).CPU) == 0 {
+		t.Fatal("SeriesFor misses with the pinned monitorCID")
+	}
+
+	updated := *stats
+	updated.CPUPercentage = 99
+	result, _ = m.Update(appui.MonitorStatsMsg{CID: fullID, Stats: &updated, StatsCh: ch})
+	m = result.(model)
+	m.refreshPinnedWorkspaceContext()
+	if m.pinnedContext.monitorCPU != 99 {
+		t.Fatalf("expected pinned monitor context to refresh through full-ID keys, cpu still %v", m.pinnedContext.monitorCPU)
 	}
 }
 
 func TestWorkspaceContextTimestampsRenderLocalTime(t *testing.T) {
+	loc := withTimeZone(t, "America/New_York")
 	instant := time.Date(2026, 6, 7, 21, 7, 0, 0, time.UTC)
-	want := "created: " + instant.Local().Format("2006-01-02 15:04")
+	want := "created: " + instant.In(loc).Format("2006-01-02 15:04")
 
 	netCtx := workspaceContextFromNetwork(network.Inspect{
 		Network: network.Network{Name: "web", ID: "net123", Created: instant},
@@ -577,7 +705,7 @@ func TestWorkspaceContextTimestampsRenderLocalTime(t *testing.T) {
 		ID:     "task123",
 		Status: swarm.TaskStatus{State: swarm.TaskStateRunning, Timestamp: instant},
 	})
-	wantUpdated := "updated: " + instant.Local().Format("2006-01-02 15:04")
+	wantUpdated := "updated: " + instant.In(loc).Format("2006-01-02 15:04")
 	if body := strings.Join(taskCtx.lines, "\n"); !strings.Contains(body, wantUpdated) {
 		t.Fatalf("expected task updated time in local time (%q), got %q", wantUpdated, body)
 	}

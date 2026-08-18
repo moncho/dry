@@ -1661,9 +1661,9 @@ func (m model) renderWorkspaceBody() string {
 func (m *model) populateWorkspaceContextPane() {
 	context := m.pinnedContext
 	if context == nil {
-		// The pane only renders title, subtitle, and lines, so the cheaper
-		// series-free preview is enough here.
-		if current, ok := m.currentWorkspacePreviewTarget(); ok {
+		// Preview mode renders the full lines, so this needs the complete
+		// context; only the pinned branch below can use the cheap target.
+		if current, ok := m.currentWorkspacePreview(); ok {
 			context = &current
 		}
 	}
@@ -1805,14 +1805,16 @@ func (m model) currentWorkspacePreview() (workspaceContext, bool) {
 	return m.workspacePreview(true)
 }
 
-// currentWorkspacePreviewTarget is a cheaper variant used on every render
-// while pinned, and by the command palette, where only the identity and
-// title are needed: it skips deep-copying monitor history series.
+// currentWorkspacePreviewTarget is a cheap variant used on every render while
+// pinned, and by the command palette, where only the identity and title are
+// needed. For the Monitor view (the hot path: one render per stats message)
+// it builds no stat lines, copies no series, and does no daemon lookup; the
+// other kinds share the full builders, which are cheap and render rarely.
 func (m model) currentWorkspacePreviewTarget() (workspaceContext, bool) {
 	return m.workspacePreview(false)
 }
 
-func (m model) workspacePreview(includeSeries bool) (workspaceContext, bool) {
+func (m model) workspacePreview(full bool) (workspaceContext, bool) {
 	if ctx, ok := m.currentWorkspaceSelection(); ok {
 		return ctx, true
 	}
@@ -1831,11 +1833,10 @@ func (m model) workspacePreview(includeSeries bool) (workspaceContext, bool) {
 		}
 	case Monitor:
 		if s := m.monitor.SelectedStats(); s != nil {
-			var series appui.MonitorSeries
-			if includeSeries {
-				series = m.monitor.SelectedSeries()
+			if !full {
+				return workspaceMonitorTarget(s), true
 			}
-			return workspaceContextFromStats(s, m.daemon, series), true
+			return workspaceContextFromStats(s, m.daemon, m.monitor.SelectedSeries()), true
 		}
 	case Nodes:
 		if n := m.nodes.SelectedNode(); n != nil {
@@ -1883,6 +1884,22 @@ func (m model) toggleWorkspacePin() (tea.Model, tea.Cmd) {
 	} else if !ok {
 		return m, nil
 	}
+	return m.pinWorkspaceContext(ctx)
+}
+
+// pinWorkspacePreview pins the current cursor preview unconditionally.
+// Unlike toggleWorkspacePin it never unpins, so a palette "Pin Current
+// Preview" action cannot flip into an unpin when the cursor state changed
+// between palette open and execution.
+func (m model) pinWorkspacePreview() (tea.Model, tea.Cmd) {
+	ctx, ok := m.currentWorkspacePreview()
+	if !ok {
+		return m, nil
+	}
+	return m.pinWorkspaceContext(ctx)
+}
+
+func (m model) pinWorkspaceContext(ctx workspaceContext) (tea.Model, tea.Cmd) {
 	m.pinnedContext = &ctx
 	m.workspaceLogs.SetContent("Activity", "Locking activity to pinned context", "Preparing pinned view...")
 	m.closeActivityReader()
@@ -2316,17 +2333,42 @@ func workspaceContextFromVolume(v *volume.Volume) workspaceContext {
 	}
 }
 
+// statsContainerID returns the ID to use for daemon lookups from a Stats
+// entry: the daemon store is keyed by the full container ID, so the truncated
+// s.CID never matches it.
+func statsContainerID(s *docker.Stats) string {
+	if s.ID != "" {
+		return s.ID
+	}
+	return s.CID
+}
+
+// workspaceMonitorTarget builds only the identity and title of a monitor
+// context: no stat lines, no series copies, no daemon lookup. It runs once
+// per render while pinned, so it must stay cheap — and it must agree with
+// workspaceContextFromStats on identity and title (locked by
+// TestWorkspaceMonitorTargetMatchesFullContext).
+func workspaceMonitorTarget(s *docker.Stats) workspaceContext {
+	if s == nil {
+		return workspaceContext{}
+	}
+	title := s.Name
+	if title == "" {
+		title = s.CID
+	}
+	return workspaceContext{
+		kind:       workspaceContextMonitor,
+		title:      title,
+		subtitle:   "Monitor",
+		monitorCID: statsContainerID(s),
+	}
+}
+
 func workspaceContextFromStats(s *docker.Stats, lookup monitorContainerLookup, series appui.MonitorSeries) workspaceContext {
 	if s == nil {
 		return workspaceContext{}
 	}
-	// The daemon store is keyed by the full container ID, so lookups (and the
-	// monitorCID used later for stats/series lookups) must use s.ID; the
-	// truncated s.CID never matches.
-	id := s.ID
-	if id == "" {
-		id = s.CID
-	}
+	id := statsContainerID(s)
 	title := s.Name
 	if title == "" {
 		title = s.CID
