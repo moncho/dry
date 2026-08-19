@@ -50,17 +50,20 @@ type ContainerDaemon interface {
 	ComposeAPI
 	ComposeActionsAPI
 	ContainerRuntime
+	SystemAPI
+}
+
+// SystemAPI is the subset of the Docker API for daemon-level information
+// and maintenance.
+type SystemAPI interface {
 	DiskUsage() (client.DiskUsageResult, error)
 	DockerEnv() Env
 	Events(ctx context.Context) (<-chan events.Message, error)
 	EventLog() *EventLog
 	Info() (system.Info, error)
-	InspectImage(name string) (image.InspectResponse, error)
 	Ok() (bool, error)
 	Prune() (*PruneReport, error)
-	Rm(id string) error
 	Refresh(notify func(error))
-	RemoveNetwork(id string) error
 	Version() (*client.ServerVersionResult, error)
 }
 
@@ -74,6 +77,7 @@ type ContainerAPI interface {
 	Logs(id string, since string, withTimeStamp bool) (io.ReadCloser, error)
 	RemoveAllStoppedContainers() (int, error)
 	RestartContainer(id string) error
+	Rm(id string) error
 	StartContainer(id string) error
 	StopContainer(id string) error
 }
@@ -91,6 +95,7 @@ type ImageAPI interface {
 	History(id string) ([]image.HistoryResponseItem, error)
 	ImageByID(id string) (image.Summary, error)
 	Images() ([]image.Summary, error)
+	InspectImage(name string) (image.InspectResponse, error)
 	RemoveDanglingImages() (int, error)
 	RemoveUnusedImages() (int, error)
 	Rmi(id string, force bool) ([]image.DeleteResponse, error)
@@ -101,6 +106,7 @@ type ImageAPI interface {
 type NetworkAPI interface {
 	Networks() ([]network.Inspect, error)
 	NetworkInspect(id string) (network.Inspect, error)
+	RemoveNetwork(id string) error
 }
 
 // SwarmAPI defines the API for Docker Swarm
