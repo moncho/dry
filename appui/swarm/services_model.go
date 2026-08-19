@@ -48,7 +48,6 @@ type ServicesLoadedMsg struct {
 type ServicesModel struct {
 	table  appui.TableModel
 	filter appui.FilterInputModel
-	daemon docker.ContainerDaemon
 }
 
 // NewServicesModel creates a services list model.
@@ -67,11 +66,6 @@ func NewServicesModel() ServicesModel {
 
 // FilterActive returns true when the filter input is active.
 func (m ServicesModel) FilterActive() bool { return m.filter.Active() }
-
-// SetDaemon sets the Docker daemon reference.
-func (m *ServicesModel) SetDaemon(d docker.ContainerDaemon) {
-	m.daemon = d
-}
 
 // SetSize updates the table dimensions.
 func (m *ServicesModel) SetSize(w, h int) {

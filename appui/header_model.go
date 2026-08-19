@@ -13,11 +13,17 @@ import (
 	"github.com/moncho/dry/ui"
 )
 
+// DockerEnvProvider is what the header needs from the daemon directly: the
+// connection environment. Info and version arrive via SetDockerInfo.
+type DockerEnvProvider interface {
+	DockerEnv() docker.Env
+}
+
 // HeaderModel displays Docker daemon information at the top of the screen.
 // The daemon info is loaded asynchronously via SetDockerInfo so constructing
 // or rendering the header never performs I/O on the Update goroutine.
 type HeaderModel struct {
-	daemon docker.ContainerDaemon
+	daemon DockerEnvProvider
 	width  int
 
 	// Cached Docker info, delivered by SetDockerInfo.
@@ -30,7 +36,7 @@ type HeaderModel struct {
 
 // NewHeaderModel creates a new header model. It performs no daemon calls;
 // deliver the results of daemon.Info and daemon.Version via SetDockerInfo.
-func NewHeaderModel(daemon docker.ContainerDaemon, width int) HeaderModel {
+func NewHeaderModel(daemon DockerEnvProvider, width int) HeaderModel {
 	return HeaderModel{
 		daemon: daemon,
 		width:  width,

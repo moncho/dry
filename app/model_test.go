@@ -29,10 +29,6 @@ func newTestModel() model {
 	m.daemon = &mocks.DockerDaemonMock{}
 	m.ready = true
 	m.swarmMode = true
-	m.containers.SetDaemon(m.daemon)
-	m.images.SetDaemon(m.daemon)
-	m.networks.SetDaemon(m.daemon)
-	m.volumes.SetDaemon(m.daemon)
 	ch := m.contentHeight()
 	m.containers.SetSize(m.width, ch)
 	m.images.SetSize(m.width, ch)
@@ -48,11 +44,6 @@ func newWorkspaceTestModel() model {
 	m.daemon = &mocks.DockerDaemonMock{}
 	m.ready = true
 	m.swarmMode = true
-	m.containers.SetDaemon(m.daemon)
-	m.images.SetDaemon(m.daemon)
-	m.networks.SetDaemon(m.daemon)
-	m.volumes.SetDaemon(m.daemon)
-	m.composeProjects.SetDaemon(m.daemon)
 	m.resizeContentModels()
 	return m
 }

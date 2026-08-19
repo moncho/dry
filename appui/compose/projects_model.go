@@ -82,7 +82,6 @@ type ProjectsLoadedMsg struct {
 type ProjectsModel struct {
 	table    appui.TableModel
 	filter   appui.FilterInputModel
-	daemon   docker.ContainerDaemon
 	projects []docker.ProjectWithServices
 }
 
@@ -101,11 +100,6 @@ func NewProjectsModel() ProjectsModel {
 		table:  appui.NewTableModel(columns),
 		filter: appui.NewFilterInputModel(),
 	}
-}
-
-// SetDaemon sets the Docker daemon reference.
-func (m *ProjectsModel) SetDaemon(d docker.ContainerDaemon) {
-	m.daemon = d
 }
 
 // FilterActive returns true when the filter input is active.

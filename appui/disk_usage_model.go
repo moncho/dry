@@ -10,7 +10,6 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/docker/go-units"
 	"github.com/moby/moby/client"
-	"github.com/moncho/dry/docker"
 )
 
 // DiskUsageLoadedMsg carries the loaded disk usage data.
@@ -21,7 +20,6 @@ type DiskUsageLoadedMsg struct {
 // DiskUsageModel displays Docker disk usage information.
 type DiskUsageModel struct {
 	usage  *client.DiskUsageResult
-	daemon docker.ContainerDaemon
 	width  int
 	height int
 }
@@ -29,11 +27,6 @@ type DiskUsageModel struct {
 // NewDiskUsageModel creates a disk usage model.
 func NewDiskUsageModel() DiskUsageModel {
 	return DiskUsageModel{}
-}
-
-// SetDaemon sets the Docker daemon reference.
-func (m *DiskUsageModel) SetDaemon(d docker.ContainerDaemon) {
-	m.daemon = d
 }
 
 // SetSize updates the dimensions.

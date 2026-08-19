@@ -116,17 +116,8 @@ func newGoldenModel(t *testing.T, workspace bool, width, height int) model {
 	m.ready = true
 	m.swarmMode = true
 
-	m.containers.SetDaemon(m.daemon)
-	m.images.SetDaemon(m.daemon)
-	m.networks.SetDaemon(m.daemon)
-	m.volumes.SetDaemon(m.daemon)
-	m.diskUsage.SetDaemon(m.daemon)
 	m.monitor.SetDaemon(m.daemon)
-	m.nodes.SetDaemon(m.daemon)
-	m.services.SetDaemon(m.daemon)
-	m.stacks.SetDaemon(m.daemon)
 	m.tasks.SetDaemon(m.daemon)
-	m.composeProjects.SetDaemon(m.daemon)
 
 	// Size the tables before feeding them rows.
 	m.resizeContentModels()

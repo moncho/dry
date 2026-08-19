@@ -67,7 +67,6 @@ func TestRenderMainScreen_SmallTerminal(t *testing.T) {
 	m.height = 25 // small terminal
 	m.daemon = &mocks.DockerDaemonMock{}
 	m.ready = true
-	m.containers.SetDaemon(m.daemon)
 	m.header = appui.NewHeaderModel(m.daemon, m.width)
 
 	ch := m.contentHeight()
@@ -131,7 +130,6 @@ func TestRenderWorkspaceScreen_ContextOverflowDoesNotHideFooter(t *testing.T) {
 	m.height = 30
 	m.daemon = &mocks.DockerDaemonMock{}
 	m.ready = true
-	m.containers.SetDaemon(m.daemon)
 	m.header = appui.NewHeaderModel(m.daemon, m.width)
 	m.resizeContentModels()
 
@@ -159,7 +157,6 @@ func TestRenderWorkspaceScreen_LongContextLinesDoNotHideFooter(t *testing.T) {
 	m.height = 24
 	m.daemon = &mocks.DockerDaemonMock{}
 	m.ready = true
-	m.containers.SetDaemon(m.daemon)
 	m.header = appui.NewHeaderModel(m.daemon, m.width)
 	m.resizeContentModels()
 
@@ -189,7 +186,6 @@ func TestRenderWorkspaceScreen_NarrowTerminalUsesCompactFallback(t *testing.T) {
 	m.height = 28
 	m.daemon = &mocks.DockerDaemonMock{}
 	m.ready = true
-	m.containers.SetDaemon(m.daemon)
 	m.header = appui.NewHeaderModel(m.daemon, m.width)
 	m.resizeContentModels()
 

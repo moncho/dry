@@ -3,7 +3,6 @@ package appui
 import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/moby/moby/api/types/network"
-	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/docker/formatter"
 )
 
@@ -35,7 +34,6 @@ type NetworksLoadedMsg struct {
 type NetworksModel struct {
 	table  TableModel
 	filter FilterInputModel
-	daemon docker.ContainerDaemon
 }
 
 // NewNetworksModel creates a networks list model.
@@ -56,11 +54,6 @@ func NewNetworksModel() NetworksModel {
 
 // FilterActive returns true when the filter input is active.
 func (m NetworksModel) FilterActive() bool { return m.filter.Active() }
-
-// SetDaemon sets the Docker daemon reference.
-func (m *NetworksModel) SetDaemon(d docker.ContainerDaemon) {
-	m.daemon = d
-}
 
 // SetSize updates the table dimensions.
 func (m *NetworksModel) SetSize(w, h int) {
