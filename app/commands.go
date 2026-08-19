@@ -885,7 +885,7 @@ func showComposeLogsCmd(daemon docker.ContainerAPI, project, service string) tea
 	}
 }
 
-func loadQuickPeekCmd(daemon docker.ContainerDaemon, ctx workspaceContext) tea.Cmd {
+func loadQuickPeekCmd(daemon dockerDaemon, ctx workspaceContext) tea.Cmd {
 	return func() tea.Msg {
 		msg := quickPeekLoadedMsg{
 			title:       ctx.title,
@@ -1004,7 +1004,7 @@ func loadQuickPeekCmd(daemon docker.ContainerDaemon, ctx workspaceContext) tea.C
 	}
 }
 
-func loadWorkspaceActivityCmd(daemon docker.ContainerDaemon, ctx workspaceContext, activityWidth, activityHeight int) tea.Cmd {
+func loadWorkspaceActivityCmd(daemon dockerDaemon, ctx workspaceContext, activityWidth, activityHeight int) tea.Cmd {
 	return func() tea.Msg {
 		switch ctx.kind {
 		case workspaceContextContainer:
