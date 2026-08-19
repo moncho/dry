@@ -205,6 +205,34 @@ Open a console, type ```dry```. It will try to connect to:
 
 If no connection with a Docker host succeeds, **dry** will exit.
 
+#### Connecting over SSH
+
+**dry** can talk to a remote Docker daemon through SSH, the same way the
+docker CLI does:
+
+```
+DOCKER_HOST=ssh://user@host dry
+```
+
+Host, port, and user are resolved like the `ssh` command resolves them:
+`Hostname`, `Port`, `User`, and `IdentityFile` directives from
+`~/.ssh/config` are honored, the port defaults to 22, the user defaults to
+the current OS user, and the remote Docker socket defaults to
+`/var/run/docker.sock` (a different socket path can be given in the URL,
+e.g. `ssh://user@host:2222/run/user/1000/docker.sock`).
+
+Authentication tries, in order: the identity files configured for the host
+in `~/.ssh/config` (or, when none is configured, the `~/.ssh/id_*` keys),
+keys held by a running SSH agent (`SSH_AUTH_SOCK`), and a password given
+in the URL. Passphrase protected key files are used through the agent.
+
+The remote host key is verified against `~/.ssh/known_hosts` and
+`/etc/ssh/ssh_known_hosts`, and the connection fails if the host is
+unknown or its key does not match. Connect once with `ssh host` to record
+the key. Verification can be disabled with
+`DRY_SSH_INSECURE_SKIP_HOST_KEY_CHECK=1`, which leaves the connection open
+to interception and should only be used against hosts you fully control.
+
 ```dry -T light``` launches dry with the light color theme. Available themes: `dark` (default), `light`.
 
 ```dry --workspace``` launches the experimental Phase 1 workspace layout.
