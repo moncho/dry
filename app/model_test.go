@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"io"
 	"net/netip"
 	"strings"
 	"testing"
@@ -241,6 +242,56 @@ func TestWorkspaceContextFromStatsUsesNameAndPortsWithoutCpuMemory(t *testing.T)
 	}
 	if len(ctx.monitorCPUHistory) != 2 || len(ctx.monitorMemHistory) != 2 {
 		t.Fatalf("expected monitor history to be preserved, got %+v", ctx)
+	}
+}
+
+type stubStreamReader struct {
+	closed bool
+}
+
+func (s *stubStreamReader) Read(p []byte) (int, error) { return 0, io.EOF }
+func (s *stubStreamReader) Close() error               { s.closed = true; return nil }
+
+func TestModel_StreamingLessClosesSupersededReader(t *testing.T) {
+	m := newTestModel()
+	first := &stubStreamReader{}
+	second := &stubStreamReader{}
+
+	// Two streams dispatched before either lands (key repeat on a slow
+	// daemon): the superseded reader must be closed, not leaked.
+	result, _ := m.Update(showStreamingLessMsg{content: "a", title: "A", reader: first})
+	m = result.(model)
+	result, _ = m.Update(showStreamingLessMsg{content: "b", title: "B", reader: second})
+	m = result.(model)
+
+	if !first.closed {
+		t.Fatal("expected the superseded stream reader to be closed")
+	}
+	if second.closed {
+		t.Fatal("the live stream reader must not be closed")
+	}
+
+	// A stale chunk from the superseded stream must not interleave into the
+	// viewer or schedule another read.
+	result, cmd := m.Update(appendLessMsg{content: "stale", reader: first})
+	m = result.(model)
+	if cmd != nil {
+		t.Fatal("a stale append must not schedule another read cycle")
+	}
+
+	// A stale close notice must not detach the live stream; that would leak
+	// it when the overlay closes.
+	result, _ = m.Update(streamClosedMsg{reader: first})
+	m = result.(model)
+	if m.streamReader == nil {
+		t.Fatal("a stale stream close must not detach the live reader")
+	}
+
+	// The live stream's close notice detaches it.
+	result, _ = m.Update(streamClosedMsg{reader: second})
+	m = result.(model)
+	if m.streamReader != nil {
+		t.Fatal("the live stream close must detach the reader")
 	}
 }
 

@@ -76,7 +76,9 @@ type appendLessMsg struct {
 }
 
 // streamClosedMsg signals the streaming reader has ended.
-type streamClosedMsg struct{}
+type streamClosedMsg struct {
+	reader io.ReadCloser // the reader that ended, so a stale close is ignorable
+}
 
 type workspaceActivityLoadedMsg struct {
 	title   string

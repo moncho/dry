@@ -107,7 +107,7 @@ func readLogStreamCmd(reader io.ReadCloser) tea.Cmd {
 		}
 		if err != nil {
 			_ = reader.Close()
-			return streamClosedMsg{}
+			return streamClosedMsg{reader: reader}
 		}
 		// n == 0 && err == nil: valid per io.Reader contract, retry after brief pause.
 		time.Sleep(10 * time.Millisecond)
