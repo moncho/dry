@@ -17,7 +17,7 @@ type containersLoadedMsg struct {
 }
 
 type dockerConnectedMsg struct {
-	daemon docker.ContainerDaemon
+	daemon dockerDaemon
 }
 
 type dockerErrorMsg struct {

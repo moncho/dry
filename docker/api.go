@@ -40,19 +40,6 @@ type ComposeActionsAPI interface {
 	ComposeProjectRemove(project string) (ComposeServiceActionReport, error)
 }
 
-// ContainerDaemon describes what is expected from the container daemon
-type ContainerDaemon interface {
-	ContainerAPI
-	ImageAPI
-	NetworkAPI
-	VolumesAPI
-	SwarmAPI
-	ComposeAPI
-	ComposeActionsAPI
-	ContainerRuntime
-	SystemAPI
-}
-
 // SystemAPI is the subset of the Docker API for daemon-level information
 // and maintenance.
 type SystemAPI interface {

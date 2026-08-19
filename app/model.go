@@ -117,7 +117,7 @@ type model struct {
 	ready        bool
 
 	// Docker
-	daemon       docker.ContainerDaemon
+	daemon       dockerDaemon
 	config       Config
 	swarmMode    bool
 	eventsChan   <-chan events.Message
