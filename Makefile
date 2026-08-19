@@ -21,27 +21,32 @@ build: ## Builds dry
 install: ## Installs dry
 	go install $(GO_LDFLAGS) $(PKG)
 
-lint: ## Runs linters
+# Keep in sync with .github/workflows/go-lint.yml so local lint predicts CI.
+GOLANGCI_LINT_VERSION := v2.10.1
+MISSPELL_VERSION := v0.8.0
+OK := ✓
+
+lint: ## Runs the same linter as CI (golangci-lint) plus gofmt and misspell
 	@echo ">> CODE QUALITY"
 
-	@echo -n "     REVIVE    "
-	@which revive > /dev/null; if [ $$? -ne 0 ]; then \
-		$(GO) get -u github.com/mgechev/revive; \
+	@printf '     GOLANGCI  '
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run ./...; \
+	else \
+		go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION) run ./...; \
 	fi
-	@revive -formatter friendly -exclude vendor/... ./...
 	@printf '%s\n' '$(OK)'
 
-	@echo -n "     FMT       "
-	@$(foreach gofile, $(GOFILES_NOVENDOR),\
-			out=$$(gofmt -s -l -d -e $(gofile) | tee /dev/stderr); if [ -n "$$out" ]; then exit 1; fi;)
+	@printf '     FMT       '
+	@out=$$(gofmt -s -l $(GOFILES_NOVENDOR)); if [ -n "$$out" ]; then echo; echo "$$out"; exit 1; fi
 	@printf '%s\n' '$(OK)'
 
-	@echo -n "     SPELL     "
-	@which misspell > /dev/null; if [ $$? -ne 0 ]; then \
-		$(GO) get -u github.com/client9/misspell/cmd/misspell; \
+	@printf '     SPELL     '
+	@if command -v misspell >/dev/null 2>&1; then \
+		misspell -error $(GOFILES_NOVENDOR); \
+	else \
+		go run github.com/golangci/misspell/cmd/misspell@$(MISSPELL_VERSION) -error $(GOFILES_NOVENDOR); \
 	fi
-	@$(foreach gofile, $(GOFILES_NOVENDOR),\
-			misspell --error $(gofile) || exit 1;)
 	@printf '%s\n' '$(OK)'
 
 fmt: ## Runs fmt

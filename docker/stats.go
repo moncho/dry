@@ -39,7 +39,7 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 		}
 
 		responseBody := containerStats.Body
-		defer responseBody.Close()
+		defer func() { _ = responseBody.Close() }()
 
 		dec := jsoniter.NewDecoder(responseBody)
 	loop:

@@ -251,7 +251,7 @@ func TestContainerName(t *testing.T) {
 func TestCalculateMemUsageUnixNoCache(t *testing.T) {
 	stats := container.MemoryStats{Usage: 500, Stats: map[string]uint64{"cache": 400}}
 	result := calculateMemUsageUnixNoCache(stats)
-	if 100.0 != result {
+	if result != 100.0 {
 		t.Errorf("Error calculating Unix mem usage, expected: %f, got: %f ", 100.0, result)
 	}
 }
