@@ -312,6 +312,42 @@ func TestModel_HeaderInfoLoadsAsynchronously(t *testing.T) {
 	}
 }
 
+type recordingSwarmAPI struct {
+	docker.SwarmAPI
+	resolvedServices []string
+	resolvedNodes    []string
+}
+
+func (r *recordingSwarmAPI) NodeTasks(nodeID string) ([]swarm.Task, error) {
+	return goldenTasks(), nil
+}
+
+func (r *recordingSwarmAPI) ResolveService(id string) (string, error) {
+	r.resolvedServices = append(r.resolvedServices, id)
+	return "svc", nil
+}
+
+func (r *recordingSwarmAPI) ResolveNode(id string) (string, error) {
+	r.resolvedNodes = append(r.resolvedNodes, id)
+	return "node", nil
+}
+
+func TestLoadNodeTasksCmdWarmsResolutions(t *testing.T) {
+	// Row building runs on the Update goroutine and resolves service and
+	// node names through the daemon's cache; the load command must warm
+	// that cache so a cache miss there never becomes a synchronous Docker
+	// round-trip that freezes the UI.
+	api := &recordingSwarmAPI{}
+	msg := loadNodeTasksCmd(api, "node11111111")()
+	if _, ok := msg.(appswarm.TasksLoadedMsg); !ok {
+		t.Fatalf("expected TasksLoadedMsg, got %T", msg)
+	}
+	if len(api.resolvedServices) != 2 || len(api.resolvedNodes) != 2 {
+		t.Fatalf("expected the load cmd to resolve names for every task, got services=%v nodes=%v",
+			api.resolvedServices, api.resolvedNodes)
+	}
+}
+
 func TestModel_CloseOverlay(t *testing.T) {
 	m := newTestModel()
 	m.overlay = overlayLess

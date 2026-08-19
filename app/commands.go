@@ -22,6 +22,7 @@ import (
 	"github.com/moby/moby/api/pkg/stdcopy"
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/api/types/events"
+	"github.com/moby/moby/api/types/swarm"
 	"github.com/moncho/dry/appui"
 	appcompose "github.com/moncho/dry/appui/compose"
 	appswarm "github.com/moncho/dry/appui/swarm"
@@ -1637,6 +1638,22 @@ func loadStacksCmd(daemon docker.SwarmAPI) tea.Cmd {
 }
 
 // loadNodeTasksCmd loads tasks for a specific node.
+// warmTaskResolutions resolves the service and node names the task rows will
+// render, inside the command goroutine. Row building happens on the Update
+// goroutine and reads these through the daemon's resolver cache; without the
+// warm-up, every cache miss there is a synchronous Docker round-trip with a
+// 10-second timeout per task, freezing the whole UI.
+func warmTaskResolutions(daemon docker.SwarmAPI, tasks []swarm.Task) {
+	for _, t := range tasks {
+		if t.ServiceID != "" {
+			_, _ = daemon.ResolveService(t.ServiceID)
+		}
+		if t.NodeID != "" {
+			_, _ = daemon.ResolveNode(t.NodeID)
+		}
+	}
+}
+
 func loadNodeTasksCmd(daemon docker.SwarmAPI, nodeID string) tea.Cmd {
 	return func() tea.Msg {
 		tasks, err := daemon.NodeTasks(nodeID)
@@ -1646,6 +1663,7 @@ func loadNodeTasksCmd(daemon docker.SwarmAPI, nodeID string) tea.Cmd {
 				expiry: 5 * time.Second,
 			}
 		}
+		warmTaskResolutions(daemon, tasks)
 		return appswarm.TasksLoadedMsg{
 			Tasks: tasks,
 			Title: fmt.Sprintf("Tasks for Node %s", shortID(nodeID)),
@@ -1663,6 +1681,7 @@ func loadServiceTasksCmd(daemon docker.SwarmAPI, serviceID string) tea.Cmd {
 				expiry: 5 * time.Second,
 			}
 		}
+		warmTaskResolutions(daemon, tasks)
 		return appswarm.TasksLoadedMsg{
 			Tasks: tasks,
 			Title: fmt.Sprintf("Tasks for Service %s", shortID(serviceID)),
@@ -1680,6 +1699,7 @@ func loadStackTasksCmd(daemon docker.SwarmAPI, stackName string) tea.Cmd {
 				expiry: 5 * time.Second,
 			}
 		}
+		warmTaskResolutions(daemon, tasks)
 		return appswarm.TasksLoadedMsg{
 			Tasks: tasks,
 			Title: fmt.Sprintf("Tasks for Stack %s", stackName),
