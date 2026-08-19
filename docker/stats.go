@@ -60,14 +60,7 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 					break loop
 				}
 
-				top, err := s.client.ContainerTop(ctx, s.Container.ID, client.ContainerTopOptions{})
-				if err != nil {
-					sendOrDone(ctx, stats, &Stats{
-						Error: fmt.Errorf("retrieve top info for container %s: %w", s.Container.ID, err),
-					})
-					break loop
-				}
-				nonBlockingSend(stats, buildStats(s.version, s.Container, &statsJSON, &top))
+				nonBlockingSend(stats, buildStats(s.version, s.Container, &statsJSON))
 			case <-ctx.Done():
 				break loop
 			}
@@ -91,14 +84,13 @@ func newStatsChannel(version *client.ServerVersionResult, client client.Containe
 }
 
 // buildStats builds Stats with the given information
-func buildStats(version *client.ServerVersionResult, container *Container, stats *container.StatsResponse, topResult *client.ContainerTopResult) *Stats {
+func buildStats(version *client.ServerVersionResult, container *Container, stats *container.StatsResponse) *Stats {
 	s := &Stats{
-		CID:         TruncateID(container.ID),
-		ID:          container.ID,
-		Name:        containerName(container),
-		Command:     container.Command,
-		Stats:       stats,
-		ProcessList: topResult,
+		CID:     TruncateID(container.ID),
+		ID:      container.ID,
+		Name:    containerName(container),
+		Command: container.Command,
+		Stats:   stats,
 	}
 
 	var (

@@ -20,6 +20,7 @@ type statsClientMock struct {
 	client.ContainerAPIClient
 	statsBody io.ReadCloser
 	statsErr  error
+	topCalled *bool
 }
 
 func (s statsClientMock) ContainerStats(context.Context, string, client.ContainerStatsOptions) (client.ContainerStatsResult, error) {
@@ -29,6 +30,9 @@ func (s statsClientMock) ContainerStats(context.Context, string, client.Containe
 }
 
 func (s statsClientMock) ContainerTop(context.Context, string, client.ContainerTopOptions) (client.ContainerTopResult, error) {
+	if s.topCalled != nil {
+		*s.topCalled = true
+	}
 	return client.ContainerTopResult{}, nil
 }
 
@@ -130,6 +134,40 @@ func TestStatsChannel_errorBuildingStats_goroutineExitsOnCtxCancel(t *testing.T)
 	ctx, cancel := context.WithCancel(context.Background())
 	sc.Start(ctx)
 	cancel()
+}
+
+func TestStatsChannel_doesNotCallContainerTopPerSample(t *testing.T) {
+	// ContainerTop is one of the more expensive daemon endpoints, and the
+	// stream used to call it once per stats sample per container (N calls
+	// per second in monitor mode) even though only the one-shot stats
+	// snapshot ever displayed the result.
+	topCalled := false
+	sc := StatsChannel{
+		Container: &Container{
+			Summary: container.Summary{
+				ID:    "1234",
+				Names: []string{"1234"},
+			},
+		},
+		version: &client.ServerVersionResult{
+			Os: "Not windows",
+		},
+		client: statsClientMock{
+			statsBody: io.NopCloser(strings.NewReader(asJSON(container.StatsResponse{}))),
+			topCalled: &topCalled,
+		},
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := sc.Start(ctx)
+
+	s := <-ch
+	if s == nil || s.Error != nil {
+		t.Fatalf("expected a data sample, got %+v", s)
+	}
+	if topCalled {
+		t.Fatal("the stats stream must not call ContainerTop per sample")
+	}
 }
 
 func TestStatsChannel_errorFrameSurvivesSlowConsumer(t *testing.T) {

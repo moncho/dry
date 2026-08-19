@@ -8,6 +8,38 @@ import (
 	"github.com/moncho/dry/mocks"
 )
 
+// newLoadedHeader builds a header with the mock daemon's info already
+// delivered, the way the headerInfoMsg handler does in production.
+func newLoadedHeader(daemon *mocks.DockerDaemonMock, width int) HeaderModel {
+	m := NewHeaderModel(daemon, width)
+	info, infoErr := daemon.Info()
+	ver, verErr := daemon.Version()
+	m.SetDockerInfo(info, infoErr, ver, verErr)
+	return m
+}
+
+// Until SetDockerInfo delivers the daemon info, the header renders a
+// placeholder of the same height so the layout does not jump, and never
+// flashes an error for data that simply has not arrived yet.
+func TestHeaderModel_PlaceholderBeforeInfoLoads(t *testing.T) {
+	InitStyles()
+	m := NewHeaderModel(&mocks.DockerDaemonMock{}, 60)
+
+	view := m.View()
+	lines := strings.Split(view, "\n")
+	if len(lines) != 3 {
+		t.Fatalf("expected the placeholder to keep the 3-line header height, got %d lines", len(lines))
+	}
+	if strings.Contains(view, "Error") {
+		t.Fatalf("expected no error while info is loading, got %q", view)
+	}
+	for i, line := range lines {
+		if got := ansi.StringWidth(line); got != 60 {
+			t.Errorf("placeholder line %d width = %d, want 60", i, got)
+		}
+	}
+}
+
 // At narrow widths the three header columns must not run into each other.
 // Regression test for the collision where a long value butted directly
 // against the next column's label (e.g. "unix:///var/rDocker Version").
@@ -16,7 +48,7 @@ func TestHeaderModel_NarrowWidthKeepsColumnGap(t *testing.T) {
 	daemon := &mocks.DockerDaemonMock{}
 
 	for _, width := range []int{40, 50, 70} {
-		m := NewHeaderModel(daemon, width)
+		m := newLoadedHeader(daemon, width)
 		lines := strings.Split(m.View(), "\n")
 		if len(lines) < 3 {
 			t.Fatalf("width %d: expected 3 header lines, got %d", width, len(lines))
@@ -43,7 +75,7 @@ func TestHeaderModel_NarrowWidthKeepsValueVisible(t *testing.T) {
 
 	// The mock reports DockerHost "dry.io".
 	for _, width := range []int{40, 50, 70} {
-		m := NewHeaderModel(daemon, width)
+		m := newLoadedHeader(daemon, width)
 		line := ansi.Strip(strings.Split(m.View(), "\n")[0])
 		if !strings.Contains(line, "Docker Host: d") {
 			t.Errorf("width %d: expected at least one host value character, got %q", width, line)
@@ -56,7 +88,7 @@ func TestHeaderModel_LinesFitWidth(t *testing.T) {
 	InitStyles()
 	daemon := &mocks.DockerDaemonMock{}
 	const width = 60
-	m := NewHeaderModel(daemon, width)
+	m := newLoadedHeader(daemon, width)
 	for i, line := range strings.Split(m.View(), "\n") {
 		if got := ansi.StringWidth(line); got > width {
 			t.Errorf("header line %d width = %d, want <= %d: %q", i, got, width, ansi.Strip(line))

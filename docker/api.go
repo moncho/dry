@@ -143,7 +143,6 @@ type Stats struct {
 	BlockWrite       float64
 	PidsCurrent      uint64
 	Stats            *container.StatsResponse
-	ProcessList      *client.ContainerTopResult
 	Error            error
 }
 

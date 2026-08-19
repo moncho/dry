@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/moby/moby/api/types/events"
+	"github.com/moby/moby/api/types/system"
+	"github.com/moby/moby/client"
 	"github.com/moncho/dry/docker"
 )
 
@@ -73,6 +75,15 @@ type showStreamingLessMsg struct {
 type appendLessMsg struct {
 	content string
 	reader  io.ReadCloser // passed back for the next read cycle
+}
+
+// headerInfoMsg carries the asynchronously fetched daemon info and version
+// for the header.
+type headerInfoMsg struct {
+	info    system.Info
+	infoErr error
+	ver     *client.ServerVersionResult
+	verErr  error
 }
 
 // streamClosedMsg signals the streaming reader has ended.

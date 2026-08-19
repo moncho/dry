@@ -249,18 +249,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if err != nil {
 			eventsCancel()
 			m.messageBar.SetMessage(fmt.Sprintf("Docker events error: %s", err), 5*time.Second)
-			return m, loadContainersCmd(m.daemon, m.containers.ShowAll(), m.containers.SortMode())
+			return m, tea.Batch(
+				loadContainersCmd(m.daemon, m.containers.ShowAll(), m.containers.SortMode()),
+				loadHeaderInfoCmd(m.daemon),
+			)
 		}
 		m.eventsChan = eventsCh
 		m.eventsCancel = eventsCancel
 		if m.config.MonitorMode {
 			m2, cmd := m.switchView(Monitor)
-			return m2, tea.Batch(cmd, listenDockerEvents(m.eventsChan))
+			return m2, tea.Batch(cmd, listenDockerEvents(m.eventsChan), loadHeaderInfoCmd(m.daemon))
 		}
 		return m, tea.Batch(
 			loadContainersCmd(m.daemon, m.containers.ShowAll(), m.containers.SortMode()),
 			listenDockerEvents(m.eventsChan),
+			loadHeaderInfoCmd(m.daemon),
 		)
+
+	case headerInfoMsg:
+		m.header.SetDockerInfo(msg.info, msg.infoErr, msg.ver, msg.verErr)
+		return m, nil
 
 	case dockerErrorMsg:
 		// Fatal error — can't connect to Docker
