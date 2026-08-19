@@ -20,6 +20,7 @@ import (
 	timeserieslinechart "github.com/NimbleMarkets/ntcharts/v2/linechart/timeserieslinechart"
 	"github.com/docker/go-units"
 	"github.com/moby/moby/api/pkg/stdcopy"
+	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/api/types/events"
 	"github.com/moncho/dry/appui"
 	appcompose "github.com/moncho/dry/appui/compose"
@@ -218,11 +219,11 @@ func shortID(id string) string {
 	return id
 }
 
-func loadContainerLogStream(daemon docker.ContainerDaemon, id string) (streamingContent, error) {
+func loadContainerLogStream(daemon docker.ContainerAPI, id string) (streamingContent, error) {
 	return loadContainerLogStreamWithTail(daemon, id, workspaceActivityLogTail)
 }
 
-func loadContainerLogStreamWithTail(daemon docker.ContainerDaemon, id string, tail int) (streamingContent, error) {
+func loadContainerLogStreamWithTail(daemon docker.ContainerAPI, id string, tail int) (streamingContent, error) {
 	reader, err := daemon.Logs(id, fmt.Sprintf("tail:%d", tail), false)
 	if err != nil {
 		return streamingContent{}, err
@@ -236,11 +237,11 @@ func loadContainerLogStreamWithTail(daemon docker.ContainerDaemon, id string, ta
 	}, nil
 }
 
-func loadComposeLogStream(daemon docker.ContainerDaemon, project, service string) (streamingContent, error) {
+func loadComposeLogStream(daemon docker.ContainerAPI, project, service string) (streamingContent, error) {
 	return loadComposeLogStreamWithTail(daemon, project, service, workspaceActivityLogTail)
 }
 
-func loadComposeLogStreamWithTail(daemon docker.ContainerDaemon, project, service string, tail int) (streamingContent, error) {
+func loadComposeLogStreamWithTail(daemon docker.ContainerAPI, project, service string, tail int) (streamingContent, error) {
 	containers := daemon.Containers(nil, docker.NoSort)
 	var targets []*docker.Container
 	for _, c := range containers {
@@ -293,7 +294,7 @@ func loadComposeLogStreamWithTail(daemon docker.ContainerDaemon, project, servic
 
 // interactiveExecCommand implements tea.ExecCommand for attach and exec sessions.
 type interactiveExecCommand struct {
-	daemon     docker.ContainerDaemon
+	daemon     docker.ContainerRuntime
 	id         string
 	command    []string // nil for attach, non-nil for exec
 	waitForKey bool     // pause for keypress after command finishes
@@ -373,7 +374,7 @@ func connectToDockerCmd(cfg Config) tea.Cmd {
 }
 
 // loadContainersCmd fetches the container list from Docker.
-func loadContainersCmd(daemon docker.ContainerDaemon, showAll bool, sortMode docker.SortMode) tea.Cmd {
+func loadContainersCmd(daemon docker.ContainerAPI, showAll bool, sortMode docker.SortMode) tea.Cmd {
 	return func() tea.Msg {
 		var filters []docker.ContainerFilter
 		if !showAll {
@@ -413,7 +414,7 @@ func showHelpCmd() tea.Cmd {
 }
 
 // inspectContainerCmd fetches container inspect JSON and shows it.
-func inspectContainerCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func inspectContainerCmd(daemon docker.ContainerAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		info, err := daemon.Inspect(id)
 		if err != nil {
@@ -447,7 +448,7 @@ func formatEvent(e events.Message) string {
 }
 
 // showDockerEventsCmd shows the Docker event log.
-func showDockerEventsCmd(daemon docker.ContainerDaemon) tea.Cmd {
+func showDockerEventsCmd(daemon docker.SystemAPI) tea.Cmd {
 	return func() tea.Msg {
 		eventLog := daemon.EventLog()
 		if eventLog == nil {
@@ -470,7 +471,7 @@ func showDockerEventsCmd(daemon docker.ContainerDaemon) tea.Cmd {
 }
 
 // showDockerInfoCmd shows docker system info.
-func showDockerInfoCmd(daemon docker.ContainerDaemon) tea.Cmd {
+func showDockerInfoCmd(daemon docker.SystemAPI) tea.Cmd {
 	return func() tea.Msg {
 		info, err := daemon.Info()
 		if err != nil {
@@ -494,7 +495,7 @@ func showDockerInfoCmd(daemon docker.ContainerDaemon) tea.Cmd {
 }
 
 // loadImagesCmd fetches the image list from Docker.
-func loadImagesCmd(daemon docker.ContainerDaemon) tea.Cmd {
+func loadImagesCmd(daemon docker.ImageAPI) tea.Cmd {
 	return func() tea.Msg {
 		images, err := daemon.Images()
 		if err != nil {
@@ -508,7 +509,7 @@ func loadImagesCmd(daemon docker.ContainerDaemon) tea.Cmd {
 }
 
 // loadNetworksCmd fetches the network list from Docker.
-func loadNetworksCmd(daemon docker.ContainerDaemon) tea.Cmd {
+func loadNetworksCmd(daemon docker.NetworkAPI) tea.Cmd {
 	return func() tea.Msg {
 		networks, err := daemon.Networks()
 		if err != nil {
@@ -522,7 +523,7 @@ func loadNetworksCmd(daemon docker.ContainerDaemon) tea.Cmd {
 }
 
 // loadVolumesCmd fetches the volume list from Docker.
-func loadVolumesCmd(daemon docker.ContainerDaemon) tea.Cmd {
+func loadVolumesCmd(daemon docker.VolumesAPI) tea.Cmd {
 	return func() tea.Msg {
 		volumes, err := daemon.VolumeList(context.Background())
 		if err != nil {
@@ -536,7 +537,7 @@ func loadVolumesCmd(daemon docker.ContainerDaemon) tea.Cmd {
 }
 
 // loadDiskUsageCmd fetches Docker disk usage.
-func loadDiskUsageCmd(daemon docker.ContainerDaemon) tea.Cmd {
+func loadDiskUsageCmd(daemon docker.SystemAPI) tea.Cmd {
 	return func() tea.Msg {
 		usage, err := daemon.DiskUsage()
 		if err != nil {
@@ -550,7 +551,7 @@ func loadDiskUsageCmd(daemon docker.ContainerDaemon) tea.Cmd {
 }
 
 // inspectImageCmd fetches image inspect JSON and shows it.
-func inspectImageCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func inspectImageCmd(daemon docker.ImageAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		info, err := daemon.InspectImage(id)
 		if err != nil {
@@ -574,7 +575,7 @@ func inspectImageCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 }
 
 // inspectNetworkCmd fetches network inspect JSON and shows it.
-func inspectNetworkCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func inspectNetworkCmd(daemon docker.NetworkAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		info, err := daemon.NetworkInspect(id)
 		if err != nil {
@@ -598,7 +599,7 @@ func inspectNetworkCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 }
 
 // showContainerLogsCmd opens a streaming log viewer for a container.
-func showContainerLogsCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func showContainerLogsCmd(daemon docker.ContainerAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		stream, err := loadContainerLogStream(daemon, id)
 		if err != nil {
@@ -616,7 +617,7 @@ func showContainerLogsCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 }
 
 // attachContainerCmd opens an interactive attach session for a running container.
-func attachContainerCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func attachContainerCmd(daemon docker.ContainerRuntime, id string) tea.Cmd {
 	cmd := &interactiveExecCommand{daemon: daemon, id: id}
 	return tea.Exec(cmd, func(err error) tea.Msg {
 		if err != nil {
@@ -651,7 +652,7 @@ func isInteractiveShell(command []string) bool {
 }
 
 // execContainerCmd opens an interactive exec session in a running container.
-func execContainerCmd(daemon docker.ContainerDaemon, id string, command []string) tea.Cmd {
+func execContainerCmd(daemon docker.ContainerRuntime, id string, command []string) tea.Cmd {
 	waitForKey := !isInteractiveShell(command)
 	cmd := &interactiveExecCommand{
 		daemon:     daemon,
@@ -676,7 +677,7 @@ func execContainerCmd(daemon docker.ContainerDaemon, id string, command []string
 // loadHeaderInfoCmd fetches the daemon info and version shown in the header.
 // This runs as a command so connecting never blocks the Update goroutine on
 // two synchronous daemon calls.
-func loadHeaderInfoCmd(daemon docker.ContainerDaemon) tea.Cmd {
+func loadHeaderInfoCmd(daemon docker.SystemAPI) tea.Cmd {
 	return func() tea.Msg {
 		info, infoErr := daemon.Info()
 		ver, verErr := daemon.Version()
@@ -684,8 +685,16 @@ func loadHeaderInfoCmd(daemon docker.ContainerDaemon) tea.Cmd {
 	}
 }
 
+// statsSnapshotSource is what the one-shot stats snapshot needs from the
+// daemon: container resolution, a stats stream, and the process list.
+type statsSnapshotSource interface {
+	ContainerByID(id string) *docker.Container
+	StatsChannel(container *docker.Container) (*docker.StatsChannel, error)
+	Top(ctx context.Context, id string) (container.TopResponse, error)
+}
+
 // showContainerStatsCmd fetches a snapshot of container stats.
-func showContainerStatsCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func showContainerStatsCmd(daemon statsSnapshotSource, id string) tea.Cmd {
 	return func() tea.Msg {
 		c := daemon.ContainerByID(id)
 		if c == nil {
@@ -743,7 +752,7 @@ func showContainerStatsCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 }
 
 // showImageHistoryCmd fetches image history and shows it.
-func showImageHistoryCmd(daemon docker.ContainerDaemon, imageID string) tea.Cmd {
+func showImageHistoryCmd(daemon docker.ImageAPI, imageID string) tea.Cmd {
 	return func() tea.Msg {
 		history, err := daemon.History(imageID)
 		if err != nil {
@@ -761,7 +770,7 @@ func showImageHistoryCmd(daemon docker.ContainerDaemon, imageID string) tea.Cmd 
 }
 
 // inspectVolumeCmd fetches volume inspect JSON and shows it.
-func inspectVolumeCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func inspectVolumeCmd(daemon docker.VolumesAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		info, err := daemon.VolumeInspect(context.Background(), id)
 		if err != nil {
@@ -787,7 +796,7 @@ func inspectVolumeCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 // --- Compose commands ---
 
 // loadComposeProjectsCmd fetches compose projects with services derived from container labels.
-func loadComposeProjectsCmd(daemon docker.ContainerDaemon) tea.Cmd {
+func loadComposeProjectsCmd(daemon docker.ComposeAPI) tea.Cmd {
 	return func() tea.Msg {
 		projects := daemon.ComposeProjectsWithServices()
 		return appcompose.ProjectsLoadedMsg{Projects: projects}
@@ -795,7 +804,15 @@ func loadComposeProjectsCmd(daemon docker.ContainerDaemon) tea.Cmd {
 }
 
 // loadComposeServicesCmd fetches compose resources (services, networks, volumes) for a project.
-func loadComposeServicesCmd(daemon docker.ContainerDaemon, project string) tea.Cmd {
+// composeResourcesSource is what the Compose services view needs: the
+// project's services plus the networks and volumes shown alongside them.
+type composeResourcesSource interface {
+	docker.ComposeAPI
+	docker.NetworkAPI
+	docker.VolumesAPI
+}
+
+func loadComposeServicesCmd(daemon composeResourcesSource, project string) tea.Cmd {
 	return func() tea.Msg {
 		services := daemon.ComposeServices(project)
 
@@ -834,7 +851,7 @@ func loadComposeServicesCmd(daemon docker.ContainerDaemon, project string) tea.C
 }
 
 // inspectComposeServiceCmd finds the first container for a compose service and inspects it.
-func inspectComposeServiceCmd(daemon docker.ContainerDaemon, project, service string) tea.Cmd {
+func inspectComposeServiceCmd(daemon docker.ContainerAPI, project, service string) tea.Cmd {
 	return func() tea.Msg {
 		for _, c := range daemon.Containers(nil, docker.NoSort) {
 			if c.Labels["com.docker.compose.project"] == project &&
@@ -851,7 +868,7 @@ func inspectComposeServiceCmd(daemon docker.ContainerDaemon, project, service st
 
 // showComposeLogsCmd opens a merged streaming log viewer for compose
 // containers matching the given project and optional service.
-func showComposeLogsCmd(daemon docker.ContainerDaemon, project, service string) tea.Cmd {
+func showComposeLogsCmd(daemon docker.ContainerAPI, project, service string) tea.Cmd {
 	return func() tea.Msg {
 		stream, err := loadComposeLogStream(daemon, project, service)
 		if err != nil {
@@ -1081,7 +1098,7 @@ func loadWorkspaceActivityCmd(daemon docker.ContainerDaemon, ctx workspaceContex
 	}
 }
 
-func loadWorkspaceImageInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func loadWorkspaceImageInspectCmd(daemon docker.ImageAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		info, err := daemon.InspectImage(id)
 		if err != nil {
@@ -1107,7 +1124,7 @@ func loadWorkspaceImageInspectCmd(daemon docker.ContainerDaemon, id string) tea.
 	}
 }
 
-func loadWorkspaceNetworkInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func loadWorkspaceNetworkInspectCmd(daemon docker.NetworkAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		info, err := daemon.NetworkInspect(id)
 		if err != nil {
@@ -1133,7 +1150,7 @@ func loadWorkspaceNetworkInspectCmd(daemon docker.ContainerDaemon, id string) te
 	}
 }
 
-func loadWorkspaceVolumeInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func loadWorkspaceVolumeInspectCmd(daemon docker.VolumesAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		info, err := daemon.VolumeInspect(context.Background(), id)
 		if err != nil {
@@ -1371,7 +1388,7 @@ func monitorChartHeight(bodyHeight int) int {
 	return max(minChartHeight, height)
 }
 
-func loadWorkspaceNodeInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func loadWorkspaceNodeInspectCmd(daemon docker.SwarmAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		node, err := daemon.Node(id)
 		if err != nil {
@@ -1397,7 +1414,7 @@ func loadWorkspaceNodeInspectCmd(daemon docker.ContainerDaemon, id string) tea.C
 	}
 }
 
-func loadWorkspaceServiceInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func loadWorkspaceServiceInspectCmd(daemon docker.SwarmAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		svc, err := daemon.Service(id)
 		if err != nil {
@@ -1423,7 +1440,7 @@ func loadWorkspaceServiceInspectCmd(daemon docker.ContainerDaemon, id string) te
 	}
 }
 
-func loadWorkspaceTaskInspectCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func loadWorkspaceTaskInspectCmd(daemon docker.SwarmAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		task, err := daemon.Task(id)
 		if err != nil {
@@ -1449,7 +1466,7 @@ func loadWorkspaceTaskInspectCmd(daemon docker.ContainerDaemon, id string) tea.C
 	}
 }
 
-func loadWorkspaceStackDetailsCmd(daemon docker.ContainerDaemon, stack docker.Stack) tea.Cmd {
+func loadWorkspaceStackDetailsCmd(daemon docker.SwarmAPI, stack docker.Stack) tea.Cmd {
 	return func() tea.Msg {
 		var lines []string
 		lines = append(lines, fmt.Sprintf("name: %s", stack.Name))
@@ -1578,7 +1595,7 @@ func mergeLogReaders(named map[string]io.ReadCloser) io.ReadCloser {
 // --- Swarm commands ---
 
 // loadNodesCmd fetches the swarm node list.
-func loadNodesCmd(daemon docker.ContainerDaemon) tea.Cmd {
+func loadNodesCmd(daemon docker.SwarmAPI) tea.Cmd {
 	return func() tea.Msg {
 		nodes, err := daemon.Nodes()
 		if err != nil {
@@ -1592,7 +1609,7 @@ func loadNodesCmd(daemon docker.ContainerDaemon) tea.Cmd {
 }
 
 // loadServicesCmd fetches the swarm service list.
-func loadServicesCmd(daemon docker.ContainerDaemon) tea.Cmd {
+func loadServicesCmd(daemon docker.SwarmAPI) tea.Cmd {
 	return func() tea.Msg {
 		services, err := daemon.Services()
 		if err != nil {
@@ -1606,7 +1623,7 @@ func loadServicesCmd(daemon docker.ContainerDaemon) tea.Cmd {
 }
 
 // loadStacksCmd fetches the swarm stack list.
-func loadStacksCmd(daemon docker.ContainerDaemon) tea.Cmd {
+func loadStacksCmd(daemon docker.SwarmAPI) tea.Cmd {
 	return func() tea.Msg {
 		stacks, err := daemon.Stacks()
 		if err != nil {
@@ -1620,7 +1637,7 @@ func loadStacksCmd(daemon docker.ContainerDaemon) tea.Cmd {
 }
 
 // loadNodeTasksCmd loads tasks for a specific node.
-func loadNodeTasksCmd(daemon docker.ContainerDaemon, nodeID string) tea.Cmd {
+func loadNodeTasksCmd(daemon docker.SwarmAPI, nodeID string) tea.Cmd {
 	return func() tea.Msg {
 		tasks, err := daemon.NodeTasks(nodeID)
 		if err != nil {
@@ -1637,7 +1654,7 @@ func loadNodeTasksCmd(daemon docker.ContainerDaemon, nodeID string) tea.Cmd {
 }
 
 // loadServiceTasksCmd loads tasks for a specific service.
-func loadServiceTasksCmd(daemon docker.ContainerDaemon, serviceID string) tea.Cmd {
+func loadServiceTasksCmd(daemon docker.SwarmAPI, serviceID string) tea.Cmd {
 	return func() tea.Msg {
 		tasks, err := daemon.ServiceTasks(serviceID)
 		if err != nil {
@@ -1654,7 +1671,7 @@ func loadServiceTasksCmd(daemon docker.ContainerDaemon, serviceID string) tea.Cm
 }
 
 // loadStackTasksCmd loads tasks for a specific stack.
-func loadStackTasksCmd(daemon docker.ContainerDaemon, stackName string) tea.Cmd {
+func loadStackTasksCmd(daemon docker.SwarmAPI, stackName string) tea.Cmd {
 	return func() tea.Msg {
 		tasks, err := daemon.StackTasks(stackName)
 		if err != nil {
@@ -1671,7 +1688,7 @@ func loadStackTasksCmd(daemon docker.ContainerDaemon, stackName string) tea.Cmd 
 }
 
 // inspectNodeCmd shows node inspect JSON.
-func inspectNodeCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func inspectNodeCmd(daemon docker.SwarmAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		node, err := daemon.Node(id)
 		if err != nil {
@@ -1695,7 +1712,7 @@ func inspectNodeCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 }
 
 // inspectServiceCmd shows service inspect JSON.
-func inspectServiceCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func inspectServiceCmd(daemon docker.SwarmAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		svc, err := daemon.Service(id)
 		if err != nil {
@@ -1719,7 +1736,7 @@ func inspectServiceCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 }
 
 // inspectTaskCmd shows task inspect JSON.
-func inspectTaskCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func inspectTaskCmd(daemon docker.SwarmAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		task, err := daemon.Task(id)
 		if err != nil {
@@ -1743,7 +1760,7 @@ func inspectTaskCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 }
 
 // showServiceLogsCmd opens a streaming log viewer for a service.
-func showServiceLogsCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
+func showServiceLogsCmd(daemon docker.SwarmAPI, id string) tea.Cmd {
 	return func() tea.Msg {
 		reader, err := daemon.ServiceLogs(id, "", false)
 		if err != nil {
