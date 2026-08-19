@@ -60,3 +60,6 @@ dist
 
 # repowise local index, databases, and API keys
 .repowise/
+
+# golden-test mismatch output
+*.golden.got
