@@ -508,6 +508,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case showStreamingLessMsg:
+		// Two streams can be dispatched before either message lands (key
+		// repeat on a slow daemon); the superseded reader must be closed or
+		// its follow-mode HTTP connection leaks until process exit.
+		if m.streamReader != nil {
+			_ = m.streamReader.Close()
+		}
 		m.less = appui.NewLessModel()
 		m.less.SetSize(m.width, m.height)
 		m.less.SetContent(msg.content, msg.title)
@@ -517,18 +523,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, readLogStreamCmd(msg.reader)
 
 	case appendLessMsg:
-		if m.overlay == overlayLess && m.streamReader != nil {
+		// Only append content from the reader that is currently live;
+		// a chunk from a superseded stream would interleave two containers'
+		// logs in one viewer.
+		if m.overlay == overlayLess && m.streamReader != nil && msg.reader == m.streamReader {
 			m.less.AppendContent(msg.content)
 			return m, readLogStreamCmd(msg.reader)
 		}
-		// Overlay was closed, clean up the reader
-		if msg.reader != nil {
+		// Overlay was closed or the stream was replaced: clean up the reader
+		if msg.reader != nil && msg.reader != m.streamReader {
 			_ = msg.reader.Close()
 		}
 		return m, nil
 
 	case streamClosedMsg:
-		m.streamReader = nil
+		// A close notice from a superseded stream must not detach the live
+		// one; that would leak it when the overlay closes.
+		if msg.reader == nil || msg.reader == m.streamReader {
+			m.streamReader = nil
+		}
 		return m, nil
 
 	case appui.CloseOverlayMsg:

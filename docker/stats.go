@@ -21,7 +21,10 @@ type StatsChannel struct {
 
 // Start starts sending stats to the channel returned
 func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
-	stats := make(chan *Stats)
+	// Buffered so a final error frame can be parked even when the consumer
+	// is between reads; without it the frame is lost and the consumer only
+	// sees a bare closed channel.
+	stats := make(chan *Stats, 1)
 
 	go func() {
 		defer close(stats)
@@ -29,7 +32,7 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 			Stream: true,
 		})
 		if err != nil {
-			nonBlockingSend(stats, &Stats{
+			sendOrDone(ctx, stats, &Stats{
 				Error: fmt.Errorf("create stats stream for container %s: %w", s.Container.ID, err),
 			})
 			return
@@ -46,11 +49,11 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 				var statsJSON container.StatsResponse
 				if err := dec.Decode(&statsJSON); err != nil {
 					if err == io.EOF {
-						nonBlockingSend(stats, &Stats{
+						sendOrDone(ctx, stats, &Stats{
 							Error: fmt.Errorf("end of stats stream reached for container %s", s.Container.ID),
 						})
 					} else {
-						nonBlockingSend(stats, &Stats{
+						sendOrDone(ctx, stats, &Stats{
 							Error: fmt.Errorf("read stats for container %s: %w", s.Container.ID, err),
 						})
 					}
@@ -59,7 +62,7 @@ func (s *StatsChannel) Start(ctx context.Context) <-chan *Stats {
 
 				top, err := s.client.ContainerTop(ctx, s.Container.ID, client.ContainerTopOptions{})
 				if err != nil {
-					nonBlockingSend(stats, &Stats{
+					sendOrDone(ctx, stats, &Stats{
 						Error: fmt.Errorf("retrieve top info for container %s: %w", s.Container.ID, err),
 					})
 					break loop
@@ -209,9 +212,21 @@ func calculateCPUPercentWindows(v *container.StatsResponse) float64 {
 	return 0.00
 }
 
+// nonBlockingSend drops the frame when the consumer is not keeping up. Only
+// use it for data samples, which self-heal on the next tick; error frames are
+// the last message before the channel closes and must go through sendOrDone.
 func nonBlockingSend(stats chan<- *Stats, s *Stats) {
 	select {
 	case stats <- s:
 	default:
+	}
+}
+
+// sendOrDone delivers the frame even when the consumer is between reads,
+// giving up only when the context is canceled.
+func sendOrDone(ctx context.Context, stats chan<- *Stats, s *Stats) {
+	select {
+	case stats <- s:
+	case <-ctx.Done():
 	}
 }

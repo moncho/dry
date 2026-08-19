@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
@@ -129,6 +130,44 @@ func TestStatsChannel_errorBuildingStats_goroutineExitsOnCtxCancel(t *testing.T)
 	ctx, cancel := context.WithCancel(context.Background())
 	sc.Start(ctx)
 	cancel()
+}
+
+func TestStatsChannel_errorFrameSurvivesSlowConsumer(t *testing.T) {
+	// The terminal error frame is the last message before the channel
+	// closes. It used to go through a non-blocking send on an unbuffered
+	// channel, so any consumer not parked in a receive at that instant lost
+	// it and saw only a bare closed channel (reported as the fake error
+	// "stats channel closed" instead of the real cause).
+	defer goleak.VerifyNone(t)
+	sc := StatsChannel{
+		Container: &Container{
+			Summary: container.Summary{
+				ID:    "1234",
+				Names: []string{"1234"},
+			},
+		},
+		version: &client.ServerVersionResult{
+			Os: "Not windows",
+		},
+		client: statsClientMock{
+			// Empty body: the decoder hits EOF immediately and emits the
+			// terminal error frame before any consumer is receiving.
+			statsBody: io.NopCloser(strings.NewReader("")),
+		},
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := sc.Start(ctx)
+
+	time.Sleep(50 * time.Millisecond) // consumer attaches late
+
+	s, ok := <-ch
+	if !ok || s == nil || s.Error == nil {
+		t.Fatalf("expected the terminal error frame to reach a late consumer, got %+v (ok=%v)", s, ok)
+	}
+	if !strings.Contains(s.Error.Error(), "end of stats stream") {
+		t.Fatalf("expected the real stream error, got %v", s.Error)
+	}
 }
 
 func TestStatsChannel_errorOpeningStream_goroutineExits(t *testing.T) {
