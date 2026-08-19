@@ -259,10 +259,9 @@ func resize(s string, length uint) string {
 	}
 	s = padRight(s, n, ' ')
 	if slen > n {
-		rs := []rune(s)
 		var buf bytes.Buffer
 		w := 0
-		for _, r := range rs {
+		for _, r := range s {
 			buf.WriteRune(r)
 			rw := runewidth.RuneWidth(r)
 			w += rw

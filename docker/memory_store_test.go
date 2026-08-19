@@ -17,7 +17,7 @@ var (
 func BenchmarkMemoryStoreContainerCreation(b *testing.B) {
 	c := mock.ContainerAPIClientMock{Containers: hundredContainers}
 	for i := 0; i < b.N; i++ {
-		NewDockerContainerStore(c)
+		_, _ = NewDockerContainerStore(c)
 	}
 }
 
