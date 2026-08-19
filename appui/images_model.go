@@ -3,7 +3,6 @@ package appui
 import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/moby/moby/api/types/image"
-	"github.com/moncho/dry/docker"
 	"github.com/moncho/dry/docker/formatter"
 )
 
@@ -35,7 +34,6 @@ type ImagesLoadedMsg struct {
 type ImagesModel struct {
 	table  TableModel
 	filter FilterInputModel
-	daemon docker.ContainerDaemon
 }
 
 // NewImagesModel creates an images list model.
@@ -55,11 +53,6 @@ func NewImagesModel() ImagesModel {
 
 // FilterActive returns true when the filter input is active.
 func (m ImagesModel) FilterActive() bool { return m.filter.Active() }
-
-// SetDaemon sets the Docker daemon reference.
-func (m *ImagesModel) SetDaemon(d docker.ContainerDaemon) {
-	m.daemon = d
-}
 
 // SetSize updates the table dimensions.
 func (m *ImagesModel) SetSize(w, h int) {

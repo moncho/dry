@@ -42,7 +42,6 @@ type NodesLoadedMsg struct {
 type NodesModel struct {
 	table  appui.TableModel
 	filter appui.FilterInputModel
-	daemon docker.ContainerDaemon
 }
 
 // NewNodesModel creates a nodes list model.
@@ -64,11 +63,6 @@ func NewNodesModel() NodesModel {
 
 // FilterActive returns true when the filter input is active.
 func (m NodesModel) FilterActive() bool { return m.filter.Active() }
-
-// SetDaemon sets the Docker daemon reference.
-func (m *NodesModel) SetDaemon(d docker.ContainerDaemon) {
-	m.daemon = d
-}
 
 // SetSize updates the table dimensions.
 func (m *NodesModel) SetSize(w, h int) {

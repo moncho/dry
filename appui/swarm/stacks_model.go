@@ -39,7 +39,6 @@ type StacksLoadedMsg struct {
 type StacksModel struct {
 	table  appui.TableModel
 	filter appui.FilterInputModel
-	daemon docker.ContainerDaemon
 }
 
 // NewStacksModel creates a stacks list model.
@@ -55,11 +54,6 @@ func NewStacksModel() StacksModel {
 		table:  appui.NewTableModel(columns),
 		filter: appui.NewFilterInputModel(),
 	}
-}
-
-// SetDaemon sets the Docker daemon reference.
-func (m *StacksModel) SetDaemon(d docker.ContainerDaemon) {
-	m.daemon = d
 }
 
 // FilterActive returns true when the filter input is active.

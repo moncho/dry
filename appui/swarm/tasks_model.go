@@ -47,7 +47,7 @@ type TasksLoadedMsg struct {
 type TasksModel struct {
 	table  appui.TableModel
 	filter appui.FilterInputModel
-	daemon docker.ContainerDaemon
+	daemon docker.SwarmAPI
 	title  string
 }
 
@@ -73,7 +73,7 @@ func NewTasksModel() TasksModel {
 func (m TasksModel) FilterActive() bool { return m.filter.Active() }
 
 // SetDaemon sets the Docker daemon reference.
-func (m *TasksModel) SetDaemon(d docker.ContainerDaemon) {
+func (m *TasksModel) SetDaemon(d docker.SwarmAPI) {
 	m.daemon = d
 }
 

@@ -3,7 +3,6 @@ package appui
 import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/moby/moby/api/types/volume"
-	"github.com/moncho/dry/docker"
 )
 
 // volumeRow wraps a Docker volume as a TableRow.
@@ -33,7 +32,6 @@ type VolumesLoadedMsg struct {
 type VolumesModel struct {
 	table  TableModel
 	filter FilterInputModel
-	daemon docker.ContainerDaemon
 }
 
 // NewVolumesModel creates a volumes list model.
@@ -51,11 +49,6 @@ func NewVolumesModel() VolumesModel {
 
 // FilterActive returns true when the filter input is active.
 func (m VolumesModel) FilterActive() bool { return m.filter.Active() }
-
-// SetDaemon sets the Docker daemon reference.
-func (m *VolumesModel) SetDaemon(d docker.ContainerDaemon) {
-	m.daemon = d
-}
 
 // SetSize updates the table dimensions.
 func (m *VolumesModel) SetSize(w, h int) {

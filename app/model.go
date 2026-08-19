@@ -231,17 +231,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if info, err := m.daemon.Info(); err == nil {
 			m.swarmMode = info.Swarm.LocalNodeState == swarm.LocalNodeStateActive
 		}
-		m.containers.SetDaemon(m.daemon)
-		m.images.SetDaemon(m.daemon)
-		m.networks.SetDaemon(m.daemon)
-		m.volumes.SetDaemon(m.daemon)
-		m.diskUsage.SetDaemon(m.daemon)
 		m.monitor.SetDaemon(m.daemon)
-		m.nodes.SetDaemon(m.daemon)
-		m.services.SetDaemon(m.daemon)
-		m.stacks.SetDaemon(m.daemon)
 		m.tasks.SetDaemon(m.daemon)
-		m.composeProjects.SetDaemon(m.daemon)
 		m.resizeContentModels()
 		m.header = appui.NewHeaderModel(m.daemon, m.width)
 		eventsCtx, eventsCancel := context.WithCancel(context.Background())

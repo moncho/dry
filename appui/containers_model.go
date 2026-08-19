@@ -41,7 +41,6 @@ func (r containerRow) ID() string        { return r.container.ID }
 type ContainersModel struct {
 	table    TableModel
 	filter   FilterInputModel
-	daemon   docker.ContainerDaemon
 	rows     []*docker.Container
 	showAll  bool
 	sortMode docker.SortMode
@@ -80,11 +79,6 @@ func NewContainersModel() ContainersModel {
 
 // FilterActive returns true when the filter input is active.
 func (m ContainersModel) FilterActive() bool { return m.filter.Active() }
-
-// SetDaemon sets the Docker daemon reference.
-func (m *ContainersModel) SetDaemon(d docker.ContainerDaemon) {
-	m.daemon = d
-}
 
 // SetSize updates the table dimensions.
 func (m *ContainersModel) SetSize(w, h int) {

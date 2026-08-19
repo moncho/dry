@@ -50,10 +50,17 @@ type MonitorPoint struct {
 	Value float64
 }
 
+// ContainerStatsSource is what the monitor needs from the daemon: the
+// running containers and a stats stream per container.
+type ContainerStatsSource interface {
+	Containers(filters []docker.ContainerFilter, mode docker.SortMode) []*docker.Container
+	StatsChannel(container *docker.Container) (*docker.StatsChannel, error)
+}
+
 // MonitorModel shows live container stats.
 type MonitorModel struct {
 	table   TableModel
-	daemon  docker.ContainerDaemon
+	daemon  ContainerStatsSource
 	stats   map[string]*docker.Stats
 	history map[string]MonitorSeries
 	cancels map[string]context.CancelFunc
@@ -84,7 +91,7 @@ func NewMonitorModel() MonitorModel {
 }
 
 // SetDaemon sets the Docker daemon reference.
-func (m *MonitorModel) SetDaemon(d docker.ContainerDaemon) {
+func (m *MonitorModel) SetDaemon(d ContainerStatsSource) {
 	m.daemon = d
 }
 
