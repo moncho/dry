@@ -358,16 +358,15 @@ func (m *TableModel) calculateColumnWidths() {
 	}
 
 	if proportionalCount > 0 {
-		propWidth := 0
-		if remaining > 0 {
-			propWidth = remaining / proportionalCount
-		}
 		// A proportional column must never collapse to zero width: bubbles'
 		// table silently drops zero-width columns, making them invisible.
-		// When fixed columns already consume the full width, give each
-		// proportional column a minimum and let View truncate the overflow.
-		if propWidth < minProportionalColumnWidth {
-			propWidth = minProportionalColumnWidth
+		// While space remains, shrink to fit so every column stays on
+		// screen; only when fixed columns alone already overflow does each
+		// proportional column get the minimum, with View truncating the
+		// overflow on the right.
+		propWidth := minProportionalColumnWidth
+		if remaining > 0 {
+			propWidth = max(remaining/proportionalCount, 1)
 		}
 		assigned := 0
 		for i, col := range m.columns {

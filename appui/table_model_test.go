@@ -355,6 +355,30 @@ func TestTableModel_ProportionalColumnNeverCollapses(t *testing.T) {
 	}
 }
 
+func TestTableModel_ProportionalColumnsShrinkToFitWhenSpaceRemains(t *testing.T) {
+	// When fixed columns leave a little space, proportional columns shrink
+	// to fit instead of being floored to the minimum: flooring would push
+	// trailing columns (and their headers) off screen with no indication.
+	cols := []Column{
+		{Title: "A", Width: 40, Fixed: true},
+		{Title: "NAME"},
+		{Title: "SUBNET"},
+	}
+	table := NewTableModel(cols)
+	table.SetSize(50, 10) // fixed consumes 41, leaving 9 for two columns
+
+	total := 0
+	for i, w := range table.colWidths {
+		if i > 0 && w < 1 {
+			t.Fatalf("proportional column %d collapsed to width %d", i, w)
+		}
+		total += w
+	}
+	if total > 50 {
+		t.Fatalf("columns overflow the table width despite available space: total %d > 50", total)
+	}
+}
+
 func TestTableModel_ViewTruncatesOverflowLines(t *testing.T) {
 	cols := []Column{
 		{Title: "A", Width: 60, Fixed: true},
