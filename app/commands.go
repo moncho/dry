@@ -673,6 +673,17 @@ func execContainerCmd(daemon docker.ContainerDaemon, id string, command []string
 	})
 }
 
+// loadHeaderInfoCmd fetches the daemon info and version shown in the header.
+// This runs as a command so connecting never blocks the Update goroutine on
+// two synchronous daemon calls.
+func loadHeaderInfoCmd(daemon docker.ContainerDaemon) tea.Cmd {
+	return func() tea.Msg {
+		info, infoErr := daemon.Info()
+		ver, verErr := daemon.Version()
+		return headerInfoMsg{info: info, infoErr: infoErr, ver: ver, verErr: verErr}
+	}
+}
+
 // showContainerStatsCmd fetches a snapshot of container stats.
 func showContainerStatsCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 	return func() tea.Msg {
@@ -706,18 +717,23 @@ func showContainerStatsCmd(daemon docker.ContainerDaemon, id string) tea.Cmd {
 		}
 		data, _ := json.MarshalIndent(stats.Stats, "", "  ")
 		content := string(data)
-		if stats.ProcessList != nil {
+		// The process list is fetched only for this one-shot snapshot; the
+		// streaming stats loop no longer issues a ContainerTop call per
+		// sample per container, and a top failure no longer kills a stream.
+		if top, err := daemon.Top(ctx, c.ID); err == nil {
 			content += "\n\n--- Process List ---\n"
-			for _, title := range stats.ProcessList.Titles {
+			for _, title := range top.Titles {
 				content += fmt.Sprintf("%-20s", title)
 			}
 			content += "\n"
-			for _, proc := range stats.ProcessList.Processes {
+			for _, proc := range top.Processes {
 				for _, field := range proc {
 					content += fmt.Sprintf("%-20s", field)
 				}
 				content += "\n"
 			}
+		} else {
+			content += fmt.Sprintf("\n\n--- Process List unavailable: %s ---\n", err)
 		}
 		return showLessMsg{
 			content: content,

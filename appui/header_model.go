@@ -14,25 +14,27 @@ import (
 )
 
 // HeaderModel displays Docker daemon information at the top of the screen.
+// The daemon info is loaded asynchronously via SetDockerInfo so constructing
+// or rendering the header never performs I/O on the Update goroutine.
 type HeaderModel struct {
 	daemon docker.ContainerDaemon
 	width  int
 
-	// Cached Docker info
+	// Cached Docker info, delivered by SetDockerInfo.
+	loaded  bool
 	info    system.Info
 	ver     *client.ServerVersionResult
 	infoErr error
 	verErr  error
 }
 
-// NewHeaderModel creates a new header model.
+// NewHeaderModel creates a new header model. It performs no daemon calls;
+// deliver the results of daemon.Info and daemon.Version via SetDockerInfo.
 func NewHeaderModel(daemon docker.ContainerDaemon, width int) HeaderModel {
-	m := HeaderModel{
+	return HeaderModel{
 		daemon: daemon,
 		width:  width,
 	}
-	m.Refresh()
-	return m
 }
 
 // SetWidth updates the header width.
@@ -40,19 +42,25 @@ func (m *HeaderModel) SetWidth(w int) {
 	m.width = w
 }
 
-// Refresh re-fetches Docker info and version from the daemon.
-func (m *HeaderModel) Refresh() {
-	if m.daemon == nil {
-		return
-	}
-	m.info, m.infoErr = m.daemon.Info()
-	m.ver, m.verErr = m.daemon.Version()
+// SetDockerInfo stores the asynchronously fetched daemon info and version.
+func (m *HeaderModel) SetDockerInfo(info system.Info, infoErr error, ver *client.ServerVersionResult, verErr error) {
+	m.info = info
+	m.infoErr = infoErr
+	m.ver = ver
+	m.verErr = verErr
+	m.loaded = true
 }
 
 // View renders the Docker daemon info header.
 func (m HeaderModel) View() string {
 	if m.daemon == nil {
 		return ""
+	}
+
+	if !m.loaded {
+		// Keep the header height stable while the info loads.
+		placeholder := lipgloss.NewStyle().Foreground(DryTheme.FgMuted).Render("Loading Docker daemon information...")
+		return padLine(placeholder, m.width) + "\n" + padLine("", m.width) + "\n" + padLine("", m.width)
 	}
 
 	if m.infoErr != nil {

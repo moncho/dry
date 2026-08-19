@@ -9,6 +9,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 	dockercontainer "github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/api/types/image"
 	"github.com/moby/moby/api/types/network"
@@ -293,6 +294,30 @@ func TestModel_StreamingLessClosesSupersededReader(t *testing.T) {
 	m = result.(model)
 	if m.streamReader != nil {
 		t.Fatal("the live stream close must detach the reader")
+	}
+}
+
+func TestModel_HeaderInfoLoadsAsynchronously(t *testing.T) {
+	// Connecting used to call daemon.Info and daemon.Version synchronously
+	// inside Update via the header constructor; the info now arrives as a
+	// message produced by loadHeaderInfoCmd.
+	m := newTestModel()
+	m.header = appui.NewHeaderModel(m.daemon, m.width)
+
+	if view := ansi.Strip(m.header.View()); strings.Contains(view, "Docker Host") {
+		t.Fatalf("expected a placeholder before the info message arrives, got %q", view)
+	}
+
+	msg := loadHeaderInfoCmd(m.daemon)()
+	infoMsg, ok := msg.(headerInfoMsg)
+	if !ok {
+		t.Fatalf("expected headerInfoMsg, got %T", msg)
+	}
+	result, _ := m.Update(infoMsg)
+	m = result.(model)
+
+	if view := ansi.Strip(m.header.View()); !strings.Contains(view, "Docker Host: dry.io") {
+		t.Fatalf("expected header to render daemon info after the message, got %q", view)
 	}
 }
 
