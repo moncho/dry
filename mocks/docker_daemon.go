@@ -32,7 +32,7 @@ func (_m *DockerDaemonMock) ComposeProjects() []drydocker.ComposeProject {
 func (_m *DockerDaemonMock) ComposeProjectsWithServices() []drydocker.ProjectWithServices {
 	return []drydocker.ProjectWithServices{
 		{
-			Project: drydocker.ComposeProject{Name: "webapp", Services: 3, Containers: 4, Running: 3, Exited: 1},
+			Project: drydocker.ComposeProject{Name: "webapp", Services: 3, Containers: 4, Running: 3, Exited: 1, Status: drydocker.ProjectRunning},
 			Services: []drydocker.ComposeService{
 				{Project: "webapp", Name: "api", Containers: 2, Running: 2, Exited: 0, Image: "api:latest", Health: "healthy", Ports: "0.0.0.0:8080->8080/tcp"},
 				{Project: "webapp", Name: "db", Containers: 1, Running: 1, Exited: 0, Image: "postgres:15", Health: "none", Ports: "0.0.0.0:5432->5432/tcp"},
@@ -40,7 +40,7 @@ func (_m *DockerDaemonMock) ComposeProjectsWithServices() []drydocker.ProjectWit
 			},
 		},
 		{
-			Project: drydocker.ComposeProject{Name: "monitoring", Services: 2, Containers: 2, Running: 2, Exited: 0},
+			Project: drydocker.ComposeProject{Name: "monitoring", Services: 2, Containers: 2, Running: 2, Exited: 0, Status: drydocker.ProjectRunning},
 			Services: []drydocker.ComposeService{
 				{Project: "monitoring", Name: "grafana", Containers: 1, Running: 1, Exited: 0, Image: "grafana/grafana:latest", Health: "healthy", Ports: "0.0.0.0:3000->3000/tcp"},
 				{Project: "monitoring", Name: "prometheus", Containers: 1, Running: 1, Exited: 0, Image: "prom/prometheus:latest", Health: "healthy", Ports: "0.0.0.0:9090->9090/tcp"},

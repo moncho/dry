@@ -9,13 +9,13 @@
 [![Release](https://img.shields.io/github/release/moncho/dry.svg?style=flat-square)](https://github.com/moncho/dry/releases/latest)
 [![dry](https://snapcraft.io/dry/badge.svg)](https://snapcraft.io/dry)
 
-**Dry** is a terminal application to manage **Docker** and **Docker Swarm**.
+**Dry** is a terminal application for **Docker** and **Docker Compose**.
 
-It shows information about Containers, Images and Networks, and, if running a **Swarm** cluster, it shows information about Nodes, Service, Stacks and the rest of **Swarm** constructs. It can be used with both local or remote **Docker** daemons.
+It lets you browse containers, images, networks, and volumes, and manage Compose projects — bring them up, take them down, see what has drifted from the compose file — without leaving the terminal. It can be used with both local or remote **Docker** daemons.
 
 Besides showing information, it can be used to manage Docker. Most of the commands that the official **Docker CLI** provides, are available in **dry** with the same behaviour. A list of available commands and their keybindings can be found in **dry**'s help screen or in this README.
 
-Lastly, it can also be used as a monitoring tool for **Docker** containers.
+It can also be used as a monitoring tool for **Docker** containers, and, when the daemon is running a **Swarm** cluster, to manage Nodes, Services, and Stacks — see [Docker Swarm](#docker-swarm) below.
 
 **Dry** is installed as a single binary and does not require external libraries.
 
@@ -129,6 +129,9 @@ Keybinding           | Description
 Keybinding           | Description
 ---------------------|---------------------------------------
 <kbd>Enter</kbd>     | show project services
+<kbd>u</kbd>         | bring the selected project (or service) up
+<kbd>d</kbd>         | take the selected project down
+<kbd>c</kbd>         | show the project's rendered compose configuration
 <kbd>l</kbd>         | project logs
 <kbd>Ctrl+t</kbd>    | stop project containers
 <kbd>Ctrl+r</kbd>    | restart project containers
@@ -140,6 +143,8 @@ Keybinding           | Description
 ---------------------|---------------------------------------
 <kbd>Enter</kbd>     | inspect service
 <kbd>Esc</kbd>       | back to projects
+<kbd>u</kbd>         | bring the selected service up
+<kbd>c</kbd>         | show the project's rendered compose configuration
 <kbd>l</kbd>         | service logs
 <kbd>Ctrl+s</kbd>    | start service containers
 <kbd>Ctrl+t</kbd>    | stop service containers
@@ -238,6 +243,34 @@ to interception and should only be used against hosts you fully control.
 ```dry --workspace``` launches the experimental Phase 1 workspace layout.
 
 ```dry -p``` launches dry with [pprof](https://golang.org/pkg/net/http/pprof/) package active.
+
+### Docker Compose
+
+Compose projects show up in their own view (key <kbd>8</kbd>); pressing <kbd>Enter</kbd> on a project opens its services in the Compose Services view.
+
+Keybinding       | Description
+-----------------|---------------------------------------
+<kbd>u</kbd>      | bring the selected project or service up
+<kbd>d</kbd>      | take the selected project down (behind a confirmation prompt)
+<kbd>c</kbd>      | show the project's rendered compose configuration
+
+`u` and `c` work in both the Compose Projects and Compose Services views; `d` works in Compose Projects only.
+
+The SYNC column reports whether a service's running containers match its compose file:
+
+Label   | Meaning
+--------|-----------------------------------------------------------------
+`ok`    | the running containers match the compose file
+`drift` | the compose file changed since the containers were created — the next `u` recreates them
+`none`  | the compose file defines the service, but nothing is running it
+
+Projects are discovered two ways: from container labels — including stopped containers — and from a compose file in the directory **dry** was started in (that directory only; it is not a recursive search). A project known only from a file is listed with no running containers, and pressing `u` brings it up.
+
+All of the above — the `u`/`d`/`c` keys and the SYNC column — require the `docker compose` CLI plugin. Without it, the Compose views still list projects discovered from container labels, and the keys respond with a status message naming the missing plugin instead of acting.
+
+### Docker Swarm
+
+**dry** also works with Docker Swarm. When the connected daemon reports an active swarm, three extra views become available: Nodes (<kbd>5</kbd>), Services (<kbd>6</kbd>), and Stacks (<kbd>7</kbd>). Without an active swarm these views, their keybindings, and their command-palette entries are hidden.
 
 ### Contributing
 

@@ -158,6 +158,10 @@ func (m model) executeContainerOp(tag, id string) tea.Cmd {
 			var report docker.ComposeServiceActionReport
 			report, err = daemon.ComposeProjectRemove(id)
 			successMsg = report.Summary()
+		case "compose-project-down":
+			// The one compose action that streams into the viewer rather than
+			// reporting a summary, so it returns the command's message directly.
+			return composeDownCmd(m.composeCLI, m.composeProjectFor(id))()
 		case "prune":
 			report, pruneErr := daemon.Prune()
 			if pruneErr != nil {

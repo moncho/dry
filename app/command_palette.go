@@ -139,6 +139,7 @@ func (m model) commandPaletteActions() []paletteAction {
 			add("Compose Service", "compose-service:stop", "Stop", label, "stop")
 			add("Compose Service", "compose-service:restart", "Restart", label, "restart")
 			add("Compose Service", "compose-service:rm", "Remove Containers", label, "remove rm")
+			add("Compose Service", "compose:recreate", "Force Recreate", label, "recreate force replace container")
 		}
 		if n := m.composeServices.SelectedNetwork(); n != nil {
 			add("Compose Network", "compose-network:inspect", "Inspect", n.Name, "inspect")
@@ -481,6 +482,11 @@ func (m model) executePaletteAction(id string) (tea.Model, tea.Cmd) {
 		if svc := m.composeServices.SelectedService(); svc != nil {
 			return m.showPrompt(fmt.Sprintf("Remove service %s containers?", svc.Name), "compose-rm", svc.Project+"/"+svc.Name), nil
 		}
+	case "compose:recreate":
+		if svc := m.composeServices.SelectedService(); svc != nil {
+			return m, composeRecreateCmd(m.composeCLI, m.composeProjectFor(svc.Project), svc.Name)
+		}
+		return m, nil
 	case "compose-network:inspect":
 		if n := m.composeServices.SelectedNetwork(); n != nil {
 			return m, inspectNetworkCmd(m.daemon, n.Name)

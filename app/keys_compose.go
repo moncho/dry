@@ -6,6 +6,7 @@ package app
 
 import (
 	"fmt"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -51,6 +52,27 @@ func (m model) handleComposeProjectsKeys(msg tea.KeyPressMsg) (tea.Model, tea.Cm
 			return m.showPrompt(fmt.Sprintf("Remove project %s containers?", p.Name),
 				"compose-project-rm", p.Name), nil
 		}
+	case "u":
+		if svc := m.composeProjects.SelectedService(); svc != nil {
+			if p := m.composeProjects.ProjectByName(svc.Project); p != nil {
+				return m, composeUpCmd(m.composeCLI, *p, svc.Name)
+			}
+		}
+		if p := m.composeProjects.SelectedProject(); p != nil {
+			return m, composeUpCmd(m.composeCLI, *p)
+		}
+		return m, nil
+	case "d":
+		if p := m.composeProjects.SelectedProject(); p != nil {
+			return m.showPrompt(fmt.Sprintf("Take project %s down?", p.Name),
+				"compose-project-down", p.Name), nil
+		}
+		return m, nil
+	case "c":
+		if p := m.composeProjects.SelectedProject(); p != nil {
+			return m, composeConfigCmd(m.composeCLI, *p)
+		}
+		return m, nil
 	}
 	var cmd tea.Cmd
 	m.composeProjects, cmd = m.composeProjects.Update(msg)
@@ -106,6 +128,24 @@ func (m model) handleComposeServicesKeys(msg tea.KeyPressMsg) (tea.Model, tea.Cm
 			return m.showPrompt(fmt.Sprintf("Remove service %s containers?", svc.Name),
 				"compose-rm", svc.Project+"/"+svc.Name), nil
 		}
+	case "u":
+		if svc := m.composeServices.SelectedService(); svc != nil {
+			return m, composeUpCmd(m.composeCLI, m.composeProjectFor(svc.Project), svc.Name)
+		}
+		// The cursor can sit on a section header, a network or a volume,
+		// none of which u can act on. Say so: a documented key that does
+		// nothing and says nothing reads as broken.
+		return m, func() tea.Msg {
+			return statusMessageMsg{
+				text:   "Select a service first",
+				expiry: 3 * time.Second,
+			}
+		}
+	case "c":
+		if m.selectedProject == "" {
+			return m, nil
+		}
+		return m, composeConfigCmd(m.composeCLI, m.composeProjectFor(m.selectedProject))
 	}
 	var cmd tea.Cmd
 	m.composeServices, cmd = m.composeServices.Update(msg)

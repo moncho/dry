@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"slices"
 	"time"
 
@@ -53,6 +54,8 @@ type model struct {
 	swarmMode    bool
 	eventsChan   <-chan events.Message
 	eventsCancel context.CancelFunc
+	composeCLI   composeEngine
+	workingDir   string
 
 	// Sub-models
 	containers       appui.ContainersModel
@@ -91,6 +94,21 @@ type model struct {
 	pendingRefresh map[docker.SourceType]bool
 	refreshTimer   bool
 
+	// composeCycleInFlight is true from the moment a compose project reload
+	// starts a scan/drift cycle until that cycle's composeDriftMsg lands. One
+	// cycle costs `compose config --format json` plus one `compose config
+	// --hash=*` per project with files, each 150-400ms of CPU in its own
+	// subprocess, so a second cycle started before the first finishes just
+	// piles overlapping batches on top of each other.
+	composeCycleInFlight bool
+
+	// composeRefreshPending records that a compose reload was skipped, so it
+	// runs once when the reason goes away. Dropping those refreshes outright
+	// would leave the view showing pre-`up` state: the container event that
+	// turns a project's status to running arrives exactly while the cycle or
+	// the streamed output is still busy.
+	composeRefreshPending bool
+
 	// Monitor stats workspace throttling
 	monitorStatsTimer bool
 
@@ -104,7 +122,9 @@ type model struct {
 
 // NewModel creates a new top-level model.
 func NewModel(cfg Config) model {
+	workingDir, _ := os.Getwd()
 	return model{
+		workingDir:       workingDir,
 		config:           cfg,
 		view:             Main,
 		showHeader:       true,
@@ -174,22 +194,30 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(
 				loadContainersCmd(m.daemon, m.containers.ShowAll(), m.containers.SortMode()),
 				loadHeaderInfoCmd(m.daemon),
+				detectComposeCmd(m.daemon.DockerEnv()),
 			)
 		}
 		m.eventsChan = eventsCh
 		m.eventsCancel = eventsCancel
 		if m.config.MonitorMode {
 			m2, cmd := m.switchView(Monitor)
-			return m2, tea.Batch(cmd, listenDockerEvents(m.eventsChan), loadHeaderInfoCmd(m.daemon))
+			return m2, tea.Batch(cmd, listenDockerEvents(m.eventsChan), loadHeaderInfoCmd(m.daemon), detectComposeCmd(m.daemon.DockerEnv()))
 		}
 		return m, tea.Batch(
 			loadContainersCmd(m.daemon, m.containers.ShowAll(), m.containers.SortMode()),
 			listenDockerEvents(m.eventsChan),
 			loadHeaderInfoCmd(m.daemon),
+			detectComposeCmd(m.daemon.DockerEnv()),
 		)
 
 	case headerInfoMsg:
 		m.header.SetDockerInfo(msg.info, msg.infoErr, msg.ver, msg.verErr)
+		return m, nil
+
+	case composeDetectedMsg:
+		if msg.err == nil && msg.cli != nil {
+			m.composeCLI = msg.cli
+		}
 		return m, nil
 
 	case dockerErrorMsg:
@@ -275,7 +303,42 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case appcompose.ProjectsLoadedMsg:
 		m.composeProjects.SetProjects(msg.Projects)
 		m.refreshPinnedWorkspaceContext()
-		return m, nil
+		// A cycle is now in flight; flushRefreshMsg will not start another
+		// until composeDriftMsg ends this one. Every path out of here leads
+		// to a composeDriftMsg — composeDriftCmd returns one even with no
+		// engine at all — so the flag cannot get stuck.
+		m.composeCycleInFlight = true
+		// composeScanCmd and composeDriftCmd must never run concurrently
+		// against the same []docker.ProjectWithServices: composeScanCmd
+		// mutates project fields in place (docker.MergeScannedProject),
+		// while composeDriftCmd reads those same fields. Batching them
+		// together is a data race. When a scan will run, defer drift until
+		// composeProjectsMsg carries the scan's (possibly enriched) result;
+		// when no scan will run, composeProjectsMsg never arrives, so drift
+		// must be dispatched here instead.
+		if resolver, ok := m.composeCLI.(composeResolver); ok {
+			return m, composeScanCmd(resolver, m.workingDir, msg.Projects)
+		}
+		return m, composeDriftCmd(m.composeCLI, msg.Projects, m.daemon.Containers(nil, docker.NoSort))
+
+	case composeProjectsMsg:
+		m.composeProjects.SetProjects(msg.projects)
+		return m, composeDriftCmd(m.composeCLI, msg.projects, m.daemon.Containers(nil, docker.NoSort))
+
+	case composeDriftMsg:
+		m.composeCycleInFlight = false
+		m.composeProjects.SetDrift(msg.drift)
+		m.composeServices.SetDrift(msg.drift)
+		cmds := []tea.Cmd{m.drainPendingComposeRefresh()}
+		if msg.err != nil {
+			cmds = append(cmds, func() tea.Msg {
+				return statusMessageMsg{
+					text:   fmt.Sprintf("Compose drift check failed: %s", msg.err),
+					expiry: 5 * time.Second,
+				}
+			})
+		}
+		return m, tea.Batch(cmds...)
 
 	case appcompose.ServicesLoadedMsg:
 		m.composeServices.SetServices(msg.Services, msg.Networks, msg.Volumes, msg.Project)
@@ -364,11 +427,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.view == Main {
 					cmds = append(cmds, loadContainersCmd(m.daemon, m.containers.ShowAll(), m.containers.SortMode()))
 				}
+				// A compose reload is not free: its ProjectsLoadedMsg starts
+				// a scan/drift cycle of compose subprocesses. Container
+				// events arrive fastest exactly when that cycle is most
+				// expensive — during a streamed `up` — so skip the reload
+				// while one cycle is still running, and skip it while a
+				// streaming viewer covers the view the reload would repaint.
 				if m.view == ComposeProjects {
-					cmds = append(cmds, loadComposeProjectsCmd(m.daemon))
+					if m.composeCycleInFlight || m.streamingViewerOpen() {
+						m.composeRefreshPending = true
+					} else {
+						cmds = append(cmds, loadComposeProjectsCmd(m.daemon))
+					}
 				}
 				if m.view == ComposeServices {
-					cmds = append(cmds, loadComposeServicesCmd(m.daemon, m.selectedProject))
+					if m.streamingViewerOpen() {
+						m.composeRefreshPending = true
+					} else {
+						cmds = append(cmds, loadComposeServicesCmd(m.daemon, m.selectedProject))
+					}
 				}
 			case docker.ImageSource:
 				if m.view == Images {
@@ -468,20 +545,42 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case streamClosedMsg:
 		// A close notice from a superseded stream must not detach the live
-		// one; that would leak it when the overlay closes.
+		// one; that would leak it when the overlay closes. The same guard
+		// keeps a stale stream's error from being reported after the user
+		// has already moved on to a newer one.
 		if msg.reader == nil || msg.reader == m.streamReader {
 			m.streamReader = nil
+			if msg.err != nil {
+				return m, func() tea.Msg {
+					return statusMessageMsg{
+						text:   fmt.Sprintf("Command failed: %s", msg.err),
+						expiry: 8 * time.Second,
+					}
+				}
+			}
 		}
 		return m, nil
 
 	case appui.CloseOverlayMsg:
 		m.overlay = overlayNone
 		m.eventsLive = false
+		var cmds []tea.Cmd
 		if m.streamReader != nil {
-			_ = m.streamReader.Close()
+			err := m.streamReader.Close()
 			m.streamReader = nil
+			if err != nil {
+				cmds = append(cmds, func() tea.Msg {
+					return statusMessageMsg{
+						text:   fmt.Sprintf("Command failed: %s", err),
+						expiry: 8 * time.Second,
+					}
+				})
+			}
 		}
-		return m, nil
+		// The refreshes skipped behind the stream are what kept the view
+		// underneath current; run one now that it is visible again.
+		cmds = append(cmds, m.drainPendingComposeRefresh())
+		return m, tea.Batch(cmds...)
 
 	case appui.PromptResultMsg:
 		m.overlay = overlayNone
@@ -548,6 +647,9 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "ctrl+c", "Q":
 		m.monitor.StopAll()
 		if m.streamReader != nil {
+			// dry is exiting; there is nowhere left to show a failure, so the
+			// close error is deliberately discarded here (unlike the
+			// CloseOverlayMsg path above, which reports it).
 			_ = m.streamReader.Close()
 			m.streamReader = nil
 		}
@@ -611,10 +713,19 @@ func (m model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "f8":
 		return m.switchView(DiskUsage)
 	case "5":
+		if !m.swarmMode {
+			return m, nil
+		}
 		return m.switchView(Nodes)
 	case "6":
+		if !m.swarmMode {
+			return m, nil
+		}
 		return m.switchView(Services)
 	case "7":
+		if !m.swarmMode {
+			return m, nil
+		}
 		return m.switchView(Stacks)
 	case "8":
 		return m.switchView(ComposeProjects)
@@ -750,6 +861,34 @@ func (m model) View() tea.View {
 	v.AltScreen = true
 	v.BackgroundColor = appui.DryTheme.Bg
 	return v
+}
+
+// drainPendingComposeRefresh returns the compose reload that was deferred
+// while a scan/drift cycle ran or a streaming viewer covered the view, and
+// clears the flag. It returns nil when nothing was deferred, which is what
+// keeps a completed cycle from chaining into another one forever. A pending
+// refresh for a view the user has since left is dropped, not carried:
+// switching back reloads that view anyway.
+func (m *model) drainPendingComposeRefresh() tea.Cmd {
+	if !m.composeRefreshPending || m.composeCycleInFlight || m.streamingViewerOpen() {
+		return nil
+	}
+	m.composeRefreshPending = false
+	switch m.view {
+	case ComposeProjects:
+		return loadComposeProjectsCmd(m.daemon)
+	case ComposeServices:
+		return loadComposeServicesCmd(m.daemon, m.selectedProject)
+	}
+	return nil
+}
+
+// streamingViewerOpen reports whether a live stream — container logs, or a
+// compose up/down — is currently filling the less overlay. Background work
+// whose only purpose is repainting the view underneath has nothing to show
+// while it is true.
+func (m model) streamingViewerOpen() bool {
+	return m.overlay == overlayLess && m.streamReader != nil
 }
 
 func (m *model) closeActivityReader() {

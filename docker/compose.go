@@ -8,13 +8,32 @@ import (
 	"github.com/moby/moby/api/types/container"
 )
 
-// ComposeProject represents a Docker Compose project aggregated from container labels.
+// ProjectStatus describes whether a Compose project is up.
+type ProjectStatus string
+
+const (
+	// ProjectRunning means at least one container is running.
+	ProjectRunning ProjectStatus = "running"
+	// ProjectStopped means containers exist but none are running.
+	ProjectStopped ProjectStatus = "stopped"
+	// ProjectNotCreated means the project is known only from its file.
+	ProjectNotCreated ProjectStatus = "not created"
+)
+
+// ComposeProject represents a Docker Compose project aggregated from container
+// labels, or discovered from a compose file when it has no containers yet.
 type ComposeProject struct {
 	Name       string
 	Services   int
 	Containers int
 	Running    int
 	Exited     int
+	// ConfigFiles are the compose files that define the project, from the
+	// com.docker.compose.project.config_files label or a directory scan.
+	ConfigFiles []string
+	// WorkingDir is the directory compose resolves relative paths against.
+	WorkingDir string
+	Status     ProjectStatus
 }
 
 // ComposeNetwork represents a network created by Docker Compose.
@@ -64,10 +83,12 @@ func AggregateComposeAll(containers []*Container) []ProjectWithServices {
 // AggregateComposeProjects groups containers by their com.docker.compose.project label.
 func AggregateComposeProjects(containers []*Container) []ComposeProject {
 	type projectAcc struct {
-		services   map[string]bool
-		containers int
-		running    int
-		exited     int
+		services    map[string]bool
+		containers  int
+		running     int
+		exited      int
+		configFiles []string
+		workingDir  string
 	}
 	projects := make(map[string]*projectAcc)
 	for _, c := range containers {
@@ -91,16 +112,35 @@ func AggregateComposeProjects(containers []*Container) []ComposeProject {
 		} else {
 			acc.exited++
 		}
+		if len(acc.configFiles) == 0 {
+			if raw := c.Labels["com.docker.compose.project.config_files"]; raw != "" {
+				for _, f := range strings.Split(raw, ",") {
+					if f = strings.TrimSpace(f); f != "" {
+						acc.configFiles = append(acc.configFiles, f)
+					}
+				}
+			}
+		}
+		if acc.workingDir == "" {
+			acc.workingDir = c.Labels["com.docker.compose.project.working_dir"]
+		}
 	}
 
 	result := make([]ComposeProject, 0, len(projects))
 	for name, acc := range projects {
+		status := ProjectStopped
+		if acc.running > 0 {
+			status = ProjectRunning
+		}
 		result = append(result, ComposeProject{
-			Name:       name,
-			Services:   len(acc.services),
-			Containers: acc.containers,
-			Running:    acc.running,
-			Exited:     acc.exited,
+			Name:        name,
+			Services:    len(acc.services),
+			Containers:  acc.containers,
+			Running:     acc.running,
+			Exited:      acc.exited,
+			ConfigFiles: acc.configFiles,
+			WorkingDir:  acc.workingDir,
+			Status:      status,
 		})
 	}
 	sort.Slice(result, func(i, j int) bool {
@@ -171,6 +211,69 @@ func AggregateComposeServices(containers []*Container, project string) []Compose
 		return result[i].Name < result[j].Name
 	})
 	return result
+}
+
+// ServiceSync says whether a service's running containers match the compose
+// file that defines them.
+type ServiceSync string
+
+const (
+	// ServiceInSync means every container matches the file.
+	ServiceInSync ServiceSync = "in sync"
+	// ServiceDrifted means the file changed since a container was created,
+	// so the next `up` will recreate it.
+	ServiceDrifted ServiceSync = "drifted"
+	// ServiceNotCreated means the file defines the service but nothing runs it.
+	ServiceNotCreated ServiceSync = "not created"
+	// ServiceUnknown means the comparison could not be made, usually because
+	// the project's compose files are not known.
+	ServiceUnknown ServiceSync = ""
+)
+
+// CompareConfigHashes compares each service's container config-hash labels
+// against the hashes compose computes for the project's files. This is the
+// same test compose itself applies when deciding whether to recreate a
+// container. With no file hashes, every existing service is unknown rather
+// than falsely in sync.
+func CompareConfigHashes(containers []*Container, project string, fileHashes map[string]string) map[string]ServiceSync {
+	status := make(map[string]ServiceSync)
+	for _, c := range containers {
+		if c.Labels["com.docker.compose.project"] != project {
+			continue
+		}
+		if c.Labels["com.docker.compose.oneoff"] == "True" {
+			continue
+		}
+		service := c.Labels["com.docker.compose.service"]
+		if service == "" {
+			continue
+		}
+		if len(fileHashes) == 0 {
+			status[service] = ServiceUnknown
+			continue
+		}
+		want, known := fileHashes[service]
+		if !known {
+			// The file no longer defines this service; leave it unknown
+			// rather than claim drift we cannot substantiate.
+			status[service] = ServiceUnknown
+			continue
+		}
+		if status[service] == ServiceDrifted {
+			continue
+		}
+		if c.Labels["com.docker.compose.config-hash"] == want {
+			status[service] = ServiceInSync
+		} else {
+			status[service] = ServiceDrifted
+		}
+	}
+	for service := range fileHashes {
+		if _, seen := status[service]; !seen {
+			status[service] = ServiceNotCreated
+		}
+	}
+	return status
 }
 
 // aggregateHealth derives a single health status from individual container health statuses.
