@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/moby/moby/api/types/swarm"
 	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
@@ -100,7 +101,7 @@ func goldenTasks() []swarm.Task {
 	}
 }
 
-func newGoldenModel(t *testing.T, workspace bool, width, height int) model {
+func newGoldenModel(t *testing.T, workspace bool, width, height int, noSwarm bool) model {
 	t.Helper()
 	appui.InitStyles()
 
@@ -114,7 +115,7 @@ func newGoldenModel(t *testing.T, workspace bool, width, height int) model {
 	daemon := &mocks.DockerDaemonMock{}
 	m.daemon = daemon
 	m.ready = true
-	m.swarmMode = true
+	m.swarmMode = !noSwarm
 
 	m.monitor.SetDaemon(m.daemon)
 	m.tasks.SetDaemon(m.daemon)
@@ -185,6 +186,7 @@ func TestGoldenViews(t *testing.T) {
 		workspace bool
 		width     int
 		height    int
+		noSwarm   bool
 	}{
 		{name: "main", view: Main, width: 120, height: 40},
 		{name: "main_narrow", view: Main, width: 80, height: 24},
@@ -202,11 +204,17 @@ func TestGoldenViews(t *testing.T) {
 		{name: "workspace_main", view: Main, workspace: true, width: 120, height: 40},
 		{name: "workspace_monitor", view: Monitor, workspace: true, width: 120, height: 40},
 		{name: "workspace_main_compact", view: Main, workspace: true, width: 90, height: 30},
+		{name: "main_no_swarm", view: Main, width: 200, height: 40, noSwarm: true},
+		// The same view, same size, with a swarm active. main_no_swarm alone
+		// cannot fail if something stops advertising the swarm views
+		// altogether; the byte difference between this pair is what makes the
+		// footer gating observable in either direction.
+		{name: "main_swarm_wide", view: Main, width: 200, height: 40},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			m := newGoldenModel(t, tc.workspace, tc.width, tc.height)
+			m := newGoldenModel(t, tc.workspace, tc.width, tc.height, tc.noSwarm)
 			m.view = tc.view
 			m.resizeContentModels()
 
@@ -238,6 +246,43 @@ func TestGoldenViews(t *testing.T) {
 					path, gotPath, firstGoldenDiff(string(want), got))
 			}
 		})
+	}
+}
+
+// TestGoldenSwarmFooterPair states what the main_no_swarm / main_swarm_wide
+// pair exists to observe. Both are the Main view at 200 columns, where the
+// footer is wide enough to list the swarm views, and they differ on exactly
+// that: the swarm entries are present with a swarm active and absent without
+// one. Either snapshot alone is blind in one direction, and both can be
+// regenerated wholesale with -update, so the difference is asserted here
+// rather than left as a convention.
+func TestGoldenSwarmFooterPair(t *testing.T) {
+	read := func(name string) string {
+		t.Helper()
+		b, err := os.ReadFile(filepath.Join("testdata", "golden", name+".golden"))
+		if err != nil {
+			t.Fatalf("missing golden file: %v", err)
+		}
+		return ansi.Strip(string(b))
+	}
+	withSwarm := read("main_swarm_wide")
+	withoutSwarm := read("main_no_swarm")
+
+	for _, entry := range []string{"5 nodes", "6 svcs", "7 stacks"} {
+		if !strings.Contains(withSwarm, entry) {
+			t.Errorf("a swarm is active: the footer must advertise %q", entry)
+		}
+		if strings.Contains(withoutSwarm, entry) {
+			t.Errorf("no swarm: the footer must not advertise %q", entry)
+		}
+	}
+	// The ungated entries prove the two snapshots really are the same view
+	// at the same width, so the difference above is the swarm gating and not
+	// some unrelated divergence.
+	for _, entry := range []string{"2 images", "3 nets", "4 vols", "8 compose"} {
+		if !strings.Contains(withSwarm, entry) || !strings.Contains(withoutSwarm, entry) {
+			t.Errorf("both footers must advertise %q", entry)
+		}
 	}
 }
 

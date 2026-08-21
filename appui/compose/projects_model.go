@@ -23,6 +23,7 @@ func newProjectHeaderRow(p docker.ComposeProject) projectHeaderRow {
 			fmt.Sprintf("%d", p.Containers),
 			fmt.Sprintf("%d", p.Running),
 			fmt.Sprintf("%d", p.Exited),
+			colorStatus(p.Status),
 			"",
 			"",
 			"",
@@ -40,7 +41,7 @@ type serviceDetailRow struct {
 	columns     []string
 }
 
-func newServiceDetailRow(s docker.ComposeService) serviceDetailRow {
+func newServiceDetailRow(s docker.ComposeService, sync docker.ServiceSync) serviceDetailRow {
 	return serviceDetailRow{
 		service:     s,
 		projectName: s.Project,
@@ -51,9 +52,33 @@ func newServiceDetailRow(s docker.ComposeService) serviceDetailRow {
 			fmt.Sprintf("%d", s.Exited),
 			s.Image,
 			colorHealth(s.Health),
+			colorSync(sync),
 			s.Ports,
 		},
 	}
+}
+
+// colorStatus renders a project's lifecycle status. It shares a column with
+// the services' images — a project row has no image and a service row has no
+// project status, the same way the services view shares IMAGE/DRIVER between
+// its row types — so the status costs no other column a single character of
+// width. It is deliberately distinct from SYNC: STATUS is per-project
+// lifecycle (does this project have running containers at all), SYNC is
+// per-service drift against the compose file.
+//
+// A project with no computed status renders nothing rather than guessing at
+// one; the empty ProjectStatus is what a project loaded before status
+// existed, or one built by a caller that does not set it, carries.
+func colorStatus(s docker.ProjectStatus) string {
+	switch s {
+	case docker.ProjectRunning:
+		return appui.ColorFg(string(s), appui.DryTheme.Success)
+	case docker.ProjectStopped:
+		return appui.ColorFg(string(s), appui.DryTheme.Warning)
+	case docker.ProjectNotCreated:
+		return appui.ColorFg(string(s), appui.DryTheme.FgMuted)
+	}
+	return ""
 }
 
 // colorHealth applies theme colors to health status text.
@@ -70,6 +95,23 @@ func colorHealth(h string) string {
 	}
 }
 
+// colorSync colors the sync status: drift is a warning, not an error. The
+// rendered labels are short so the fixed-width SYNC column does not steal
+// space from the flexible columns (IMAGE, PORTS); the ServiceSync constant
+// values stay the spec's full words ("in sync", "drifted", "not created"),
+// only the on-screen text is abbreviated.
+func colorSync(s docker.ServiceSync) string {
+	switch s {
+	case docker.ServiceDrifted:
+		return appui.ColorFg("drift", appui.DryTheme.Warning)
+	case docker.ServiceNotCreated:
+		return appui.ColorFg("none", appui.DryTheme.FgMuted)
+	case docker.ServiceInSync:
+		return appui.ColorFg("ok", appui.DryTheme.Success)
+	}
+	return ""
+}
+
 func (r serviceDetailRow) Columns() []string { return r.columns }
 func (r serviceDetailRow) ID() string        { return r.projectName + "/" + r.service.Name }
 
@@ -83,6 +125,7 @@ type ProjectsModel struct {
 	table    appui.TableModel
 	filter   appui.FilterInputModel
 	projects []docker.ProjectWithServices
+	drift    map[string]map[string]docker.ServiceSync
 }
 
 // NewProjectsModel creates a compose projects list model.
@@ -92,8 +135,9 @@ func NewProjectsModel() ProjectsModel {
 		{Title: "CONTAINERS", Width: 12, Fixed: true},
 		{Title: "RUNNING", Width: 10, Fixed: true},
 		{Title: "EXITED", Width: 10, Fixed: true},
-		{Title: "IMAGE"},
+		{Title: "STATUS/IMAGE"},
 		{Title: "HEALTH", Width: 12, Fixed: true},
+		{Title: "SYNC", Width: 7, Fixed: true},
 		{Title: "PORTS"},
 	}
 	return ProjectsModel{
@@ -118,11 +162,24 @@ func (m *ProjectsModel) SetSize(w, h int) {
 // SetProjects replaces the project list with interleaved project+service rows.
 func (m *ProjectsModel) SetProjects(projects []docker.ProjectWithServices) {
 	m.projects = projects
+	m.refreshRows()
+}
+
+// SetDrift records per-service sync status, keyed by project then service.
+func (m *ProjectsModel) SetDrift(drift map[string]map[string]docker.ServiceSync) {
+	m.drift = drift
+	m.refreshRows()
+}
+
+// refreshRows rebuilds the interleaved project+service rows from the current
+// project list and drift status.
+func (m *ProjectsModel) refreshRows() {
 	var rows []appui.TableRow
-	for _, pws := range projects {
+	for _, pws := range m.projects {
 		rows = append(rows, newProjectHeaderRow(pws.Project))
 		for _, svc := range pws.Services {
-			rows = append(rows, newServiceDetailRow(svc))
+			sync := m.drift[pws.Project.Name][svc.Name]
+			rows = append(rows, newServiceDetailRow(svc, sync))
 		}
 	}
 	m.table.SetRows(rows)
@@ -151,10 +208,19 @@ func (m ProjectsModel) SelectedProject() *docker.ComposeProject {
 	case projectHeaderRow:
 		return &r.project
 	case serviceDetailRow:
-		for i := range m.projects {
-			if m.projects[i].Project.Name == r.projectName {
-				return &m.projects[i].Project
-			}
+		return m.ProjectByName(r.projectName)
+	}
+	return nil
+}
+
+// ProjectByName returns the project row matching name, or nil if not loaded.
+// A service row must be brought up in the context of its own project's
+// files, so callers resolve the service's project name back to the full
+// docker.ComposeProject before invoking a compose command.
+func (m ProjectsModel) ProjectByName(name string) *docker.ComposeProject {
+	for i := range m.projects {
+		if m.projects[i].Project.Name == name {
+			return &m.projects[i].Project
 		}
 	}
 	return nil

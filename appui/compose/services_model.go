@@ -14,7 +14,7 @@ type serviceRow struct {
 	columns []string
 }
 
-func newServiceRow(s docker.ComposeService) serviceRow {
+func newServiceRow(s docker.ComposeService, sync docker.ServiceSync) serviceRow {
 	return serviceRow{
 		service: s,
 		columns: []string{
@@ -24,6 +24,7 @@ func newServiceRow(s docker.ComposeService) serviceRow {
 			fmt.Sprintf("%d", s.Exited),
 			s.Image,
 			colorHealth(s.Health),
+			colorSync(sync),
 			s.Ports,
 		},
 	}
@@ -42,7 +43,7 @@ func newSectionRow(label string, count int) sectionRow {
 	title := appui.ColorFg(fmt.Sprintf("%s (%d)", label, count), appui.DryTheme.Info)
 	return sectionRow{
 		label:   label,
-		columns: []string{title, "", "", "", "", "", ""},
+		columns: []string{title, "", "", "", "", "", "", ""},
 	}
 }
 
@@ -58,7 +59,7 @@ type networkRow struct {
 func newNetworkRow(n docker.ComposeNetwork) networkRow {
 	return networkRow{
 		network: n,
-		columns: []string{"  " + n.Name, "", "", "", n.Driver, n.Scope, ""},
+		columns: []string{"  " + n.Name, "", "", "", n.Driver, n.Scope, "", ""},
 	}
 }
 
@@ -74,7 +75,7 @@ type volumeRow struct {
 func newVolumeRow(v docker.ComposeVolume) volumeRow {
 	return volumeRow{
 		volume:  v,
-		columns: []string{"  " + v.Name, "", "", "", v.Driver, "", ""},
+		columns: []string{"  " + v.Name, "", "", "", v.Driver, "", "", ""},
 	}
 }
 
@@ -95,6 +96,10 @@ type ServicesModel struct {
 	filter       appui.FilterInputModel
 	project      string
 	serviceCount int
+	services     []docker.ComposeService
+	networks     []docker.ComposeNetwork
+	volumes      []docker.ComposeVolume
+	drift        map[string]map[string]docker.ServiceSync
 }
 
 // NewServicesModel creates a compose services list model.
@@ -106,6 +111,7 @@ func NewServicesModel() ServicesModel {
 		{Title: "EXITED", Width: 10, Fixed: true},
 		{Title: "IMAGE/DRIVER"},
 		{Title: "HEALTH/SCOPE", Width: 14, Fixed: true},
+		{Title: "SYNC", Width: 7, Fixed: true},
 		{Title: "PORTS"},
 	}
 	return ServicesModel{
@@ -131,23 +137,39 @@ func (m *ServicesModel) SetSize(w, h int) {
 func (m *ServicesModel) SetServices(services []docker.ComposeService, networks []docker.ComposeNetwork, volumes []docker.ComposeVolume, project string) {
 	m.project = project
 	m.serviceCount = len(services)
+	m.services = services
+	m.networks = networks
+	m.volumes = volumes
+	m.refreshRows()
+}
+
+// SetDrift records per-service sync status, keyed by project then service.
+func (m *ServicesModel) SetDrift(drift map[string]map[string]docker.ServiceSync) {
+	m.drift = drift
+	m.refreshRows()
+}
+
+// refreshRows rebuilds the resource rows from the current services,
+// networks, volumes, and drift status.
+func (m *ServicesModel) refreshRows() {
 	var rows []appui.TableRow
 
-	if len(services) > 0 {
-		rows = append(rows, newSectionRow("Services", len(services)))
-		for _, s := range services {
-			rows = append(rows, newServiceRow(s))
+	if len(m.services) > 0 {
+		rows = append(rows, newSectionRow("Services", len(m.services)))
+		for _, s := range m.services {
+			sync := m.drift[s.Project][s.Name]
+			rows = append(rows, newServiceRow(s, sync))
 		}
 	}
-	if len(networks) > 0 {
-		rows = append(rows, newSectionRow("Networks", len(networks)))
-		for _, n := range networks {
+	if len(m.networks) > 0 {
+		rows = append(rows, newSectionRow("Networks", len(m.networks)))
+		for _, n := range m.networks {
 			rows = append(rows, newNetworkRow(n))
 		}
 	}
-	if len(volumes) > 0 {
-		rows = append(rows, newSectionRow("Volumes", len(volumes)))
-		for _, v := range volumes {
+	if len(m.volumes) > 0 {
+		rows = append(rows, newSectionRow("Volumes", len(m.volumes)))
+		for _, v := range m.volumes {
 			rows = append(rows, newVolumeRow(v))
 		}
 	}

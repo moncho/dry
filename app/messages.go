@@ -8,6 +8,7 @@ import (
 	"github.com/moby/moby/api/types/system"
 	"github.com/moby/moby/client"
 	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/docker/composecli"
 )
 
 // Docker data messages
@@ -31,6 +32,26 @@ type dockerEventMsg struct {
 type eventsClosedMsg struct{}
 
 type reconnectEventsMsg struct{}
+
+// composeDetectedMsg carries the result of probing for the compose plugin.
+type composeDetectedMsg struct {
+	cli *composecli.CLI
+	err error
+}
+
+// composeProjectsMsg carries a project list that has been enriched with a
+// compose file discovered on disk.
+type composeProjectsMsg struct {
+	projects []docker.ProjectWithServices
+}
+
+// composeDriftMsg carries per-project, per-service sync status. err, when
+// set, reports that ConfigHashes failed for at least one project; drift
+// still carries results for every project that succeeded.
+type composeDriftMsg struct {
+	drift map[string]map[string]docker.ServiceSync
+	err   error
+}
 
 // Operation result messages
 
@@ -89,6 +110,7 @@ type headerInfoMsg struct {
 // streamClosedMsg signals the streaming reader has ended.
 type streamClosedMsg struct {
 	reader io.ReadCloser // the reader that ended, so a stale close is ignorable
+	err    error         // the process's exit error, if Close reported one
 }
 
 type workspaceActivityLoadedMsg struct {

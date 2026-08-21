@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/netip"
@@ -34,6 +35,8 @@ func newTestModel() model {
 	m.images.SetSize(m.width, ch)
 	m.networks.SetSize(m.width, ch)
 	m.volumes.SetSize(m.width, ch)
+	m.composeProjects.SetSize(m.width, ch)
+	m.composeServices.SetSize(m.width, ch)
 	return m
 }
 
@@ -1626,5 +1629,157 @@ func TestModel_ResizeWithOverlay(t *testing.T) {
 	v2 := m.View()
 	if v1.Content == v2.Content {
 		t.Fatal("expected view to change after resize with less overlay active")
+	}
+}
+
+// failingStreamReader reports a process failure when closed, the way a
+// compose command with a non-zero exit does.
+type failingStreamReader struct{}
+
+func (f *failingStreamReader) Read(p []byte) (int, error) { return 0, io.EOF }
+func (f *failingStreamReader) Close() error               { return errors.New("exit status 1") }
+
+// TestModel_FailedStreamReportsStatusOnClose drives the real read pump: a
+// finished process (docker compose exiting non-zero) is reported through
+// streamClosedMsg, not through appui.CloseOverlayMsg, because by the time
+// the user closes the viewer the reader has already been detached by the
+// read loop reaching EOF. A test that skips the pump and jumps straight to
+// CloseOverlayMsg cannot observe this path at all.
+func TestModel_FailedStreamReportsStatusOnClose(t *testing.T) {
+	m := newTestModel()
+	reader := &failingStreamReader{}
+
+	result, cmd := m.Update(showStreamingLessMsg{title: "Compose up: web", reader: reader})
+	m = result.(model)
+	if cmd == nil {
+		t.Fatal("expected the streaming view to start reading")
+	}
+
+	// Run the read pump exactly as bubbletea would: reader.Read returns
+	// io.EOF immediately, so the first cycle yields streamClosedMsg with
+	// the process's exit error.
+	msg := cmd()
+	closed, ok := msg.(streamClosedMsg)
+	if !ok {
+		t.Fatalf("expected the read pump to close the stream, got %T", msg)
+	}
+	if closed.err == nil {
+		t.Fatal("expected streamClosedMsg to carry the process's exit error")
+	}
+
+	_, cmd = m.Update(closed)
+	if cmd == nil {
+		t.Fatal("expected a failed stream close to report the failure")
+	}
+	status, ok := cmd().(statusMessageMsg)
+	if !ok {
+		t.Fatalf("expected a status message, got %T", cmd())
+	}
+	if !strings.Contains(status.text, "exit status 1") {
+		t.Fatalf("expected the process error in the message, got %q", status.text)
+	}
+}
+
+// TestModel_CleanStreamThroughPumpIsSilent is the pump-driven counterpart:
+// a clean exit (Close returning nil) must not synthesize a failure message.
+func TestModel_CleanStreamThroughPumpIsSilent(t *testing.T) {
+	m := newTestModel()
+
+	result, cmd := m.Update(showStreamingLessMsg{title: "Logs", reader: &stubStreamReader{}})
+	m = result.(model)
+	if cmd == nil {
+		t.Fatal("expected the streaming view to start reading")
+	}
+
+	msg := cmd()
+	closed, ok := msg.(streamClosedMsg)
+	if !ok {
+		t.Fatalf("expected the read pump to close the stream, got %T", msg)
+	}
+	if closed.err != nil {
+		t.Fatalf("expected a clean close to carry no error, got %v", closed.err)
+	}
+
+	_, cmd = m.Update(closed)
+	if cmd != nil {
+		if _, isStatus := cmd().(statusMessageMsg); isStatus {
+			t.Fatal("a clean stream close must not report a failure")
+		}
+	}
+}
+
+// TestModel_CloseWhileRunningReportsFailure covers the other reachable
+// failure path: the user closes the viewer while the process is still
+// running (the pump never reached EOF, so the reader is still attached),
+// and Close() itself reports the failure.
+func TestModel_CloseWhileRunningReportsFailure(t *testing.T) {
+	m := newTestModel()
+	reader := &failingStreamReader{}
+
+	result, _ := m.Update(showStreamingLessMsg{title: "Compose up: web", reader: reader})
+	m = result.(model)
+
+	_, cmd := m.Update(appui.CloseOverlayMsg{})
+	if cmd == nil {
+		t.Fatal("expected closing a still-running failed stream to report the failure")
+	}
+	status, ok := cmd().(statusMessageMsg)
+	if !ok {
+		t.Fatalf("expected a status message, got %T", cmd())
+	}
+	if !strings.Contains(status.text, "exit status 1") {
+		t.Fatalf("expected the process error in the message, got %q", status.text)
+	}
+}
+
+func TestModel_CleanStreamCloseIsSilent(t *testing.T) {
+	m := newTestModel()
+
+	result, _ := m.Update(showStreamingLessMsg{title: "Logs", reader: &stubStreamReader{}})
+	m = result.(model)
+
+	_, cmd := m.Update(appui.CloseOverlayMsg{})
+	if cmd != nil {
+		if _, isStatus := cmd().(statusMessageMsg); isStatus {
+			t.Fatal("a clean close must not report a failure")
+		}
+	}
+}
+
+func TestModel_SwarmViewsHiddenWithoutSwarm(t *testing.T) {
+	m := newTestModel()
+	m.swarmMode = false
+
+	for _, key := range []rune{'5', '6', '7'} {
+		result, _ := m.Update(tea.KeyPressMsg{Code: key})
+		if got := result.(model).view; got != Main {
+			t.Fatalf("key %c: expected to stay on Main without a swarm, switched to %d", key, got)
+		}
+	}
+
+	for _, a := range m.commandPaletteActions() {
+		switch a.ID {
+		case "switch:nodes", "switch:services", "switch:stacks":
+			t.Fatalf("expected no swarm palette entry without a swarm, found %q", a.ID)
+		}
+	}
+}
+
+func TestModel_SwarmViewsAvailableWithSwarm(t *testing.T) {
+	m := newTestModel()
+	m.swarmMode = true
+
+	for _, tc := range []struct {
+		key  rune
+		want viewMode
+	}{
+		{'5', Nodes},
+		{'6', Services},
+		{'7', Stacks},
+	} {
+		result, _ := m.Update(tea.KeyPressMsg{Code: tc.key})
+		if got := result.(model).view; got != tc.want {
+			t.Fatalf("key %c: expected to reach view %d with a swarm, got %d", tc.key, tc.want, got)
+		}
 	}
 }

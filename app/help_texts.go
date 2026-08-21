@@ -104,6 +104,9 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Ctrl+t</>    Stop project containers
 	<white>Ctrl+r</>    Restart project containers
 	<white>Ctrl+e</>    Remove project containers
+	<white>u</>         Brings the selected project or service up
+	<white>d</>         Takes the selected project down
+	<white>c</>         Shows the rendered compose configuration
 
 <yellow>Compose Services</>
 	<white>Esc</>       Back to projects
@@ -115,6 +118,8 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Ctrl+t</>    Stop service containers
 	<white>Ctrl+r</>    Restart service containers
 	<white>Ctrl+e</>    Remove service containers
+	<white>c</>         Shows the rendered compose configuration
+	<white>u</>         Brings the selected service up
 
 <yellow>Workspace activity</>
 	<white>f</>         Toggles follow mode for embedded logs
