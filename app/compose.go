@@ -197,6 +197,28 @@ func (m model) composeProjectFor(name string) docker.ComposeProject {
 // composeReadTimeout. A var so tests can shorten it.
 var composeDriftBudget = 30 * time.Second
 
+// openComposeServices switches to the Compose Services view for a project
+// and starts loading its resources, clearing the view on the way in: the
+// switch lands before the load does.
+func (m model) openComposeServices(project string) (tea.Model, tea.Cmd) {
+	m.previousView = m.view
+	m.view = ComposeServices
+	m.selectedProject = project
+	m.composeServices.SetProject(project)
+	load := m.loadComposeServices(project)
+	return m, load
+}
+
+// loadComposeServices starts a resource load for a project, stamped with a
+// generation so an older load finishing later cannot replace a newer one's
+// rows. Two are in flight after an f5 during a container event. It mutates
+// m, so callers assign the command to a variable before returning it rather
+// than relying on evaluation order inside a return statement.
+func (m *model) loadComposeServices(project string) tea.Cmd {
+	m.composeServicesGen++
+	return loadComposeServicesCmd(m.daemon, project, m.composeServicesGen)
+}
+
 // composeDriftCmd asks compose for each project's file hashes and compares
 // them against the running containers. Projects whose files are unknown are
 // skipped rather than reported as unknown, so the views render exactly as
@@ -224,8 +246,9 @@ func composeDriftCmd(engine composeEngine, projects []docker.ProjectWithServices
 				break
 			}
 			// Unknown files, not a failure: ConfigFiles belongs to
-			// whichever machine ran compose, so a project brought up
-			// elsewhere would pin an error banner for the whole session.
+			// whichever machine ran compose, so a project from another
+			// machine, or one whose file has moved, would pin an error
+			// banner for the whole session.
 			if !composeFilesUsable(p.Project) {
 				continue
 			}

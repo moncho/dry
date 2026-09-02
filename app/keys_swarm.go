@@ -1,8 +1,8 @@
 package app
 
-// Per-view key handling, extracted mechanically from handleKeyPress in
-// model.go. Bodies are unchanged; behavior is locked by the golden view
-// snapshots and the key-handling tests.
+// Per-view key handling, originally extracted from handleKeyPress in
+// model.go: behaviour is locked by the golden view snapshots and the
+// key-handling tests.
 
 import (
 	"fmt"
@@ -135,7 +135,8 @@ func (m model) handleTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		m.view = m.previousView
-		return m, m.loadViewData(m.view)
+		reload := m.loadViewData(m.view)
+		return m, reload
 	}
 	var cmd tea.Cmd
 	m.tasks, cmd = m.tasks.Update(msg)

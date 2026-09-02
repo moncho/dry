@@ -813,7 +813,7 @@ type composeResourcesSource interface {
 	docker.VolumesAPI
 }
 
-func loadComposeServicesCmd(daemon composeResourcesSource, project string) tea.Cmd {
+func loadComposeServicesCmd(daemon composeResourcesSource, project string, gen uint64) tea.Cmd {
 	return func() tea.Msg {
 		services := daemon.ComposeServices(project)
 
@@ -847,6 +847,7 @@ func loadComposeServicesCmd(daemon composeResourcesSource, project string) tea.C
 			Networks: composeNets,
 			Volumes:  composeVols,
 			Project:  project,
+			Gen:      gen,
 		}
 	}
 }

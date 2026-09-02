@@ -53,6 +53,10 @@ func NewTableModel(columns []Column) TableModel {
 	km := table.DefaultKeyMap()
 	km.LineUp = key.NewBinding(key.WithKeys("up", "k"))
 	km.LineDown = key.NewBinding(key.WithKeys("down", "j"))
+	// pgup alone, without bubbles' "b", and HalfPageUp/Down disabled
+	// below: appui/compose's movesUp enumerates the upward keys to decide
+	// which way to skip a section header, so this binding is load-bearing
+	// outside this package.
 	km.PageUp = key.NewBinding(key.WithKeys("pgup"))
 	km.PageDown = key.NewBinding(key.WithKeys("pgdown"))
 	km.GotoTop = key.NewBinding(key.WithKeys("g", "home"))
@@ -102,6 +106,7 @@ func (m *TableModel) SetSize(w, h int) {
 	m.inner.SetWidth(w)
 	// -1 for blank line after the table
 	m.inner.SetHeight(h - 1)
+	m.ensureCursorVisible()
 }
 
 // Width returns the table's current width.
@@ -119,6 +124,92 @@ func (m TableModel) SelectedRow() TableRow {
 // Cursor returns the current cursor position.
 func (m TableModel) Cursor() int {
 	return m.inner.Cursor()
+}
+
+// SetCursor moves the cursor to the given row index, clamped to the visible
+// rows, keeping the row on screen. It moves by a delta because MoveUp and
+// MoveDown compensate the scroll offset and the inner table's own SetCursor
+// does not, which would highlight a row off screen while every key kept
+// acting on it. A delta of any size is enough, wider than the window
+// included, which TestTableModel_ADeltaMoveKeepsTheCursorOnScreen asserts.
+func (m *TableModel) SetCursor(i int) {
+	switch delta := i - m.inner.Cursor(); {
+	case delta > 0:
+		m.inner.MoveDown(delta)
+	case delta < 0:
+		m.inner.MoveUp(-delta)
+	}
+}
+
+// ensureCursorVisible scrolls the viewport so the cursor's row is rendered.
+// A viewport that shrinks under the cursor on a resize leaves the selection
+// off screen, and re-walking from the top is the only way to make the inner
+// table recompute its offset. That walk ends on the last visible line, so
+// the check has to come first: a resize that leaves the selection on screen
+// must not scroll.
+func (m *TableModel) ensureCursorVisible() {
+	cursor := m.inner.Cursor()
+	if cursor <= 0 || m.cursorOnScreen() {
+		return
+	}
+	m.inner.GotoTop()
+	m.inner.MoveDown(cursor)
+}
+
+// cursorOnScreen reports whether the cursor's row is among the ones the
+// inner table renders. The offset is not exported, so the answer is read
+// back out of the render, by the escape sequence the Selected style emits.
+// A theme that renders nothing distinguishable answers yes, which is the
+// behaviour of not correcting at all.
+func (m TableModel) cursorOnScreen() bool {
+	// A list that fits needs no render: every row is on screen. Capacity is
+	// height-2, not height-1: SetSize gives the inner table h-1, and bubbles
+	// takes another line off for the header.
+	if len(m.filtered) <= max(m.height-2, 0) {
+		return true
+	}
+	marker := selectedRowMarker()
+	if marker == "" {
+		return true
+	}
+	return selectedRowVisible(strings.Split(m.inner.View(), "\n"), marker)
+}
+
+// selectedRowVisible reports whether any line begins with the marker the
+// inner table emits before the cursor's row. A prefix rather than a search:
+// cell content arrives pre-styled from several views, and a cell carrying
+// the same sequence must not answer for the cursor.
+func selectedRowVisible(lines []string, marker string) bool {
+	for _, line := range lines {
+		if strings.HasPrefix(line, marker) {
+			return true
+		}
+	}
+	return false
+}
+
+// selectedRowMarker is the escape sequence the inner table emits before the
+// cursor's row, or "" when the Selected style renders nothing.
+func selectedRowMarker() string {
+	const probe = "\x00"
+	rendered := SelectedRowStyle.Render(probe)
+	if i := strings.Index(rendered, probe); i > 0 {
+		return rendered[:i]
+	}
+	return ""
+}
+
+// SelectRowByID moves the cursor onto the visible row with the given ID and
+// reports whether it was found, so a view rebuilt on every refresh can
+// follow the row rather than the index it happened to occupy.
+func (m *TableModel) SelectRowByID(id string) bool {
+	for i, row := range m.filtered {
+		if row.ID() == id {
+			m.SetCursor(i)
+			return true
+		}
+	}
+	return false
 }
 
 // RowCount returns the number of visible (filtered) rows.

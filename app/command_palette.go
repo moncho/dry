@@ -437,10 +437,7 @@ func (m model) executePaletteAction(id string) (tea.Model, tea.Cmd) {
 		}
 	case "compose-project:open":
 		if p := m.composeProjects.SelectedProject(); p != nil {
-			m.previousView = m.view
-			m.view = ComposeServices
-			m.selectedProject = p.Name
-			return m, loadComposeServicesCmd(m.daemon, p.Name)
+			return m.openComposeServices(p.Name)
 		}
 	case "compose-project:logs":
 		if p := m.composeProjects.SelectedProject(); p != nil {
@@ -591,10 +588,7 @@ func (m model) executeWorkspaceOpenInspect() (tea.Model, tea.Cmd) {
 	case ctx.project != "" && ctx.service != "":
 		return m, inspectComposeServiceCmd(m.daemon, ctx.project, ctx.service)
 	case ctx.project != "":
-		m.previousView = m.view
-		m.view = ComposeServices
-		m.selectedProject = ctx.project
-		return m, loadComposeServicesCmd(m.daemon, ctx.project)
+		return m.openComposeServices(ctx.project)
 	}
 	return m, nil
 }

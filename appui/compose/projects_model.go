@@ -149,6 +149,19 @@ func NewProjectsModel() ProjectsModel {
 // FilterActive returns true when the filter input is active.
 func (m ProjectsModel) FilterActive() bool { return m.filter.Active() }
 
+// Filtered reports whether a filter is narrowing the list, open or not. It
+// tells "no compose projects" apart from "the filter is hiding them", which
+// is what the keys need to name a reason rather than doing nothing.
+func (m ProjectsModel) Filtered() bool { return m.table.FilterText() != "" }
+
+// SetFilter narrows the list, for tests that need a filter without driving
+// the input; the view itself pushes the input's value in Update.
+func (m *ProjectsModel) SetFilter(pattern string) { m.table.SetFilter(pattern) }
+
+// ProjectCount is how many projects the model holds. Zero covers both a list
+// that has not loaded and a host with no compose projects at all.
+func (m ProjectsModel) ProjectCount() int { return len(m.projects) }
+
 // SetSize updates the table dimensions.
 func (m *ProjectsModel) SetSize(w, h int) {
 	filterH := 0
