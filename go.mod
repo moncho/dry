@@ -1,6 +1,6 @@
 module github.com/moncho/dry
 
-go 1.26
+go 1.26.0
 
 toolchain go1.26.6
 
@@ -22,7 +22,7 @@ require (
 	github.com/moby/moby/client v0.4.0
 	github.com/sirupsen/logrus v1.9.4
 	go.uber.org/goleak v1.3.0
-	golang.org/x/crypto v0.55.0
+	golang.org/x/crypto v0.56.0
 	golang.org/x/term v0.45.0
 )
 
