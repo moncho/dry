@@ -7,12 +7,17 @@ import (
 )
 
 // composeFileNames are the file names compose recognises, in the order
-// compose itself prefers them.
+// compose itself prefers them. The legacy name prefers .yml and the current
+// one .yaml, which looks like a typo and is not: get them backwards and, in
+// a directory holding both legacy names, dry acts on a different file from
+// the one `docker compose up` there would. Compose warns which of several it
+// picked, and between docker-compose.yml and docker-compose.yaml it takes
+// the .yml.
 var composeFileNames = []string{
 	"compose.yaml",
 	"compose.yml",
-	"docker-compose.yaml",
 	"docker-compose.yml",
+	"docker-compose.yaml",
 }
 
 // ScanComposeDir looks for a compose file in the given directory and returns
