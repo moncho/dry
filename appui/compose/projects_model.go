@@ -159,7 +159,9 @@ func (m ProjectsModel) Filtered() bool { return m.table.FilterText() != "" }
 func (m *ProjectsModel) SetFilter(pattern string) { m.table.SetFilter(pattern) }
 
 // ProjectCount is how many projects the model holds. Zero covers both a list
-// that has not loaded and a host with no compose projects at all.
+// that has not loaded and a host with no compose projects at all; the caller
+// in composeServiceDrift tells them apart because it is looking at a project
+// it has already entered, so its list cannot legitimately be empty.
 func (m ProjectsModel) ProjectCount() int { return len(m.projects) }
 
 // SetSize updates the table dimensions.
