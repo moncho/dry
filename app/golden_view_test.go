@@ -75,6 +75,23 @@ func goldenStats() []*docker.Stats {
 	}
 }
 
+// goldenDrift is a fixed SYNC status for every service the mock daemon
+// reports, one of each kind so the column's three renderings are all
+// snapshotted.
+func goldenDrift() map[string]map[string]docker.ServiceSync {
+	return map[string]map[string]docker.ServiceSync{
+		"webapp": {
+			"api":    docker.ServiceInSync,
+			"db":     docker.ServiceDrifted,
+			"worker": docker.ServiceNotCreated,
+		},
+		"monitoring": {
+			"grafana":    docker.ServiceDrifted,
+			"prometheus": docker.ServiceInSync,
+		},
+	}
+}
+
 func goldenTasks() []swarm.Task {
 	// Anchored to now so the rendered relative duration ("30 minutes ago")
 	// is identical on every run; an absolute date would advance with the
@@ -163,6 +180,12 @@ func newGoldenModel(t *testing.T, workspace bool, width, height int, noSwarm boo
 	m.tasks.SetTasks(goldenTasks(), "Tasks")
 	m.composeProjects.SetProjects(daemon.ComposeProjectsWithServices())
 	m.composeServices.SetServices(daemon.ComposeServices("webapp"), nil, nil, "webapp")
+	// Fixed drift, so the SYNC column is in the snapshots: it is a fixed
+	// column at the right edge of both compose views, which is exactly
+	// where a narrow terminal clips, and an empty column cannot show that.
+	drift := goldenDrift()
+	m.composeProjects.SetDrift(drift)
+	m.composeServices.SetDrift(drift)
 
 	info, infoErr := daemon.Info()
 	ver, verErr := daemon.Version()
@@ -210,6 +233,13 @@ func TestGoldenViews(t *testing.T) {
 		// altogether; the byte difference between this pair is what makes the
 		// footer gating observable in either direction.
 		{name: "main_swarm_wide", view: Main, width: 200, height: 40},
+		// The two widths where column allocation is tightest, snapshotted
+		// so the layout there is reviewable like any other: the monitor's
+		// fixed columns sum to 142, and workspace mode gives the navigator
+		// pane 58 of a 100-column terminal, which its five fixed columns
+		// nearly fill on their own.
+		{name: "monitor_tight", view: Monitor, width: 143, height: 40},
+		{name: "workspace_compose_projects", view: ComposeProjects, workspace: true, width: 100, height: 30},
 	}
 
 	for _, tc := range cases {
@@ -302,4 +332,58 @@ func firstGoldenDiff(want, got string) string {
 		}
 	}
 	return "(no line diff; length or trailing content differs)"
+}
+
+// TestViewsKeepTheirColumnGutters renders whole views, in both layouts, at
+// the widths where column allocation is tightest, and fails if a truncation
+// ellipsis is ever followed by anything but a space, a column running into
+// its neighbour.
+//
+// The unit sweep in appui covers the table in isolation at every width from
+// 20 to 210; this one covers the composition around it, where the worst case
+// lives: workspace mode gives the navigator pane 58 of a 100-column
+// terminal, and Compose Projects' five fixed columns take 56 of it, leaving
+// its three proportional columns one cell each.
+func TestViewsKeepTheirColumnGutters(t *testing.T) {
+	views := []struct {
+		name string
+		view viewMode
+	}{
+		{"main", Main},
+		{"monitor", Monitor},
+		{"tasks", Tasks},
+		{"compose_projects", ComposeProjects},
+		{"compose_services", ComposeServices},
+	}
+	// 104 is inside workspace mode's tightest band, 143 is where the
+	// monitor's fixed columns leave exactly one cell over.
+	widths := []int{60, 80, 100, 104, 120, 132, 143, 200}
+
+	for _, workspace := range []bool{false, true} {
+		for _, v := range views {
+			for _, width := range widths {
+				m := newGoldenModel(t, workspace, width, 40, false)
+				m.view = v.view
+				m.resizeContentModels()
+				for _, line := range strings.Split(ansi.Strip(m.renderMainScreen()), "\n") {
+					runes := []rune(line)
+					for i, r := range runes {
+						if r != '…' || i+1 >= len(runes) {
+							continue
+						}
+						if i == 0 || runes[i-1] == ' ' {
+							// The whole column is the ellipsis: one cell,
+							// nothing left for a gutter. See
+							// TestTableModel_FittingIsNeverTradedForSpacing.
+							continue
+						}
+						if runes[i+1] != ' ' {
+							t.Fatalf("workspace=%v view=%s width=%d: a column runs into the next:\n%s",
+								workspace, v.name, width, line)
+						}
+					}
+				}
+			}
+		}
+	}
 }

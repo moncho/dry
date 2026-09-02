@@ -19,8 +19,11 @@ type Column struct {
 	Fixed bool // fixed-width column
 }
 
-// minProportionalColumnWidth is the smallest width a proportional column may
-// get when fixed columns leave no remaining space.
+// minProportionalColumnWidth is the smallest allocation a proportional
+// column may get when fixed columns leave no remaining space. It is nine
+// visible cells plus the spacing gutter, except for the last column, which
+// fitCell does not fit at all: there it is ten visible cells and no gutter,
+// which costs nothing, since nothing sits to its right.
 const minProportionalColumnWidth = 10
 
 // TableRow represents one row of data in the table.
@@ -42,8 +45,11 @@ type TableModel struct {
 	filterText string
 	filterFn   func(row TableRow, pattern string) bool
 	colWidths  []int
-	width      int
-	height     int
+	// contentWidths is how much of each allocation the text may use: the
+	// allocation less the gutter, zero (no limit) for the last column.
+	contentWidths []int
+	width         int
+	height        int
 }
 
 // NewTableModel creates a table with the given column definitions.
@@ -99,14 +105,32 @@ func (m *TableModel) SetRows(rows []TableRow) {
 // SetSize updates the table dimensions. Table height is reduced
 // by 1 to leave space for the blank line after the table.
 func (m *TableModel) SetSize(w, h int) {
+	widthChanged := m.width != w
 	m.width = w
 	m.height = h
 	m.calculateColumnWidths()
 	m.syncInnerColumns()
+	// Cells are fitted to the column widths, so a new width refits them:
+	// rows set at the old one would stay truncated after a resize.
+	if widthChanged {
+		m.syncInner()
+	}
 	m.inner.SetWidth(w)
 	// -1 for blank line after the table
 	m.inner.SetHeight(h - 1)
 	m.ensureCursorVisible()
+}
+
+// ColumnWidth is the width allocated to a column, which is where its
+// boundary falls, except for the last column: syncInnerColumns renders that
+// one wider when the columns fit with room to spare. Exported for tests
+// only, in appui/compose, appui/swarm and the monitor's own; no production
+// code calls it.
+func (m TableModel) ColumnWidth(i int) int {
+	if i < 0 || i >= len(m.colWidths) {
+		return 0
+	}
+	return m.colWidths[i]
 }
 
 // Width returns the table's current width.
@@ -291,7 +315,11 @@ func (m TableModel) View() string {
 	for i, line := range lines {
 		w := ansi.StringWidth(line)
 		if w > m.width {
-			lines[i] = ansi.Truncate(line, m.width, "")
+			// Only the header reaches here: bubbles renders it outside
+			// the viewport, which clips every data row to the width
+			// first. Marking it is what says a column was dropped, since
+			// the rows below lose theirs silently.
+			lines[i] = ansi.Truncate(line, m.width, "…")
 		} else if w < m.width {
 			pad := strings.Repeat(" ", m.width-w)
 			if i == selectedLine {
@@ -301,10 +329,12 @@ func (m TableModel) View() string {
 		}
 	}
 
-	// Pad with empty lines to fill allocated height so the footer stays
-	// at the bottom of the screen.
+	// Pad with empty lines to fill allocated height so the footer stays at
+	// the bottom of the screen. max() is defensive: only a zero width
+	// returns early above, and strings.Repeat panics on a negative count.
+	// No layout produces a negative width today, so nothing tests it.
 	for len(lines) < m.height {
-		lines = append(lines, strings.Repeat(" ", m.width))
+		lines = append(lines, strings.Repeat(" ", max(m.width, 0)))
 	}
 
 	return strings.Join(lines, "\n")
@@ -315,6 +345,11 @@ func (m TableModel) View() string {
 // ---------------------------------------------------------------------------
 
 func (m *TableModel) syncInner() {
+	// bubbles' table indexes its column slice per cell, so rows set before
+	// the first SetSize would panic there. SetSize pushes them.
+	if len(m.colWidths) == 0 {
+		return
+	}
 	m.inner.SetRows(m.toBubblesRows())
 	cursor := m.inner.Cursor()
 	if cursor < 0 && len(m.filtered) > 0 {
@@ -336,7 +371,7 @@ func (m *TableModel) syncInnerColumns() {
 		if m.sortField >= 0 && i == m.sortField && title != "" {
 			title += " " + DownArrow
 		}
-		cols[i] = table.Column{Title: title, Width: w}
+		cols[i] = table.Column{Title: m.fitCell(title, i), Width: w}
 		totalW += w
 	}
 	// Stretch the last column so the total equals m.width, ensuring the
@@ -356,17 +391,36 @@ func (m *TableModel) toBubblesRows() []table.Row {
 			if j < len(cols) {
 				// Skip ColorFg wrapping for columns that already contain
 				// ANSI escape sequences (e.g. container status indicator)
-				// to avoid double-coloring.
+				// to avoid double-coloring. Asked of the cell as it
+				// arrived, not of the fitted one.
+				cell := m.fitCell(cols[j], j)
 				if strings.Contains(cols[j], "\x1b[") {
-					row[j] = cols[j]
+					row[j] = cell
 				} else {
-					row[j] = ColorFg(cols[j], DryTheme.Fg)
+					row[j] = ColorFg(cell, DryTheme.Fg)
 				}
 			}
 		}
 		rows[i] = row
 	}
 	return rows
+}
+
+// fitCell shortens a cell, or a header title, so the column keeps a spacing
+// gutter on its right. bubbles' table pads every cell to its column width
+// and joins them with no separator, so the gap is whatever the left cell
+// leaves unused. The last column is not fitted: nothing sits to its right,
+// and when the columns fit with room to spare syncInnerColumns stretches it
+// past its allocation.
+func (m *TableModel) fitCell(s string, col int) string {
+	if col >= len(m.contentWidths) {
+		return s
+	}
+	limit := m.contentWidths[col]
+	if limit <= 0 || ansi.StringWidth(s) <= limit {
+		return s
+	}
+	return ansi.Truncate(s, limit, "…")
 }
 
 func (m *TableModel) sortRows() {
@@ -455,6 +509,13 @@ func (m *TableModel) calculateColumnWidths() {
 		// screen; only when fixed columns alone already overflow does each
 		// proportional column get the minimum, with View truncating the
 		// overflow on the right.
+		//
+		// The gutter comes out of the content, not the allocation (see
+		// fitCell), so only a one-cell column goes without one. Flooring
+		// the allocation to buy that gutter would overflow the table
+		// further than it already does at these widths, and each cell of
+		// overflow costs the rightmost column: see
+		// TestTableModel_FittingIsNeverTradedForSpacing.
 		propWidth := minProportionalColumnWidth
 		if remaining > 0 {
 			propWidth = max(remaining/proportionalCount, 1)
@@ -472,5 +533,16 @@ func (m *TableModel) calculateColumnWidths() {
 				}
 			}
 		}
+	}
+
+	// The allocation less the gutter, and zero (no limit) for the last
+	// column, which syncInnerColumns stretches to fill the table.
+	m.contentWidths = make([]int, len(m.colWidths))
+	last := len(m.colWidths) - 1
+	for i, w := range m.colWidths {
+		if i == last {
+			continue
+		}
+		m.contentWidths[i] = max(w-DefaultColumnSpacing, 1)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -343,9 +344,10 @@ func TestTableModel_ProportionalColumnNeverCollapses(t *testing.T) {
 	}
 	table := NewTableModel(cols)
 	table.SetSize(100, 10)
-	if got := table.colWidths[1]; got < minProportionalColumnWidth {
-		t.Fatalf("expected proportional column width >= %d when fixed columns overflow, got %d",
-			minProportionalColumnWidth, got)
+	// 10 as a literal, for the same reason: read from the constant, this
+	// assertion moves whenever the constant does.
+	if got := table.colWidths[1]; got != 10 {
+		t.Fatalf("expected the 10-cell minimum when fixed columns overflow, got %d", got)
 	}
 
 	// With room to spare, the proportional column takes the remainder.
@@ -646,5 +648,514 @@ func TestSelectedRowVisible_MatchesOnlyAtTheStartOfALine(t *testing.T) {
 				t.Errorf("selectedRowVisible(%q) = %v, want %v", tc.lines, got, tc.want)
 			}
 		})
+	}
+}
+
+// --- Column gutters --------------------------------------------------------
+//
+// bubbles' table pads every cell to exactly its column width and joins the
+// cells with no separator, so the only thing keeping one column's text off
+// the next one's is the cell content being narrower than the column. Fixed
+// columns get that gutter from calculateColumnWidths, which allocates
+// Width+DefaultColumnSpacing; proportional columns are allocated a raw share
+// of the remaining space, so a cell that filled it used to butt against its
+// neighbour with no space at all.
+
+// visibleLines strips the styling and returns the rendered rows: the header
+// line, then one line per row.
+func visibleLines(t *testing.T, table TableModel) []string {
+	t.Helper()
+	var out []string
+	for _, line := range strings.Split(table.View(), "\n") {
+		out = append(out, strings.TrimRight(ansi.Strip(line), " "))
+	}
+	return out
+}
+
+// columnStart returns the on-screen column, in cells rather than bytes, at
+// which text first appears in line, and reports whether the cell before it
+// is a space. Byte offsets are useless here: a fitted cell ends in "…",
+// which is three bytes wide and one cell wide.
+func columnStart(t *testing.T, line, text string) (int, bool) {
+	t.Helper()
+	byteIdx := strings.Index(line, text)
+	if byteIdx < 0 {
+		t.Fatalf("expected %q in %q", text, line)
+	}
+	cells := ansi.StringWidth(line[:byteIdx])
+	if cells == 0 {
+		t.Fatalf("expected %q not to start the line in %q", text, line)
+	}
+	prev := []rune(line[:byteIdx])
+	return cells, prev[len(prev)-1] == ' '
+}
+
+func TestTableModel_ProportionalCellsKeepAGutter(t *testing.T) {
+	cols := []Column{{Title: "A"}, {Title: "B"}}
+	table := NewTableModel(cols)
+	table.SetSize(40, 10)
+	table.SetRows([]TableRow{testRow{id: "1", cols: []string{
+		strings.Repeat("a", 60), strings.Repeat("b", 60),
+	}}})
+
+	row := visibleLines(t, table)[1]
+	if _, spaced := columnStart(t, row, "bbb"); !spaced {
+		t.Fatalf("expected a space between the two columns, got %q", row)
+	}
+}
+
+// The same must hold for the header titles: at narrow widths a title is
+// wider than its column ("IMAGE/DRIVER" in 10 columns of space), and a
+// truncated title that fills the column butts the next title.
+func TestTableModel_ProportionalHeadersKeepAGutter(t *testing.T) {
+	cols := []Column{{Title: "IMAGE/DRIVER"}, {Title: "PORTS"}}
+	table := NewTableModel(cols)
+	table.SetSize(20, 10)
+	table.SetRows([]TableRow{testRow{id: "1", cols: []string{"x", "y"}}})
+
+	header := visibleLines(t, table)[0]
+	if _, spaced := columnStart(t, header, "PORTS"); !spaced {
+		t.Fatalf("expected a space between the two titles, got %q", header)
+	}
+}
+
+// A fixed column's gutter is allocated as part of its width, so its content
+// must stay inside Width and never spill into the spacing.
+func TestTableModel_FixedCellsStayInsideTheirWidth(t *testing.T) {
+	cols := []Column{{Title: "A", Width: 5, Fixed: true}, {Title: "B"}}
+	table := NewTableModel(cols)
+	table.SetSize(40, 10)
+	table.SetRows([]TableRow{testRow{id: "1", cols: []string{
+		strings.Repeat("a", 20), strings.Repeat("b", 20),
+	}}})
+
+	row := visibleLines(t, table)[1]
+	start, spaced := columnStart(t, row, "bbb")
+	if start != 5+DefaultColumnSpacing {
+		t.Fatalf("expected the second column to start at %d, got %d in %q",
+			5+DefaultColumnSpacing, start, row)
+	}
+	if !spaced {
+		t.Fatalf("expected a space between the two columns, got %q", row)
+	}
+}
+
+// The last column has nothing to its right, so it keeps its full width: a
+// gutter there would throw away a character of PORTS for no gain.
+func TestTableModel_LastColumnUsesItsFullWidth(t *testing.T) {
+	cols := []Column{{Title: "A", Width: 10, Fixed: true}, {Title: "B"}}
+	table := NewTableModel(cols)
+	table.SetSize(30, 10)
+	table.SetRows([]TableRow{testRow{id: "1", cols: []string{
+		"a", strings.Repeat("b", 60),
+	}}})
+
+	row := visibleLines(t, table)[1]
+	if got := ansi.StringWidth(row); got != 30 {
+		t.Fatalf("expected the last column to fill the table width, got %d in %q", got, row)
+	}
+}
+
+// Cells are fitted to the column widths, so a resize has to re-fit them: a
+// row set while the table was narrow must not stay truncated once the
+// terminal grows, and must not spill once it shrinks.
+func TestTableModel_ResizeRefitsCells(t *testing.T) {
+	cols := []Column{{Title: "A"}, {Title: "B"}}
+	table := NewTableModel(cols)
+	table.SetSize(20, 10)
+	table.SetRows([]TableRow{testRow{id: "1", cols: []string{
+		strings.Repeat("a", 60), strings.Repeat("b", 60),
+	}}})
+	narrow := strings.Count(visibleLines(t, table)[1], "a")
+
+	table.SetSize(80, 10)
+	wide := strings.Count(visibleLines(t, table)[1], "a")
+	if wide <= narrow {
+		t.Fatalf("expected the widened table to show more of the cell, got %d then %d", narrow, wide)
+	}
+
+	table.SetSize(20, 10)
+	row := visibleLines(t, table)[1]
+	if got := strings.Count(row, "a"); got != narrow {
+		t.Fatalf("expected the narrowed table to fit the cell again, got %d (want %d) in %q", got, narrow, row)
+	}
+	if _, spaced := columnStart(t, row, "bbb"); !spaced {
+		t.Fatalf("expected a space between the two columns after narrowing, got %q", row)
+	}
+}
+
+// Fitting must not destroy the styling a cell arrives with: the container
+// list's status cell is pre-colored, and truncating it has to keep the escape
+// sequences balanced or the color bleeds into the rest of the line.
+func TestTableModel_FittingKeepsStyledCellsBalanced(t *testing.T) {
+	cols := []Column{{Title: "A"}, {Title: "B"}}
+	table := NewTableModel(cols)
+	table.SetSize(24, 10)
+	styled := ColorFg(strings.Repeat("a", 40), DryTheme.Success)
+	table.SetRows([]TableRow{testRow{id: "1", cols: []string{styled, strings.Repeat("b", 40)}}})
+
+	rendered := strings.Split(table.View(), "\n")[1]
+	row := strings.TrimRight(ansi.Strip(rendered), " ")
+	if _, spaced := columnStart(t, row, "bbb"); !spaced {
+		t.Fatalf("expected a space between the two columns, got %q", row)
+	}
+	// The truncated cell's own color must be closed before the gutter, or
+	// it bleeds across the gap and into the next column. Walk the SGR
+	// state to the gutter cell and require nothing of the cell's own to be
+	// active there. The row is the cursor row, so the selected-row
+	// background is expected and ignored.
+	fg, bg := sgrStateAt(rendered, table.contentWidths[0])
+	if fg != "" {
+		t.Fatalf("expected no foreground active in the gutter, got %q in %q", fg, rendered)
+	}
+	if bg == "" {
+		t.Fatalf("expected the selected-row background still active in the gutter, got %q", rendered)
+	}
+}
+
+// sgrStateAt replays the SGR sequences in a rendered line up to the given
+// screen cell and reports the foreground and background active there, as
+// the raw parameter strings, so an unbalanced opener is visible in the
+// failure message.
+func sgrStateAt(line string, cell int) (fgOut, bgOut string) {
+	var fg, bg string
+	pos := 0
+	rest := line
+	for pos <= cell && rest != "" {
+		if strings.HasPrefix(rest, "\x1b[") {
+			end := strings.Index(rest, "m")
+			if end < 0 {
+				break
+			}
+			params := rest[2:end]
+			switch {
+			case params == "" || params == "0":
+				fg, bg = "", ""
+			case strings.HasPrefix(params, "38;"):
+				fg = params
+			case params == "39":
+				fg = ""
+			case strings.HasPrefix(params, "48;"):
+				bg = params
+			case params == "49":
+				bg = ""
+			}
+			// A combined sequence carries both.
+			if i := strings.Index(params, ";48;"); i > 0 {
+				bg = params[i+1:]
+			}
+			rest = rest[end+1:]
+			continue
+		}
+		r, size := utf8.DecodeRuneInString(rest)
+		pos += ansi.StringWidth(string(r))
+		rest = rest[size:]
+	}
+	return fg, bg
+}
+
+// TestTableModel_EveryColumnKeepsItsGutterAtEveryWidth is the gate test for
+// the gutter: it sweeps every width a terminal is likely to have, against
+// the column sets the app actually ships, and checks the cell before each
+// column boundary is a space. Width-dependent layout has bands, a
+// proportional column lands at one or two cells wide when the fixed columns
+// nearly fill the terminal, and a test at three hand-picked widths walks
+// straight past them.
+func TestTableModel_EveryColumnKeepsItsGutterAtEveryWidth(t *testing.T) {
+	// The real column sets, read from the models that ship them, plus one
+	// synthetic shape the app has no example of: a proportional column
+	// first and a fixed one last.
+	containers := NewContainersModel()
+	// The compact set is what workspace mode swaps in, in the narrow pane
+	// where the allocation is tightest, so it belongs in a sweep claiming
+	// to cover the sets the app ships.
+	compact := containerColumns(true)
+	images := NewImagesModel()
+	networks := NewNetworksModel()
+	volumes := NewVolumesModel()
+	monitor := NewMonitorModel()
+	sets := map[string][]Column{
+		"containers":         containers.table.columns,
+		"images":             images.table.columns,
+		"networks":           networks.table.columns,
+		"volumes":            volumes.table.columns,
+		"monitor":            monitor.table.columns,
+		"containers compact": compact,
+		"fixed last": {
+			{Title: "NAME"},
+			{Title: "SIZE", Width: 10, Fixed: true},
+		},
+	}
+
+	for name, cols := range sets {
+		t.Run(name, func(t *testing.T) {
+			cells := make([]string, len(cols))
+			for i := range cells {
+				// Long enough to fill any column at any width, ASCII so a
+				// rune index is a screen cell.
+				cells[i] = strings.Repeat(string(rune('a'+i)), 80)
+			}
+			for width := 20; width <= 210; width++ {
+				table := NewTableModel(cols)
+				table.SetSize(width, 12)
+				table.SetRows([]TableRow{testRow{id: "1", cols: cells}})
+
+				lines := visibleLinesPadded(t, table)
+				boundary := 0
+				for i := 0; i < len(cols)-1; i++ {
+					alloc := table.colWidths[i]
+					boundary += alloc
+					if boundary >= width {
+						break // this boundary is off the right edge
+					}
+					if alloc < 2 {
+						// One cell holds the ellipsis and nothing else;
+						// see TestTableModel_FittingIsNeverTradedForSpacing.
+						continue
+					}
+					for row, line := range lines {
+						runes := []rune(line)
+						if len(runes) < boundary {
+							t.Fatalf("%s width %d: line %d is %d cells, expected at least %d",
+								name, width, row, len(runes), boundary)
+						}
+						if runes[boundary-1] != ' ' {
+							t.Fatalf("%s width %d: column %d butts column %d on line %d:\n%s",
+								name, width, i, i+1, row, line)
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+// visibleLinesPadded returns the header line and the first row, styling
+// stripped and padding kept, so a rune index is a screen cell.
+func visibleLinesPadded(t *testing.T, table TableModel) []string {
+	t.Helper()
+	lines := strings.Split(table.View(), "\n")
+	if len(lines) < 2 {
+		t.Fatalf("expected a header and a row, got %d lines", len(lines))
+	}
+	return []string{ansi.Strip(lines[0]), ansi.Strip(lines[1])}
+}
+
+// A proportional column wide enough for it shows content, the ellipsis that
+// says the text was cut, and the gutter. Three cells is where that starts:
+// the gutter takes one and the ellipsis takes one, so a two-cell column
+// shows a bare ellipsis and still keeps its gutter, and only a one-cell
+// column has nothing left for one. Narrowing further is what the allocator
+// prefers to dropping a column outright.
+func TestTableModel_ProportionalColumnsKeepRoomToTrim(t *testing.T) {
+	cols := []Column{
+		{Title: "A", Width: 40, Fixed: true},
+		{Title: "NAME"},
+		{Title: "B", Width: 10, Fixed: true},
+	}
+	for width := 44; width <= 60; width++ {
+		table := NewTableModel(cols)
+		table.SetSize(width, 10)
+		table.SetRows([]TableRow{testRow{id: "1", cols: []string{
+			"aaaaaaaaaa", strings.Repeat("n", 40), "bbbbbbbbbb",
+		}}})
+
+		row := visibleLinesPadded(t, table)[1]
+		runes := []rune(row)
+		start := table.colWidths[0]
+		if start+table.colWidths[1] > width {
+			continue // the column is clipped by the right edge at this width
+		}
+		cell := strings.TrimRight(string(runes[start:min(start+table.colWidths[1], len(runes))]), " ")
+		if table.colWidths[1] < 3 {
+			// Two cells hold the ellipsis and the gutter, one holds the
+			// ellipsis alone: content needs a third.
+			if cell != "…" {
+				t.Fatalf("width %d: expected a bare ellipsis in a one-cell column, got %q", width, cell)
+			}
+			continue
+		}
+		if !strings.Contains(cell, "n") {
+			t.Fatalf("width %d: the fitted cell shows no content at all: %q (row %q)",
+				width, cell, row)
+		}
+		if !strings.HasSuffix(cell, "…") {
+			t.Fatalf("width %d: expected the cut to be marked, got %q", width, cell)
+		}
+	}
+}
+
+// A column set with no proportional column is the one case where the last
+// column is rendered wider than it was allocated: syncInnerColumns stretches
+// it to fill the table. Its text must be fitted to what it is rendered at,
+// not to the allocation, or most of the column comes out blank with the
+// content cut short at its left edge.
+func TestTableModel_AllFixedColumnsKeepTheirLastColumnsText(t *testing.T) {
+	table := NewTableModel([]Column{
+		{Title: "A", Width: 6, Fixed: true},
+		{Title: "B", Width: 6, Fixed: true},
+	})
+	table.SetSize(80, 8)
+	table.SetRows([]TableRow{testRow{id: "1", cols: []string{
+		"aaa", strings.Repeat("b", 60),
+	}}})
+
+	row := visibleLinesPadded(t, table)[1]
+	if got := strings.Count(row, "b"); got < 60 {
+		t.Fatalf("expected the stretched last column to keep its text, got %d of 60 in %q", got, row)
+	}
+}
+
+// Rows can be set before the table has ever been sized, a view that loads
+// its data before the first window-size message. bubbles' table indexes its
+// column slice per cell while rendering, so handing it rows with no columns
+// panics; the rows wait for the size instead.
+func TestTableModel_RowsBeforeTheFirstSizeDoNotPanic(t *testing.T) {
+	table := NewTableModel([]Column{{Title: "NAME"}, {Title: "SIZE", Width: 8, Fixed: true}})
+	table.SetRows([]TableRow{
+		testRow{id: "1", cols: []string{"one", "1kB"}},
+		testRow{id: "2", cols: []string{"two", "2kB"}},
+	})
+	if got := table.RowCount(); got != 2 {
+		t.Fatalf("expected the rows to be kept, got %d", got)
+	}
+	if view := table.View(); view != "" {
+		t.Fatalf("expected an unsized table to render nothing, got %q", view)
+	}
+
+	table.SetSize(40, 6)
+	if !strings.Contains(ansi.Strip(table.View()), "one") {
+		t.Fatalf("expected the rows once sized, got:\n%s", ansi.Strip(table.View()))
+	}
+	if got := table.Cursor(); got != 0 {
+		t.Fatalf("expected the cursor on the first row, got %d", got)
+	}
+}
+
+// Spacing must never cost a column: the columns overflow only when one cell
+// each does not fit, and then by the least the shortfall allows. An earlier
+// revision floored proportional columns at two cells plus the gutter, which
+// overflowed these columns to 67 at every width from 59 to 66 and dropped
+// PORTS at widths where it had fitted.
+func TestTableModel_FittingIsNeverTradedForSpacing(t *testing.T) {
+	cols := []Column{
+		{Title: "NAME"},
+		{Title: "CONTAINERS", Width: 12, Fixed: true},
+		{Title: "RUNNING", Width: 10, Fixed: true},
+		{Title: "EXITED", Width: 10, Fixed: true},
+		{Title: "IMAGE/DRIVER"},
+		{Title: "HEALTH/SCOPE", Width: 14, Fixed: true},
+		{Title: "SYNC", Width: 7, Fixed: true},
+		{Title: "PORTS"},
+	}
+	proportional, fixedTotal := 0, 0
+	for _, c := range cols {
+		if c.Fixed && c.Width > 0 {
+			fixedTotal += c.Width + DefaultColumnSpacing
+			continue
+		}
+		proportional++
+	}
+	for width := 20; width <= 250; width++ {
+		table := NewTableModel(cols)
+		table.SetSize(width, 12)
+
+		total := 0
+		for _, w := range table.colWidths {
+			total += w
+		}
+		switch {
+		case fixedTotal >= width:
+			// The fixed columns alone do not fit, which is the older
+			// minProportionalColumnWidth trade, not this one. The 88 is a
+			// literal on purpose: 58 of fixed columns plus three
+			// proportional ones at their 10-cell minimum. Deriving it from
+			// minProportionalColumnWidth would move with the constant and
+			// assert nothing.
+			if total != 88 {
+				t.Fatalf("width %d: expected the minimum-width allocation 88, got %d",
+					width, total)
+			}
+		case fixedTotal+proportional <= width:
+			// One cell each fits, so the whole allocation must fit.
+			if total > width {
+				t.Fatalf("width %d: columns total %d, overflowing by %d with room to fit",
+					width, total, total-width)
+			}
+		default:
+			// One cell each does not fit. The overflow is then exactly the
+			// shortfall, never more.
+			if want := fixedTotal + proportional; total != want {
+				t.Fatalf("width %d: expected one cell per proportional column (%d), got %d",
+					width, want, total)
+			}
+		}
+	}
+}
+
+// The gutter a proportional column keeps is taken out of its content, so a
+// column of two cells or more has one. A one-cell column cannot, and that
+// is the case the allocator prefers over losing a column outright.
+func TestTableModel_TwoCellColumnsKeepTheirGutter(t *testing.T) {
+	InitStyles()
+	cols := []Column{{Title: "A"}, {Title: "B"}, {Title: "C"}}
+	for width := 6; width <= 40; width++ {
+		table := NewTableModel(cols)
+		table.SetSize(width, 6)
+		table.SetRows([]TableRow{testRow{id: "1", cols: []string{
+			strings.Repeat("a", 60), strings.Repeat("b", 60), strings.Repeat("c", 60),
+		}}})
+		lines := visibleLinesPadded(t, table)
+		boundary := 0
+		for i := 0; i < len(cols)-1; i++ {
+			alloc := table.colWidths[i]
+			boundary += alloc
+			if boundary >= width || alloc < 2 {
+				continue
+			}
+			for row, line := range lines {
+				runes := []rune(line)
+				if len(runes) < boundary {
+					t.Fatalf("width %d: line %d is %d cells, expected %d", width, row, len(runes), boundary)
+				}
+				if runes[boundary-1] != ' ' {
+					t.Fatalf("width %d: column %d (%d cells) butts its neighbour on line %d:\n%s",
+						width, i, alloc, row, line)
+				}
+			}
+		}
+	}
+}
+
+// The gutter has to survive a cell that exactly fills its content limit, and
+// one a single cell over it: the first takes the no-truncation path through
+// fitCell, the second the ellipsis path, and only the second was covered by
+// the sweeps, which all use cells far longer than any column.
+func TestTableModel_TheGutterHoldsAtTheContentLimit(t *testing.T) {
+	InitStyles()
+	cols := []Column{{Title: "A"}, {Title: "B"}, {Title: "C"}}
+	for width := 12; width <= 60; width++ {
+		table := NewTableModel(cols)
+		table.SetSize(width, 6)
+		limit := table.contentWidths[0]
+		if limit < 2 {
+			continue
+		}
+		for _, length := range []int{limit - 1, limit, limit + 1} {
+			table.SetRows([]TableRow{testRow{id: "1", cols: []string{
+				strings.Repeat("a", length), "b", "c",
+			}}})
+			alloc := table.colWidths[0]
+			for _, line := range visibleLinesPadded(t, table) {
+				runes := []rune(line)
+				if len(runes) < alloc || strings.TrimSpace(string(runes[:alloc])) == "" {
+					continue
+				}
+				if runes[alloc-1] != ' ' {
+					t.Fatalf("width %d, cell of %d against a limit of %d: no gutter left:\n%s",
+						width, length, limit, line)
+				}
+			}
+		}
 	}
 }

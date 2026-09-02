@@ -1,10 +1,13 @@
 package swarm
 
 import (
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/moby/moby/api/types/swarm"
+	"github.com/moncho/dry/appui"
 	"github.com/moncho/dry/docker"
 )
 
@@ -280,3 +283,71 @@ func TestTasksModel_View(t *testing.T) {
 		t.Fatal("View() should not be empty")
 	}
 }
+
+// TestSwarmViews_EveryColumnKeepsItsGutterAtEveryWidth sweeps the swarm
+// column sets the way appui sweeps its own: at every width, the cell before
+// each column boundary must be a space, or one column's text runs into the
+// next one's. The sets live in this package, so the sweep does too.
+func TestSwarmViews_EveryColumnKeepsItsGutterAtEveryWidth(t *testing.T) {
+	appui.InitStyles()
+	nodes := NewNodesModel()
+	services := NewServicesModel()
+	stacks := NewStacksModel()
+	tasks := NewTasksModel()
+	sets := map[string]appui.TableModel{
+		"nodes":    nodes.table,
+		"services": services.table,
+		"stacks":   stacks.table,
+		"tasks":    tasks.table,
+	}
+
+	for name, tbl := range sets {
+		t.Run(name, func(t *testing.T) {
+			cells := make([]string, 8)
+			for i := range cells {
+				cells[i] = strings.Repeat(string(rune('a'+i)), 60)
+			}
+			for width := 20; width <= 210; width++ {
+				table := tbl
+				table.SetSize(width, 12)
+				table.SetRows([]appui.TableRow{sweepRow(cells)})
+
+				lines := strings.Split(table.View(), "\n")
+				if len(lines) < 2 {
+					t.Fatalf("width %d: expected a header and a row", width)
+				}
+				boundary := 0
+				for i := range cells {
+					boundary += table.ColumnWidth(i)
+					if boundary == 0 || boundary >= width {
+						break
+					}
+					if width := table.ColumnWidth(i); width < 2 {
+						// One cell holds the ellipsis, with nothing left
+						// for a gutter: the allocator prefers that to
+						// overflowing the table. See
+						// TestTableModel_FittingIsNeverTradedForSpacing.
+						continue
+					}
+					for row, line := range lines[:2] {
+						runes := []rune(ansi.Strip(line))
+						if len(runes) < boundary {
+							t.Fatalf("%s width %d: line %d is %d cells, expected %d",
+								name, width, row, len(runes), boundary)
+						}
+						if runes[boundary-1] != ' ' {
+							t.Fatalf("%s width %d: column %d butts the next on line %d:\n%s",
+								name, width, i, row, ansi.Strip(line))
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+// sweepRow is a row of pre-set cells for the width sweep.
+type sweepRow []string
+
+func (r sweepRow) Columns() []string { return r }
+func (r sweepRow) ID() string        { return "sweep" }

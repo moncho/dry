@@ -670,3 +670,65 @@ func TestServicesModel_RemovedRowFallsBackToTheRowAbove(t *testing.T) {
 		t.Fatalf("expected the row that took its place, got %s", got)
 	}
 }
+
+// The compose views' column set is the one the gutter bug was reported from
+// , three proportional columns among five fixed ones, and the unit sweep
+// in appui cannot reach it from another package. Sweep it here: at every
+// width, the cell before each column boundary must be a space.
+func TestComposeViews_EveryColumnKeepsItsGutterAtEveryWidth(t *testing.T) {
+	services := NewServicesModel()
+	projects := NewProjectsModel()
+	sets := map[string]appui.TableModel{
+		"services": services.table,
+		"projects": projects.table,
+	}
+	for name, tbl := range sets {
+		t.Run(name, func(t *testing.T) {
+			cells := make([]string, 8)
+			for i := range cells {
+				cells[i] = strings.Repeat(string(rune('a'+i)), 60)
+			}
+			for width := 20; width <= 210; width++ {
+				table := tbl
+				table.SetSize(width, 12)
+				table.SetRows([]appui.TableRow{sweepRow(cells)})
+
+				lines := strings.Split(table.View(), "\n")
+				if len(lines) < 2 {
+					t.Fatalf("width %d: expected a header and a row", width)
+				}
+				boundary := 0
+				for i := 0; i < len(cells)-1; i++ {
+					boundary += table.ColumnWidth(i)
+					if boundary >= width {
+						break
+					}
+					if width := table.ColumnWidth(i); width < 2 {
+						// One cell holds the ellipsis, with nothing left
+						// for a gutter: the allocator prefers that to
+						// overflowing the table. See
+						// TestTableModel_FittingIsNeverTradedForSpacing.
+						continue
+					}
+					for row, line := range lines[:2] {
+						runes := []rune(ansi.Strip(line))
+						if len(runes) < boundary {
+							t.Fatalf("%s width %d: line %d is %d cells, expected %d",
+								name, width, row, len(runes), boundary)
+						}
+						if runes[boundary-1] != ' ' {
+							t.Fatalf("%s width %d: column %d butts column %d on line %d:\n%s",
+								name, width, i, i+1, row, ansi.Strip(line))
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+// sweepRow is a row of pre-set cells for the width sweep.
+type sweepRow []string
+
+func (r sweepRow) Columns() []string { return r }
+func (r sweepRow) ID() string        { return "sweep" }

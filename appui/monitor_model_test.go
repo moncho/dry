@@ -215,6 +215,8 @@ func TestMonitor_ViewShowsContainerNames(t *testing.T) {
 func TestMonitor_ViewShowsContainerNamesOnNarrowTerminals(t *testing.T) {
 	// The fixed columns alone consume 142 columns; the proportional NAME
 	// column must still be visible (possibly truncated) below that width.
+	// It is truncated one cell short of its column so the name cannot run
+	// into the CPU LOAD bar that follows it.
 	stats := map[string]*docker.Stats{
 		"aaa": {CID: "aaa", Name: "nginx-proxy", CPUPercentage: 12.5},
 		"bbb": {CID: "bbb", Name: "postgres-db", CPUPercentage: 82.1},
@@ -226,9 +228,66 @@ func TestMonitor_ViewShowsContainerNamesOnNarrowTerminals(t *testing.T) {
 		m.refreshTable()
 
 		view := ansi.Strip(m.View())
-		for _, want := range []string{"NAME", "nginx-pro", "postgres-"} {
+		for _, want := range []string{"NAME", "nginx-pr", "postgres"} {
 			if !strings.Contains(view, want) {
 				t.Fatalf("width %d: expected %q in monitor view, got %q", width, want, view)
+			}
+		}
+		// The truncated name must be followed by the gutter, not by the
+		// next column's first cell.
+		if !strings.Contains(view, "nginx-pr… ") {
+			t.Fatalf("width %d: expected a space after the truncated name, got %q", width, view)
+		}
+	}
+}
+
+// The monitor's six fixed columns sum to 142, so 143 is the width where
+// NAME, the one proportional column, gets a single cell: it holds the
+// ellipsis and has nothing left for a gutter, which the allocator prefers to
+// overflowing the table. Below 143 the fixed columns alone do not fit and
+// NAME falls back to the 10-cell minimum; above it NAME has content and must
+// keep its gutter. Asserted from the allocation rather than by scanning for
+// ellipses, so the single-cell width asserts something instead of being
+// skipped.
+func TestMonitor_NameKeepsItsGutterExceptAtASingleCell(t *testing.T) {
+	stats := map[string]*docker.Stats{
+		"aaa": {CID: "aaa", Name: "nginx-proxy-with-a-long-name", CPUPercentage: 12.5},
+	}
+	for _, tc := range []struct {
+		width     int
+		wantCells int // NAME's allocation
+	}{
+		{141, 10}, {142, 10}, {143, 1}, {144, 2}, {150, 8},
+	} {
+		m := NewMonitorModel()
+		m.SetSize(tc.width, 25)
+		m.stats = stats
+		m.refreshTable()
+
+		start, alloc := m.table.ColumnWidth(0), m.table.ColumnWidth(1)
+		if alloc != tc.wantCells {
+			t.Errorf("width %d: NAME allocated %d cells, expected %d", tc.width, alloc, tc.wantCells)
+			continue
+		}
+		// The table's own render, not m.View(): the monitor's status line
+		// sits outside the columns and would answer for them.
+		for _, line := range strings.Split(ansi.Strip(m.table.View()), "\n") {
+			runes := []rune(line)
+			if len(runes) < start+alloc {
+				continue
+			}
+			cell := string(runes[start : start+alloc])
+			if strings.TrimSpace(cell) == "" {
+				continue // a line that is not part of the table
+			}
+			if alloc < 2 {
+				if cell != "…" {
+					t.Errorf("width %d: expected a bare ellipsis in a one-cell NAME, got %q", tc.width, cell)
+				}
+				continue
+			}
+			if runes[start+alloc-1] != ' ' {
+				t.Errorf("width %d: NAME runs into the next column: %q", tc.width, line)
 			}
 		}
 	}
