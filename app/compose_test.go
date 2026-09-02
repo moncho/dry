@@ -172,9 +172,10 @@ func TestComposeUpCmd_NoFilesRefusesRatherThanGuessing(t *testing.T) {
 	}
 }
 
-// TestComposeUpCmd_FilesMissingLocallyRefuses covers the remote-daemon and
-// moved-file case: ConfigFiles comes from a container label describing the
-// daemon host's filesystem, so the recorded path can be meaningless here.
+// TestComposeUpCmd_FilesMissingLocallyRefuses covers the moved-file and
+// brought-up-elsewhere case: ConfigFiles comes from a container label
+// recording the filesystem of whichever machine ran the compose client, so
+// the recorded path can be meaningless here.
 // An unreadable file must be treated exactly like no file at all.
 func TestComposeUpCmd_FilesMissingLocallyRefuses(t *testing.T) {
 	engine := &stubComposeEngine{}
@@ -592,11 +593,12 @@ func TestComposeDriftCmd_SkipsProjectsWithoutFiles(t *testing.T) {
 }
 
 // TestComposeDriftCmd_SkipsProjectsWhoseFilesAreNotLocal guards the recurring
-// error banner. ConfigFiles comes from a container label describing the
-// daemon host's filesystem, while the compose CLI runs locally: against a
-// remote DOCKER_HOST, or after the file moved, ConfigHashes fails for that
+// error banner. ConfigFiles comes from a container label recording the
+// filesystem of whichever machine ran the compose client: for a project
+// brought up on another machine, or whose file has moved, ConfigHashes fails
+// for that
 // project on every refresh cycle and the model turns each failure into
-// "Compose drift check failed: ..." — permanent for a remote daemon. A file
+// "Compose drift check failed: ...", on every cycle. A file
 // dry cannot read is not a failure, it is an unknown file, which drift
 // already handles by skipping silently.
 func TestComposeDriftCmd_SkipsProjectsWhoseFilesAreNotLocal(t *testing.T) {
@@ -1069,5 +1071,67 @@ func TestComposeDriftMsg_ErrSurfacesAsStatusMessage(t *testing.T) {
 	}
 	if !strings.Contains(status.text, failure.Error()) {
 		t.Fatalf("expected the status message to name the failure, got %q", status.text)
+	}
+}
+
+// TestComposeDownCmd_TargetsByLabelWhenTheFilesAreNotHere is the point of
+// down being unguarded. Compose removes a project by its container labels,
+// so down is the one action that works when the recorded compose file is not
+// on this host, but only if dry stops handing compose that path: `-f` on a
+// file that does not exist makes compose fail on the file instead of
+// removing the project, in exactly the moved-file and elsewhere case
+// where removing by label is the only thing that can work.
+func TestComposeDownCmd_TargetsByLabelWhenTheFilesAreNotHere(t *testing.T) {
+	engine := &stubComposeEngine{}
+	p := docker.ComposeProject{
+		Name:        "web",
+		WorkingDir:  "/srv/web",
+		ConfigFiles: []string{"/srv/web/compose.yaml"},
+	}
+
+	msg := composeDownCmd(engine, p)()
+	if _, ok := msg.(showStreamingLessMsg); !ok {
+		t.Fatalf("expected down to run, got %T", msg)
+	}
+	if len(engine.downCalls) != 1 {
+		t.Fatalf("expected one Down call, got %+v", engine.downCalls)
+	}
+	call := engine.downCalls[0]
+	if call.Name != "web" {
+		t.Fatalf("expected the project name to be kept, got %+v", call)
+	}
+	if len(call.Files) != 0 {
+		t.Fatalf("expected no -f for files that are not on this host, got %v", call.Files)
+	}
+	if call.WorkingDir != "" {
+		t.Fatalf("expected no --project-directory for a path that is not here, got %q", call.WorkingDir)
+	}
+}
+
+// A project whose files are here keeps them: that is what `docker compose
+// down` in the project directory does. down does not need them (it finds
+// containers, networks and volumes by label), so this pins the narrower
+// rule: paths are dropped only when they are unusable.
+func TestComposeDownCmd_KeepsFilesThatAreHere(t *testing.T) {
+	engine := &stubComposeEngine{}
+	dir, file := composeFileFixture(t)
+
+	msg := composeDownCmd(engine, docker.ComposeProject{
+		Name:        "web",
+		WorkingDir:  dir,
+		ConfigFiles: []string{file},
+	})()
+	if _, ok := msg.(showStreamingLessMsg); !ok {
+		t.Fatalf("expected down to run, got %T", msg)
+	}
+	if len(engine.downCalls) != 1 {
+		t.Fatalf("expected one Down call, got %+v", engine.downCalls)
+	}
+	call := engine.downCalls[0]
+	if len(call.Files) != 1 || call.Files[0] != file {
+		t.Fatalf("expected the readable file to be passed, got %v", call.Files)
+	}
+	if call.WorkingDir != dir {
+		t.Fatalf("expected the working directory to be passed, got %q", call.WorkingDir)
 	}
 }
