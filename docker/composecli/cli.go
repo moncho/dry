@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -27,6 +28,26 @@ import (
 // freezes whatever UI is waiting on it. See exec.Cmd.WaitDelay.
 const composeCancelGrace = 2 * time.Second
 
+// composeReadTimeout bounds the calls dry makes on its own: ConfigHashes and
+// ResolveProject on every cycle, the Detect probe once at startup. Compose
+// has no timeout of its own and the model gates each cycle on the last one
+// finishing, so one unanswered call stopped every later refresh. It bounds
+// the wait, not the launch or an uninterruptible child: exec watches the
+// context only once the process runs, so a `docker` on a wedged mount still
+// gates refreshes. Write actions get no bound; see stream.
+const composeReadTimeout = 10 * time.Second
+
+// composeConfigTimeout bounds `compose config`, which the user asks for and
+// waits on. Far longer than the polled bound: nothing retries it, and a cold
+// plugin, a project with many include:s or a slow remote context can each
+// cost seconds before compose has done any work.
+const composeConfigTimeout = 60 * time.Second
+
+// ErrProbeTimeout reports that the `docker compose version` probe did not
+// answer, as opposed to answering that the plugin is not installed. Both
+// leave no engine, but only one is fixed by installing the plugin.
+var ErrProbeTimeout = errors.New("docker compose version probe timed out")
+
 // Options configures how compose is invoked.
 type Options struct {
 	// Host is the Docker host to target, i.e. the value of DOCKER_HOST.
@@ -34,6 +55,17 @@ type Options struct {
 	Host string
 	// Extra is appended to the child environment, mainly for tests.
 	Extra []string
+	// ReadTimeout overrides the bound on every read-only call, Config
+	// included, unless ConfigTimeout is set as well. Zero means the
+	// per-call default; tests set it small.
+	ReadTimeout time.Duration
+	// ConfigTimeout overrides the bound on Config alone, which is the one
+	// read the user waits on rather than dry polling it. Zero falls back to
+	// ReadTimeout and then to composeConfigTimeout.
+	ConfigTimeout time.Duration
+	// CancelGrace overrides composeCancelGrace. Zero means the default;
+	// tests set it small.
+	CancelGrace time.Duration
 }
 
 // CLI runs `docker compose` commands.
@@ -44,15 +76,52 @@ type CLI struct {
 
 // Detect verifies that the compose plugin is available and records its
 // version. It runs one short-lived process and must be called from a command,
-// never from the UI update path.
+// never from the UI update path. The probe is bounded like the other
+// read-only calls, and nothing retries it, so the bound does not save
+// detection: it turns an indefinite hang into a reported failure, which the
+// model can tell the user about instead of leaving compose quietly absent
+// for the session.
 func Detect(opts Options) (*CLI, error) {
 	c := &CLI{opts: opts}
-	out, err := exec.Command("docker", "compose", "version").CombinedOutput()
-	if err != nil {
+	bound := c.timeout(composeReadTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), bound)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "docker", "compose", "version")
+	cmd.WaitDelay = c.cancelGrace()
+	killed := killSwitch(cmd)
+	out, err := cmd.CombinedOutput()
+	// ErrWaitDelay means the command exited fine and a grandchild held the
+	// pipe open, so the version is already in hand: not a failure.
+	if err != nil && !errors.Is(err, exec.ErrWaitDelay) {
+		if killed.Load() {
+			return nil, fmt.Errorf("%w after %s", ErrProbeTimeout, bound)
+		}
 		return nil, fmt.Errorf("docker compose plugin not available: %w", err)
 	}
 	c.version = strings.TrimSpace(string(out))
 	return c, nil
+}
+
+// timeout is the bound for a read-only call: the base the caller names,
+// unless Options overrides it. ConfigTimeout applies to composeConfigTimeout
+// only, so the polled and user-initiated bounds can be set apart; ReadTimeout
+// overrides both, which is what most tests want.
+func (c *CLI) timeout(base time.Duration) time.Duration {
+	if base == composeConfigTimeout && c.opts.ConfigTimeout > 0 {
+		return c.opts.ConfigTimeout
+	}
+	if c.opts.ReadTimeout > 0 {
+		return c.opts.ReadTimeout
+	}
+	return base
+}
+
+// cancelGrace is how long a killed command's output pipes are waited on.
+func (c *CLI) cancelGrace() time.Duration {
+	if c.opts.CancelGrace > 0 {
+		return c.opts.CancelGrace
+	}
+	return composeCancelGrace
 }
 
 // Version is the version string reported by the plugin.
@@ -143,7 +212,7 @@ func (c *CLI) stream(ctx context.Context, p Project, verb ...string) (io.ReadClo
 	ctx, cancel := context.WithCancel(ctx)
 	cmd := exec.CommandContext(ctx, "docker", c.args(p, verb...)...)
 	cmd.Env = c.env()
-	cmd.WaitDelay = composeCancelGrace
+	cmd.WaitDelay = c.cancelGrace()
 	pr, pw := io.Pipe()
 	cmd.Stdout = pw
 	cmd.Stderr = pw
@@ -192,20 +261,93 @@ func classifyExit(err error) error {
 	return err
 }
 
-// output runs a compose command to completion and returns its stdout.
-func (c *CLI) output(ctx context.Context, p Project, verb ...string) (string, error) {
+// output runs a read-only compose command to completion and returns its
+// stdout, bounded by the given timeout or by the caller's context, whichever
+// expires first, so the bound it reports is the one that applied. WaitDelay
+// caps cmd.Wait too: a grandchild holding the write end open outlives the
+// child the deadline killed.
+//
+// The branches are ordered on whether this package killed the process
+// rather than on what the context says; killSwitch is what records it.
+func (c *CLI) output(ctx context.Context, bound time.Duration, p Project, verb ...string) (string, error) {
+	if deadline, ok := ctx.Deadline(); ok {
+		if remaining := time.Until(deadline); remaining < bound {
+			bound = remaining
+		}
+	}
+	ctx, cancel := context.WithTimeout(ctx, bound)
+	defer cancel()
 	cmd := exec.CommandContext(ctx, "docker", c.args(p, verb...)...)
 	cmd.Env = c.env()
+	cmd.WaitDelay = c.cancelGrace()
+	killed := killSwitch(cmd)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
-	if err != nil {
+	switch {
+	case err == nil:
+		return string(out), nil
+	case errors.Is(err, exec.ErrWaitDelay):
+		// ErrWaitDelay means the command exited fine and a grandchild held
+		// the pipe open, so the output is already complete: the draining
+		// copy had the whole grace period. A slow bystander, not a failure.
+		return string(out), nil
+	case !killed.Load():
+		// The process was not killed by us: either it chose its own non-zero
+		// exit, and compose's diagnosis beats the exit code, or it never
+		// started, which leaves nothing on stderr and falls through to err.
 		if msg := strings.TrimSpace(stderr.String()); msg != "" {
 			return "", fmt.Errorf("%s", msg)
 		}
 		return "", err
+	case errors.Is(ctx.Err(), context.DeadlineExceeded):
+		return "", fmt.Errorf("docker compose %s timed out after %s%s",
+			strings.Join(verb, " "), bound.Round(time.Millisecond), hint(&stderr))
+	default:
+		return "", fmt.Errorf("docker compose %s was cancelled%s",
+			strings.Join(verb, " "), hint(&stderr))
 	}
-	return string(out), nil
+}
+
+// killSwitch wraps cmd.Cancel so the caller can tell a process this package
+// killed from one that failed on its own, which the exit status cannot carry
+// everywhere: a signalled process has no exit code on POSIX, but Windows
+// kills with TerminateProcess(h, 1), indistinguishable from compose choosing
+// to exit 1.
+//
+// The flag is set only when the kill found something to kill. exec calls
+// Cancel whenever the context is done before the result has been handed
+// over, which includes a process that finished a moment earlier, and Kill
+// then reports os.ErrProcessDone; exec treats that as "not interrupted" and
+// so does this. What is left is the window between a process exiting and
+// being reaped, where a kill still succeeds: a failure landing there is
+// reported as whichever of the deadline or the cancellation applies, with
+// compose's own stderr appended by hint.
+//
+// Only for a Cmd from exec.CommandContext: that is what installs the Cancel
+// this wraps, and Start rejects a Cancel on a Cmd built any other way.
+func killSwitch(cmd *exec.Cmd) *atomic.Bool {
+	var killed atomic.Bool
+	kill := cmd.Cancel
+	cmd.Cancel = func() error {
+		err := kill()
+		if !errors.Is(err, os.ErrProcessDone) {
+			killed.Store(true)
+		}
+		return err
+	}
+	return &killed
+}
+
+// hint returns what the killed process had written to stderr, as a suffix
+// for the message saying why it was killed. It explains where compose got
+// stuck, not what went wrong: it never got to report its own verdict.
+func hint(stderr *bytes.Buffer) string {
+	msg := strings.TrimSpace(stderr.String())
+	if msg == "" {
+		return ""
+	}
+	return ": " + strings.ReplaceAll(msg, "\n", "; ")
 }
 
 // Up creates and starts the project, or only the named services.
@@ -223,16 +365,17 @@ func (c *CLI) Recreate(ctx context.Context, p Project, service string) (io.ReadC
 	return c.stream(ctx, p, "up", "-d", "--force-recreate", service)
 }
 
-// Config returns the project's rendered configuration.
+// Config returns the project's rendered configuration. It gets the longer,
+// user-initiated bound: the c key waits on it and nothing retries it.
 func (c *CLI) Config(ctx context.Context, p Project) (string, error) {
-	return c.output(ctx, p, "config")
+	return c.output(ctx, c.timeout(composeConfigTimeout), p, "config")
 }
 
 // ConfigHashes returns the per-service config hash of the project's files.
 // These are comparable to each container's com.docker.compose.config-hash
 // label, which is how compose itself decides whether to recreate a container.
 func (c *CLI) ConfigHashes(ctx context.Context, p Project) (map[string]string, error) {
-	out, err := c.output(ctx, p, "config", "--hash=*")
+	out, err := c.output(ctx, c.timeout(composeReadTimeout), p, "config", "--hash=*")
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +387,7 @@ func (c *CLI) ConfigHashes(ctx context.Context, p Project) (map[string]string, e
 // directory name.
 func (c *CLI) ResolveProject(ctx context.Context, dir string, files []string) (Project, error) {
 	probe := Project{WorkingDir: dir, Files: files}
-	out, err := c.output(ctx, probe, "config", "--format", "json")
+	out, err := c.output(ctx, c.timeout(composeReadTimeout), probe, "config", "--format", "json")
 	if err != nil {
 		return Project{}, err
 	}

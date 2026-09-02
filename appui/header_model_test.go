@@ -95,3 +95,58 @@ func TestHeaderModel_LinesFitWidth(t *testing.T) {
 		}
 	}
 }
+
+// The separator is one line in the layout's height budget, so anything the
+// message bar carries has to end up on one line: errors.Join produces
+// newline-separated text (a compose drift check reports one failure per
+// project), and a message wider than the terminal would be wrapped by
+// lipgloss. Either way the extra lines push the footer off the screen.
+func TestHeaderModel_SeparatorLineKeepsMessagesToOneLine(t *testing.T) {
+	InitStyles()
+	m := newLoadedHeader(&mocks.DockerDaemonMock{}, 40)
+
+	for name, message := range map[string]string{
+		"joined errors":   "web: config timed out\napi: config timed out\ndb: config timed out",
+		"overlong":        strings.Repeat("compose drift check failed ", 10),
+		"both":            strings.Repeat("a", 60) + "\n" + strings.Repeat("b", 60),
+		"carriage return": "web: pulling\rweb: pulled",
+		"backspace":       "web: 50%\b\b\b100%",
+		"bell":            "web: done\a",
+		"tab":             "web:\tconfig timed out",
+	} {
+		t.Run(name, func(t *testing.T) {
+			line := m.SeparatorLine(message)
+			if got := strings.Count(line, "\n"); got != 0 {
+				t.Fatalf("expected one line, got %d newlines in %q", got, ansi.Strip(line))
+			}
+			if got := ansi.StringWidth(line); got != 40 {
+				t.Fatalf("expected the separator to be exactly 40 wide, got %d", got)
+			}
+		})
+	}
+
+	// Width and newline count do not see a control character: lipgloss
+	// passes \r, \b and BEL through untouched and counts them as zero
+	// width, so only the text says whether they were removed.
+	for name, tc := range map[string]struct{ in, want string }{
+		"carriage return": {"web: pulling\rweb: pulled", "web: pullingweb: pulled"},
+		"backspace":       {"web: 50%\b\b\b100%", "web: 50%100%"},
+		"bell":            {"web: done\a", "web: done"},
+		"tab":             {"web:\tconfig timed out", "web: config timed out"},
+		"newline":         {"web: one\napi: two", "web: one; api: two"},
+	} {
+		t.Run("text/"+name, func(t *testing.T) {
+			got := strings.TrimRight(ansi.Strip(m.SeparatorLine(tc.in)), " ")
+			if got != tc.want {
+				t.Errorf("SeparatorLine(%q) = %q, want %q", tc.in, got, tc.want)
+			}
+		})
+	}
+
+	// The first failure still has to be readable, not replaced by an
+	// ellipsis at the front.
+	line := ansi.Strip(m.SeparatorLine("web: config timed out\napi: config timed out"))
+	if !strings.HasPrefix(line, "web: config timed out") {
+		t.Fatalf("expected the first message to survive, got %q", line)
+	}
+}
