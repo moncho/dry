@@ -1,7 +1,7 @@
 package app
 
-// Per-view key handling, extracted mechanically from handleKeyPress in
-// model.go. Bodies are unchanged; behavior is locked by the golden view
+// Per-view key handling, originally extracted from handleKeyPress in
+// model.go and since changed here: behaviour is locked by the golden view
 // snapshots and the key-handling tests.
 
 import (
@@ -21,12 +21,9 @@ func (m model) handleComposeProjectsKeys(msg tea.KeyPressMsg) (tea.Model, tea.Cm
 		}
 		// Project row: drill into project resources
 		if p := m.composeProjects.SelectedProject(); p != nil {
-			m.previousView = m.view
-			m.view = ComposeServices
-			m.selectedProject = p.Name
-			return m, loadComposeServicesCmd(m.daemon, p.Name)
+			return m.openComposeServices(p.Name)
 		}
-		return m, nil
+		return m, m.composeNoProjectCmd("Inspect")
 	case "l", "L":
 		if svc := m.composeProjects.SelectedService(); svc != nil {
 			return m, showComposeLogsCmd(m.daemon, svc.Project, svc.Name)
@@ -34,7 +31,7 @@ func (m model) handleComposeProjectsKeys(msg tea.KeyPressMsg) (tea.Model, tea.Cm
 		if p := m.composeProjects.SelectedProject(); p != nil {
 			return m, showComposeLogsCmd(m.daemon, p.Name, "")
 		}
-		return m, nil
+		return m, m.composeNoProjectCmd("Logs")
 	case "f5":
 		return m, loadComposeProjectsCmd(m.daemon)
 	case "ctrl+t":
@@ -61,23 +58,73 @@ func (m model) handleComposeProjectsKeys(msg tea.KeyPressMsg) (tea.Model, tea.Cm
 		if p := m.composeProjects.SelectedProject(); p != nil {
 			return m, composeUpCmd(m.composeCLI, *p)
 		}
-		return m, nil
+		return m, m.composeNoProjectCmd("Up")
 	case "d":
 		if p := m.composeProjects.SelectedProject(); p != nil {
 			return m.showPrompt(fmt.Sprintf("Take project %s down?", p.Name),
 				"compose-project-down", p.Name), nil
 		}
-		return m, nil
+		return m, m.composeNoProjectCmd("Down")
 	case "c":
 		if p := m.composeProjects.SelectedProject(); p != nil {
 			return m, composeConfigCmd(m.composeCLI, *p)
 		}
-		return m, nil
+		return m, m.composeNoProjectCmd("Config")
 	}
 	var cmd tea.Cmd
 	m.composeProjects, cmd = m.composeProjects.Update(msg)
 	return m, cmd
 
+}
+
+// composeSelectionCmd reports that a key has no row it can act on. The
+// Compose Services view mixes networks and volumes in with its services, so
+// several documented keys land on rows they cannot act on, and a key that
+// does nothing and says nothing reads as broken.
+func composeSelectionCmd(text string) tea.Cmd {
+	return func() tea.Msg {
+		return statusMessageMsg{text: text, expiry: 3 * time.Second}
+	}
+}
+
+// composeNoProjectCmd explains that a project key was pressed with no row
+// under the cursor, which the Compose Projects view reaches whenever the
+// list is empty: nothing loaded yet, a filter matching nothing, or a host
+// with no compose projects. Same rule as the services view: a documented
+// key that does nothing and says nothing reads as broken.
+func (m model) composeNoProjectCmd(action string) tea.Cmd {
+	switch {
+	case m.composeProjects.Filtered():
+		return composeSelectionCmd(action + " needs a project, and the filter matches none")
+	case m.composeProjects.ProjectCount() == 0:
+		return composeSelectionCmd(action + " needs a project, and none is loaded")
+	default:
+		return composeSelectionCmd(action + " needs a project, and none is selected")
+	}
+}
+
+// composeNotAServiceCmd explains that a service key was pressed on
+// something else. It names the row when there is one, because a highlighted
+// network or volume plus "select a service first" reads as a bug in dry,
+// and otherwise names the reason there is none: still loading, filtered
+// down to nothing, or a project with no resources at all.
+func (m model) composeNotAServiceCmd(action string) tea.Cmd {
+	switch {
+	case m.composeServices.SelectedNetwork() != nil:
+		return composeSelectionCmd(action + " only applies to services, and a network is selected")
+	case m.composeServices.SelectedVolume() != nil:
+		return composeSelectionCmd(action + " only applies to services, and a volume is selected")
+	case m.composeServices.Loading():
+		// The load is several round trips behind the view switch, so
+		// calling the project empty here would be a guess.
+		return composeSelectionCmd(action + " needs a service, and this project is still loading")
+	case m.composeServices.Filtered():
+		// A filter can narrow the list to a header, the one row the cursor
+		// rests on that resolves to nothing. Name the filter, not the row.
+		return composeSelectionCmd(action + " only applies to services, and the filter matches no service")
+	default:
+		return composeSelectionCmd(action + " needs a service, and this project has none")
+	}
 }
 
 // handleComposeServicesKeys handles key presses for the Compose services view.
@@ -100,50 +147,60 @@ func (m model) handleComposeServicesKeys(msg tea.KeyPressMsg) (tea.Model, tea.Cm
 		if v := m.composeServices.SelectedVolume(); v != nil {
 			return m, inspectVolumeCmd(m.daemon, v.Name)
 		}
-		return m, nil
+		switch {
+		case m.composeServices.Loading():
+			return m, composeSelectionCmd("Nothing to inspect yet: this project is still loading")
+		case m.composeServices.Filtered():
+			return m, composeSelectionCmd("Nothing to inspect: the filter matches no service, network or volume")
+		default:
+			return m, composeSelectionCmd("Nothing to inspect: this project has no services, networks or volumes")
+		}
 	case "l", "L":
 		if svc := m.composeServices.SelectedService(); svc != nil {
 			return m, showComposeLogsCmd(m.daemon, svc.Project, svc.Name)
 		}
-		return m, nil
+		return m, m.composeNotAServiceCmd("Logs")
 	case "f5":
-		return m, loadComposeServicesCmd(m.daemon, m.selectedProject)
+		reload := m.loadComposeServices(m.selectedProject)
+		return m, reload
 	case "ctrl+s":
 		if svc := m.composeServices.SelectedService(); svc != nil {
 			return m.showPrompt(fmt.Sprintf("Start service %s?", svc.Name),
 				"compose-start", svc.Project+"/"+svc.Name), nil
 		}
+		return m, m.composeNotAServiceCmd("Start")
 	case "ctrl+t":
 		if svc := m.composeServices.SelectedService(); svc != nil {
 			return m.showPrompt(fmt.Sprintf("Stop service %s?", svc.Name),
 				"compose-stop", svc.Project+"/"+svc.Name), nil
 		}
+		return m, m.composeNotAServiceCmd("Stop")
 	case "ctrl+r":
 		if svc := m.composeServices.SelectedService(); svc != nil {
 			return m.showPrompt(fmt.Sprintf("Restart service %s?", svc.Name),
 				"compose-restart", svc.Project+"/"+svc.Name), nil
 		}
+		return m, m.composeNotAServiceCmd("Restart")
 	case "ctrl+e":
 		if svc := m.composeServices.SelectedService(); svc != nil {
 			return m.showPrompt(fmt.Sprintf("Remove service %s containers?", svc.Name),
 				"compose-rm", svc.Project+"/"+svc.Name), nil
 		}
+		return m, m.composeNotAServiceCmd("Remove")
 	case "u":
 		if svc := m.composeServices.SelectedService(); svc != nil {
 			return m, composeUpCmd(m.composeCLI, m.composeProjectFor(svc.Project), svc.Name)
 		}
-		// The cursor can sit on a section header, a network or a volume,
-		// none of which u can act on. Say so: a documented key that does
-		// nothing and says nothing reads as broken.
-		return m, func() tea.Msg {
-			return statusMessageMsg{
-				text:   "Select a service first",
-				expiry: 3 * time.Second,
-			}
+		// Say where the whole-project version lives. Not "esc, then u":
+		// in workspace mode with a pinned context the first esc only
+		// clears the pin.
+		if m.composeServices.SelectedNetwork() != nil || m.composeServices.SelectedVolume() != nil {
+			return m, composeSelectionCmd("Up applies to a service here; back on the projects list, u brings up the whole project")
 		}
+		return m, m.composeNotAServiceCmd("Up")
 	case "c":
 		if m.selectedProject == "" {
-			return m, nil
+			return m, composeSelectionCmd("Config needs a project, and none is open")
 		}
 		return m, composeConfigCmd(m.composeCLI, m.composeProjectFor(m.selectedProject))
 	}

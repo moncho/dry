@@ -31,7 +31,11 @@ func newServiceRow(s docker.ComposeService, sync docker.ServiceSync) serviceRow 
 }
 
 func (r serviceRow) Columns() []string { return r.columns }
-func (r serviceRow) ID() string        { return r.service.Name }
+
+// ID prefixes the service name the way the network and volume rows do:
+// service names come from a user-controlled label, so an unprefixed
+// "net:x" would collide with the network x.
+func (r serviceRow) ID() string { return "svc:" + r.service.Name }
 
 // sectionRow is a visual group header separating resource types.
 type sectionRow struct {
@@ -82,12 +86,17 @@ func newVolumeRow(v docker.ComposeVolume) volumeRow {
 func (r volumeRow) Columns() []string { return r.columns }
 func (r volumeRow) ID() string        { return "vol:" + r.volume.Name }
 
-// ServicesLoadedMsg carries loaded compose resources for a project.
+// ServicesLoadedMsg carries loaded compose resources for a project. Gen is
+// the load's generation, so a load that lands after a newer one is ignored;
+// two are in flight after an f5 during a container event. Generations start
+// at 1, so a message built by hand with Gen unset is older than every real
+// load and is dropped once any load has been applied.
 type ServicesLoadedMsg struct {
 	Services []docker.ComposeService
 	Networks []docker.ComposeNetwork
 	Volumes  []docker.ComposeVolume
 	Project  string
+	Gen      uint64
 }
 
 // ServicesModel is the Compose project resources view.
@@ -100,6 +109,7 @@ type ServicesModel struct {
 	networks     []docker.ComposeNetwork
 	volumes      []docker.ComposeVolume
 	drift        map[string]map[string]docker.ServiceSync
+	loading      bool
 }
 
 // NewServicesModel creates a compose services list model.
@@ -123,6 +133,16 @@ func NewServicesModel() ServicesModel {
 // FilterActive returns true when the filter input is active.
 func (m ServicesModel) FilterActive() bool { return m.filter.Active() }
 
+// Filtered reports whether a filter is narrowing the list, open or not. It
+// tells "no services" apart from "the filter is hiding them".
+func (m ServicesModel) Filtered() bool { return m.table.FilterText() != "" }
+
+// Loading reports that the first load for this project has not arrived
+// yet, the state where calling the project empty would be a guess. An f5
+// or an event-driven reload does not raise it: the rows on screen stay
+// answerable while it runs.
+func (m ServicesModel) Loading() bool { return m.loading }
+
 // SetSize updates the table dimensions.
 func (m *ServicesModel) SetSize(w, h int) {
 	filterH := 0
@@ -136,6 +156,7 @@ func (m *ServicesModel) SetSize(w, h int) {
 // SetServices replaces the resource list with services, networks, and volumes.
 func (m *ServicesModel) SetServices(services []docker.ComposeService, networks []docker.ComposeNetwork, volumes []docker.ComposeVolume, project string) {
 	m.project = project
+	m.loading = false
 	m.serviceCount = len(services)
 	m.services = services
 	m.networks = networks
@@ -174,51 +195,145 @@ func (m *ServicesModel) refreshRows() {
 		}
 	}
 
+	selected := m.selectedID()
 	m.table.SetRows(rows)
+	// A rebuild has no direction of travel: prefer the row above, since
+	// everything below a removed row has shifted up.
+	m.restoreSelection(selected, false)
+}
+
+// selectedID identifies the row the cursor is on, or "" when no key can act
+// on it. A header is deliberately unidentified: following one across a
+// rebuild would put the cursor straight back on it.
+func (m ServicesModel) selectedID() string {
+	row := m.table.SelectedRow()
+	if row == nil || !selectableRow(row) {
+		return ""
+	}
+	return row.ID()
+}
+
+// restoreSelection puts the cursor back on the row it was on, and when that
+// row is gone leaves it wherever SetRows clamped it, on the last row if the
+// list shrank past it, with ensureSelectableRow moving it off a header.
+// Following the row rather than the index is what keeps the selection still
+// while the list moves under it: by index, a reload, a sort or a filter
+// keystroke slides it silently onto a neighbour, often a different kind of
+// resource.
+func (m *ServicesModel) restoreSelection(id string, forward bool) {
+	if id != "" && m.table.SelectRowByID(id) {
+		return
+	}
+	m.ensureSelectableRow(forward)
+}
+
+// SetProject clears the resource list and records the project being loaded.
+// The view switches before the resources arrive, so without this it goes on
+// rendering the previous project's rows, under the previous project's title,
+// until the load lands. Clearing both together is what makes the empty view
+// mean "loading" rather than "this project is empty".
+func (m *ServicesModel) SetProject(project string) {
+	m.project = project
+	m.serviceCount = 0
+	m.services = nil
+	m.networks = nil
+	m.volumes = nil
+	// Until the load lands, empty means "not loaded yet".
+	m.loading = true
+	// The filter goes with the project it was typed for: carried over, it
+	// hides rows the user never filtered, usually all of them.
+	m.filter.Clear()
+	m.table.SetFilter("")
+	m.refreshRows()
+}
+
+// composeResource is what a row resolves to. Exactly one field is set, or
+// none at all for a row that is only decoration.
+type composeResource struct {
+	service *docker.ComposeService
+	network *docker.ComposeNetwork
+	volume  *docker.ComposeVolume
+}
+
+// empty reports that the row resolves to nothing a key could act on.
+func (r composeResource) empty() bool {
+	return r.service == nil && r.network == nil && r.volume == nil
+}
+
+// resourceRow is a row that resolves to one of the view's resources.
+// Selectability and the Selected* accessors read this same resolution, so
+// they cannot disagree about what a row is. The cursor can still be left on
+// a header when a filter leaves nothing else.
+type resourceRow interface {
+	appui.TableRow
+	resource() composeResource
+}
+
+func (r serviceRow) resource() composeResource { return composeResource{service: &r.service} }
+func (r networkRow) resource() composeResource { return composeResource{network: &r.network} }
+func (r volumeRow) resource() composeResource  { return composeResource{volume: &r.volume} }
+
+// resourceOf resolves a row, returning the empty resource for decoration.
+func resourceOf(row appui.TableRow) composeResource {
+	if r, ok := row.(resourceRow); ok {
+		return r.resource()
+	}
+	return composeResource{}
+}
+
+// selectableRow reports whether a key can act on the given row.
+func selectableRow(row appui.TableRow) bool {
+	return !resourceOf(row).empty()
+}
+
+// ensureSelectableRow moves the cursor off a section header onto the nearest
+// row a key can act on, preferring the direction the user was travelling. It
+// falls back to the other one when that runs out, which is what carries a
+// fresh load past row 0, always a header. With no selectable row at all, a
+// filter matching only a header, the cursor stays put.
+func (m *ServicesModel) ensureSelectableRow(forward bool) {
+	rows := m.table.FilteredRows()
+	cursor := m.table.Cursor()
+	if cursor < 0 || cursor >= len(rows) || selectableRow(rows[cursor]) {
+		return
+	}
+	steps := []int{1, -1}
+	if !forward {
+		steps = []int{-1, 1}
+	}
+	for _, step := range steps {
+		for i := cursor + step; i >= 0 && i < len(rows); i += step {
+			if selectableRow(rows[i]) {
+				m.table.SetCursor(i)
+				return
+			}
+		}
+	}
 }
 
 // SelectedService returns the service under the cursor, or nil.
 func (m ServicesModel) SelectedService() *docker.ComposeService {
-	row := m.table.SelectedRow()
-	if row == nil {
-		return nil
-	}
-	if r, ok := row.(serviceRow); ok {
-		return &r.service
-	}
-	return nil
+	return resourceOf(m.table.SelectedRow()).service
 }
 
 // SelectedNetwork returns the network under the cursor, or nil.
 func (m ServicesModel) SelectedNetwork() *docker.ComposeNetwork {
-	row := m.table.SelectedRow()
-	if row == nil {
-		return nil
-	}
-	if r, ok := row.(networkRow); ok {
-		return &r.network
-	}
-	return nil
+	return resourceOf(m.table.SelectedRow()).network
 }
 
 // SelectedVolume returns the volume under the cursor, or nil.
 func (m ServicesModel) SelectedVolume() *docker.ComposeVolume {
-	row := m.table.SelectedRow()
-	if row == nil {
-		return nil
-	}
-	if r, ok := row.(volumeRow); ok {
-		return &r.volume
-	}
-	return nil
+	return resourceOf(m.table.SelectedRow()).volume
 }
 
 // Update handles key events.
 func (m ServicesModel) Update(msg tea.Msg) (ServicesModel, tea.Cmd) {
 	if m.filter.Active() {
 		var cmd tea.Cmd
+		selected := m.selectedID()
 		m.filter, cmd = m.filter.Update(msg)
 		m.table.SetFilter(m.filter.Value())
+		m.restoreSelection(selected, true)
 		return m, cmd
 	}
 
@@ -226,7 +341,10 @@ func (m ServicesModel) Update(msg tea.Msg) (ServicesModel, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "f1":
+			// Sorting reorders every row: follow the row, not the index.
+			selected := m.selectedID()
 			m.table.NextSort()
+			m.restoreSelection(selected, true)
 			return m, nil
 		case "%":
 			cmd := m.filter.Activate()
@@ -235,7 +353,24 @@ func (m ServicesModel) Update(msg tea.Msg) (ServicesModel, tea.Cmd) {
 	}
 	var cmd tea.Cmd
 	m.table, cmd = m.table.Update(msg)
+	m.ensureSelectableRow(!movesUp(msg))
 	return m, cmd
+}
+
+// movesUp reports whether msg is an upward navigation key, the only thing
+// that makes header-skipping search backwards. GotoTop is deliberately not
+// one: it lands on row 0, always a header, so the skip continues forward.
+// Exhaustive for NewTableModel's keymap, which is where the bindings are.
+func movesUp(msg tea.Msg) bool {
+	key, ok := msg.(tea.KeyPressMsg)
+	if !ok {
+		return false
+	}
+	switch key.String() {
+	case "up", "k", "pgup":
+		return true
+	}
+	return false
 }
 
 // View renders the services list.

@@ -532,34 +532,6 @@ func TestPalette_RecreateExecutesAgainstTheEngine(t *testing.T) {
 	}
 }
 
-// TestComposeServicesView_UWithNoSelectionSaysSo covers the fresh Compose
-// Services view, whose cursor starts on the "Services" section header rather
-// than on a service. u there used to return nil: a documented key that does
-// nothing and says nothing reads as broken.
-func TestComposeServicesView_UWithNoSelectionSaysSo(t *testing.T) {
-	m := newTestModel()
-	m.view = ComposeServices
-	m.composeCLI = &stubComposeEngine{}
-	m.composeServices.SetServices([]docker.ComposeService{
-		{Project: "web", Name: "api"},
-	}, nil, nil, "web")
-	if m.composeServices.SelectedService() != nil {
-		t.Fatal("precondition: a fresh view must have no service selected")
-	}
-
-	_, cmd := m.Update(tea.KeyPressMsg{Code: 'u'})
-	if cmd == nil {
-		t.Fatal("expected u to explain itself when nothing is selected")
-	}
-	status, ok := cmd().(statusMessageMsg)
-	if !ok {
-		t.Fatalf("expected a status message, got %T", cmd())
-	}
-	if !strings.Contains(strings.ToLower(status.text), "service") {
-		t.Fatalf("expected the message to say what to select, got %q", status.text)
-	}
-}
-
 func TestComposeRecreateCmd_Streams(t *testing.T) {
 	engine := &stubComposeEngine{}
 	dir, file := composeFileFixture(t)
@@ -1240,5 +1212,516 @@ func TestComposeDetected_MissingPluginStaysSilent(t *testing.T) {
 	})
 	if cmd != nil {
 		t.Fatalf("expected no startup message for a missing plugin, got %T", cmd())
+	}
+}
+
+// TestComposeServicesView_UBringsUpTheSelectedServiceOnAFreshView is the
+// headline of the cursor fix: entering a project and pressing u, the
+// documented "bring this up" key, with no navigation in between, must
+// actually run compose up for the first service, not report that nothing is
+// selected. The view's first row is the "Services" section header, so this
+// only works because the cursor skips it.
+func TestComposeServicesView_UBringsUpTheSelectedServiceOnAFreshView(t *testing.T) {
+	engine := &stubComposeEngine{}
+	dir, file := composeFileFixture(t)
+	m := newTestModel()
+	m.view = ComposeServices
+	m.composeCLI = engine
+	m.selectedProject = "web"
+	m.composeProjects.SetProjects([]docker.ProjectWithServices{{
+		Project: docker.ComposeProject{Name: "web", WorkingDir: dir, ConfigFiles: []string{file}},
+	}})
+	m.composeServices.SetSize(120, 40)
+	m.composeServices.SetServices([]docker.ComposeService{
+		{Project: "web", Name: "api"},
+		{Project: "web", Name: "worker"},
+	}, nil, nil, "web")
+
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'u'})
+	if cmd == nil {
+		t.Fatal("expected u to produce a command")
+	}
+	if _, ok := cmd().(showStreamingLessMsg); !ok {
+		t.Fatalf("expected up to stream into the viewer, got %T", cmd())
+	}
+	if len(engine.upCalls) != 1 || engine.upCalls[0].Name != "web" {
+		t.Fatalf("expected one Up call on project web, got %+v", engine.upCalls)
+	}
+	if len(engine.upServices) != 1 || engine.upServices[0] != "api" {
+		t.Fatalf("expected the first service to be targeted, got %v", engine.upServices)
+	}
+}
+
+// TestComposeServicesView_KeysThatNeedAServiceSaySo covers the rows the
+// Compose Services view holds that are not services. The cursor lands on a
+// network by walking past the services, or immediately when the project has
+// none, and six documented keys can do nothing with one. Each has to say
+// so: a key that does nothing and says nothing reads as broken.
+func TestComposeServicesView_KeysThatNeedAServiceSaySo(t *testing.T) {
+	keys := []tea.KeyPressMsg{
+		{Code: 'u'},
+		{Code: 'l'},
+		{Code: 's', Mod: tea.ModCtrl},
+		{Code: 't', Mod: tea.ModCtrl},
+		{Code: 'r', Mod: tea.ModCtrl},
+		{Code: 'e', Mod: tea.ModCtrl},
+	}
+	for _, key := range keys {
+		t.Run(key.String(), func(t *testing.T) {
+			m := newTestModel()
+			m.view = ComposeServices
+			m.composeCLI = &stubComposeEngine{}
+			m.selectedProject = "web"
+			m.composeServices.SetSize(120, 40)
+			m.composeServices.SetServices(nil,
+				[]docker.ComposeNetwork{{Name: "web_default"}}, nil, "web")
+			if m.composeServices.SelectedNetwork() == nil {
+				t.Fatal("precondition: the cursor must sit on the network row")
+			}
+
+			_, cmd := m.Update(key)
+			if cmd == nil {
+				t.Fatalf("expected %s to explain itself on a network row", key.String())
+			}
+			status, ok := cmd().(statusMessageMsg)
+			if !ok {
+				t.Fatalf("expected a status message, got %T", cmd())
+			}
+			if !strings.Contains(strings.ToLower(status.text), "service") {
+				t.Fatalf("expected the message to mention services, got %q", status.text)
+			}
+			// The row is visibly selected, so the message must not ask the
+			// user to select something. u says where the whole-project
+			// version lives instead of naming the row, and says it as a
+			// place rather than a keystroke: in workspace mode with a
+			// pinned context the first esc only clears the pin, so "esc,
+			// then u" would be wrong there.
+			if key.String() == "u" {
+				if !strings.Contains(status.text, "projects list") {
+					t.Fatalf("expected u to point at the projects list, got %q", status.text)
+				}
+				if strings.Contains(status.text, "esc") {
+					t.Fatalf("expected no keystroke count in the message, got %q", status.text)
+				}
+			} else if !strings.Contains(status.text, "a network is selected") {
+				t.Fatalf("expected the message to name the selected row, got %q", status.text)
+			}
+		})
+	}
+}
+
+// enter acts on all three resource kinds, so the only row it cannot use is
+// one that resolves to nothing: the section header a filter matching nothing
+// else leaves, or no row at all, which is what an empty project has, since
+// refreshRows emits a header only alongside items.
+func TestComposeServicesView_EnterWithNothingSelectedSaysSo(t *testing.T) {
+	m := newTestModel()
+	m.view = ComposeServices
+	m.selectedProject = "web"
+	m.composeServices.SetSize(120, 40)
+	m.composeServices.SetServices(nil, nil, nil, "web")
+
+	_, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	if cmd == nil {
+		t.Fatal("expected enter to explain itself with nothing selected")
+	}
+	status, ok := cmd().(statusMessageMsg)
+	if !ok {
+		t.Fatalf("expected a status message, got %T", cmd())
+	}
+	if !strings.Contains(status.text, "no services, networks or volumes") {
+		t.Fatalf("expected the message to say the project is empty, got %q", status.text)
+	}
+}
+
+// TestComposeServicesView_OpeningAnotherProjectDropsTheOldRows guards
+// against acting on the wrong project. Entering a project switches the view
+// and records the project name, then loads its resources asynchronously;
+// until that load lands the view would otherwise still hold the previous
+// project's rows, and u, which now always finds a service under the cursor
+// , would bring up a service of the project the user just left.
+func TestComposeServicesView_OpeningAnotherProjectDropsTheOldRows(t *testing.T) {
+	engine := &stubComposeEngine{}
+	dir, file := composeFileFixture(t)
+	m := newTestModel()
+	m.view = ComposeProjects
+	m.composeCLI = engine
+	m.composeProjects.SetSize(120, 40)
+	m.composeProjects.SetProjects([]docker.ProjectWithServices{
+		{Project: docker.ComposeProject{Name: "alpha", WorkingDir: dir, ConfigFiles: []string{file}}},
+		{Project: docker.ComposeProject{Name: "beta", WorkingDir: dir, ConfigFiles: []string{file}}},
+	})
+
+	// Open alpha and let its resources arrive.
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	m = result.(model)
+	result, _ = m.Update(appcompose.ServicesLoadedMsg{
+		Services: []docker.ComposeService{{Project: "alpha", Name: "alpha-api"}},
+		Project:  "alpha",
+	})
+	m = result.(model)
+	if svc := m.composeServices.SelectedService(); svc == nil || svc.Name != "alpha-api" {
+		t.Fatalf("precondition: expected alpha-api selected, got %+v", svc)
+	}
+
+	// Back out, move to beta, open it. Its resources have not arrived yet.
+	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
+	m = result.(model)
+	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = result.(model)
+	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	m = result.(model)
+	if m.selectedProject != "beta" {
+		t.Fatalf("precondition: expected beta to be selected, got %q", m.selectedProject)
+	}
+
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'u'})
+	if cmd != nil {
+		if _, ok := cmd().(statusMessageMsg); !ok {
+			t.Fatalf("expected u to report nothing selected, got %T", cmd())
+		}
+	}
+	if len(engine.upCalls) != 0 {
+		t.Fatalf("u must not act on the project the user left, got %+v with services %v",
+			engine.upCalls, engine.upServices)
+	}
+
+	// Once beta's resources arrive, u targets beta.
+	result, _ = m.Update(appcompose.ServicesLoadedMsg{
+		Services: []docker.ComposeService{{Project: "beta", Name: "beta-web"}},
+		Project:  "beta",
+	})
+	m = result.(model)
+	if _, cmd := m.Update(tea.KeyPressMsg{Code: 'u'}); cmd != nil {
+		cmd()
+	}
+	if len(engine.upCalls) != 1 || engine.upCalls[0].Name != "beta" {
+		t.Fatalf("expected one Up call on beta, got %+v", engine.upCalls)
+	}
+	if len(engine.upServices) != 1 || engine.upServices[0] != "beta-web" {
+		t.Fatalf("expected beta-web to be targeted, got %v", engine.upServices)
+	}
+}
+
+// A load that finishes for a project the user has already left must be
+// dropped: two are in flight after a quick esc-and-enter, and the older,
+// slower one would replace the current project's rows.
+func TestComposeServicesLoaded_IgnoresAStaleProjectsLoad(t *testing.T) {
+	m := newTestModel()
+	m.view = ComposeServices
+	m.selectedProject = "beta"
+	m.composeServices.SetSize(120, 40)
+	m.composeServices.SetProject("beta")
+	result, _ := m.Update(appcompose.ServicesLoadedMsg{
+		Services: []docker.ComposeService{{Project: "beta", Name: "beta-web"}},
+		Project:  "beta",
+	})
+	m = result.(model)
+
+	result, _ = m.Update(appcompose.ServicesLoadedMsg{
+		Services: []docker.ComposeService{{Project: "alpha", Name: "alpha-api"}},
+		Project:  "alpha",
+	})
+	m = result.(model)
+
+	if svc := m.composeServices.SelectedService(); svc == nil || svc.Name != "beta-web" {
+		t.Fatalf("expected beta's rows to survive the stale load, got %+v", svc)
+	}
+}
+
+// TestComposeServicesView_ResizeKeepsTheSelectionOnScreen drives the resize
+// through the model the way a terminal does, since that is where the
+// selection went missing: the view is sized by resizeContentModels on every
+// WindowSizeMsg, and a shorter window under a cursor near the bottom used to
+// leave the highlighted row unrendered while every key still acted on it.
+func TestComposeServicesView_ResizeKeepsTheSelectionOnScreen(t *testing.T) {
+	appui.InitStyles()
+	m := newTestModel()
+	m.view = ComposeServices
+	m.selectedProject = "web"
+
+	services := make([]docker.ComposeService, 20)
+	for i := range services {
+		services[i] = docker.ComposeService{Project: "web", Name: fmt.Sprintf("svc%02d", i)}
+	}
+	result, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = result.(model)
+	m.composeServices.SetServices(services,
+		[]docker.ComposeNetwork{{Name: "web_default"}},
+		[]docker.ComposeVolume{{Name: "web_data"}}, "web")
+
+	// Walk to the bottom of the list.
+	for range len(services) + 6 {
+		result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+		m = result.(model)
+	}
+	if v := m.composeServices.SelectedVolume(); v == nil || v.Name != "web_data" {
+		t.Fatalf("precondition: expected the last row selected, got %+v", v)
+	}
+
+	marker := strings.SplitN(appui.SelectedRowStyle.Render("x"), "x", 2)[0]
+	for _, height := range []int{40, 34, 30, 24, 18, 12} {
+		result, _ = m.Update(tea.WindowSizeMsg{Width: 120, Height: height})
+		m = result.(model)
+		var highlighted string
+		for _, line := range strings.Split(m.composeServices.View(), "\n") {
+			if strings.Contains(line, marker) {
+				highlighted = ansi.Strip(line)
+				break
+			}
+		}
+		if !strings.Contains(highlighted, "web_data") {
+			t.Fatalf("height %d: expected the selected row to be highlighted on screen, got %q",
+				height, highlighted)
+		}
+	}
+}
+
+// Two resource loads for the same project can be in flight, an f5 during a
+// container event, or a quick esc and re-enter, and by arrival order the
+// older one's rows win, so the view shows a service the project no longer
+// has until the next event.
+func TestComposeServicesLoaded_IgnoresAnOlderLoadOfTheSameProject(t *testing.T) {
+	m := newTestModel()
+	m.view = ComposeServices
+	m.selectedProject = "web"
+	m.composeServices.SetSize(120, 40)
+
+	result, _ := m.Update(appcompose.ServicesLoadedMsg{
+		Project: "web",
+		Gen:     2,
+		Services: []docker.ComposeService{
+			{Project: "web", Name: "api"},
+			{Project: "web", Name: "worker"},
+		},
+	})
+	m = result.(model)
+
+	result, _ = m.Update(appcompose.ServicesLoadedMsg{
+		Project:  "web",
+		Gen:      1,
+		Services: []docker.ComposeService{{Project: "web", Name: "api"}},
+	})
+	m = result.(model)
+
+	view := ansi.Strip(m.composeServices.View())
+	if !strings.Contains(view, "worker") {
+		t.Fatalf("expected the newer load's rows to survive the older one, got:\n%s", view)
+	}
+	if !strings.Contains(view, "Services (2)") {
+		t.Fatalf("expected the newer load's count to survive, got:\n%s", view)
+	}
+}
+
+// A filter can narrow the list to a section header, the one row the cursor
+// rests on that resolves to nothing. Telling the user that nothing is
+// selected there contradicts the row highlighted on screen, so the message
+// names the filter instead.
+func TestComposeServicesView_KeysUnderAHeaderOnlyFilterNameTheFilter(t *testing.T) {
+	m := newTestModel()
+	m.view = ComposeServices
+	m.composeCLI = &stubComposeEngine{}
+	m.selectedProject = "web"
+	m.composeServices.SetSize(120, 40)
+	m.composeServices.SetServices([]docker.ComposeService{
+		{Project: "web", Name: "api"},
+		{Project: "web", Name: "worker"},
+	}, nil, nil, "web")
+
+	result, _ := m.Update(tea.KeyPressMsg{Code: '%'})
+	m = result.(model)
+	for _, r := range "services (2)" {
+		result, _ = m.Update(tea.KeyPressMsg{Code: r, Text: string(r)})
+		m = result.(model)
+	}
+	if m.composeServices.SelectedService() != nil {
+		t.Fatalf("precondition: expected no service to match, got %+v", m.composeServices.SelectedService())
+	}
+	// Leave the filter committed, the way enter does.
+	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	m = result.(model)
+
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'l'})
+	if cmd == nil {
+		t.Fatal("expected l to explain itself")
+	}
+	status, ok := cmd().(statusMessageMsg)
+	if !ok {
+		t.Fatalf("expected a status message, got %T", cmd())
+	}
+	if !strings.Contains(status.text, "filter") {
+		t.Fatalf("expected the message to name the filter, got %q", status.text)
+	}
+}
+
+// c renders the open project's configuration, and the one state where it has
+// no project is the one where it used to do nothing and say nothing.
+func TestComposeServicesView_ConfigWithNoProjectSaysSo(t *testing.T) {
+	m := newTestModel()
+	m.view = ComposeServices
+	m.composeCLI = &stubComposeEngine{}
+
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'c'})
+	if cmd == nil {
+		t.Fatal("expected c to explain itself with no project open")
+	}
+	status, ok := cmd().(statusMessageMsg)
+	if !ok {
+		t.Fatalf("expected a status message, got %T", cmd())
+	}
+	if !strings.Contains(strings.ToLower(status.text), "project") {
+		t.Fatalf("expected the message to name what is missing, got %q", status.text)
+	}
+}
+
+// The generation that keeps an older resource load from replacing a newer
+// one has to advance on every path that starts a load. A container
+// operation's success is one of them, and it reloads through loadViewData,
+// which is where a value receiver would have left the generation on a
+// discarded copy, handing two loads the same number and making the guard
+// unable to tell them apart.
+func TestComposeServicesView_EveryReloadPathAdvancesTheGeneration(t *testing.T) {
+	m := newTestModel()
+	m.view = ComposeServices
+	m.selectedProject = "web"
+
+	seen := map[uint64]string{}
+	record := func(path string, cmd tea.Cmd) {
+		t.Helper()
+		if cmd == nil {
+			t.Fatalf("%s: expected a load", path)
+		}
+		msg, ok := cmd().(appcompose.ServicesLoadedMsg)
+		if !ok {
+			t.Fatalf("%s: expected a services load, got %T", path, cmd())
+		}
+		if msg.Gen == 0 {
+			t.Fatalf("%s: expected a generation", path)
+		}
+		if other, dup := seen[msg.Gen]; dup {
+			t.Fatalf("%s and %s share generation %d", other, path, msg.Gen)
+		}
+		seen[msg.Gen] = path
+	}
+
+	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyF5})
+	m = result.(model)
+	record("f5", cmd)
+
+	result, cmd = m.Update(operationSuccessMsg{message: "Stop web/api: 1 targeted, 1 succeeded"})
+	m = result.(model)
+	record("operation success", cmd)
+
+	result, cmd = m.Update(tea.KeyPressMsg{Code: tea.KeyF5})
+	m = result.(model)
+	record("f5 again", cmd)
+
+	if len(seen) != 3 {
+		t.Fatalf("expected three distinct generations, got %v", seen)
+	}
+}
+
+// Entering a project clears the view, and the load is several daemon round
+// trips behind: until it lands, a key that needs a service must not assert
+// that the project has none.
+func TestComposeServicesView_KeysDuringTheLoadSayItIsLoading(t *testing.T) {
+	dir, file := composeFileFixture(t)
+	m := newTestModel()
+	m.view = ComposeProjects
+	m.composeCLI = &stubComposeEngine{}
+	m.composeProjects.SetSize(120, 40)
+	m.composeProjects.SetProjects([]docker.ProjectWithServices{{
+		Project: docker.ComposeProject{Name: "web", WorkingDir: dir, ConfigFiles: []string{file}},
+	}})
+
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	m = result.(model)
+	if !m.composeServices.Loading() {
+		t.Fatal("precondition: expected the view to be waiting for its resources")
+	}
+
+	for _, key := range []tea.KeyPressMsg{{Code: 'l'}, {Code: 's', Mod: tea.ModCtrl}, {Code: tea.KeyEnter}} {
+		_, cmd := m.Update(key)
+		if cmd == nil {
+			t.Fatalf("%s: expected a message", key.String())
+		}
+		status, ok := cmd().(statusMessageMsg)
+		if !ok {
+			t.Fatalf("%s: expected a status message, got %T", key.String(), cmd())
+		}
+		if !strings.Contains(status.text, "loading") {
+			t.Fatalf("%s: expected the message to say the project is still loading, got %q",
+				key.String(), status.text)
+		}
+	}
+
+	// Once the resources land, the same keys act.
+	result, _ = m.Update(appcompose.ServicesLoadedMsg{
+		Services: []docker.ComposeService{{Project: "web", Name: "api"}},
+		Project:  "web",
+		Gen:      m.composeServicesGen,
+	})
+	m = result.(model)
+	if m.composeServices.Loading() {
+		t.Fatal("expected the view to stop reporting a load once the resources arrived")
+	}
+	if svc := m.composeServices.SelectedService(); svc == nil {
+		t.Fatal("expected the first service to be selected")
+	}
+}
+
+// The Compose Projects view reaches "nothing selected" whenever its list is
+// empty, and u, d, c, enter and l all used to return nil there: a documented
+// key that does nothing and says nothing reads as broken, the same rule the
+// services view follows. The message names why the list is empty, because
+// "select a project" is not actionable when there is nothing to select.
+func TestComposeProjectsView_KeysWithNoProjectSaySo(t *testing.T) {
+	keys := []tea.KeyPressMsg{
+		{Code: 'u'}, {Code: 'd'}, {Code: 'c'}, {Code: 'l'}, {Code: tea.KeyEnter},
+	}
+	for _, key := range keys {
+		t.Run(key.String(), func(t *testing.T) {
+			m := newTestModel()
+			m.view = ComposeProjects
+			m.composeCLI = &stubComposeEngine{}
+			m.composeProjects.SetSize(120, 40)
+			m.composeProjects.SetProjects(nil)
+			if m.composeProjects.SelectedProject() != nil {
+				t.Fatal("precondition: expected an empty project list")
+			}
+
+			_, cmd := m.Update(key)
+			if cmd == nil {
+				t.Fatalf("expected %s to explain itself with no project, got nil", key.String())
+			}
+			status, ok := cmd().(statusMessageMsg)
+			if !ok {
+				t.Fatalf("expected a status message, got %T", cmd())
+			}
+			if !strings.Contains(status.text, "none is loaded") {
+				t.Errorf("expected the message to name the reason, got %q", status.text)
+			}
+		})
+	}
+}
+
+// And with a filter hiding every project, the filter is the thing to name.
+func TestComposeProjectsView_KeysUnderAFilterNameTheFilter(t *testing.T) {
+	m := newTestModel()
+	m.view = ComposeProjects
+	m.composeCLI = &stubComposeEngine{}
+	m.composeProjects.SetSize(120, 40)
+	m.composeProjects.SetProjects([]docker.ProjectWithServices{
+		{Project: docker.ComposeProject{Name: "web"}},
+	})
+	m.composeProjects.SetFilter("nothing-matches-this")
+
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'u'})
+	if cmd == nil {
+		t.Fatal("expected u to explain itself under a filter that matches nothing")
+	}
+	status := cmd().(statusMessageMsg)
+	if !strings.Contains(status.text, "filter") {
+		t.Errorf("expected the filter named, got %q", status.text)
 	}
 }

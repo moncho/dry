@@ -104,6 +104,15 @@ type model struct {
 	// piles overlapping batches on top of each other.
 	composeCycleInFlight bool
 
+	// composeServicesGen is the generation of the most recent Compose
+	// Services load (loadComposeServices increments, then stamps), and
+	// composeServicesApplied the last one rendered, so a load that finishes
+	// after a newer one is dropped. One counter for every project, not one
+	// each: comparing across projects is safe only because it never goes
+	// backwards, and the project name is checked separately.
+	composeServicesGen     uint64
+	composeServicesApplied uint64
+
 	// composeRefreshPending records that a compose reload was skipped, so it
 	// runs once when the reason goes away. Dropping those refreshes outright
 	// would leave the view showing pre-`up` state: the container event that
@@ -355,6 +364,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 
 	case appcompose.ServicesLoadedMsg:
+		// A load for a project the user has left, or an older load of the
+		// same one, is dropped. SetServices would repaint the title along
+		// with the rows, so the view would show the old project while
+		// m.selectedProject, which c, f5 and the event reload act on,
+		// still points at the new one.
+		if msg.Project != m.selectedProject || msg.Gen < m.composeServicesApplied {
+			return m, nil
+		}
+		m.composeServicesApplied = msg.Gen
 		m.composeServices.SetServices(msg.Services, msg.Networks, msg.Volumes, msg.Project)
 		m.refreshPinnedWorkspaceContext()
 		return m, nil
@@ -458,7 +476,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if m.streamingViewerOpen() {
 						m.composeRefreshPending = true
 					} else {
-						cmds = append(cmds, loadComposeServicesCmd(m.daemon, m.selectedProject))
+						cmds = append(cmds, m.loadComposeServices(m.selectedProject))
 					}
 				}
 			case docker.ImageSource:
@@ -494,7 +512,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case operationSuccessMsg:
 		m.messageBar.SetMessage(msg.message, 3*time.Second)
-		return m, m.loadViewData(m.view)
+		reload := m.loadViewData(m.view)
+		return m, reload
 
 	case operationErrorMsg:
 		m.messageBar.SetMessage(fmt.Sprintf("Error: %s", msg.err), 5*time.Second)
@@ -892,7 +911,7 @@ func (m *model) drainPendingComposeRefresh() tea.Cmd {
 	case ComposeProjects:
 		return loadComposeProjectsCmd(m.daemon)
 	case ComposeServices:
-		return loadComposeServicesCmd(m.daemon, m.selectedProject)
+		return m.loadComposeServices(m.selectedProject)
 	}
 	return nil
 }
@@ -969,17 +988,25 @@ func (m model) switchView(target viewMode) (tea.Model, tea.Cmd) {
 	if m.workspaceEnabled() {
 		m.resetWorkspaceActivity()
 	}
-	// Monitor.Start() mutates the model (stores cancel funcs), so it must
-	// run on the copy that gets returned — not inside loadViewData which
-	// operates on a nested copy that gets discarded.
+	// Monitor.Start() belongs to entering the view, not to loading it: it
+	// calls StopAll and wipes stats, history and cancels, and loadViewData
+	// is a reload path that runs on every operationSuccessMsg. Folding this
+	// in there would clear the monitor's accumulated history and restart
+	// every stat stream on each container operation.
 	if target == Monitor {
 		cmds := m.monitor.Start()
 		return m, tea.Batch(cmds...)
 	}
-	return m, m.loadViewData(target)
+	load := m.loadViewData(target)
+	return m, load
 }
 
-func (m model) loadViewData(v viewMode) tea.Cmd {
+// loadViewData returns the command that (re)loads the given view's data.
+// The receiver is a pointer because the Compose Services load stamps a
+// generation on the model, which a value receiver would leave on a discarded
+// copy, handing two loads the same one. Callers assign the command to a
+// variable before returning it, rather than relying on evaluation order.
+func (m *model) loadViewData(v viewMode) tea.Cmd {
 	if m.daemon == nil {
 		return nil
 	}
@@ -995,8 +1022,8 @@ func (m model) loadViewData(v viewMode) tea.Cmd {
 	case DiskUsage:
 		return loadDiskUsageCmd(m.daemon)
 	case Monitor:
-		// Monitor is handled directly in switchView to avoid the
-		// value-receiver copy problem (Start mutates the model).
+		// Started by switchView, which is entering the view; a reload
+		// must not restart the streams. See there.
 		return nil
 	case Nodes:
 		if m.swarmMode {
@@ -1013,7 +1040,7 @@ func (m model) loadViewData(v viewMode) tea.Cmd {
 	case ComposeProjects:
 		return loadComposeProjectsCmd(m.daemon)
 	case ComposeServices:
-		return loadComposeServicesCmd(m.daemon, m.selectedProject)
+		return m.loadComposeServices(m.selectedProject)
 	}
 	return nil
 }
