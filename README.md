@@ -208,6 +208,12 @@ Open a console, type ```dry```. It will try to connect to:
 * if none given, a Docker host defined in the **$DOCKER_HOST** environment variable.
 * if not defined, to **unix:///var/run/docker.sock**.
 
+**dry** does not read `docker context`, so with Docker Desktop, colima or
+Rancher Desktop, whose active context is not that socket, name the host with
+**-H** or **$DOCKER_HOST**. The same value is what **dry** hands the
+`docker compose` plugin, so the two always agree about which daemon they are
+talking to.
+
 If no connection with a Docker host succeeds, **dry** will exit.
 
 #### Connecting over SSH
@@ -246,7 +252,7 @@ to interception and should only be used against hosts you fully control.
 
 ### Docker Compose
 
-Compose projects show up in their own view (key <kbd>8</kbd>); pressing <kbd>Enter</kbd> on a project opens its services in the Compose Services view.
+Compose projects show up in their own view (key <kbd>8</kbd>), each project row followed by its services indented under it; pressing <kbd>Enter</kbd> on a project opens its services, networks and volumes in the Compose Services view.
 
 Keybinding       | Description
 -----------------|---------------------------------------
@@ -256,17 +262,112 @@ Keybinding       | Description
 
 `u` and `c` work in both the Compose Projects and Compose Services views; `d` works in Compose Projects only.
 
-The SYNC column reports whether a service's running containers match its compose file:
+Projects are discovered two ways: from container labels, including stopped
+containers, and from a compose file in the directory **dry** was started in.
+A project known only from a file is listed with no running containers, and
+pressing `u` brings it up.
+
+Everything compose-specific needs the `docker compose` CLI plugin: the
+`u`/`d`/`c` keys, the SYNC column and that directory scan. Without it the
+views still list projects found from container labels, and **dry** probes
+once at startup, so installing it needs a restart. An empty Compose view has
+three causes, and these tell them apart:
+
+* `docker compose version` fails: no plugin, so no scan either.
+* the directory holds none of `compose.yaml`, `compose.yml`,
+  `docker-compose.yml`, `docker-compose.yaml`. The scan looks in the
+  directory **dry** started in, never below it.
+* `docker compose config` in that directory fails. A file that does not
+  resolve, a YAML error or a required variable with no value, is dropped
+  without a message.
+
+The scan passes the one file it picked, so an override file beside it is not
+applied and `u` on a scanned project creates something different from
+`docker compose up` in the same directory. It matches an existing project by
+name, and compose takes that name from the directory's basename unless the
+file sets `name:`. A project brought up with `-p` therefore needs
+`COMPOSE_PROJECT_NAME=<name> dry` to match, or the scan lists it a second
+time under the directory's name.
+
+The SYNC column reports whether a service's running containers match its
+compose file:
 
 Label   | Meaning
 --------|-----------------------------------------------------------------
-`ok`    | the running containers match the compose file
-`drift` | the compose file changed since the containers were created — the next `u` recreates them
-`none`  | the compose file defines the service, but nothing is running it
+`ok`    | the containers were created from the compose file as it is now
+`drift` | the compose file changed since the containers were created, the next `u` recreates them
 
-Projects are discovered two ways: from container labels — including stopped containers — and from a compose file in the directory **dry** was started in (that directory only; it is not a recursive search). A project known only from a file is listed with no running containers, and pressing `u` brings it up.
+A blank cell is none of those. SYNC is per service, so it is always empty on
+a project row, and on the section, network and volume rows of the Compose
+Services view. On a service row it means one of:
 
-All of the above — the `u`/`d`/`c` keys and the SYNC column — require the `docker compose` CLI plugin. Without it, the Compose views still list projects discovered from container labels, and the keys respond with a status message naming the missing plugin instead of acting.
+* no plugin, or the check has not run yet;
+* the project's compose file is not on this machine, see below;
+* the first check for this project failed. The message bar names it once,
+  and a later identical failure keeps the label it already had rather than
+  banners again;
+* the file no longer defines a service whose containers are still running;
+* the file defines it behind a profile, which reports no hash. Start with
+  `COMPOSE_PROFILES=dev dry` to fix both that and what `u` brings up.
+
+<kbd>F5</kbd> re-runs the check: the directory scan and every project's drift
+in Compose Projects, the selected project's resources and drift in Compose
+Services. A refresh that arrives while a check is already running is deferred
+rather than dropped, so it lands once that one finishes.
+
+The command palette (<kbd>:</kbd>) adds Force Recreate, on a service row in
+the Compose Services view: it recreates that service's containers even when
+nothing has drifted, which `u` would skip.
+
+#### Compose files and the machine **dry** runs on
+
+`u`, `c` and Force Recreate have to read the compose file, and the plugin
+reads it from the filesystem **dry** runs on. The paths come from the
+project's `com.docker.compose.project.config_files` label, written by
+whichever machine ran `compose up`, or from the directory scan. Every
+recorded path has to be absolute and present there; when one is not, **dry**
+says `Project <name> has no compose file on this host` and refuses before
+running compose.
+
+`docker compose ls -a` prints each project's recorded files, which shows
+which of three cases you are in. (It talks to whatever your shell's
+`docker context` or `DOCKER_HOST` points at, which is not necessarily the
+daemon **dry** is connected to.)
+
+* **No path recorded**, from an older Compose: start **dry** in the
+  project's directory and the scan fills in the file it finds.
+* **A relative path**, which an older Compose recorded as given: bring the
+  project down and up again from its directory.
+* **An absolute path that is not there**: the project was brought up on
+  another machine, or the file has since moved. A project brought up from a
+  different directory *on this machine* is not this case, its recorded path
+  is absolute and still valid.
+
+Either put the files back where the label says, or run **dry** on the machine
+that has them. To do the latter, name the daemon with `DOCKER_HOST` or `-H`:
+both reach the plugin. **dry** does not read `docker context` and always
+passes the plugin a `DOCKER_HOST`, so with Docker Desktop or colima name the
+host explicitly rather than relying on the context.
+
+To put the files back, recreate the project directory too, not just the
+compose file: **dry** passes the project's
+`com.docker.compose.project.working_dir` label as `--project-directory`, and
+relative `build:` contexts and bind-mount sources resolve under it. That
+label is printed by:
+
+```sh
+docker inspect $(docker ps -aq --filter label=com.docker.compose.project=<name> | head -1) \
+  --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}'
+```
+
+The paths are re-checked on every invocation, so the keys start working the
+moment the files are in place.
+
+`d` (down) needs the plugin but no file, because compose removes a project by
+its container labels, so it keeps working when the paths do not. The `Ctrl+`
+lifecycle keys need neither: they act on containers through the Docker API,
+in [Compose Projects](#compose-projects-commands) and
+[Compose Services](#compose-services-commands).
 
 ### Docker Swarm
 
