@@ -39,18 +39,25 @@ type composeDetectedMsg struct {
 	err error
 }
 
-// composeProjectsMsg carries a project list that has been enriched with a
-// compose file discovered on disk.
+// composeProjectsMsg carries a project list enriched with a compose file
+// discovered on disk. gen is the cycle's generation, carried through to
+// the drift check the model dispatches next.
 type composeProjectsMsg struct {
 	projects []docker.ProjectWithServices
+	gen      uint64
 }
 
-// composeDriftMsg carries per-project, per-service sync status. err, when
-// set, reports that ConfigHashes failed for at least one project; drift
-// still carries results for every project that succeeded.
+// composeDriftMsg carries per-project, per-service sync status, plus why any
+// project's check did not complete. composeDriftState.merge decides what it
+// is allowed to change; see there for the generation and failure rules.
 type composeDriftMsg struct {
-	drift map[string]map[string]docker.ServiceSync
-	err   error
+	// project names the single project this message covers, empty for a whole
+	// cycle over the list. The model merges the former and replaces on the
+	// latter, so one project's SYNC does not blank the rest.
+	project  string
+	gen      uint64
+	drift    map[string]map[string]docker.ServiceSync
+	failures map[string]string
 }
 
 // Operation result messages

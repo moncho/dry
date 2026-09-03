@@ -96,14 +96,6 @@ type model struct {
 	pendingRefresh map[docker.SourceType]bool
 	refreshTimer   bool
 
-	// composeCycleInFlight is true from the moment a compose project reload
-	// starts a scan/drift cycle until that cycle's composeDriftMsg lands. One
-	// cycle costs `compose config --format json` plus one `compose config
-	// --hash=*` per project with files, each 150-400ms of CPU in its own
-	// subprocess, so a second cycle started before the first finishes just
-	// piles overlapping batches on top of each other.
-	composeCycleInFlight bool
-
 	// composeServicesGen is the generation of the most recent Compose
 	// Services load (loadComposeServices increments, then stamps), and
 	// composeServicesApplied the last one rendered, so a load that finishes
@@ -112,6 +104,20 @@ type model struct {
 	// backwards, and the project name is checked separately.
 	composeServicesGen     uint64
 	composeServicesApplied uint64
+
+	// composeChecks records when each dispatched drift check went out, keyed
+	// by generation, so a second cycle cannot pile subprocesses on the first.
+	// One cycle is a `compose config --format json` plus a `compose config
+	// --hash=*` per project with usable files, each its own subprocess.
+	// Why every check and not one flag: see composeCycleRunning. Why when and
+	// not how many: see composeCycleStale.
+	composeChecks map[uint64]time.Time
+
+	// composeDriftGen stamps the next drift check, and composeDrift records
+	// which generation each project's SYNC came from, so a slower check
+	// cannot overwrite a fresher one. See composeDriftState.
+	composeDriftGen uint64
+	composeDrift    composeDriftState
 
 	// composeRefreshPending records that a compose reload was skipped, so it
 	// runs once when the reason goes away. Dropping those refreshes outright
@@ -326,11 +332,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case appcompose.ProjectsLoadedMsg:
 		m.composeProjects.SetProjects(msg.Projects)
 		m.refreshPinnedWorkspaceContext()
+		// The rows are in; the drift cycle behind them is the expensive
+		// half, so it runs only for a compose view on screen and only with
+		// no other check in flight. A skip is recorded, and drained when the
+		// reason clears; a skip because no compose view is on screen is
+		// dropped instead, since switching back reloads anyway.
+		if !m.composeViewActive() || m.composeCycleRunning() || m.streamingViewerOpen() {
+			m.composeRefreshPending = true
+			return m, nil
+		}
 		// A cycle is now in flight; flushRefreshMsg will not start another
-		// until composeDriftMsg ends this one. Every path out of here leads
-		// to a composeDriftMsg — composeDriftCmd returns one even with no
-		// engine at all — so the flag cannot get stuck.
-		m.composeCycleInFlight = true
+		// until it lands. Every path out of here leads to a composeDriftMsg,
+		// since composeDriftCmd returns one even with no engine at all, so
+		// the count cannot get stuck above zero.
+		gen := m.startComposeDrift()
 		// composeScanCmd and composeDriftCmd must never run concurrently
 		// against the same []docker.ProjectWithServices: composeScanCmd
 		// mutates project fields in place (docker.MergeScannedProject),
@@ -340,25 +355,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// when no scan will run, composeProjectsMsg never arrives, so drift
 		// must be dispatched here instead.
 		if resolver, ok := m.composeCLI.(composeResolver); ok {
-			return m, composeScanCmd(resolver, m.workingDir, msg.Projects)
+			return m, composeScanCmd(resolver, m.workingDir, msg.Projects, gen)
 		}
-		return m, composeDriftCmd(m.composeCLI, msg.Projects, m.daemon.Containers(nil, docker.NoSort))
+		return m, composeDriftCmd(m.composeCLI, msg.Projects, m.daemon, gen)
 
 	case composeProjectsMsg:
 		m.composeProjects.SetProjects(msg.projects)
-		return m, composeDriftCmd(m.composeCLI, msg.projects, m.daemon.Containers(nil, docker.NoSort))
+		return m, composeDriftCmd(m.composeCLI, msg.projects, m.daemon, msg.gen)
 
 	case composeDriftMsg:
-		m.composeCycleInFlight = false
-		m.composeProjects.SetDrift(msg.drift)
-		m.composeServices.SetDrift(msg.drift)
+		delete(m.composeChecks, msg.gen)
+		before := m.composeDrift.fail
+		m.composeDrift = m.composeDrift.merge(msg)
+		m.composeProjects.SetDrift(m.composeDrift.sync)
+		m.composeServices.SetDrift(m.composeDrift.sync)
 		cmds := []tea.Cmd{m.drainPendingComposeRefresh()}
-		if msg.err != nil {
+		// Report what the merged state has just learned, per project, not what
+		// the message carried: a superseded result raises nothing, and a check
+		// that keeps failing is reported once.
+		if text := newDriftFailures(before, m.composeDrift.fail); text != "" {
 			cmds = append(cmds, func() tea.Msg {
-				return statusMessageMsg{
-					text:   fmt.Sprintf("Compose drift check failed: %s", msg.err),
-					expiry: 5 * time.Second,
-				}
+				return statusMessageMsg{text: text, expiry: 5 * time.Second}
 			})
 		}
 		return m, tea.Batch(cmds...)
@@ -375,7 +392,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.composeServicesApplied = msg.Gen
 		m.composeServices.SetServices(msg.Services, msg.Networks, msg.Volumes, msg.Project)
 		m.refreshPinnedWorkspaceContext()
-		return m, nil
+		// Assigned before the return: composeServiceDrift records state on m,
+		// and evaluation order in a return list is not to be relied on.
+		driftCmd := m.composeServiceDrift(msg.Project)
+		return m, driftCmd
 
 	case workspaceActivityLoadedMsg:
 		m.closeActivityReader()
@@ -466,7 +486,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// while one cycle is still running, and skip it while a
 				// streaming viewer covers the view the reload would repaint.
 				if m.view == ComposeProjects {
-					if m.composeCycleInFlight || m.streamingViewerOpen() {
+					if m.composeCycleRunning() || m.streamingViewerOpen() {
 						m.composeRefreshPending = true
 					} else {
 						cmds = append(cmds, loadComposeProjectsCmd(m.daemon))
@@ -903,7 +923,7 @@ func (m model) View() tea.View {
 // refresh for a view the user has since left is dropped, not carried:
 // switching back reloads that view anyway.
 func (m *model) drainPendingComposeRefresh() tea.Cmd {
-	if !m.composeRefreshPending || m.composeCycleInFlight || m.streamingViewerOpen() {
+	if !m.composeRefreshPending || m.composeCycleRunning() || m.streamingViewerOpen() {
 		return nil
 	}
 	m.composeRefreshPending = false
