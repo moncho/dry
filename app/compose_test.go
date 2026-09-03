@@ -3,11 +3,13 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -30,6 +32,7 @@ type stubComposeEngine struct {
 	hashes           map[string]string
 	hashesCalls      []composecli.Project
 	hashesErr        error
+	hangHashes       bool
 	resolveName      string
 	err              error
 }
@@ -64,8 +67,21 @@ func (s *stubComposeEngine) Config(_ context.Context, _ composecli.Project) (str
 	return s.configOutput, s.err
 }
 
-func (s *stubComposeEngine) ConfigHashes(_ context.Context, p composecli.Project) (map[string]string, error) {
+func (s *stubComposeEngine) ConfigHashes(ctx context.Context, p composecli.Project) (map[string]string, error) {
 	s.hashesCalls = append(s.hashesCalls, p)
+	// hangHashes makes the stub behave like a compose that never answers:
+	// it waits for the caller's context instead of returning, which is what
+	// the drift cycle's budget has to survive. The fallback matters: with
+	// only <-ctx.Done() here, an unbounded context turns a regression into
+	// a hung package instead of a failed assertion.
+	if s.hangHashes {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(2 * time.Second):
+			return s.hashes, nil
+		}
+	}
 	if s.hashesErr != nil {
 		return nil, s.hashesErr
 	}
@@ -596,9 +612,7 @@ func TestComposeDriftCmd_SkipsProjectsWithoutFiles(t *testing.T) {
 // error banner. ConfigFiles comes from a container label recording the
 // filesystem of whichever machine ran the compose client: for a project
 // brought up on another machine, or whose file has moved, ConfigHashes fails
-// for that
-// project on every refresh cycle and the model turns each failure into
-// "Compose drift check failed: ...", on every cycle. A file
+// for that project on every refresh cycle and the model banners it. A file
 // dry cannot read is not a failure, it is an unknown file, which drift
 // already handles by skipping silently.
 func TestComposeDriftCmd_SkipsProjectsWhoseFilesAreNotLocal(t *testing.T) {
@@ -1004,15 +1018,19 @@ type stubHashesOnlyEngine struct {
 func (s *stubHashesOnlyEngine) Up(context.Context, composecli.Project, ...string) (io.ReadCloser, error) {
 	return nil, errors.New("not implemented")
 }
+
 func (s *stubHashesOnlyEngine) Down(context.Context, composecli.Project) (io.ReadCloser, error) {
 	return nil, errors.New("not implemented")
 }
+
 func (s *stubHashesOnlyEngine) Recreate(context.Context, composecli.Project, string) (io.ReadCloser, error) {
 	return nil, errors.New("not implemented")
 }
+
 func (s *stubHashesOnlyEngine) Config(context.Context, composecli.Project) (string, error) {
 	return "", errors.New("not implemented")
 }
+
 func (s *stubHashesOnlyEngine) ConfigHashes(_ context.Context, _ composecli.Project) (map[string]string, error) {
 	return s.hashes, nil
 }
@@ -1133,5 +1151,94 @@ func TestComposeDownCmd_KeepsFilesThatAreHere(t *testing.T) {
 	}
 	if call.WorkingDir != dir {
 		t.Fatalf("expected the working directory to be passed, got %q", call.WorkingDir)
+	}
+}
+
+// TestComposeDriftCmd_GivesUpOnTheWholeCycle covers the failure the per-call
+// bound does not: the reason a compose call hangs, a daemon that accepted
+// the connection and went quiet, hangs every project at once, and the cycle
+// walks them one at a time, so the per-call bounds add up while the model
+// gates every compose reload on the cycle finishing.
+func TestComposeDriftCmd_GivesUpOnTheWholeCycle(t *testing.T) {
+	restore := composeDriftBudget
+	composeDriftBudget = 200 * time.Millisecond
+	t.Cleanup(func() { composeDriftBudget = restore })
+
+	engine := &stubComposeEngine{hangHashes: true}
+	dir, file := composeFileFixture(t)
+	var projects []docker.ProjectWithServices
+	for _, name := range []string{"one", "two", "three", "four", "five"} {
+		projects = append(projects, docker.ProjectWithServices{
+			Project: docker.ComposeProject{Name: name, WorkingDir: dir, ConfigFiles: []string{file}},
+		})
+	}
+
+	start := time.Now()
+	msg := composeDriftCmd(engine, projects, nil)()
+	elapsed := time.Since(start)
+
+	drift, ok := msg.(composeDriftMsg)
+	if !ok {
+		t.Fatalf("expected composeDriftMsg, got %T", msg)
+	}
+	if drift.err == nil {
+		t.Fatal("expected the cycle to report that it gave up")
+	}
+	if !strings.Contains(drift.err.Error(), "gave up") {
+		t.Fatalf("expected the error to say the cycle gave up, got %v", drift.err)
+	}
+	if !strings.Contains(drift.err.Error(), "unchecked") {
+		t.Fatalf("expected the error to say how many projects were left, got %v", drift.err)
+	}
+	// Once, not once per remaining project: the loop breaks rather than
+	// continuing, or a one-line message bar gets four copies of the same
+	// sentence.
+	if got := strings.Count(drift.err.Error(), "gave up"); got != 1 {
+		t.Fatalf("expected the expiry reported once, got %d copies: %v", got, drift.err)
+	}
+	// One hung call spends the budget; the rest must not each spend another.
+	if len(engine.hashesCalls) > 2 {
+		t.Fatalf("expected the cycle to stop after the budget ran out, got %d calls",
+			len(engine.hashesCalls))
+	}
+	// Comfortably inside the stub's own 2s fallback, which is what would
+	// otherwise absorb a regression: pass context.Background() to
+	// ConfigHashes instead of ctx and the hung call returns on the fallback,
+	// the loop breaks between calls on ctx.Err(), and every assertion above
+	// still holds. Only the elapsed time tells the two apart.
+	if elapsed > time.Second {
+		t.Fatalf("expected the cycle to end with its 200ms budget, took %s", elapsed)
+	}
+}
+
+// A probe that timed out is not the same as a plugin that is not installed:
+// the plugin may be there, dry behaves as if it were not, and "install it"
+// is the wrong advice. The timeout is reported once, at startup; a plugin
+// that is simply missing stays silent, because every compose key says so
+// when pressed.
+func TestComposeDetected_ProbeTimeoutIsReported(t *testing.T) {
+	m := newTestModel()
+	_, cmd := m.Update(composeDetectedMsg{
+		err: fmt.Errorf("%w after 10s", composecli.ErrProbeTimeout),
+	})
+	if cmd == nil {
+		t.Fatal("expected a probe timeout to be reported")
+	}
+	status, ok := cmd().(statusMessageMsg)
+	if !ok {
+		t.Fatalf("expected a status message, got %T", cmd())
+	}
+	if !strings.Contains(status.text, "timed out") {
+		t.Fatalf("expected the message to name the timeout, got %q", status.text)
+	}
+}
+
+func TestComposeDetected_MissingPluginStaysSilent(t *testing.T) {
+	m := newTestModel()
+	_, cmd := m.Update(composeDetectedMsg{
+		err: errors.New("docker compose plugin not available: exec: \"docker\": executable file not found in $PATH"),
+	})
+	if cmd != nil {
+		t.Fatalf("expected no startup message for a missing plugin, got %T", cmd())
 	}
 }

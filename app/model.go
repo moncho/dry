@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -16,6 +17,7 @@ import (
 	appswarm "github.com/moncho/dry/appui/swarm"
 	appworkspace "github.com/moncho/dry/appui/workspace"
 	"github.com/moncho/dry/docker"
+	"github.com/moncho/dry/docker/composecli"
 )
 
 // Compile-time assertion: model implements tea.Model.
@@ -217,6 +219,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case composeDetectedMsg:
 		if msg.err == nil && msg.cli != nil {
 			m.composeCLI = msg.cli
+			return m, nil
+		}
+		// A missing plugin stays silent, since every compose key says so
+		// when pressed. A timed-out probe is not that case: the plugin may
+		// be there, so say so once instead of a wrong diagnosis later.
+		if errors.Is(msg.err, composecli.ErrProbeTimeout) {
+			return m, func() tea.Msg {
+				return statusMessageMsg{
+					text:   fmt.Sprintf("Docker Compose unavailable: %s", msg.err),
+					expiry: 8 * time.Second,
+				}
+			}
 		}
 		return m, nil
 

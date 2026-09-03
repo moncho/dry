@@ -54,9 +54,8 @@ func composeUnavailableMsg() tea.Msg {
 // no config_files label, or the project row predates the working-directory
 // scan), or the path is not on this machine: config_files records the
 // filesystem of whichever machine ran the compose client, not the daemon's,
-// so a project brought up on another machine, or a file since moved,
-// yields a path that
-// means nothing here. Both cases are treated as "no files".
+// so a project brought up on another machine, or a file since moved, yields
+// a path that means nothing here. Both cases are treated as "no files".
 //
 // A relative path counts as no path at all. Compose v1 recorded config_files
 // as given rather than absolute, and the label is stored verbatim, so
@@ -192,6 +191,12 @@ func (m model) composeProjectFor(name string) docker.ComposeProject {
 	return docker.ComposeProject{Name: name}
 }
 
+// composeDriftBudget bounds the drift walk, not just the calls in it: the
+// per-call bounds add up over a project list. It does not bound the model's
+// whole cycle, which starts with composeScanCmd under its own
+// composeReadTimeout. A var so tests can shorten it.
+var composeDriftBudget = 30 * time.Second
+
 // composeDriftCmd asks compose for each project's file hashes and compares
 // them against the running containers. Projects whose files are unknown are
 // skipped rather than reported as unknown, so the views render exactly as
@@ -199,21 +204,32 @@ func (m model) composeProjectFor(name string) docker.ComposeProject {
 // project's drift (an empty SYNC column, same as "not checked yet") but is
 // never swallowed: every failure is joined into the returned message's err
 // so the model can surface it rather than leave it undiagnosable.
+// The cycle is bounded twice: each call by composecli, the whole walk by
+// composeDriftBudget.
 func composeDriftCmd(engine composeEngine, projects []docker.ProjectWithServices, containers []*docker.Container) tea.Cmd {
 	return func() tea.Msg {
 		if engine == nil {
 			return composeDriftMsg{}
 		}
+		ctx, cancel := context.WithTimeout(context.Background(), composeDriftBudget)
+		defer cancel()
 		drift := make(map[string]map[string]docker.ServiceSync)
 		var errs []error
-		for _, p := range projects {
+		for i, p := range projects {
+			// Stop rather than report the same expiry per project.
+			if ctx.Err() != nil {
+				errs = append(errs, fmt.Errorf(
+					"drift check gave up after %s, %d of %d projects unchecked",
+					composeDriftBudget, len(projects)-i, len(projects)))
+				break
+			}
 			// Unknown files, not a failure: ConfigFiles belongs to
 			// whichever machine ran compose, so a project brought up
 			// elsewhere would pin an error banner for the whole session.
 			if !composeFilesUsable(p.Project) {
 				continue
 			}
-			hashes, err := engine.ConfigHashes(context.Background(), composeProjectOf(p.Project))
+			hashes, err := engine.ConfigHashes(ctx, composeProjectOf(p.Project))
 			if err != nil {
 				errs = append(errs, fmt.Errorf("%s: %w", p.Project.Name, err))
 				continue

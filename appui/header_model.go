@@ -3,6 +3,7 @@ package appui
 import (
 	"fmt"
 	"strings"
+	"unicode"
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -149,8 +150,16 @@ func (m HeaderModel) View() string {
 
 // SeparatorLine renders the header separator. When message is non-empty it
 // displays the message text; otherwise it renders a plain colored line.
+// The separator is one line in the layout's height budget, so a message is
+// flattened and truncated first: a newline would make lipgloss render two
+// rows and push the footer off the screen, and anything wider than the
+// terminal would wrap for the same effect.
 func (m HeaderModel) SeparatorLine(message string) string {
 	if message != "" {
+		message = oneLine(message)
+		if m.width > 0 {
+			message = ansi.Truncate(message, m.width, "…")
+		}
 		style := lipgloss.NewStyle().
 			Foreground(DryTheme.Fg).
 			Background(DryTheme.Header).
@@ -162,6 +171,27 @@ func (m HeaderModel) SeparatorLine(message string) string {
 		Background(DryTheme.Header).
 		Width(m.width).
 		Render(" ")
+}
+
+// oneLine flattens a message so it cannot occupy more than one row, and so
+// the row it occupies is the one it appears to. Newlines become separators,
+// since lipgloss renders them as extra rows. A carriage return or backspace
+// it passes through untouched at zero width, so the padding arithmetic is
+// satisfied and the terminal still repaints over the row; compose writes
+// them for progress. A tab it expands to four cells while ansi.StringWidth
+// counts none, so one space in its place keeps the width honest and the
+// words apart.
+func oneLine(s string) string {
+	s = strings.ReplaceAll(s, "\n", "; ")
+	return strings.Map(func(r rune) rune {
+		switch {
+		case r == '\t':
+			return ' '
+		case r != ' ' && unicode.IsControl(r):
+			return -1
+		}
+		return r
+	}, s)
 }
 
 // padLine pads or truncates a line to exactly targetWidth visual characters.
