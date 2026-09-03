@@ -52,11 +52,11 @@ func composeUnavailableMsg() tea.Msg {
 // compose from this host. Two things make a recorded path unusable, and both
 // look identical to compose: there is no path at all (an older compose wrote
 // no config_files label, or the project row predates the working-directory
-// scan), or the path exists only on the daemon's filesystem —
-// com.docker.compose.project.config_files describes the host the containers
-// were created on, while the compose CLI runs locally, so a remote
-// DOCKER_HOST, a moved file, or a deleted file all yield a path that means
-// nothing here. Both cases are treated as "no files".
+// scan), or the path is not on this machine: config_files records the
+// filesystem of whichever machine ran the compose client, not the daemon's,
+// so a project brought up on another machine, or a file since moved,
+// yields a path that
+// means nothing here. Both cases are treated as "no files".
 //
 // A relative path counts as no path at all. Compose v1 recorded config_files
 // as given rather than absolute, and the label is stored verbatim, so
@@ -89,9 +89,10 @@ func composeFilesUsable(p docker.ComposeProject) bool {
 // with the selected project's name. A duplicate stack under a wrong name is
 // worse than a refusal, so dry refuses.
 //
-// down is deliberately not guarded: compose removes a project by its
-// container labels alone, so it does the right thing with no file at all, and
-// a project dry only knows from labels must stay removable.
+// down is deliberately never refused: compose removes a project by its
+// container labels alone, so it does the right thing with no file at all,
+// and a project dry only knows from labels must stay removable.
+// composeDownCmd does check the paths, but to drop them, not to refuse.
 func composeNoFilesMsg(p docker.ComposeProject) tea.Msg {
 	return statusMessageMsg{
 		text:   fmt.Sprintf("Project %s has no compose file on this host", p.Name),
@@ -206,12 +207,9 @@ func composeDriftCmd(engine composeEngine, projects []docker.ProjectWithServices
 		drift := make(map[string]map[string]docker.ServiceSync)
 		var errs []error
 		for _, p := range projects {
-			// A project whose recorded files are not readable here is
-			// treated as a project with unknown files, not as a failure:
-			// ConfigFiles describes the daemon host's filesystem, so a
-			// remote DOCKER_HOST or a moved file would otherwise make
-			// ConfigHashes fail every cycle and pin an error banner to the
-			// screen for as long as dry runs.
+			// Unknown files, not a failure: ConfigFiles belongs to
+			// whichever machine ran compose, so a project brought up
+			// elsewhere would pin an error banner for the whole session.
 			if !composeFilesUsable(p.Project) {
 				continue
 			}
@@ -249,13 +247,24 @@ func composeConfigCmd(engine composeEngine, p docker.ComposeProject) tea.Cmd {
 	}
 }
 
-// composeDownCmd takes a project down.
+// composeDownCmd takes a project down by label when the recorded paths are
+// not usable here. -f on a path that is not on this machine fails the
+// command outright ("open /srv/app/compose.yaml: no such file or
+// directory") in exactly the case where by-label is the only thing that can
+// work; --project-directory does not fail, and is dropped along with the
+// files only to keep the invocation purely label-based. See
+// composeNoFilesMsg for why down is never refused.
 func composeDownCmd(engine composeEngine, p docker.ComposeProject) tea.Cmd {
 	return func() tea.Msg {
 		if engine == nil {
 			return composeUnavailableMsg()
 		}
-		reader, err := engine.Down(context.Background(), composeProjectOf(p))
+		target := composeProjectOf(p)
+		if !composeFilesUsable(p) {
+			target.Files = nil
+			target.WorkingDir = ""
+		}
+		reader, err := engine.Down(context.Background(), target)
 		if err != nil {
 			return statusMessageMsg{
 				text:   fmt.Sprintf("Compose down failed: %s", err),
