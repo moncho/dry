@@ -114,3 +114,46 @@ func TestMergeScannedProject_AddsNotCreatedProject(t *testing.T) {
 		t.Fatalf("expected status not created, got %q", merged[0].Project.Status)
 	}
 }
+
+// TestScanComposeDir_PrefersTheFileComposeWouldUse pins the precedence
+// order against the plugin's own. dry hands the scanned file to compose as
+// -f, so picking a different file from the one compose would have picked
+// means `u` brings up a different stack from `docker compose up` in that
+// directory, silently, since both files are valid. Matching the precedence
+// does not make the two identical: -f also suppresses override discovery,
+// so a directory with a compose.override.yaml still diverges.
+
+func TestScanComposeDir_PrefersTheFileComposeWouldUse(t *testing.T) {
+	tests := []struct {
+		name    string
+		present []string
+		want    string
+	}{
+		{"current over legacy", []string{"compose.yaml", "docker-compose.yml"}, "compose.yaml"},
+		{"yaml over yml, current name", []string{"compose.yaml", "compose.yml"}, "compose.yaml"},
+		{"current yml over legacy", []string{"compose.yml", "docker-compose.yml"}, "compose.yml"},
+		{"yml over yaml, legacy name", []string{"docker-compose.yaml", "docker-compose.yml"}, "docker-compose.yml"},
+		{"legacy yaml alone", []string{"docker-compose.yaml"}, "docker-compose.yaml"},
+		{"all four", []string{"compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml"}, "compose.yaml"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			for _, name := range tc.present {
+				if err := os.WriteFile(filepath.Join(dir, name), []byte("services: {}\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			files, ok := ScanComposeDir(dir)
+			if !ok {
+				t.Fatal("expected a compose file to be found")
+			}
+			if len(files) != 1 {
+				t.Fatalf("expected a single file, got %v", files)
+			}
+			if got := filepath.Base(files[0]); got != tc.want {
+				t.Fatalf("expected %s, got %s", tc.want, got)
+			}
+		})
+	}
+}
