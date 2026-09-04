@@ -484,7 +484,7 @@ type composeProjectsKeyMap struct {
 	Sort, Refresh, Filter                                                 key.Binding
 	Monitor, Containers, Images, Nets, Vols, Nodes, Svcs, Stacks, Compose key.Binding
 	Enter                                                                 key.Binding
-	Logs                                                                  key.Binding
+	Up, Down, Logs                                                        key.Binding
 	Stop, Restart, Remove                                                 key.Binding
 }
 
@@ -504,17 +504,27 @@ var composeProjectsKeys = composeProjectsKeyMap{
 	Stacks:     key.NewBinding(key.WithKeys("7"), key.WithHelp("7", "stacks")),
 	Compose:    key.NewBinding(key.WithKeys("8"), key.WithHelp("8", "compose")),
 	Enter:      key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "services")),
+	Up:         key.NewBinding(key.WithKeys("u"), key.WithHelp("u", "up")),
+	Down:       key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "down")),
 	Logs:       key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "logs")),
 	Stop:       key.NewBinding(key.WithKeys("ctrl+t"), key.WithHelp("^t", "stop")),
 	Restart:    key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("^r", "restart")),
-	Remove:     key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("^e", "remove")),
+	Remove:     key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("^e", "rm")),
 }
 
+// What acts on the selected row comes first, then what moves around it.
+// The footer is cut to the terminal width, and sort, refresh, filter and
+// the eight view-switch digits spend 151 columns between them, 120 with no
+// swarm to show, so with the actions last a 140-column terminal showed none
+// of them: enter, u, d, logs and the three lifecycle keys were all past the
+// cut. u is the key a not-created service's message names and d is the most
+// destructive one here, and everything after them is under h as well.
 func (k composeProjectsKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
-		k.Help, k.Quit, k.Sort, k.Refresh, k.Filter,
+		k.Help, k.Quit,
+		k.Enter, k.Up, k.Down, k.Logs, k.Stop, k.Restart, k.Remove,
+		k.Sort, k.Refresh, k.Filter,
 		k.Monitor, k.Containers, k.Images, k.Nets, k.Vols, k.Nodes, k.Svcs, k.Stacks, k.Compose,
-		k.Enter, k.Logs, k.Stop, k.Restart, k.Remove,
 	}
 }
 
@@ -525,7 +535,7 @@ func (k composeProjectsKeyMap) FullHelp() [][]key.Binding { return [][]key.Bindi
 type composeServicesKeyMap struct {
 	Help, Quit                   key.Binding
 	Sort, Filter                 key.Binding
-	Back, Enter, Logs            key.Binding
+	Back, Enter, Up, Logs        key.Binding
 	Start, Stop, Restart, Remove key.Binding
 }
 
@@ -536,15 +546,23 @@ var composeServicesKeys = composeServicesKeyMap{
 	Filter:  key.NewBinding(key.WithKeys("%"), key.WithHelp("%", "filter")),
 	Back:    key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 	Enter:   key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "inspect")),
+	Up:      key.NewBinding(key.WithKeys("u"), key.WithHelp("u", "up")),
 	Logs:    key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "logs")),
 	Start:   key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("^s", "start")),
 	Stop:    key.NewBinding(key.WithKeys("ctrl+t"), key.WithHelp("^t", "stop")),
 	Restart: key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("^r", "restart")),
-	Remove:  key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("^e", "remove")),
+	Remove:  key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("^e", "rm")),
 }
 
+// Actions first, for the reason the projects view orders them that way:
+// adding u pushed the tail of this strip past a 140-column cut, and the 20
+// columns sort and filter spend are the ones to give up for it.
 func (k composeServicesKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit, k.Sort, k.Filter, k.Back, k.Enter, k.Logs, k.Start, k.Stop, k.Restart, k.Remove}
+	return []key.Binding{
+		k.Help, k.Quit, k.Back,
+		k.Enter, k.Up, k.Logs, k.Start, k.Stop, k.Restart, k.Remove,
+		k.Sort, k.Filter,
+	}
 }
 
 func (k composeServicesKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{k.ShortHelp()} }

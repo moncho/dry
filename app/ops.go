@@ -127,22 +127,22 @@ func (m model) executeContainerOp(tag, id string) tea.Cmd {
 			err = daemon.StackRemove(id)
 			successMsg = fmt.Sprintf("Stack %s removed", id)
 		case "compose-start":
-			project, service, _ := strings.Cut(id, "/")
+			project, service := splitComposeServiceID(id)
 			var report docker.ComposeServiceActionReport
 			report, err = daemon.ComposeServiceStart(project, service)
 			successMsg = report.Summary()
 		case "compose-stop":
-			project, service, _ := strings.Cut(id, "/")
+			project, service := splitComposeServiceID(id)
 			var report docker.ComposeServiceActionReport
 			report, err = daemon.ComposeServiceStop(project, service)
 			successMsg = report.Summary()
 		case "compose-restart":
-			project, service, _ := strings.Cut(id, "/")
+			project, service := splitComposeServiceID(id)
 			var report docker.ComposeServiceActionReport
 			report, err = daemon.ComposeServiceRestart(project, service)
 			successMsg = report.Summary()
 		case "compose-rm":
-			project, service, _ := strings.Cut(id, "/")
+			project, service := splitComposeServiceID(id)
 			var report docker.ComposeServiceActionReport
 			report, err = daemon.ComposeServiceRemove(project, service)
 			successMsg = report.Summary()
@@ -158,9 +158,12 @@ func (m model) executeContainerOp(tag, id string) tea.Cmd {
 			var report docker.ComposeServiceActionReport
 			report, err = daemon.ComposeProjectRemove(id)
 			successMsg = report.Summary()
+		case "compose-project-up":
+			// The two compose actions that stream into the viewer rather
+			// than reporting a summary, so they return the command's
+			// message directly.
+			return composeUpCmd(m.composeCLI, m.composeProjectFor(id))()
 		case "compose-project-down":
-			// The one compose action that streams into the viewer rather than
-			// reporting a summary, so it returns the command's message directly.
 			return composeDownCmd(m.composeCLI, m.composeProjectFor(id))()
 		case "prune":
 			report, pruneErr := daemon.Prune()
@@ -254,4 +257,18 @@ func (m model) cycleNodeAvailability(nodeID string) tea.Cmd {
 			message: fmt.Sprintf("Node %s availability set to %s", shortID(nodeID), next),
 		}
 	}
+}
+
+// composeServiceID pairs a project with one of its services, for a
+// confirmation prompt that has to survive until the user answers it. Both
+// names come from container labels anything can set, so the halves are
+// joined by a NUL rather than a slash: joined by a slash, project "a"
+// service "b/c" and project "a/b" service "c" are the same id, and the
+// confirmation then acts on a service the user did not name.
+func composeServiceID(project, service string) string { return project + "\x00" + service }
+
+// splitComposeServiceID undoes composeServiceID.
+func splitComposeServiceID(id string) (project, service string) {
+	project, service, _ = strings.Cut(id, "\x00")
+	return project, service
 }

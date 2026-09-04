@@ -47,8 +47,8 @@ func TestServicesModel_SetDrift_RendersSyncColumn(t *testing.T) {
 	}
 
 	const syncCol = 6 // NAME, CONTAINERS, RUNNING, EXITED, IMAGE/DRIVER, HEALTH/SCOPE, SYNC, PORTS
-	if !strings.Contains(apiCols[syncCol], "none") {
-		t.Fatalf("expected the not-created service's SYNC cell to render \"none\", got %q", apiCols[syncCol])
+	if !strings.Contains(apiCols[syncCol], "absent") {
+		t.Fatalf("expected the not-created service's SYNC cell to render \"absent\", got %q", apiCols[syncCol])
 	}
 	if !strings.Contains(workerCols[syncCol], "ok") {
 		t.Fatalf("expected the in-sync service's SYNC cell to render \"ok\", got %q", workerCols[syncCol])
@@ -732,3 +732,214 @@ type sweepRow []string
 
 func (r sweepRow) Columns() []string { return r }
 func (r sweepRow) ID() string        { return "sweep" }
+
+// The same rows in the services view, where the section count has to include
+// them or the header contradicts the list underneath it.
+func TestServicesModel_AServiceInTheFileWithNoContainersGetsARow(t *testing.T) {
+	appui.InitStyles()
+	m := NewServicesModel()
+	m.SetSize(140, 20)
+	m.SetServices([]docker.ComposeService{{Project: "web", Name: "api", Containers: 1}}, nil, nil, "web")
+	m.SetDrift(map[string]map[string]docker.ServiceSync{"web": {
+		"api": docker.ServiceInSync,
+		"db":  docker.ServiceNotCreated,
+	}})
+
+	view := ansi.Strip(m.View())
+	if !strings.Contains(view, "db") {
+		t.Errorf("expected the file's own service listed:\n%s", view)
+	}
+	if !strings.Contains(view, "Services (2)") {
+		t.Errorf("expected the section count to include it:\n%s", view)
+	}
+	// And the widget header's own total, which is a separate field: with
+	// only the section row asserted, a header that still counted containers
+	// would contradict the list underneath it and nothing here would say so.
+	if header := strings.Split(view, "\n")[0]; !strings.Contains(header, "Compose: web  2") {
+		t.Errorf("expected the header total to include it, got %q", header)
+	}
+	if !strings.Contains(view, "absent") {
+		t.Errorf("expected it to report SYNC absent:\n%s", view)
+	}
+}
+
+// The row has to resolve to a service, which is what makes u able to act on
+// it; that u then does is asserted through the key handler in package app.
+func TestServicesModel_ANotCreatedRowIsSelectableAsAService(t *testing.T) {
+	appui.InitStyles()
+	m := NewServicesModel()
+	m.SetSize(140, 20)
+	m.SetServices(nil, nil, nil, "web")
+	m.SetDrift(map[string]map[string]docker.ServiceSync{"web": {"db": docker.ServiceNotCreated}})
+
+	svc := m.SelectedService()
+	if svc == nil {
+		t.Fatal("expected the not-created row to resolve to a service")
+	}
+	if svc.Name != "db" || svc.Project != "web" {
+		t.Errorf("expected web/db, got %s/%s", svc.Project, svc.Name)
+	}
+}
+
+// The rows wait for the load, because the drift map may still describe this
+// project from an earlier cycle.
+func TestServicesModel_NoNotCreatedRowsWhileLoading(t *testing.T) {
+	appui.InitStyles()
+	m := NewServicesModel()
+	m.SetSize(140, 20)
+	m.SetServices([]docker.ComposeService{{Project: "web", Name: "api", Containers: 1}}, nil, nil, "web")
+	m.SetDrift(map[string]map[string]docker.ServiceSync{"web": {"api": docker.ServiceNotCreated}})
+
+	m.SetProject("web") // entering the project again: loading, rows cleared
+
+	if got := m.table.RowCount(); got != 0 {
+		t.Errorf("expected no rows while loading, got %d", got)
+	}
+	if view := ansi.Strip(m.View()); !strings.Contains(view, "Loading") {
+		t.Errorf("expected the loading message, got:\n%s", view)
+	}
+}
+
+// And the three empty states here.
+func TestServicesModel_AnEmptyViewSaysWhy(t *testing.T) {
+	appui.InitStyles()
+	body := func(m ServicesModel) string {
+		return strings.TrimRight(ansi.Strip(strings.Split(m.View(), "\n")[3]), " ")
+	}
+
+	m := NewServicesModel()
+	// 58 columns, what workspace mode leaves the list on a 100-column
+	// terminal: every one of these has to fit there whole, since an
+	// ellipsis lands in the middle of the reason.
+	m.SetSize(58, 8)
+	m.SetProject("web")
+	if got := body(m); !strings.Contains(got, "Loading") {
+		t.Errorf("loading, expected to say so, got %q", got)
+	} else if strings.HasSuffix(got, "…") {
+		t.Errorf("expected the loading message to fit 58 columns, got %q", got)
+	}
+
+	m.SetServices(nil, nil, nil, "web")
+	if got := body(m); !strings.Contains(got, "no services, networks or volumes") {
+		t.Errorf("empty, expected to say so, got %q", got)
+	} else if strings.HasSuffix(got, "…") {
+		t.Errorf("expected the empty message to fit 58 columns, got %q", got)
+	}
+
+	m.SetServices([]docker.ComposeService{{Project: "web", Name: "api"}}, nil, nil, "web")
+	m, _ = m.Update(tea.KeyPressMsg{Code: '%'})
+	for _, r := range "zzz" {
+		m, _ = m.Update(tea.KeyPressMsg{Code: r, Text: string(r)})
+	}
+	if got := body(m); !strings.Contains(got, "filter") {
+		t.Errorf("filtered to nothing, expected the filter named, got %q", got)
+	} else if strings.HasSuffix(got, "…") {
+		t.Errorf("expected the filter message to fit 58 columns, got %q", got)
+	}
+}
+
+// A model that has never been given a project is waiting, not empty: the two
+// look identical on screen, and "this project has no services" is a claim
+// about a project that has not been named yet.
+func TestServicesModel_AFreshModelSaysItIsLoading(t *testing.T) {
+	appui.InitStyles()
+	m := NewServicesModel()
+	m.SetSize(140, 8)
+	line := strings.TrimRight(ansi.Strip(strings.Split(m.View(), "\n")[3]), " ")
+	if !strings.Contains(line, "Loading") {
+		t.Errorf("expected a fresh model to say it is loading, got %q", line)
+	}
+}
+
+// The Compose Services view groups services, networks and volumes under
+// section headers, so f1 has the same hazard the projects view has: sorted
+// flat, the service rows end up under Volumes and the Services section has
+// nothing under it.
+func TestServicesModel_SortKeepsEveryRowUnderItsOwnSection(t *testing.T) {
+	appui.InitStyles()
+	m := NewServicesModel()
+	m.SetSize(160, 20)
+	m.SetServices(
+		[]docker.ComposeService{
+			{Project: "web", Name: "api", Containers: 3, Running: 3},
+			{Project: "web", Name: "db", Containers: 1},
+		},
+		[]docker.ComposeNetwork{{Name: "web_default"}, {Name: "web_backend"}},
+		[]docker.ComposeVolume{{Name: "web_data"}},
+		"web")
+
+	// Sixteen presses: eight columns, twice round.
+	want := map[string]int{"svc:": 2, "net:": 2, "vol:": 1}
+	for press := range 16 {
+		m, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyF1})
+		rows := m.table.FilteredRows()
+		if _, first := rows[0].(sectionRow); !first {
+			t.Fatalf("press %d: the first row is not a section header: %s", press, rows[0].ID())
+		}
+		prefix := ""
+		counted := map[string]int{}
+		for _, row := range rows {
+			switch r := row.(type) {
+			case sectionRow:
+				switch {
+				case strings.Contains(r.Columns()[0], "Services"):
+					prefix = "svc:"
+				case strings.Contains(r.Columns()[0], "Networks"):
+					prefix = "net:"
+				case strings.Contains(r.Columns()[0], "Volumes"):
+					prefix = "vol:"
+				}
+			default:
+				if !strings.HasPrefix(row.ID(), prefix) {
+					t.Fatalf("press %d: row %s sits under the %s section", press, row.ID(), prefix)
+				}
+				counted[prefix]++
+			}
+		}
+		for p, n := range want {
+			if counted[p] != n {
+				t.Fatalf("press %d: expected %d rows under %s, got %d", press, n, p, counted[p])
+			}
+		}
+	}
+
+	// And the sort reaches the rows inside a section: on CONTAINERS
+	// ascending the services go db (1) then api (3), against their names.
+	m.table.SetSortField(0)
+	m.refreshRows()
+	m, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyF1})
+	var order []string
+	for _, row := range m.table.FilteredRows() {
+		if strings.HasPrefix(row.ID(), "svc:") {
+			order = append(order, strings.TrimPrefix(row.ID(), "svc:"))
+		}
+	}
+	if strings.Join(order, ",") != "db,api" {
+		t.Errorf("expected the services sorted by container count, db then api, got %v", order)
+	}
+}
+
+// The same tiebreak in this view: on a column where every service cell is
+// empty, the order is the order the rows were built in, so building the
+// file-only ones on the end rather than in among the rest shows there.
+func TestServicesModel_ServicesTieBreakByName(t *testing.T) {
+	appui.InitStyles()
+	m := NewServicesModel()
+	m.SetSize(160, 20)
+	m.SetServices([]docker.ComposeService{{Project: "web", Name: "zzz", Containers: 1}}, nil, nil, "web")
+	m.SetDrift(map[string]map[string]docker.ServiceSync{"web": {"aaa": docker.ServiceNotCreated}})
+
+	// PORTS, the last column, is empty on both rows.
+	m.table.SetSortField(7)
+	m.refreshRows()
+
+	var order []string
+	for _, row := range m.table.FilteredRows() {
+		if strings.HasPrefix(row.ID(), "svc:") {
+			order = append(order, strings.TrimPrefix(row.ID(), "svc:"))
+		}
+	}
+	if strings.Join(order, ",") != "aaa,zzz" {
+		t.Errorf("expected the name order to break the tie, aaa then zzz, got %v", order)
+	}
+}

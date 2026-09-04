@@ -23,7 +23,7 @@ const (
 )
 
 func (m model) renderWorkspaceFooter(bindings []key.Binding, footerBg, keyStyle, descStyle, sepStyle lipgloss.Style) string {
-	renderCompact := func(bindings []key.Binding, mode int) string {
+	compactParts := func(bindings []key.Binding, mode int) []string {
 		var parts []string
 		for _, kb := range bindings {
 			if !kb.Enabled() {
@@ -49,7 +49,36 @@ func (m model) renderWorkspaceFooter(bindings []key.Binding, footerBg, keyStyle,
 			}
 			parts = append(parts, keyStyle.Render(keyText)+footerBg.Render(" ")+descStyle.Render(descText))
 		}
-		return strings.Join(parts, sepStyle.Render(" · "))
+		return parts
+	}
+
+	// Whole entries, never half of one, the same rule the wide footer
+	// follows: this strip's last resort used to cut the rendered line, and
+	// at the widths that reaches it that lands inside a key's own label.
+	const marker = " \u2026"
+	join := func(parts []string, limit int) (line string, width int, dropped bool) {
+		sep := sepStyle.Render(" \u00b7 ")
+		for i, part := range parts {
+			add := ansi.StringWidth(part)
+			if i > 0 {
+				add += 3
+			}
+			if width+add > limit {
+				return line, width, i > 0
+			}
+			if i > 0 {
+				line += sep
+			}
+			line += part
+			width += add
+		}
+		return line, width, false
+	}
+	// Unlimited, because the three compaction modes are chosen by how wide
+	// their whole line comes out: a mode that trimmed itself to fit would
+	// always fit, and the next mode would never be tried.
+	renderCompact := func(bindings []key.Binding, mode int) string {
+		return strings.Join(compactParts(bindings, mode), sepStyle.Render(" \u00b7 "))
 	}
 
 	right := renderCompact([]key.Binding{key.NewBinding(key.WithKeys("h"), key.WithHelp("?", ""))}, 0)
@@ -70,8 +99,12 @@ func (m model) renderWorkspaceFooter(bindings []key.Binding, footerBg, keyStyle,
 		leftWidth = ansi.StringWidth(left)
 	}
 	if leftWidth > maxLeftWidth {
-		left = ansi.Truncate(left, maxLeftWidth, "")
-		leftWidth = ansi.StringWidth(left)
+		var dropped bool
+		left, leftWidth, dropped = join(compactParts(bindings, 2), maxLeftWidth)
+		if dropped && leftWidth+ansi.StringWidth(marker) <= maxLeftWidth {
+			left += sepStyle.Render(marker)
+			leftWidth += ansi.StringWidth(marker)
+		}
 	}
 	line := left
 	if leftWidth < m.width-rightWidth {
@@ -297,6 +330,19 @@ func (m model) nextWorkspacePane(reverse bool) workspacePane {
 	return order[idx]
 }
 
+// definedServiceCount is how many service rows the list shows for a
+// project, read from whichever model is showing it. Always reading the
+// projects model made the panel disagree with the list beside it: the two
+// hold separate drift maps, and only the services model knows its own first
+// load has not landed, so the panel said "3 of 4 defined" next to a list
+// that still said it was loading.
+func (m model) definedServiceCount(project string) int {
+	if m.view == ComposeServices && m.selectedProject == project {
+		return m.composeServices.ServiceRowCount()
+	}
+	return m.composeProjects.ServiceRowCount(project)
+}
+
 func (m model) currentWorkspaceSelection() (workspaceContext, bool) {
 	switch m.view {
 	case Main:
@@ -308,7 +354,7 @@ func (m model) currentWorkspaceSelection() (workspaceContext, bool) {
 			return workspaceContextFromComposeService(*svc), true
 		}
 		if p := m.composeProjects.SelectedProject(); p != nil {
-			return workspaceContextFromComposeProject(*p), true
+			return workspaceContextFromComposeProject(*p, m.definedServiceCount(p.Name)), true
 		}
 	case ComposeServices:
 		if svc := m.composeServices.SelectedService(); svc != nil {
@@ -374,7 +420,7 @@ func (m model) workspacePreview(full bool) (workspaceContext, bool) {
 	}
 	if m.view == ComposeServices {
 		if p, ok := m.findComposeProjectByName(m.selectedProject); ok {
-			return workspaceContextFromComposeProject(*p), true
+			return workspaceContextFromComposeProject(*p, m.definedServiceCount(p.Name)), true
 		}
 	}
 	return workspaceContext{}, false
@@ -518,7 +564,7 @@ func (m *model) refreshPinnedWorkspaceContext() {
 		}
 	case workspaceContextComposeProject:
 		if p, ok := m.findComposeProjectByName(m.pinnedContext.project); ok {
-			ctx := workspaceContextFromComposeProject(*p)
+			ctx := workspaceContextFromComposeProject(*p, m.definedServiceCount(p.Name))
 			m.pinnedContext = &ctx
 		}
 	case workspaceContextComposeService:

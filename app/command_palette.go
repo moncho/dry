@@ -120,12 +120,24 @@ func (m model) commandPaletteActions() []paletteAction {
 	case ComposeProjects:
 		if svc := m.composeProjects.SelectedService(); svc != nil {
 			label := svc.Project + "/" + svc.Name
-			add("Compose Service", "compose-project-service:inspect", "Inspect", label, "inspect")
-			add("Compose Service", "compose-project-service:logs", "Logs", label, "logs")
+			// Up first, and on its own for a service the compose file
+			// defines and nothing runs: a menu that lists six entries
+			// which all answer "u brings it up" is a menu of dead ends.
+			add("Compose Service", "compose-project-service:up", "Up", label, "up create start")
+			if svc.Containers > 0 {
+				add("Compose Service", "compose-project-service:inspect", "Inspect", label, "inspect")
+				add("Compose Service", "compose-project-service:logs", "Logs", label, "logs")
+				add("Compose Service", "compose-project-service:stop", "Stop", label, "stop")
+				add("Compose Service", "compose-project-service:restart", "Restart", label, "restart")
+				add("Compose Service", "compose-project-service:rm", "Remove Containers", label, "remove rm")
+			}
 		}
 		if p := m.composeProjects.SelectedProject(); p != nil {
 			add("Compose Project", "compose-project:open", "Open Resources", p.Name, "open services")
 			add("Compose Project", "compose-project:logs", "Logs", p.Name, "logs")
+			add("Compose Project", "compose-project:up", "Up", p.Name, "up create start")
+			add("Compose Project", "compose-project:down", "Down", p.Name, "down destroy remove networks")
+			add("Compose Project", "compose-project:config", "Config", p.Name, "config rendered yaml")
 			add("Compose Project", "compose-project:stop", "Stop", p.Name, "stop")
 			add("Compose Project", "compose-project:restart", "Restart", p.Name, "restart")
 			add("Compose Project", "compose-project:rm", "Remove Containers", p.Name, "remove rm")
@@ -133,13 +145,19 @@ func (m model) commandPaletteActions() []paletteAction {
 	case ComposeServices:
 		if svc := m.composeServices.SelectedService(); svc != nil {
 			label := svc.Project + "/" + svc.Name
-			add("Compose Service", "compose-service:inspect", "Inspect", label, "inspect")
-			add("Compose Service", "compose-service:logs", "Logs", label, "logs")
-			add("Compose Service", "compose-service:start", "Start", label, "start")
-			add("Compose Service", "compose-service:stop", "Stop", label, "stop")
-			add("Compose Service", "compose-service:restart", "Restart", label, "restart")
-			add("Compose Service", "compose-service:rm", "Remove Containers", label, "remove rm")
+			// The two that create the service come first and are always
+			// offered; the rest need a container to act on, and listing
+			// them on a row that has none is a menu of dead ends.
+			add("Compose Service", "compose-service:up", "Up", label, "up create start")
 			add("Compose Service", "compose:recreate", "Force Recreate", label, "recreate force replace container")
+			if svc.Containers > 0 {
+				add("Compose Service", "compose-service:inspect", "Inspect", label, "inspect")
+				add("Compose Service", "compose-service:logs", "Logs", label, "logs")
+				add("Compose Service", "compose-service:start", "Start", label, "start")
+				add("Compose Service", "compose-service:stop", "Stop", label, "stop")
+				add("Compose Service", "compose-service:restart", "Restart", label, "restart")
+				add("Compose Service", "compose-service:rm", "Remove Containers", label, "remove rm")
+			}
 		}
 		if n := m.composeServices.SelectedNetwork(); n != nil {
 			add("Compose Network", "compose-network:inspect", "Inspect", n.Name, "inspect")
@@ -428,13 +446,39 @@ func (m model) executePaletteAction(id string) (tea.Model, tea.Cmd) {
 			return m.showPrompt(fmt.Sprintf("Remove stack %s?", s.Name), "stack-rm", s.Name), nil
 		}
 	case "compose-project-service:inspect":
-		if svc := m.composeProjects.SelectedService(); svc != nil {
+		svc, why := containerAction(m.composeProjects.SelectedService(), "Inspect")
+		if why != nil {
+			return m, why
+		}
+		if svc != nil {
 			return m, inspectComposeServiceCmd(m.daemon, svc.Project, svc.Name)
 		}
 	case "compose-project-service:logs":
-		if svc := m.composeProjects.SelectedService(); svc != nil {
+		svc, why := containerAction(m.composeProjects.SelectedService(), "Logs")
+		if why != nil {
+			return m, why
+		}
+		if svc != nil {
 			return m, showComposeLogsCmd(m.daemon, svc.Project, svc.Name)
 		}
+	case "compose-project-service:stop":
+		return m.composeProjectsServiceOp("Stop", "compose-stop", "Stop service %s?")
+	case "compose-project-service:restart":
+		return m.composeProjectsServiceOp("Restart", "compose-restart", "Restart service %s?")
+	case "compose-project-service:rm":
+		return m.composeProjectsServiceOp("Remove", "compose-rm", "Remove service %s containers?")
+	case "compose-project-service:up":
+		// No gate: up is the action a service with no containers needs, and
+		// it is the one the refusals name.
+		if svc := m.composeProjects.SelectedService(); svc != nil {
+			if p := m.composeProjects.ProjectByName(svc.Project); p != nil {
+				return m, composeUpCmd(m.composeCLI, *p, svc.Name)
+			}
+			// The row is there and its project is not, which a refresh
+			// between opening the palette and choosing can do.
+			return m, composeSelectionCmd("Up needs " + svc.Project + ", and that project is gone")
+		}
+		return m, m.composeNoServiceRowCmd("Up")
 	case "compose-project:open":
 		if p := m.composeProjects.SelectedProject(); p != nil {
 			return m.openComposeServices(p.Name)
@@ -442,6 +486,20 @@ func (m model) executePaletteAction(id string) (tea.Model, tea.Cmd) {
 	case "compose-project:logs":
 		if p := m.composeProjects.SelectedProject(); p != nil {
 			return m, showComposeLogsCmd(m.daemon, p.Name, "")
+		}
+	case "compose-project:up":
+		if p := m.composeProjects.SelectedProject(); p != nil {
+			return m.showPrompt(fmt.Sprintf("Bring project %s up?", p.Name),
+				"compose-project-up", p.Name), nil
+		}
+	case "compose-project:down":
+		if p := m.composeProjects.SelectedProject(); p != nil {
+			return m.showPrompt(fmt.Sprintf("Take project %s down?", p.Name),
+				"compose-project-down", p.Name), nil
+		}
+	case "compose-project:config":
+		if p := m.composeProjects.SelectedProject(); p != nil {
+			return m, composeConfigCmd(m.composeCLI, *p)
 		}
 	case "compose-project:stop":
 		if p := m.composeProjects.SelectedProject(); p != nil {
@@ -456,28 +514,56 @@ func (m model) executePaletteAction(id string) (tea.Model, tea.Cmd) {
 			return m.showPrompt(fmt.Sprintf("Remove project %s containers?", p.Name), "compose-project-rm", p.Name), nil
 		}
 	case "compose-service:inspect":
-		if svc := m.composeServices.SelectedService(); svc != nil {
+		svc, why := containerAction(m.composeServices.SelectedService(), "Inspect")
+		if why != nil {
+			return m, why
+		}
+		if svc != nil {
 			return m, inspectComposeServiceCmd(m.daemon, svc.Project, svc.Name)
 		}
 	case "compose-service:logs":
-		if svc := m.composeServices.SelectedService(); svc != nil {
+		svc, why := containerAction(m.composeServices.SelectedService(), "Logs")
+		if why != nil {
+			return m, why
+		}
+		if svc != nil {
 			return m, showComposeLogsCmd(m.daemon, svc.Project, svc.Name)
 		}
-	case "compose-service:start":
+	case "compose-service:up":
 		if svc := m.composeServices.SelectedService(); svc != nil {
-			return m.showPrompt(fmt.Sprintf("Start service %s?", svc.Name), "compose-start", svc.Project+"/"+svc.Name), nil
+			return m, composeUpCmd(m.composeCLI, m.composeProjectFor(svc.Project), svc.Name)
+		}
+	case "compose-service:start":
+		svc, why := containerAction(m.composeServices.SelectedService(), "Start")
+		if why != nil {
+			return m, why
+		}
+		if svc != nil {
+			return m.showPrompt(fmt.Sprintf("Start service %s?", svc.Name), "compose-start", composeServiceID(svc.Project, svc.Name)), nil
 		}
 	case "compose-service:stop":
-		if svc := m.composeServices.SelectedService(); svc != nil {
-			return m.showPrompt(fmt.Sprintf("Stop service %s?", svc.Name), "compose-stop", svc.Project+"/"+svc.Name), nil
+		svc, why := containerAction(m.composeServices.SelectedService(), "Stop")
+		if why != nil {
+			return m, why
+		}
+		if svc != nil {
+			return m.showPrompt(fmt.Sprintf("Stop service %s?", svc.Name), "compose-stop", composeServiceID(svc.Project, svc.Name)), nil
 		}
 	case "compose-service:restart":
-		if svc := m.composeServices.SelectedService(); svc != nil {
-			return m.showPrompt(fmt.Sprintf("Restart service %s?", svc.Name), "compose-restart", svc.Project+"/"+svc.Name), nil
+		svc, why := containerAction(m.composeServices.SelectedService(), "Restart")
+		if why != nil {
+			return m, why
+		}
+		if svc != nil {
+			return m.showPrompt(fmt.Sprintf("Restart service %s?", svc.Name), "compose-restart", composeServiceID(svc.Project, svc.Name)), nil
 		}
 	case "compose-service:rm":
-		if svc := m.composeServices.SelectedService(); svc != nil {
-			return m.showPrompt(fmt.Sprintf("Remove service %s containers?", svc.Name), "compose-rm", svc.Project+"/"+svc.Name), nil
+		svc, why := containerAction(m.composeServices.SelectedService(), "Remove")
+		if why != nil {
+			return m, why
+		}
+		if svc != nil {
+			return m.showPrompt(fmt.Sprintf("Remove service %s containers?", svc.Name), "compose-rm", composeServiceID(svc.Project, svc.Name)), nil
 		}
 	case "compose:recreate":
 		if svc := m.composeServices.SelectedService(); svc != nil {

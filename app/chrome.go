@@ -118,7 +118,15 @@ func (m model) renderFooter() string {
 	bindings = append(bindings, globalKeys.Palette)
 	bindings = append(bindings, globalKeys.QuickPeek)
 
-	renderBindings := func(bindings []key.Binding) string {
+	// Whole bindings, never half of one: the strip is cut to the terminal
+	// width, and cutting inside an entry leaves "^e rm stop", which reads
+	// as a rendering fault where a list ending in an ellipsis reads as a
+	// list that did not fit (dry's own "^e rm stopped" is what that looks
+	// like). The marker is added only when it fits in what is left over,
+	// since dropping a whole binding to make room for it would say less
+	// than the binding did.
+	const marker = "  \u2026"
+	renderBindings := func(bindings []key.Binding, limit int) (line string, width int, dropped bool) {
 		var b strings.Builder
 		first := true
 		for _, kb := range bindings {
@@ -132,22 +140,36 @@ func (m model) renderFooter() string {
 					continue
 				}
 			}
+			sep := ""
 			if !first {
-				b.WriteString(sepStyle.Render("  \u00b7  "))
+				sep = "  \u00b7  "
 			}
+			entry := kb.Help().Key + " " + kb.Help().Desc
+			if width+ansi.StringWidth(sep)+ansi.StringWidth(entry) > limit {
+				// Whether anything was emitted is what first records; the
+				// loop index counts the bindings skipped above as well.
+				return b.String(), width, !first
+			}
+			if sep != "" {
+				b.WriteString(sepStyle.Render(sep))
+			}
+			width += ansi.StringWidth(sep) + ansi.StringWidth(entry)
 			first = false
 			b.WriteString(keyStyle.Render(kb.Help().Key))
 			b.WriteString(footerBg.Render(" "))
 			b.WriteString(descStyle.Render(kb.Help().Desc))
 		}
-		return b.String()
+		return b.String(), width, false
 	}
 
-	line := renderBindings(bindings)
-	w := ansi.StringWidth(line)
-	if w > m.width {
-		line = ansi.Truncate(line, m.width, "")
-	} else if w < m.width {
+	// A zero or negative width needs no special case: the first binding
+	// does not fit, so nothing is emitted and the padding below has
+	// nothing to pad.
+	line, width, dropped := renderBindings(bindings, m.width)
+	if dropped && width+ansi.StringWidth(marker) <= m.width {
+		line += sepStyle.Render(marker)
+	}
+	if w := ansi.StringWidth(line); w < m.width {
 		line += footerBg.Render(strings.Repeat(" ", m.width-w))
 	}
 	return line

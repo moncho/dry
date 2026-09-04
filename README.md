@@ -129,13 +129,20 @@ Keybinding           | Description
 Keybinding           | Description
 ---------------------|---------------------------------------
 <kbd>Enter</kbd>     | show project services
-<kbd>u</kbd>         | bring the selected project (or service) up
-<kbd>d</kbd>         | take the selected project down
+<kbd>u</kbd>         | bring the selected service up, with no prompt; on a project's own row it asks first
+<kbd>d</kbd>         | take the project down, from its own row and behind a prompt: `compose down` removes the project's networks too, so there is no per-service form
 <kbd>c</kbd>         | show the project's rendered compose configuration
-<kbd>l</kbd>         | project logs
-<kbd>Ctrl+t</kbd>    | stop project containers
-<kbd>Ctrl+r</kbd>    | restart project containers
-<kbd>Ctrl+e</kbd>    | remove project containers
+<kbd>l</kbd>         | logs for the selected service, or the project on its header
+<kbd>Ctrl+t</kbd>    | stop the selected service, or the project on its header
+<kbd>Ctrl+r</kbd>    | restart the selected service, or the project on its header
+<kbd>Ctrl+e</kbd>    | remove the selected service's containers, or the project's
+
+`Ctrl+t`, `Ctrl+r`, `Ctrl+e` and `d` all name their target in a confirmation
+prompt, "Stop service webapp/api?" or "Take project webapp down?", so a
+cursor that has moved is visible before anything runs. `u` on a service row
+is the one action that runs unasked, since it creates rather than destroys;
+on a `drift` row it does recreate the containers, which is the point of the
+label.
 
 #### Compose Services commands
 
@@ -256,8 +263,8 @@ Compose projects show up in their own view (key <kbd>8</kbd>), each project row 
 
 Keybinding       | Description
 -----------------|---------------------------------------
-<kbd>u</kbd>      | bring the selected project or service up
-<kbd>d</kbd>      | take the selected project down (behind a confirmation prompt)
+<kbd>u</kbd>      | bring the selected service up, with no prompt; on a project's own row it asks first
+<kbd>d</kbd>      | take the project down, from its own row and behind a confirmation prompt
 <kbd>c</kbd>      | show the project's rendered compose configuration
 
 `u` and `c` work in both the Compose Projects and Compose Services views; `d` works in Compose Projects only.
@@ -292,10 +299,29 @@ time under the directory's name.
 The SYNC column reports whether a service's running containers match its
 compose file:
 
-Label   | Meaning
---------|-----------------------------------------------------------------
-`ok`    | the containers were created from the compose file as it is now
-`drift` | the compose file changed since the containers were created, the next `u` recreates them
+Label    | Meaning
+---------|----------------------------------------------------------------
+`ok`     | the containers were created from the compose file as it is now
+`drift`  | the compose file changed since the containers were created, the next `u` recreates them
+`absent` | the compose file defines the service and dry lists no container for it
+
+A service with `absent` gets a row of its own under its project, in the same
+name order as the rest, so pressing `u` on it brings up that one service. It
+appears once the drift check has run. The keys that need a container to act
+on answer "u brings it up" on that row rather than prompting for an action
+with nothing to do: `enter`, `l`, `^t`, `^r` and `^e` in both Compose views,
+plus `^s` in Compose Services, which is the only view that has it. `u`, the
+palette's Up and its Force Recreate all create the service, so they run as
+usual. A service behind a compose profile is not part of the file's resolved
+configuration, so it gets no row until the profile is enabled, and a service
+whose only container is a one-off (`docker compose run`) reads as `absent`,
+since dry lists that container under neither the service nor the project.
+
+SYNC is not HEALTH, which sits two columns to its left and is Docker's own
+reading of a container: `none` there means the container declares no
+healthcheck, and has nothing to do with the compose file. A project row's
+STATUS says `not created` for the same idea one level up, when nothing in
+the project has containers.
 
 A blank cell is none of those. SYNC is per service, so it is always empty on
 a project row, and on the section, network and volume rows of the Compose

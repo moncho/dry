@@ -144,9 +144,21 @@ func workspaceContextFromContainer(c *docker.Container) workspaceContext {
 	}
 }
 
-func workspaceContextFromComposeProject(p docker.ComposeProject) workspaceContext {
+// defined is how many service rows the projects view shows, which counts the
+// ones nothing runs and p.Services, taken from containers, does not. It can
+// also be lower, or zero: the panel is reachable with the projects list
+// unloaded, and the two numbers then come from different sources. Only a
+// higher count says anything, so only a higher count is shown.
+func workspaceContextFromComposeProject(p docker.ComposeProject, defined int) workspaceContext {
+	services := fmt.Sprintf("services: %d", p.Services)
+	if defined > p.Services {
+		// "3 of 4 in the file", not "3 of 4 defined": the line sits above
+		// "containers: 4", where "defined" reads as the smaller number's
+		// qualifier rather than the larger one's.
+		services = fmt.Sprintf("services: %d of %d in the file", p.Services, defined)
+	}
 	lines := []string{
-		fmt.Sprintf("services: %d", p.Services),
+		services,
 		fmt.Sprintf("containers: %d", p.Containers),
 		fmt.Sprintf("running: %d", p.Running),
 		fmt.Sprintf("exited: %d", p.Exited),
@@ -174,6 +186,13 @@ func workspaceContextFromComposeService(s docker.ComposeService) workspaceContex
 	}
 	if s.Containers > 0 {
 		lines = append(lines, fmt.Sprintf("status ratio: %d/%d running", s.Running, s.Containers))
+	} else {
+		// A service row with no containers is one the compose file defines
+		// and nothing runs, since every other row is built from a
+		// container. "containers: 0" on its own reads as a fault, so the
+		// panel names the state, in the SYNC column's own word so the two
+		// do not describe one thing twice.
+		lines = append(lines, "state: absent, u brings it up")
 	}
 	if s.Image != "" {
 		lines = append(lines, fmt.Sprintf("image: %s", s.Image))
@@ -184,7 +203,12 @@ func workspaceContextFromComposeService(s docker.ComposeService) workspaceContex
 	if s.Ports != "" {
 		lines = append(lines, fmt.Sprintf("ports: %s", s.Ports))
 	}
-	lines = append(lines, fmt.Sprintf("health summary: %s", workspaceRunningHealth(s.Running, s.Containers)))
+	// The summary describes containers, so a service with none has nothing
+	// for it to describe: "health summary: empty" under "not created" reads
+	// as a second and worse diagnosis of the same thing.
+	if s.Containers > 0 {
+		lines = append(lines, fmt.Sprintf("health summary: %s", workspaceRunningHealth(s.Running, s.Containers)))
+	}
 	return workspaceContext{
 		kind:     workspaceContextComposeService,
 		title:    s.Name,

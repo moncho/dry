@@ -2,6 +2,7 @@ package compose
 
 import (
 	"fmt"
+	"sort"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/moncho/dry/appui"
@@ -124,10 +125,15 @@ func NewServicesModel() ServicesModel {
 		{Title: "SYNC", Width: 7, Fixed: true},
 		{Title: "PORTS"},
 	}
-	return ServicesModel{
+	m := ServicesModel{
 		table:  appui.NewTableModel(columns),
 		filter: appui.NewFilterInputModel(),
+		// Waiting, not empty: a model that has never been given a project
+		// has nothing to show for the same reason one mid-load does.
+		loading: true,
 	}
+	m.syncEmptyMessage()
+	return m
 }
 
 // FilterActive returns true when the filter input is active.
@@ -136,6 +142,14 @@ func (m ServicesModel) FilterActive() bool { return m.filter.Active() }
 // Filtered reports whether a filter is narrowing the list, open or not. It
 // tells "no services" apart from "the filter is hiding them".
 func (m ServicesModel) Filtered() bool { return m.table.FilterText() != "" }
+
+// ServiceRowCount is how many service rows this view shows before
+// filtering: the ones with containers plus the ones only the compose file
+// knows about. It is zero while the first load is in flight, because
+// SetProject clears the resource slices along with raising the flag, and
+// refreshRows recounts from those slices; the workspace panel depends on
+// that, so a change to either has a test on it.
+func (m ServicesModel) ServiceRowCount() int { return m.serviceCount }
 
 // Loading reports that the first load for this project has not arrived
 // yet, the state where calling the project empty would be a guess. An f5
@@ -157,7 +171,6 @@ func (m *ServicesModel) SetSize(w, h int) {
 func (m *ServicesModel) SetServices(services []docker.ComposeService, networks []docker.ComposeNetwork, volumes []docker.ComposeVolume, project string) {
 	m.project = project
 	m.loading = false
-	m.serviceCount = len(services)
 	m.services = services
 	m.networks = networks
 	m.volumes = volumes
@@ -173,26 +186,50 @@ func (m *ServicesModel) SetDrift(drift map[string]map[string]docker.ServiceSync)
 // refreshRows rebuilds the resource rows from the current services,
 // networks, volumes, and drift status.
 func (m *ServicesModel) refreshRows() {
+	// Ascending, the one direction any dry table sorts in.
+	field, asc := m.table.SortField(), true
+	// Each section is sorted on its own and the sections keep their order.
+	// The table's flat sort moves rows between sections, leaving Services
+	// with none under it and service rows below Volumes.
+	section := func(rows []appui.TableRow) []appui.TableRow {
+		sort.SliceStable(rows, func(i, j int) bool {
+			return appui.CompareRowsByColumn(rows[i], rows[j], field, asc)
+		})
+		return rows
+	}
 	var rows []appui.TableRow
 
-	if len(m.services) > 0 {
-		rows = append(rows, newSectionRow("Services", len(m.services)))
-		for _, s := range m.services {
-			sync := m.drift[s.Project][s.Name]
-			rows = append(rows, newServiceRow(s, sync))
+	// Held back while loading: the drift map may still describe this project
+	// from an earlier cycle.
+	var notCreated []docker.ComposeService
+	if !m.loading {
+		notCreated = notCreatedServices(m.project, m.services, m.drift[m.project])
+	}
+	m.serviceCount = len(m.services) + len(notCreated)
+	if m.serviceCount > 0 {
+		rows = append(rows, newSectionRow("Services", m.serviceCount))
+		services := mergeByName(m.services, notCreated)
+		serviceRows := make([]appui.TableRow, 0, len(services))
+		for _, s := range services {
+			serviceRows = append(serviceRows, newServiceRow(s, m.drift[s.Project][s.Name]))
 		}
+		rows = append(rows, section(serviceRows)...)
 	}
 	if len(m.networks) > 0 {
 		rows = append(rows, newSectionRow("Networks", len(m.networks)))
+		networkRows := make([]appui.TableRow, 0, len(m.networks))
 		for _, n := range m.networks {
-			rows = append(rows, newNetworkRow(n))
+			networkRows = append(networkRows, newNetworkRow(n))
 		}
+		rows = append(rows, section(networkRows)...)
 	}
 	if len(m.volumes) > 0 {
 		rows = append(rows, newSectionRow("Volumes", len(m.volumes)))
+		volumeRows := make([]appui.TableRow, 0, len(m.volumes))
 		for _, v := range m.volumes {
-			rows = append(rows, newVolumeRow(v))
+			volumeRows = append(volumeRows, newVolumeRow(v))
 		}
+		rows = append(rows, section(volumeRows)...)
 	}
 
 	selected := m.selectedID()
@@ -200,6 +237,7 @@ func (m *ServicesModel) refreshRows() {
 	// A rebuild has no direction of travel: prefer the row above, since
 	// everything below a removed row has shifted up.
 	m.restoreSelection(selected, false)
+	m.syncEmptyMessage()
 }
 
 // selectedID identifies the row the cursor is on, or "" when no key can act
@@ -311,6 +349,22 @@ func (m *ServicesModel) ensureSelectableRow(forward bool) {
 	}
 }
 
+// syncEmptyMessage pushes the current reason into the table; see the same
+// method on ProjectsModel for why it is not done in View.
+func (m *ServicesModel) syncEmptyMessage() { m.table.SetEmptyMessage(m.emptyMessage()) }
+
+// emptyMessage says which of the three empty states this is.
+func (m ServicesModel) emptyMessage() string {
+	switch {
+	case m.loading:
+		return "Loading the project's resources..."
+	case m.table.FilterText() != "":
+		return "Nothing here matches the filter"
+	default:
+		return "This project has no services, networks or volumes"
+	}
+}
+
 // SelectedService returns the service under the cursor, or nil.
 func (m ServicesModel) SelectedService() *docker.ComposeService {
 	return resourceOf(m.table.SelectedRow()).service
@@ -334,6 +388,7 @@ func (m ServicesModel) Update(msg tea.Msg) (ServicesModel, tea.Cmd) {
 		m.filter, cmd = m.filter.Update(msg)
 		m.table.SetFilter(m.filter.Value())
 		m.restoreSelection(selected, true)
+		m.syncEmptyMessage()
 		return m, cmd
 	}
 
@@ -341,10 +396,11 @@ func (m ServicesModel) Update(msg tea.Msg) (ServicesModel, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "f1":
-			// Sorting reorders every row: follow the row, not the index.
-			selected := m.selectedID()
-			m.table.NextSort()
-			m.restoreSelection(selected, true)
+			// SetSortField moves the indicator without sorting; the
+			// rebuild sorts inside each section. refreshRows follows the
+			// selected row, whose index means nothing after a reorder.
+			m.table.NextSortField()
+			m.refreshRows()
 			return m, nil
 		case "%":
 			cmd := m.filter.Activate()
