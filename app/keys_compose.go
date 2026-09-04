@@ -55,6 +55,9 @@ func (m model) handleComposeProjectsKeys(msg tea.KeyPressMsg) (tea.Model, tea.Cm
 			"Remove service %s containers?", "Remove project %s containers?")
 	case "u":
 		if svc := m.composeProjects.SelectedService(); svc != nil {
+			// The lookup cannot miss: service rows are built from the
+			// project list this searches, so a row on screen has its
+			// project in it.
 			if p := m.composeProjects.ProjectByName(svc.Project); p != nil {
 				return m, composeUpCmd(m.composeCLI, *p, svc.Name)
 			}

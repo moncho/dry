@@ -514,7 +514,7 @@ var composeProjectsKeys = composeProjectsKeyMap{
 
 // What acts on the selected row comes first, then what moves around it.
 // The footer is cut to the terminal width, and sort, refresh, filter and
-// the eight view-switch digits spend 151 columns between them, 120 with no
+// the eight view-switch digits spend 151 columns between them, 115 with no
 // swarm to show, so with the actions last a 140-column terminal showed none
 // of them: enter, u, d, logs and the three lifecycle keys were all past the
 // cut. u is the key a not-created service's message names and d is the most

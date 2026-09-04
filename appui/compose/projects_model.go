@@ -113,10 +113,10 @@ func colorSync(s docker.ServiceSync) string {
 	case docker.ServiceDrifted:
 		return appui.ColorFg("drift", appui.DryTheme.Warning)
 	case docker.ServiceNotCreated:
-		// "absent", not "none": the HEALTH column two cells to the left
-		// renders "none" for a container with no healthcheck, and this is
-		// the first release in which this label reaches a screen at all,
-		// so there is no reading of "none" here to preserve.
+		// "absent", not "none": HEALTH, the column immediately to the
+		// left, renders "none" for a container with no healthcheck, and
+		// this is the first release in which this label reaches a screen
+		// at all, so there is no reading of "none" here to preserve.
 		return appui.ColorFg("absent", appui.DryTheme.FgMuted)
 	case docker.ServiceInSync:
 		return appui.ColorFg("ok", appui.DryTheme.Success)

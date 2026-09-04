@@ -317,8 +317,8 @@ configuration, so it gets no row until the profile is enabled, and a service
 whose only container is a one-off (`docker compose run`) reads as `absent`,
 since dry lists that container under neither the service nor the project.
 
-SYNC is not HEALTH, which sits two columns to its left and is Docker's own
-reading of a container: `none` there means the container declares no
+SYNC is not HEALTH, the column immediately to its left, which is Docker's
+own reading of a container: `none` there means the container declares no
 healthcheck, and has nothing to do with the compose file. A project row's
 STATUS says `not created` for the same idea one level up, when nothing in
 the project has containers.

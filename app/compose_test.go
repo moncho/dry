@@ -4271,3 +4271,44 @@ func TestComposePalette_ProjectsViewLifecycleWithNoServiceRow(t *testing.T) {
 		})
 	}
 }
+
+// The palette opens with its first entry selected, so enter on a freshly
+// opened palette runs it. For a compose service that has to be a read:
+// hoisting Up to the head of the group turned that keystroke into a
+// container recreate on a drifted row.
+func TestComposePalette_FirstServiceEntryIsARead(t *testing.T) {
+	drift := map[string]map[string]docker.ServiceSync{"web": {
+		"api":   docker.ServiceDrifted,
+		"cache": docker.ServiceNotCreated,
+	}}
+	running := []docker.ComposeService{{Project: "web", Name: "api", Containers: 2, Running: 2}}
+
+	for _, view := range []viewMode{ComposeProjects, ComposeServices} {
+		m := newComposeServiceSelectionModel(t, view, running, drift, "api")
+
+		var first string
+		for _, a := range m.commandPaletteActions() {
+			if a.Group == "Compose Service" {
+				first = a.ID
+				break
+			}
+		}
+		if first != "compose-service:inspect" && first != "compose-project-service:inspect" {
+			t.Errorf("view %v: expected the first service entry to be inspect, got %q", view, first)
+		}
+
+		// And on a row with no containers, where inspect has nothing to
+		// read, the first entry is the one that creates it.
+		empty := newComposeServiceSelectionModel(t, view, running, drift, "cache")
+		first = ""
+		for _, a := range empty.commandPaletteActions() {
+			if a.Group == "Compose Service" {
+				first = a.ID
+				break
+			}
+		}
+		if first != "compose-service:up" && first != "compose-project-service:up" {
+			t.Errorf("view %v: expected the first entry on an absent service to be up, got %q", view, first)
+		}
+	}
+}

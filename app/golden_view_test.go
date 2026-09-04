@@ -254,7 +254,7 @@ func TestGoldenViews(t *testing.T) {
 		{name: "workspace_compose_projects", view: ComposeProjects, workspace: true, width: 100, height: 30,
 			setup: selectComposeRow("webapp")},
 		// And on the row for one of those services, where the panel says
-		// what the SYNC column's none means.
+		// what the SYNC column's absent means.
 		{name: "workspace_compose_not_created", view: ComposeProjects, workspace: true, width: 100, height: 30,
 			setup: selectComposeRow("cache")},
 		// The empty states, which are what a new user sees first: a loaded
@@ -263,8 +263,14 @@ func TestGoldenViews(t *testing.T) {
 			setup: func(m *model) { m.composeProjects.SetProjects(nil) }},
 		{name: "compose_projects_filtered_empty", view: ComposeProjects, width: 120, height: 40,
 			setup: func(m *model) { m.composeProjects.SetFilter("no-such-project") }},
+		// Genuinely empty: the drift fixture defines webapp/cache, so
+		// clearing the resources alone leaves the row that service gets,
+		// and the snapshot showed "Services (1)" rather than the message.
 		{name: "compose_services_empty", view: ComposeServices, width: 120, height: 40,
-			setup: func(m *model) { m.composeServices.SetServices(nil, nil, nil, "webapp") }},
+			setup: func(m *model) {
+				m.composeServices.SetServices(nil, nil, nil, "webapp")
+				m.composeServices.SetDrift(nil)
+			}},
 	}
 
 	for _, tc := range cases {
@@ -418,9 +424,10 @@ func TestViewsKeepTheirColumnGutters(t *testing.T) {
 
 // selectComposeRow walks the Compose Projects cursor to the project header
 // or service row with this name, for a golden that has to snapshot the
-// panel beside a particular row. It fails the test rather than rendering a
-// snapshot of the wrong row, which is how the count the panel is there to
-// show went missing when projects started sorting by name.
+// panel beside a particular row. It panics rather than render a snapshot of
+// the wrong row, which is how the count the panel is there to show went
+// missing when projects started sorting by name. A panic, not t.Fatal: it
+// runs inside a setup func that has no testing.T.
 func selectComposeRow(name string) func(*model) {
 	return func(m *model) {
 		for range 40 {
