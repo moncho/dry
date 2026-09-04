@@ -330,6 +330,19 @@ func (m model) nextWorkspacePane(reverse bool) workspacePane {
 	return order[idx]
 }
 
+// definedServiceCount is how many service rows the list shows for a
+// project, read from whichever model is showing it. Always reading the
+// projects model made the panel disagree with the list beside it: the two
+// hold separate drift maps, and only the services model knows its own first
+// load has not landed, so the panel said "3 of 4 defined" next to a list
+// that still said it was loading.
+func (m model) definedServiceCount(project string) int {
+	if m.view == ComposeServices && m.selectedProject == project {
+		return m.composeServices.ServiceRowCount()
+	}
+	return m.composeProjects.ServiceRowCount(project)
+}
+
 func (m model) currentWorkspaceSelection() (workspaceContext, bool) {
 	switch m.view {
 	case Main:
@@ -341,7 +354,7 @@ func (m model) currentWorkspaceSelection() (workspaceContext, bool) {
 			return workspaceContextFromComposeService(*svc), true
 		}
 		if p := m.composeProjects.SelectedProject(); p != nil {
-			return workspaceContextFromComposeProject(*p), true
+			return workspaceContextFromComposeProject(*p, m.definedServiceCount(p.Name)), true
 		}
 	case ComposeServices:
 		if svc := m.composeServices.SelectedService(); svc != nil {
@@ -407,7 +420,7 @@ func (m model) workspacePreview(full bool) (workspaceContext, bool) {
 	}
 	if m.view == ComposeServices {
 		if p, ok := m.findComposeProjectByName(m.selectedProject); ok {
-			return workspaceContextFromComposeProject(*p), true
+			return workspaceContextFromComposeProject(*p, m.definedServiceCount(p.Name)), true
 		}
 	}
 	return workspaceContext{}, false
@@ -551,7 +564,7 @@ func (m *model) refreshPinnedWorkspaceContext() {
 		}
 	case workspaceContextComposeProject:
 		if p, ok := m.findComposeProjectByName(m.pinnedContext.project); ok {
-			ctx := workspaceContextFromComposeProject(*p)
+			ctx := workspaceContextFromComposeProject(*p, m.definedServiceCount(p.Name))
 			m.pinnedContext = &ctx
 		}
 	case workspaceContextComposeService:

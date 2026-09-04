@@ -101,12 +101,18 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>F1</>        Sorts the list
 	<white>F5</>        Refreshes the list
 	<white>%</>         Filters the list
-	<white>Ctrl+t</>    Stop project containers
-	<white>Ctrl+r</>    Restart project containers
-	<white>Ctrl+e</>    Remove project containers
-	<white>u</>         Brings the selected project or service up
-	<white>d</>         Takes the selected project down
+	<white>Ctrl+t</>    Stops the selected service, or the project on its header
+	<white>Ctrl+r</>    Restarts the selected service, or the project on its header
+	<white>Ctrl+e</>    Removes the selected service's containers, or the project's
+	<white>u</>         Brings the selected service up unasked; on a project's row it asks first
+	<white>d</>         Takes the project down, from its own row: there is no per-service down
 	<white>c</>         Shows the rendered compose configuration
+
+	The SYNC column compares a service's containers with the compose file:
+	<white>ok</> matches it, <white>drift</> means the file changed since they were created and
+	the next <white>u</> recreates them, <white>absent</> means the file defines the service
+	and dry lists no container for it. HEALTH is Docker's own, where
+	<white>none</> means the container has no healthcheck.
 
 <yellow>Compose Services</>
 	<white>Esc</>       Back to projects
@@ -119,7 +125,7 @@ Visit <blue>http://moncho.github.io/dry/</> for more information.
 	<white>Ctrl+r</>    Restart service containers
 	<white>Ctrl+e</>    Remove service containers
 	<white>c</>         Shows the rendered compose configuration
-	<white>u</>         Brings the selected service up
+	<white>u</>         Brings the selected service up unasked, creating it if it has no containers
 
 <yellow>Workspace activity</>
 	<white>f</>         Toggles follow mode for embedded logs

@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -30,6 +31,7 @@ type stubComposeEngine struct {
 	downCalls        []composecli.Project
 	recreateCalls    []composecli.Project
 	recreateServices []string
+	configCalls      []composecli.Project
 	configOutput     string
 	hashes           map[string]string
 	hashesCalls      []composecli.Project
@@ -66,7 +68,11 @@ func (s *stubComposeEngine) Recreate(_ context.Context, p composecli.Project, se
 	return io.NopCloser(strings.NewReader("recreated\n")), nil
 }
 
-func (s *stubComposeEngine) Config(_ context.Context, _ composecli.Project) (string, error) {
+func (s *stubComposeEngine) Config(_ context.Context, p composecli.Project) (string, error) {
+	// Recorded, not discarded: config is the one read-only compose call,
+	// and a caller that hands it an empty project renders the wrong file's
+	// configuration while every assertion on the output still passes.
+	s.configCalls = append(s.configCalls, p)
 	return s.configOutput, s.err
 }
 
@@ -409,7 +415,11 @@ func TestComposeScanCmd_ResolveFailureIsAPassthrough(t *testing.T) {
 	}
 }
 
-func TestComposeProjectsView_UBringsTheProjectUp(t *testing.T) {
+// u on a project row asks first, like d, ctrl+t, ctrl+r and ctrl+e do:
+// bringing up every service in a project is not a keystroke's worth of
+// consequence, and running it unasked made the cursor position a safety
+// mechanism it could not be.
+func TestComposeProjectsView_UPromptsBeforeBringingAProjectUp(t *testing.T) {
 	engine := &stubComposeEngine{}
 	dir, file := composeFileFixture(t)
 	m := newTestModel()
@@ -419,15 +429,47 @@ func TestComposeProjectsView_UBringsTheProjectUp(t *testing.T) {
 		Project: docker.ComposeProject{Name: "web", WorkingDir: dir, ConfigFiles: []string{file}},
 	}})
 
-	_, cmd := m.Update(tea.KeyPressMsg{Code: 'u'})
+	result, _ := m.Update(tea.KeyPressMsg{Code: 'u'})
+	asked := result.(model)
+	if asked.overlay != overlayPrompt {
+		t.Fatal("expected u on a project row to ask first")
+	}
+	if len(engine.upCalls) != 0 {
+		t.Fatalf("expected nothing run before the answer, got %+v", engine.upCalls)
+	}
+	// What the prompt asks and what it carries, both read off the prompt
+	// itself. Injecting the tag and id below instead would pass with u
+	// wired to any tag at all, and a tag nothing dispatches on means the
+	// user confirms and nothing happens.
+	if q := ansi.Strip(asked.prompt.View()); !strings.Contains(q, "Bring project web up?") {
+		t.Errorf("expected the prompt to name what it is about to do, got %q", q)
+	}
+	if tag, id := answerPrompt(t, asked); tag != "compose-project-up" || id != "web" {
+		t.Fatalf("expected the project-up confirmation for web, got %q %q", tag, id)
+	}
+
+	// Confirming runs it, and it streams into the viewer.
+	result, cmd := asked.Update(appui.PromptResultMsg{Confirmed: true, Tag: "compose-project-up", ID: "web"})
 	if cmd == nil {
-		t.Fatal("expected u to produce a command")
+		t.Fatal("expected the confirmation to run up")
 	}
 	if _, ok := cmd().(showStreamingLessMsg); !ok {
 		t.Fatalf("expected up to stream into the viewer, got %T", cmd())
 	}
-	if len(engine.upCalls) != 1 {
-		t.Fatalf("expected one Up call, got %d", len(engine.upCalls))
+	if len(engine.upCalls) != 1 || engine.upCalls[0].Name != "web" {
+		t.Fatalf("expected one Up on web, got %+v", engine.upCalls)
+	}
+	if got := result.(model); got.overlay == overlayPrompt {
+		t.Error("expected the prompt closed after answering")
+	}
+
+	// And declining runs nothing.
+	engine.upCalls = nil
+	if _, cmd := asked.Update(appui.PromptResultMsg{Confirmed: false, Tag: "compose-project-up", ID: "web"}); cmd != nil {
+		cmd()
+	}
+	if len(engine.upCalls) != 0 {
+		t.Errorf("expected nothing run when declined, got %+v", engine.upCalls)
 	}
 }
 
@@ -934,10 +976,20 @@ func TestComposeDemoPath_UpTargetsTheScannedFile(t *testing.T) {
 		t.Fatalf("expected the view to show the project's status, got:\n%s", view)
 	}
 
-	// u brings it up, and compose is told which file to use.
-	_, cmd = m.Update(tea.KeyPressMsg{Code: 'u'})
+	// u brings it up once confirmed, and compose is told which file to use.
+	result, _ = m.Update(tea.KeyPressMsg{Code: 'u'})
+	m = result.(model)
+	if m.overlay != overlayPrompt {
+		t.Fatal("expected u on a project row to ask first")
+	}
+	// Off the prompt, not injected: the id it carries is what decides which
+	// project the confirmation acts on.
+	if tag, id := answerPrompt(t, m); tag != "compose-project-up" || id != "web" {
+		t.Fatalf("expected the project-up confirmation for web, got %q %q", tag, id)
+	}
+	_, cmd = m.Update(appui.PromptResultMsg{Confirmed: true, Tag: "compose-project-up", ID: "web"})
 	if cmd == nil {
-		t.Fatal("expected u to produce a command")
+		t.Fatal("expected the confirmation to run up")
 	}
 	if msg := cmd(); !isStreamingLess(msg) {
 		t.Fatalf("expected up to stream into the viewer, got %T (%+v)", msg, msg)
@@ -1811,7 +1863,7 @@ func TestComposeServicesView_SyncUpdatesWhileSittingInTheView(t *testing.T) {
 	// The mock daemon has no containers for this project, so compose's
 	// hashes describe services that are not created, which is what the
 	// column should now say.
-	if !strings.Contains(view, "none") {
+	if !strings.Contains(view, "absent") {
 		t.Fatalf("expected the recomputed SYNC, got:\n%s", view)
 	}
 }
@@ -2986,3 +3038,1236 @@ func TestComposeDriftCmd_TheBudgetStopsTheWalkBetweenCalls(t *testing.T) {
 
 // drift is msg.drift, named so the assertion above reads as a sentence.
 func drift(msg composeDriftMsg) map[string]map[string]docker.ServiceSync { return msg.drift }
+
+// Every container key on a service that has none; see
+// composeNoContainersCmd for why they may not prompt.
+func TestComposeServicesView_ContainerKeysOnAServiceWithNoContainers(t *testing.T) {
+	keys := map[string]struct {
+		key    tea.KeyPressMsg
+		action string
+	}{
+		"enter":   {tea.KeyPressMsg{Code: tea.KeyEnter}, "Inspect"},
+		"logs":    {tea.KeyPressMsg{Code: 'l'}, "Logs"},
+		"start":   {tea.KeyPressMsg{Code: 's', Mod: tea.ModCtrl}, "Start"},
+		"stop":    {tea.KeyPressMsg{Code: 't', Mod: tea.ModCtrl}, "Stop"},
+		"restart": {tea.KeyPressMsg{Code: 'r', Mod: tea.ModCtrl}, "Restart"},
+		"remove":  {tea.KeyPressMsg{Code: 'e', Mod: tea.ModCtrl}, "Remove"},
+	}
+	for name, tc := range keys {
+		key := tc.key
+		t.Run(name, func(t *testing.T) {
+			m := newTestModel()
+			m.view = ComposeServices
+			m.composeCLI = &stubComposeEngine{}
+			m.selectedProject = "web"
+			m.composeServices.SetSize(120, 40)
+			m.composeServices.SetServices(nil, nil, nil, "web")
+			m.composeServices.SetDrift(map[string]map[string]docker.ServiceSync{
+				"web": {"cache": docker.ServiceNotCreated},
+			})
+			svc := m.composeServices.SelectedService()
+			if svc == nil || svc.Containers != 0 {
+				t.Fatalf("precondition: expected a service with no containers, got %+v", svc)
+			}
+
+			result, cmd := m.Update(key)
+			if cmd == nil {
+				t.Fatalf("expected %s to explain itself, got nil", name)
+			}
+			status, ok := cmd().(statusMessageMsg)
+			if !ok {
+				t.Fatalf("expected a status message, got %T", cmd())
+			}
+			// The action and the service by name: with only the shared
+			// half asserted, every message could read "Logs" and name a
+			// service that does not exist and these five would still pass.
+			if want := tc.action + " needs a container, and cache has none: u brings it up"; status.text != want {
+				t.Errorf("expected %q, got %q", want, status.text)
+			}
+			// And no confirmation prompt was opened: the point is that the
+			// user is not asked to confirm a no-op.
+			if got := result.(model); got.overlay == overlayPrompt {
+				t.Errorf("expected no prompt for an action that cannot act")
+			}
+		})
+	}
+}
+
+// u on the same row is the one key that does apply, and it must still work.
+func TestComposeServicesView_UBringsUpAServiceWithNoContainers(t *testing.T) {
+	engine := &stubComposeEngine{}
+	dir, file := composeFileFixture(t)
+	m := newTestModel()
+	m.view = ComposeServices
+	m.composeCLI = engine
+	m.selectedProject = "web"
+	// up reads the compose file, so the project needs usable files. The
+	// fixture's file has no services of its own; cache reaches the view
+	// through the drift map this test injects, as it would from a real
+	// check.
+	m.composeProjects.SetProjects([]docker.ProjectWithServices{{
+		Project: docker.ComposeProject{Name: "web", WorkingDir: dir, ConfigFiles: []string{file}},
+	}})
+	m.composeServices.SetSize(120, 40)
+	m.composeServices.SetServices(nil, nil, nil, "web")
+	m.composeServices.SetDrift(map[string]map[string]docker.ServiceSync{
+		"web": {"cache": docker.ServiceNotCreated},
+	})
+
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'u'})
+	if cmd == nil {
+		t.Fatal("expected u to act on the not-created service")
+	}
+	cmd()
+	if len(engine.upCalls) != 1 {
+		t.Fatalf("expected one Up call, got %+v", engine.upCalls)
+	}
+	if len(engine.upServices) != 1 || engine.upServices[0] != "cache" {
+		t.Errorf("expected up to target the service alone, got %v", engine.upServices)
+	}
+}
+
+// The command palette reaches the same actions, so it needs the same answer:
+// it used to prompt "Remove service cache containers?" on a row whose
+// service has none.
+func TestComposePalette_ContainerActionsOnAServiceWithNoContainers(t *testing.T) {
+	for id, action := range map[string]string{
+		"compose-service:logs":    "Logs",
+		"compose-service:start":   "Start",
+		"compose-service:stop":    "Stop",
+		"compose-service:restart": "Restart",
+		"compose-service:rm":      "Remove",
+	} {
+		t.Run(id, func(t *testing.T) {
+			m := newTestModel()
+			m.view = ComposeServices
+			m.composeCLI = &stubComposeEngine{}
+			m.selectedProject = "web"
+			m.composeServices.SetSize(120, 40)
+			m.composeServices.SetServices(nil, nil, nil, "web")
+			m.composeServices.SetDrift(map[string]map[string]docker.ServiceSync{
+				"web": {"cache": docker.ServiceNotCreated},
+			})
+
+			result, cmd := m.executePaletteAction(id)
+			if cmd == nil {
+				t.Fatalf("expected %s to explain itself, got nil", id)
+			}
+			status, ok := cmd().(statusMessageMsg)
+			if !ok {
+				t.Fatalf("expected a status message, got %T", cmd())
+			}
+			if want := action + " needs a container, and cache has none: u brings it up"; status.text != want {
+				t.Errorf("expected %q, got %q", want, status.text)
+			}
+			if got := result.(model); got.overlay == overlayPrompt {
+				t.Error("expected no prompt for an action that cannot act")
+			}
+		})
+	}
+}
+
+// The Compose Projects view lists the same rows, so its container keys need
+// the same answer. Nothing here selected a not-created row in that view
+// before, which is how its palette twin stayed unguarded through a review.
+func TestComposeProjectsView_ContainerKeysOnAServiceWithNoContainers(t *testing.T) {
+	cases := map[string]struct {
+		key    tea.KeyPressMsg
+		action string
+	}{
+		"logs":    {tea.KeyPressMsg{Code: 'l'}, "Logs"},
+		"enter":   {tea.KeyPressMsg{Code: tea.KeyEnter}, "Inspect"},
+		"stop":    {tea.KeyPressMsg{Code: 't', Mod: tea.ModCtrl}, "Stop"},
+		"restart": {tea.KeyPressMsg{Code: 'r', Mod: tea.ModCtrl}, "Restart"},
+		"remove":  {tea.KeyPressMsg{Code: 'e', Mod: tea.ModCtrl}, "Remove"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			m := newTestModel()
+			m.view = ComposeProjects
+			m.composeCLI = &stubComposeEngine{}
+			m.composeProjects.SetSize(120, 40)
+			m.composeProjects.SetProjects([]docker.ProjectWithServices{
+				{Project: docker.ComposeProject{Name: "web"}},
+			})
+			m.composeProjects.SetDrift(map[string]map[string]docker.ServiceSync{
+				"web": {"cache": docker.ServiceNotCreated},
+			})
+			// Move onto the service row, below the project header.
+			result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+			m = result.(model)
+			if svc := m.composeProjects.SelectedService(); svc == nil || svc.Containers != 0 {
+				t.Fatalf("precondition: expected a service with no containers, got %+v", svc)
+			}
+
+			result, cmd := m.Update(tc.key)
+			if cmd == nil {
+				t.Fatalf("expected %s to explain itself, got nil", name)
+			}
+			status, ok := cmd().(statusMessageMsg)
+			if !ok {
+				t.Fatalf("expected a status message, got %T", cmd())
+			}
+			if want := tc.action + " needs a container, and cache has none: u brings it up"; status.text != want {
+				t.Errorf("expected %q, got %q", want, status.text)
+			}
+			if got := result.(model); got.overlay == overlayPrompt {
+				t.Error("expected no prompt for an action that cannot act")
+			}
+		})
+	}
+}
+
+// The palette reaches the projects view's service actions too, and those
+// are the entries that were missed while the guard was written out per site
+// rather than shared.
+func TestComposePalette_ProjectsViewContainerActions(t *testing.T) {
+	for id, action := range map[string]string{
+		"compose-project-service:logs":    "Logs",
+		"compose-project-service:inspect": "Inspect",
+	} {
+		t.Run(id, func(t *testing.T) {
+			m := newTestModel()
+			m.view = ComposeProjects
+			m.composeCLI = &stubComposeEngine{}
+			m.composeProjects.SetSize(120, 40)
+			m.composeProjects.SetProjects([]docker.ProjectWithServices{
+				{Project: docker.ComposeProject{Name: "web"}},
+			})
+			m.composeProjects.SetDrift(map[string]map[string]docker.ServiceSync{
+				"web": {"cache": docker.ServiceNotCreated},
+			})
+			result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+			m = result.(model)
+
+			_, cmd := m.executePaletteAction(id)
+			if cmd == nil {
+				t.Fatalf("expected %s to explain itself, got nil", id)
+			}
+			status, ok := cmd().(statusMessageMsg)
+			if !ok {
+				t.Fatalf("expected a status message, got %T", cmd())
+			}
+			if want := action + " needs a container, and cache has none: u brings it up"; status.text != want {
+				t.Errorf("expected %q, got %q", want, status.text)
+			}
+		})
+	}
+}
+
+// Every palette action the two Compose views offer for a service must
+// either refuse on a service with no containers or be one of the entries
+// that deliberately act without one. The set is derived from
+// commandPaletteActions rather than hand-written, so an action added later
+// without a guard fails here instead of waiting for someone to notice: the
+// guard was missed once per review round, in a different view each time.
+//
+// The listing is taken with a service that has containers selected, since
+// the palette no longer offers the container-requiring entries on a row
+// with none. Reading the list off the not-created row instead would leave
+// this with nothing to check.
+func TestComposePalette_EveryServiceActionHandlesAServiceWithNoContainers(t *testing.T) {
+	actsWithoutContainers := map[string]bool{
+		"compose:recreate":           true,
+		"compose-service:up":         true,
+		"compose-project-service:up": true,
+	}
+	drift := map[string]map[string]docker.ServiceSync{"web": {"cache": docker.ServiceNotCreated}}
+	running := []docker.ComposeService{{Project: "web", Name: "api", Containers: 2, Running: 2}}
+
+	for _, view := range []viewMode{ComposeProjects, ComposeServices} {
+		// One model with a service that has containers, to read the full
+		// list of entries off, and one on the not-created row to run them
+		// against.
+		listing := newComposeServiceSelectionModel(t, view, running, drift, "api")
+		onEmpty := newComposeServiceSelectionModel(t, view, running, drift, "cache")
+
+		var offered []string
+		for _, a := range listing.commandPaletteActions() {
+			// The compose service actions only: switch:services is a view
+			// switch, and compose-project:* acts on the project.
+			if strings.HasPrefix(a.ID, "compose-service:") || strings.HasPrefix(a.ID, "compose-project-service:") || a.ID == "compose:recreate" {
+				offered = append(offered, a.ID)
+			}
+		}
+		if len(offered) < 4 {
+			t.Fatalf("view %v: expected the palette to offer the service actions, got %v", view, offered)
+		}
+
+		for _, id := range offered {
+			if actsWithoutContainers[id] {
+				continue
+			}
+			result, cmd := onEmpty.executePaletteAction(id)
+			if cmd == nil {
+				t.Errorf("view %v: %s did nothing on a service with no containers", view, id)
+				continue
+			}
+			status, ok := cmd().(statusMessageMsg)
+			if !ok {
+				t.Errorf("view %v: %s acted on a service with no containers, got %T", view, id, cmd())
+				continue
+			}
+			if !strings.Contains(status.text, "has none") {
+				t.Errorf("view %v: %s said %q, expected it to say the service has none", view, id, status.text)
+			}
+			if got := result.(model); got.overlay == overlayPrompt {
+				t.Errorf("view %v: %s prompted for an action that cannot act", view, id)
+			}
+		}
+
+		// And the palette does not offer what it would refuse: on the
+		// not-created row only the entries that create the service are
+		// listed.
+		for _, a := range onEmpty.commandPaletteActions() {
+			if !strings.HasPrefix(a.ID, "compose-service:") && !strings.HasPrefix(a.ID, "compose-project-service:") && a.ID != "compose:recreate" {
+				continue
+			}
+			if !actsWithoutContainers[a.ID] {
+				t.Errorf("view %v: the palette offers %s on a service with no containers, which it refuses", view, a.ID)
+			}
+		}
+	}
+}
+
+// newComposeServiceSelectionModel builds a model in one of the two Compose
+// views with the named service under the cursor.
+func newComposeServiceSelectionModel(t *testing.T, view viewMode, services []docker.ComposeService,
+	drift map[string]map[string]docker.ServiceSync, want string) model {
+	t.Helper()
+	m := newTestModel()
+	m.view = view
+	m.composeCLI = &stubComposeEngine{}
+	m.selectedProject = "web"
+	switch view {
+	case ComposeProjects:
+		m.composeProjects.SetSize(120, 40)
+		m.composeProjects.SetProjects([]docker.ProjectWithServices{{
+			Project:  docker.ComposeProject{Name: "web"},
+			Services: services,
+		}})
+		m.composeProjects.SetDrift(drift)
+		for range 10 {
+			if svc := m.composeProjects.SelectedService(); svc != nil && svc.Name == want {
+				return m
+			}
+			next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+			m = next.(model)
+		}
+	case ComposeServices:
+		m.composeServices.SetSize(120, 40)
+		m.composeServices.SetServices(services, nil, nil, "web")
+		m.composeServices.SetDrift(drift)
+		for range 10 {
+			if svc := m.composeServices.SelectedService(); svc != nil && svc.Name == want {
+				return m
+			}
+			next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+			m = next.(model)
+		}
+	}
+	t.Fatalf("view %v: no service row named %s", view, want)
+	return m
+}
+
+// The footer is where a key is discovered, and it is truncated to the
+// terminal width, so a binding added at the end of a long list is
+// advertised in the source and nowhere on screen. Both compose footers have
+// to show every key that acts on the selected row at a width a reader
+// actually has: u, which every refusal on a not-created row names, and d,
+// which takes a whole project down.
+func TestComposeFooters_AdvertiseEveryRowAction(t *testing.T) {
+	for _, tc := range []struct {
+		view    viewMode
+		name    string
+		actions []string
+	}{
+		{ComposeProjects, "projects", []string{"services", "up", "down", "logs", "stop", "restart", "rm"}},
+		{ComposeServices, "services", []string{"back", "inspect", "up", "logs", "start", "stop", "restart", "rm"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m := newTestModel()
+			m.view = tc.view
+			m.width = 140
+			m.height = 40
+
+			footer := ansi.Strip(m.renderFooter())
+			for _, action := range tc.actions {
+				if !strings.Contains(footer, action) {
+					t.Errorf("expected %q in the 140-column footer, got %q", action, footer)
+				}
+			}
+		})
+	}
+}
+
+// And u specifically answers to u, since the message tells the user to
+// press it. The help screen documented it while the footer did not.
+func TestComposeFooters_AdvertiseU(t *testing.T) {
+	for _, tc := range []struct {
+		view viewMode
+		name string
+	}{
+		{ComposeProjects, "projects"},
+		{ComposeServices, "services"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m := newTestModel()
+			m.view = tc.view
+
+			var found bool
+			for _, b := range m.viewFooterBindings() {
+				if b.Help().Key != "u" {
+					continue
+				}
+				found = true
+				if b.Help().Desc != "up" {
+					t.Errorf("expected u described as up, got %q", b.Help().Desc)
+				}
+				if !slices.Contains(b.Keys(), "u") {
+					t.Errorf("expected the binding to answer to u, got %v", b.Keys())
+				}
+			}
+			if !found {
+				t.Fatal("expected u among the footer bindings")
+			}
+
+			// And it survives the render: the strip is truncated to the
+			// terminal width, so a binding added at the end of a long list
+			// is advertised in the source and nowhere on screen.
+			m.width = 140
+			m.height = 40
+			footer := m.renderFooter()
+			if !strings.Contains(footer, "up") {
+				t.Errorf("expected u in the rendered footer, got %q", footer)
+			}
+		})
+	}
+}
+
+// A lifecycle key in the Compose Projects view acts on the row under the
+// cursor. All three took SelectedProject(), which returns the parent for a
+// service row, so ctrl+e on a service prompted to remove every container in
+// its project, while enter, l and u on the same row acted per service.
+func TestComposeProjectsView_LifecycleKeysTargetTheSelectedRow(t *testing.T) {
+	cases := map[string]struct {
+		key         tea.KeyPressMsg
+		serviceText string
+		serviceTag  string
+		projectText string
+		projectTag  string
+	}{
+		"stop": {
+			tea.KeyPressMsg{Code: 't', Mod: tea.ModCtrl},
+			"Stop service web/api?", "compose-stop",
+			"Stop project web?", "compose-project-stop",
+		},
+		"restart": {
+			tea.KeyPressMsg{Code: 'r', Mod: tea.ModCtrl},
+			"Restart service web/api?", "compose-restart",
+			"Restart project web?", "compose-project-restart",
+		},
+		"remove": {
+			tea.KeyPressMsg{Code: 'e', Mod: tea.ModCtrl},
+			"Remove service web/api containers?", "compose-rm",
+			"Remove project web containers?", "compose-project-rm",
+		},
+	}
+	projects := []docker.ProjectWithServices{{
+		Project:  docker.ComposeProject{Name: "web", Containers: 2},
+		Services: []docker.ComposeService{{Project: "web", Name: "api", Containers: 2, Running: 2}},
+	}}
+
+	for name, tc := range cases {
+		t.Run(name+"/service row", func(t *testing.T) {
+			m := newTestModel()
+			m.view = ComposeProjects
+			m.composeCLI = &stubComposeEngine{}
+			m.composeProjects.SetSize(120, 40)
+			m.composeProjects.SetProjects(projects)
+			down, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+			m = down.(model)
+			if svc := m.composeProjects.SelectedService(); svc == nil || svc.Name != "api" {
+				t.Fatalf("precondition: expected web/api selected, got %+v", svc)
+			}
+
+			result, _ := m.Update(tc.key)
+			got := result.(model)
+			if got.overlay != overlayPrompt {
+				t.Fatalf("expected a prompt, got overlay %v", got.overlay)
+			}
+			if q := ansi.Strip(got.prompt.View()); !strings.Contains(q, tc.serviceText) {
+				t.Errorf("expected the prompt to ask %q, got %q", tc.serviceText, q)
+			}
+			// The wording and the tag are separate: a prompt worded per
+			// service that carries the project tag still stops the project,
+			// since the tag alone decides which daemon call runs.
+			tag, id := answerPrompt(t, got)
+			if tag != tc.serviceTag {
+				t.Errorf("expected tag %q, got %q", tc.serviceTag, tag)
+			}
+			if id != composeServiceID("web", "api") {
+				t.Errorf("expected the id for web's api service, got %q", id)
+			}
+		})
+
+		t.Run(name+"/project header", func(t *testing.T) {
+			m := newTestModel()
+			m.view = ComposeProjects
+			m.composeCLI = &stubComposeEngine{}
+			m.composeProjects.SetSize(120, 40)
+			m.composeProjects.SetProjects(projects)
+			if p := m.composeProjects.SelectedProject(); p == nil || p.Name != "web" {
+				t.Fatalf("precondition: expected web's header selected, got %+v", p)
+			}
+
+			result, _ := m.Update(tc.key)
+			got := result.(model)
+			if got.overlay != overlayPrompt {
+				t.Fatalf("expected a prompt, got overlay %v", got.overlay)
+			}
+			if q := ansi.Strip(got.prompt.View()); !strings.Contains(q, tc.projectText) {
+				t.Errorf("expected the prompt to ask %q, got %q", tc.projectText, q)
+			}
+			tag, id := answerPrompt(t, got)
+			if tag != tc.projectTag {
+				t.Errorf("expected tag %q, got %q", tc.projectTag, tag)
+			}
+			if id != "web" {
+				t.Errorf("expected the project id web, got %q", id)
+			}
+		})
+	}
+}
+
+// answerPrompt says yes to the open prompt and reports which operation the
+// prompt was carrying. The tag and id are private to PromptModel, and they
+// are what the confirmation dispatches on, so the y keypress is the only
+// way to read them.
+func answerPrompt(t *testing.T, m model) (tag, id string) {
+	t.Helper()
+	_, cmd := m.prompt.Update(tea.KeyPressMsg{Code: 'y'})
+	if cmd == nil {
+		t.Fatal("expected the prompt to answer a y keypress")
+	}
+	res, ok := cmd().(appui.PromptResultMsg)
+	if !ok {
+		t.Fatalf("expected a prompt result, got %T", cmd())
+	}
+	if !res.Confirmed {
+		t.Fatal("expected y to confirm")
+	}
+	return res.Tag, res.ID
+}
+
+// u on a not-created row in the Compose Projects view brings up that one
+// service. It is the key every other action's message names, and it is the
+// key with the most to lose from a mistargeted row: gating it on the row
+// having containers, the way the other keys are gated, made it fall through
+// to the project branch, so u on a service row prompted for the whole
+// project instead.
+func TestComposeProjectsView_UBringsUpAServiceWithNoContainers(t *testing.T) {
+	engine := &stubComposeEngine{}
+	dir, file := composeFileFixture(t)
+	m := newTestModel()
+	m.view = ComposeProjects
+	m.composeCLI = engine
+	m.composeProjects.SetSize(120, 40)
+	m.composeProjects.SetProjects([]docker.ProjectWithServices{{
+		Project: docker.ComposeProject{Name: "web", WorkingDir: dir, ConfigFiles: []string{file}},
+	}})
+	m.composeProjects.SetDrift(map[string]map[string]docker.ServiceSync{
+		"web": {"cache": docker.ServiceNotCreated},
+	})
+	down, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = down.(model)
+	if svc := m.composeProjects.SelectedService(); svc == nil || svc.Name != "cache" {
+		t.Fatalf("precondition: expected web/cache selected, got %+v", svc)
+	}
+
+	result, cmd := m.Update(tea.KeyPressMsg{Code: 'u'})
+	if got := result.(model); got.overlay == overlayPrompt {
+		t.Fatal("expected u on a service row to act without asking about a project")
+	}
+	if cmd == nil {
+		t.Fatal("expected u to bring the service up")
+	}
+	cmd()
+	if len(engine.upCalls) != 1 {
+		t.Fatalf("expected one up call, got %d", len(engine.upCalls))
+	}
+	if len(engine.upServices) != 1 || engine.upServices[0] != "cache" {
+		t.Errorf("expected up to target cache alone, got %v", engine.upServices)
+	}
+}
+
+// Every refusal on a not-created row names u, so the palette has to offer
+// it: the palette is the surface a user reaches for when they do not know
+// the key, and it listed six actions that refuse and nothing that acts.
+func TestComposePalette_OffersUpOnAServiceWithNoContainers(t *testing.T) {
+	dir, file := composeFileFixture(t)
+	drift := map[string]map[string]docker.ServiceSync{"web": {"cache": docker.ServiceNotCreated}}
+	project := docker.ComposeProject{Name: "web", WorkingDir: dir, ConfigFiles: []string{file}}
+
+	for _, tc := range []struct {
+		view viewMode
+		id   string
+		name string
+	}{
+		{ComposeProjects, "compose-project-service:up", "projects"},
+		{ComposeServices, "compose-service:up", "services"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			engine := &stubComposeEngine{}
+			m := newTestModel()
+			m.view = tc.view
+			m.composeCLI = engine
+			m.selectedProject = "web"
+			m.composeProjects.SetSize(120, 40)
+			m.composeProjects.SetProjects([]docker.ProjectWithServices{{Project: project}})
+			m.composeProjects.SetDrift(drift)
+			switch tc.view {
+			case ComposeProjects:
+				down, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+				m = down.(model)
+			case ComposeServices:
+				m.composeServices.SetSize(120, 40)
+				m.composeServices.SetServices(nil, nil, nil, "web")
+				m.composeServices.SetDrift(drift)
+			}
+
+			var offered bool
+			for _, a := range m.commandPaletteActions() {
+				if a.ID == tc.id {
+					offered = true
+					if a.Title != "Up" {
+						t.Errorf("expected the entry titled Up, got %q", a.Title)
+					}
+				}
+			}
+			if !offered {
+				t.Fatalf("expected the palette to offer %s", tc.id)
+			}
+
+			_, cmd := m.executePaletteAction(tc.id)
+			if cmd == nil {
+				t.Fatal("expected the entry to bring the service up")
+			}
+			cmd()
+			if len(engine.upServices) != 1 || engine.upServices[0] != "cache" {
+				t.Errorf("expected up to target cache alone, got %v", engine.upServices)
+			}
+		})
+	}
+}
+
+// The palette's project-level Up asks the same question the key asks. The
+// two surfaces reaching the same action must agree, or the palette becomes
+// the way to skip a confirmation.
+func TestComposePalette_ProjectUpAsksFirst(t *testing.T) {
+	engine := &stubComposeEngine{}
+	dir, file := composeFileFixture(t)
+	m := newTestModel()
+	m.view = ComposeProjects
+	m.composeCLI = engine
+	m.composeProjects.SetSize(120, 40)
+	m.composeProjects.SetProjects([]docker.ProjectWithServices{{
+		Project: docker.ComposeProject{Name: "web", WorkingDir: dir, ConfigFiles: []string{file}},
+	}})
+	if p := m.composeProjects.SelectedProject(); p == nil {
+		t.Fatal("precondition: expected web's header selected")
+	}
+
+	// Listed as well as handled: an entry the palette never offers is
+	// unreachable, and the handler alone passes a test that calls it.
+	var offered bool
+	for _, a := range m.commandPaletteActions() {
+		if a.ID == "compose-project:up" {
+			offered = true
+			if a.Title != "Up" {
+				t.Errorf("expected the entry titled Up, got %q", a.Title)
+			}
+		}
+	}
+	if !offered {
+		t.Fatal("expected the palette to offer compose-project:up")
+	}
+
+	result, _ := m.executePaletteAction("compose-project:up")
+	asked := result.(model)
+	if asked.overlay != overlayPrompt {
+		t.Fatalf("expected a prompt, got overlay %v", asked.overlay)
+	}
+	if q := ansi.Strip(asked.prompt.View()); !strings.Contains(q, "Bring project web up?") {
+		t.Errorf("expected the same question the key asks, got %q", q)
+	}
+	if len(engine.upCalls) != 0 {
+		t.Errorf("expected nothing brought up before the answer, got %v", engine.upCalls)
+	}
+	tag, id := answerPrompt(t, asked)
+	if tag != "compose-project-up" || id != "web" {
+		t.Errorf("expected the project-up confirmation for web, got %q %q", tag, id)
+	}
+}
+
+// A confirmation outlives the keypress that raised it, carrying only the
+// prompt's id, so the id has to name one service unambiguously. Project and
+// service names both come from container labels anything can set: joined by
+// a slash, project "a" service "b/c" and project "a/b" service "c" are the
+// same id and the answer acts on whichever one ops.go splits out.
+func TestComposeServiceID_SurvivesNamesWithSlashes(t *testing.T) {
+	cases := [][2]string{
+		{"a", "b/c"},
+		{"a/b", "c"},
+		{"web", "api"},
+		{"web/", "/api"},
+	}
+	seen := map[string][2]string{}
+	for _, c := range cases {
+		id := composeServiceID(c[0], c[1])
+		if other, clash := seen[id]; clash {
+			t.Errorf("%v and %v share the id %q", c, other, id)
+		}
+		seen[id] = c
+
+		project, service := splitComposeServiceID(id)
+		if project != c[0] || service != c[1] {
+			t.Errorf("expected %q/%q back, got %q/%q", c[0], c[1], project, service)
+		}
+	}
+}
+
+// And the whole way through: a lifecycle key on a service of a project whose
+// name contains a slash confirms into an action on that same service.
+func TestComposeProjectsView_LifecycleOnASlashedProjectName(t *testing.T) {
+	m := newTestModel()
+	m.view = ComposeProjects
+	m.composeCLI = &stubComposeEngine{}
+	m.composeProjects.SetSize(120, 40)
+	m.composeProjects.SetProjects([]docker.ProjectWithServices{{
+		Project:  docker.ComposeProject{Name: "a/b", Containers: 1},
+		Services: []docker.ComposeService{{Project: "a/b", Name: "c", Containers: 1, Running: 1}},
+	}})
+	down, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = down.(model)
+	if svc := m.composeProjects.SelectedService(); svc == nil || svc.Name != "c" {
+		t.Fatalf("precondition: expected a/b's service c selected, got %+v", svc)
+	}
+
+	result, _ := m.Update(tea.KeyPressMsg{Code: 't', Mod: tea.ModCtrl})
+	if q := ansi.Strip(result.(model).prompt.View()); !strings.Contains(q, "Stop service a/b/c?") {
+		t.Errorf("expected the prompt to name the project and the service, got %q", q)
+	}
+	tag, id := answerPrompt(t, result.(model))
+	if tag != "compose-stop" {
+		t.Errorf("expected the per-service stop, got %q", tag)
+	}
+	project, service := splitComposeServiceID(id)
+	if project != "a/b" || service != "c" {
+		t.Errorf("expected a/b and c back out of the confirmation, got %q and %q", project, service)
+	}
+}
+
+// The help screen is the first entry in every footer, so it is where a user
+// checks what a key does. It described ctrl+t, ctrl+r and ctrl+e in the
+// Compose Projects view as project-level long after the code stopped
+// treating them that way, which is worse than saying nothing.
+func TestComposeHelp_DescribesWhatTheLifecycleKeysTarget(t *testing.T) {
+	help := Help()
+	start := strings.Index(help, "Compose Projects")
+	end := strings.Index(help, "Compose Services")
+	if start < 0 || end < start {
+		t.Fatal("expected a Compose Projects section before the Compose Services one")
+	}
+	section := help[start:end]
+
+	for _, key := range []string{"Ctrl+t", "Ctrl+r", "Ctrl+e", "u", "d"} {
+		// The keybinding lines only: the section also has prose, which
+		// mentions some of these keys in passing.
+		var line string
+		for _, l := range strings.Split(section, "\n") {
+			if strings.HasPrefix(l, "\t<white>"+key+"</>") {
+				line = l
+			}
+		}
+		if line == "" {
+			t.Errorf("no help line for %s in the Compose Projects section", key)
+			continue
+		}
+		// Both halves: what the key does to the selected service, and
+		// what it does to a project. d is the exception that proves the
+		// rule, since it has no per-service form and has to say so.
+		if !strings.Contains(line, "service") {
+			t.Errorf("%s: expected the service target named, got %q", key, strings.TrimSpace(line))
+		}
+		if !strings.Contains(line, "project") {
+			t.Errorf("%s: expected the project target named, got %q", key, strings.TrimSpace(line))
+		}
+	}
+}
+
+// The gate's boundary is one container, not two. Every fixture that expects
+// an action to run gives its service two, so narrowing the gate to
+// Containers > 1 would refuse every single-replica service in dry, which is
+// most of them, and no test would notice.
+func TestContainerAction_OneContainerIsEnough(t *testing.T) {
+	for _, n := range []int{1, 2} {
+		svc, why := containerAction(&docker.ComposeService{Project: "web", Name: "api", Containers: n}, "Stop")
+		if why != nil {
+			t.Errorf("with %d container(s), expected the action to run, got a refusal", n)
+		}
+		if svc == nil || svc.Containers != n {
+			t.Errorf("with %d container(s), expected the service back, got %+v", n, svc)
+		}
+	}
+
+	// And zero is the only count that refuses.
+	svc, why := containerAction(&docker.ComposeService{Project: "web", Name: "cache"}, "Stop")
+	if why == nil {
+		t.Fatal("with no containers, expected a refusal")
+	}
+	if svc != nil {
+		t.Errorf("expected no service to act on, got %+v", svc)
+	}
+	status, ok := why().(statusMessageMsg)
+	if !ok {
+		t.Fatalf("expected a status message, got %T", why())
+	}
+	if want := "Stop needs a container, and cache has none: u brings it up"; status.text != want {
+		t.Errorf("expected %q, got %q", want, status.text)
+	}
+
+	// A nil selection is not a refusal: no service is selected at all, and
+	// each caller words that for itself.
+	if svc, why := containerAction(nil, "Stop"); svc != nil || why != nil {
+		t.Errorf("expected nothing for a nil selection, got %+v and %v", svc, why != nil)
+	}
+}
+
+// With no projects at all, a lifecycle key has no row to act on and says
+// so. The branch is reachable from a host with no compose projects, which
+// is the state the empty view was added for.
+func TestComposeProjectsView_LifecycleKeysWithNoProjects(t *testing.T) {
+	for name, key := range map[string]tea.KeyPressMsg{
+		"stop":    {Code: 't', Mod: tea.ModCtrl},
+		"restart": {Code: 'r', Mod: tea.ModCtrl},
+		"remove":  {Code: 'e', Mod: tea.ModCtrl},
+	} {
+		t.Run(name, func(t *testing.T) {
+			m := newTestModel()
+			m.view = ComposeProjects
+			m.composeCLI = &stubComposeEngine{}
+			m.composeProjects.SetSize(120, 40)
+			m.composeProjects.SetProjects(nil)
+
+			result, cmd := m.Update(key)
+			if cmd == nil {
+				t.Fatalf("expected %s to explain itself, got nil", name)
+			}
+			status, ok := cmd().(statusMessageMsg)
+			if !ok {
+				t.Fatalf("expected a status message, got %T", cmd())
+			}
+			if !strings.Contains(status.text, "needs a project") {
+				t.Errorf("expected the message to say it needs a project, got %q", status.text)
+			}
+			if got := result.(model); got.overlay == overlayPrompt {
+				t.Error("expected no prompt with nothing to act on")
+			}
+		})
+	}
+}
+
+// The panel's count is for the project it is asked about. In the Compose
+// Services view only the project that view is showing can come from the
+// services model; any other project's count still comes from the list that
+// knows about it.
+func TestWorkspacePanel_DefinedCountIsPerProject(t *testing.T) {
+	m := newTestModel()
+	m.view = ComposeServices
+	m.selectedProject = "web"
+	m.composeProjects.SetSize(120, 40)
+	m.composeProjects.SetProjects([]docker.ProjectWithServices{
+		{
+			Project:  docker.ComposeProject{Name: "web", Services: 1},
+			Services: []docker.ComposeService{{Project: "web", Name: "api", Containers: 1}},
+		},
+		{
+			Project:  docker.ComposeProject{Name: "other", Services: 1},
+			Services: []docker.ComposeService{{Project: "other", Name: "db", Containers: 1}},
+		},
+	})
+	m.composeProjects.SetDrift(map[string]map[string]docker.ServiceSync{
+		"web":   {"cache": docker.ServiceNotCreated},
+		"other": {"redis": docker.ServiceNotCreated, "queue": docker.ServiceNotCreated},
+	})
+	m.composeServices.SetSize(120, 40)
+	m.composeServices.SetServices(
+		[]docker.ComposeService{{Project: "web", Name: "api", Containers: 1}}, nil, nil, "web")
+	m.composeServices.SetDrift(map[string]map[string]docker.ServiceSync{
+		"web": {"cache": docker.ServiceNotCreated},
+	})
+
+	// web is what this view shows, so its count is the services model's.
+	if got := m.definedServiceCount("web"); got != 2 {
+		t.Errorf("expected web's two rows from the view showing them, got %d", got)
+	}
+	// other is not, so its count comes from the projects list.
+	if got := m.definedServiceCount("other"); got != 3 {
+		t.Errorf("expected other's three rows from the projects list, got %d", got)
+	}
+}
+
+// d is the one lifecycle key with no per-service form, since compose down
+// removes the project's networks along with its containers. On a service
+// row it says so and names the project's row, rather than prompting to take
+// the parent project down, which is what the other three keys used to do.
+func TestComposeProjectsView_DownOnAServiceRowSaysWhereItLives(t *testing.T) {
+	m := newTestModel()
+	m.view = ComposeProjects
+	m.composeCLI = &stubComposeEngine{}
+	m.composeProjects.SetSize(120, 40)
+	m.composeProjects.SetProjects([]docker.ProjectWithServices{{
+		Project: docker.ComposeProject{Name: "web", Containers: 2},
+		Services: []docker.ComposeService{
+			{Project: "web", Name: "api", Containers: 1, Running: 1},
+			{Project: "web", Name: "db", Containers: 1, Running: 1},
+		},
+	}})
+	// The second service, where the row above is another service and not
+	// the project's header.
+	for range 2 {
+		next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+		m = next.(model)
+	}
+	if svc := m.composeProjects.SelectedService(); svc == nil || svc.Name != "db" {
+		t.Fatalf("precondition: expected web/db selected, got %+v", svc)
+	}
+
+	result, cmd := m.Update(tea.KeyPressMsg{Code: 'd'})
+	if got := result.(model); got.overlay == overlayPrompt {
+		t.Fatal("expected no prompt to take a project down from a service row")
+	}
+	if cmd == nil {
+		t.Fatal("expected d to explain itself, got nil")
+	}
+	status, ok := cmd().(statusMessageMsg)
+	if !ok {
+		t.Fatalf("expected a status message, got %T", cmd())
+	}
+	want := "Down takes a whole project, not the service db: press d on the web row"
+	if status.text != want {
+		t.Errorf("expected %q, got %q", want, status.text)
+	}
+
+	// Under a filter the project's row can be hidden, so the message stops
+	// pointing at a row the reader cannot see.
+	filtered := m
+	filtered.composeProjects.SetFilter("db")
+	if svc := filtered.composeProjects.SelectedService(); svc == nil || svc.Name != "db" {
+		t.Fatalf("precondition: expected the filter to leave web/db selected, got %+v", svc)
+	}
+	_, cmd = filtered.Update(tea.KeyPressMsg{Code: 'd'})
+	if cmd == nil {
+		t.Fatal("expected d under a filter to explain itself")
+	}
+	if status, ok := cmd().(statusMessageMsg); !ok {
+		t.Fatalf("expected a status message, got %T", cmd())
+	} else if want := "Down takes a whole project, not the service db: clear the filter to reach web"; status.text != want {
+		t.Errorf("expected %q, got %q", want, status.text)
+	}
+
+	// And on the project's own row it still asks and still means the
+	// project.
+	up, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyUp})
+	m = up.(model)
+	up, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyUp})
+	m = up.(model)
+	if p := m.composeProjects.SelectedProject(); p == nil || m.composeProjects.SelectedService() != nil {
+		t.Fatalf("precondition: expected web's header selected, got %+v", p)
+	}
+	asked, _ := m.Update(tea.KeyPressMsg{Code: 'd'})
+	if got := asked.(model); got.overlay != overlayPrompt {
+		t.Fatal("expected d on the project's row to ask")
+	}
+	if q := ansi.Strip(asked.(model).prompt.View()); !strings.Contains(q, "Take project web down?") {
+		t.Errorf("expected the prompt to name the project, got %q", q)
+	}
+	if tag, id := answerPrompt(t, asked.(model)); tag != "compose-project-down" || id != "web" {
+		t.Errorf("expected the project-down confirmation for web, got %q %q", tag, id)
+	}
+}
+
+// The Compose Projects view lists every project at once, so a prompt that
+// names only the service is ambiguous the moment two projects have a
+// service of the same name: the id is right, but what the user reads before
+// answering is not.
+func TestComposeProjectsView_LifecyclePromptsNameTheProject(t *testing.T) {
+	m := newTestModel()
+	m.view = ComposeProjects
+	m.composeCLI = &stubComposeEngine{}
+	m.composeProjects.SetSize(120, 40)
+	m.composeProjects.SetProjects([]docker.ProjectWithServices{
+		{
+			Project:  docker.ComposeProject{Name: "alpha", Containers: 1},
+			Services: []docker.ComposeService{{Project: "alpha", Name: "web", Containers: 1, Running: 1}},
+		},
+		{
+			Project:  docker.ComposeProject{Name: "beta", Containers: 1},
+			Services: []docker.ComposeService{{Project: "beta", Name: "web", Containers: 1, Running: 1}},
+		},
+	})
+
+	questions := map[string]string{}
+	for _, want := range []string{"alpha", "beta"} {
+		for range 4 {
+			if svc := m.composeProjects.SelectedService(); svc != nil && svc.Project == want {
+				break
+			}
+			next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+			m = next.(model)
+		}
+		svc := m.composeProjects.SelectedService()
+		if svc == nil || svc.Project != want {
+			t.Fatalf("precondition: expected %s's web selected, got %+v", want, svc)
+		}
+		asked, _ := m.Update(tea.KeyPressMsg{Code: 't', Mod: tea.ModCtrl})
+		questions[want] = ansi.Strip(asked.(model).prompt.View())
+	}
+
+	if questions["alpha"] == questions["beta"] {
+		t.Errorf("the two projects' web services ask the same question: %q", questions["alpha"])
+	}
+	for project, q := range questions {
+		if !strings.Contains(q, project+"/web") {
+			t.Errorf("expected %s's prompt to name the project, got %q", project, q)
+		}
+	}
+}
+
+// Every project-level key has a palette entry, since the palette is where
+// a user who does not know the keys looks. d and c had none: the palette
+// could bring a project up and never take it down.
+func TestComposePalette_OffersEveryProjectAction(t *testing.T) {
+	dir, file := composeFileFixture(t)
+	engine := &stubComposeEngine{}
+	m := newTestModel()
+	m.view = ComposeProjects
+	m.composeCLI = engine
+	m.composeProjects.SetSize(120, 40)
+	m.composeProjects.SetProjects([]docker.ProjectWithServices{{
+		Project: docker.ComposeProject{Name: "web", Containers: 1, WorkingDir: dir, ConfigFiles: []string{file}},
+	}})
+	if p := m.composeProjects.SelectedProject(); p == nil {
+		t.Fatal("precondition: expected web's header selected")
+	}
+
+	titles := map[string]string{}
+	for _, a := range m.commandPaletteActions() {
+		if strings.HasPrefix(a.ID, "compose-project:") {
+			titles[a.ID] = a.Title
+		}
+	}
+	for id, title := range map[string]string{
+		"compose-project:open":    "Open Resources",
+		"compose-project:logs":    "Logs",
+		"compose-project:up":      "Up",
+		"compose-project:down":    "Down",
+		"compose-project:config":  "Config",
+		"compose-project:stop":    "Stop",
+		"compose-project:restart": "Restart",
+		"compose-project:rm":      "Remove Containers",
+	} {
+		if got, ok := titles[id]; !ok {
+			t.Errorf("expected the palette to offer %s", id)
+		} else if got != title {
+			t.Errorf("expected %s titled %q, got %q", id, title, got)
+		}
+	}
+
+	// Down asks the same question the key asks, and carries the same tag.
+	asked, _ := m.executePaletteAction("compose-project:down")
+	if got := asked.(model); got.overlay != overlayPrompt {
+		t.Fatal("expected the palette's Down to ask first")
+	}
+	if q := ansi.Strip(asked.(model).prompt.View()); !strings.Contains(q, "Take project web down?") {
+		t.Errorf("expected the same question the key asks, got %q", q)
+	}
+	if tag, id := answerPrompt(t, asked.(model)); tag != "compose-project-down" || id != "web" {
+		t.Errorf("expected the project-down confirmation for web, got %q %q", tag, id)
+	}
+
+	// And Config runs against the project's own files, since a config
+	// rendered from an empty project is another project's configuration.
+	if _, cmd := m.executePaletteAction("compose-project:config"); cmd == nil {
+		t.Fatal("expected the palette's Config to run")
+	} else {
+		cmd()
+	}
+	if len(engine.configCalls) != 1 {
+		t.Fatalf("expected one config call, got %+v", engine.configCalls)
+	}
+	if got := engine.configCalls[0]; got.Name != "web" || got.WorkingDir != dir ||
+		len(got.Files) != 1 || got.Files[0] != file {
+		t.Errorf("expected config to run against web at %s with %s, got %+v", dir, file, got)
+	}
+}
+
+// The palette's per-service lifecycle entries in the Compose Projects view
+// must reach the same action the key reaches: the same prompt, the same
+// tag, and an id whose halves are the right way round. Swapping them reads
+// identically on screen and removes a service called after the project.
+func TestComposePalette_ProjectsViewLifecycleMatchesTheKeys(t *testing.T) {
+	cases := map[string]struct {
+		id   string
+		key  tea.KeyPressMsg
+		tag  string
+		text string
+	}{
+		"stop": {"compose-project-service:stop", tea.KeyPressMsg{Code: 't', Mod: tea.ModCtrl},
+			"compose-stop", "Stop service web/api?"},
+		"restart": {"compose-project-service:restart", tea.KeyPressMsg{Code: 'r', Mod: tea.ModCtrl},
+			"compose-restart", "Restart service web/api?"},
+		"rm": {"compose-project-service:rm", tea.KeyPressMsg{Code: 'e', Mod: tea.ModCtrl},
+			"compose-rm", "Remove service web/api containers?"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			build := func() model {
+				m := newTestModel()
+				m.view = ComposeProjects
+				m.composeCLI = &stubComposeEngine{}
+				m.composeProjects.SetSize(120, 40)
+				m.composeProjects.SetProjects([]docker.ProjectWithServices{{
+					Project:  docker.ComposeProject{Name: "web", Containers: 2},
+					Services: []docker.ComposeService{{Project: "web", Name: "api", Containers: 2, Running: 2}},
+				}})
+				down, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+				return down.(model)
+			}
+
+			m := build()
+			if svc := m.composeProjects.SelectedService(); svc == nil || svc.Name != "api" {
+				t.Fatalf("precondition: expected web/api selected, got %+v", svc)
+			}
+			viaPalette, _ := m.executePaletteAction(tc.id)
+			asked := viaPalette.(model)
+			if asked.overlay != overlayPrompt {
+				t.Fatalf("expected %s to ask, got overlay %v", tc.id, asked.overlay)
+			}
+			if q := ansi.Strip(asked.prompt.View()); !strings.Contains(q, tc.text) {
+				t.Errorf("expected %q, got %q", tc.text, q)
+			}
+			tag, id := answerPrompt(t, asked)
+			if tag != tc.tag {
+				t.Errorf("expected tag %q, got %q", tc.tag, tag)
+			}
+			// The halves the right way round, read back the way ops.go
+			// reads them.
+			project, service := splitComposeServiceID(id)
+			if project != "web" || service != "api" {
+				t.Errorf("expected project web and service api, got %q and %q", project, service)
+			}
+
+			// And the key on the same row produces the same thing.
+			viaKey, _ := build().Update(tc.key)
+			keyAsked := viaKey.(model)
+			keyTag, keyID := answerPrompt(t, keyAsked)
+			if keyTag != tag || keyID != id {
+				t.Errorf("the key confirms %q/%q where the palette confirms %q/%q", keyTag, keyID, tag, id)
+			}
+			if ansi.Strip(keyAsked.prompt.View()) != ansi.Strip(asked.prompt.View()) {
+				t.Errorf("the key asks %q where the palette asks %q",
+					ansi.Strip(keyAsked.prompt.View()), ansi.Strip(asked.prompt.View()))
+			}
+		})
+	}
+}
+
+// c renders the project's configuration, so it has to hand compose the
+// project's own working directory and files. Given a bare name instead,
+// compose resolves whatever file sits in dry's directory and renders that,
+// which reads as the selected project's configuration.
+func TestComposeConfig_RunsAgainstTheProjectsOwnFiles(t *testing.T) {
+	dir, file := composeFileFixture(t)
+	project := docker.ComposeProject{Name: "web", WorkingDir: dir, ConfigFiles: []string{file}}
+
+	for _, tc := range []struct {
+		view viewMode
+		name string
+	}{
+		{ComposeProjects, "projects"},
+		{ComposeServices, "services"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			engine := &stubComposeEngine{configOutput: "services:\n  api:\n    image: nginx\n"}
+			m := newTestModel()
+			m.view = tc.view
+			m.composeCLI = engine
+			m.selectedProject = "web"
+			m.composeProjects.SetSize(120, 40)
+			m.composeProjects.SetProjects([]docker.ProjectWithServices{{Project: project}})
+
+			_, cmd := m.Update(tea.KeyPressMsg{Code: 'c'})
+			if cmd == nil {
+				t.Fatal("expected c to render the configuration")
+			}
+			cmd()
+			if len(engine.configCalls) != 1 {
+				t.Fatalf("expected one config call, got %+v", engine.configCalls)
+			}
+			got := engine.configCalls[0]
+			if got.Name != "web" || got.WorkingDir != dir || len(got.Files) != 1 || got.Files[0] != file {
+				t.Errorf("expected config against web at %s with %s, got %+v", dir, file, got)
+			}
+		})
+	}
+}
+
+// The palette's per-service entries are listed with a service selected, so
+// their empty branch needs the selection to have moved while the palette
+// was open: a filter typed into the projects list can hide every service
+// row. The message then has to name the filter, since the reader can see a
+// project and no service under it.
+func TestComposePalette_ProjectsViewLifecycleWithNoServiceRow(t *testing.T) {
+	for name, filter := range map[string]string{"filtered": "no-such-service", "empty": ""} {
+		t.Run(name, func(t *testing.T) {
+			m := newTestModel()
+			m.view = ComposeProjects
+			m.composeCLI = &stubComposeEngine{}
+			m.composeProjects.SetSize(120, 40)
+			m.composeProjects.SetProjects([]docker.ProjectWithServices{{
+				Project: docker.ComposeProject{Name: "web"},
+			}})
+			if filter != "" {
+				m.composeProjects.SetFilter(filter)
+			}
+			if svc := m.composeProjects.SelectedService(); svc != nil {
+				t.Fatalf("precondition: expected no service row, got %+v", svc)
+			}
+
+			result, cmd := m.executePaletteAction("compose-project-service:stop")
+			if cmd == nil {
+				t.Fatal("expected the entry to explain itself, got nil")
+			}
+			status, ok := cmd().(statusMessageMsg)
+			if !ok {
+				t.Fatalf("expected a status message, got %T", cmd())
+			}
+			if !strings.Contains(status.text, "needs a service") {
+				t.Errorf("expected the message to say it needs a service, got %q", status.text)
+			}
+			// Named, not guessed: a filter is the reason a project with
+			// services shows none, and the reader has to know to clear it.
+			if filter != "" && !strings.Contains(status.text, "filter") {
+				t.Errorf("expected the filter named, got %q", status.text)
+			}
+			if filter == "" && strings.Contains(status.text, "filter") {
+				t.Errorf("expected no filter mentioned with none set, got %q", status.text)
+			}
+			if got := result.(model); got.overlay == overlayPrompt {
+				t.Error("expected no prompt with nothing to act on")
+			}
+		})
+	}
+}

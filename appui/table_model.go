@@ -50,6 +50,7 @@ type TableModel struct {
 	contentWidths []int
 	width         int
 	height        int
+	emptyMessage  string
 }
 
 // NewTableModel creates a table with the given column definitions.
@@ -132,6 +133,12 @@ func (m TableModel) ColumnWidth(i int) int {
 	}
 	return m.colWidths[i]
 }
+
+// SetEmptyMessage sets the line shown where the first row would be when no
+// row is visible, filtered out as well as absent. Without it a table with
+// nothing in it looks the same as one still loading and the same as one
+// whose filter matches nothing.
+func (m *TableModel) SetEmptyMessage(s string) { m.emptyMessage = s }
 
 // Width returns the table's current width.
 func (m TableModel) Width() int { return m.width }
@@ -329,6 +336,15 @@ func (m TableModel) View() string {
 		}
 	}
 
+	// The empty-state line goes where the first row would be, after the
+	// column titles, so the header still says what the columns are.
+	if len(m.filtered) == 0 && m.emptyMessage != "" && len(lines) > 1 {
+		// Marked when it does not fit, for the same reason a clipped cell
+		// is: an unmarked cut reads as a rendering fault.
+		msg := ansi.Truncate(m.emptyMessage, m.width, "…")
+		lines[1] = PadLine(ColorFg(msg, DryTheme.FgMuted), m.width, lipgloss.NewStyle())
+	}
+
 	// Pad with empty lines to fill allocated height so the footer stays at
 	// the bottom of the screen. max() is defensive: only a zero width
 	// returns early above, and strings.Repeat panics on a negative count.
@@ -427,29 +443,55 @@ func (m *TableModel) sortRows() {
 	col := m.sortField
 	asc := m.sortAsc
 	sort.SliceStable(m.rows, func(i, j int) bool {
-		ci := colValue(m.rows[i], col)
-		cj := colValue(m.rows[j], col)
-		// Try numeric comparison so "9" < "10".
-		if ni, ei := strconv.ParseFloat(ci, 64); ei == nil {
-			if nj, ej := strconv.ParseFloat(cj, 64); ej == nil {
-				if asc {
-					return ni < nj
-				}
-				return ni > nj
-			}
-		}
-		if asc {
-			return ci < cj
-		}
-		return ci > cj
+		return CompareRowsByColumn(m.rows[i], m.rows[j], col, asc)
 	})
 	m.applyFilter()
 	m.syncInner()
 }
 
+// CompareRowsByColumn orders two rows by one column: numerically when both
+// cells parse as a number, so "9" sorts before "10", and otherwise by the
+// visible text with escape sequences stripped. asc is the direction; no
+// view toggles it today, and sortRows reads the same field, so a view that
+// gains a toggle has to reach both.
+//
+// Exported for a table whose rows are grouped, where the flat sort is the
+// wrong tool: it interleaves the group headers with rows from other groups.
+// Such a model sorts inside its own groups and rebuilds instead, and this
+// keeps its ordering the same as every other table's. A column index
+// outside the row's cells compares as empty, which SetSortField's -1 is.
+func CompareRowsByColumn(a, b TableRow, col int, asc bool) bool {
+	ci := colValue(a, col)
+	cj := colValue(b, col)
+	if ni, ei := strconv.ParseFloat(ci, 64); ei == nil {
+		if nj, ej := strconv.ParseFloat(cj, 64); ej == nil {
+			if asc {
+				return ni < nj
+			}
+			return ni > nj
+		}
+	}
+	if asc {
+		return ci < cj
+	}
+	return ci > cj
+}
+
+// NextSortField moves the sort indicator to the next column without
+// sorting the rows, for a table whose rows are grouped: such a model
+// rebuilds them in order instead, since sorting them flat interleaves the
+// groups. NextSort is the same step for every other table, sort included.
+func (m *TableModel) NextSortField() {
+	m.SetSortField((m.sortField + 1) % len(m.columns))
+}
+
 func colValue(row TableRow, col int) string {
 	cols := row.Columns()
-	if col < len(cols) {
+	// SetSortField takes -1 for a view whose rows are sorted elsewhere, so
+	// the lower bound guards a field this can legitimately be handed. No
+	// caller does today, since the views that sort externally never call
+	// back into the comparison.
+	if col >= 0 && col < len(cols) {
 		// Strip ANSI escape sequences so sorting compares visible text only.
 		return strings.ToLower(ansi.Strip(cols[col]))
 	}

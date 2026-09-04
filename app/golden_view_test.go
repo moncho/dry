@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/moby/moby/api/types/swarm"
 	"github.com/moncho/dry/appui"
@@ -75,15 +76,20 @@ func goldenStats() []*docker.Stats {
 	}
 }
 
-// goldenDrift is a fixed SYNC status for every service the mock daemon
-// reports, one of each kind so the column's three renderings are all
-// snapshotted.
+// goldenDrift is a fixed SYNC status per service, one of each label, so all
+// three of the column's renderings are snapshotted.
 func goldenDrift() map[string]map[string]docker.ServiceSync {
 	return map[string]map[string]docker.ServiceSync{
 		"webapp": {
-			"api":    docker.ServiceInSync,
-			"db":     docker.ServiceDrifted,
-			"worker": docker.ServiceNotCreated,
+			"api": docker.ServiceInSync,
+			"db":  docker.ServiceDrifted,
+			// worker has a container, an exited one, and having a container
+			// at all is what CompareConfigHashes keys on, so it can never be
+			// "not created". "cache" is the case that can: the mock reports
+			// no service by that name, so nothing runs it and it has no row
+			// except the one this fixture makes the snapshots render.
+			"worker": docker.ServiceInSync,
+			"cache":  docker.ServiceNotCreated,
 		},
 		"monitoring": {
 			"grafana":    docker.ServiceDrifted,
@@ -210,6 +216,9 @@ func TestGoldenViews(t *testing.T) {
 		width     int
 		height    int
 		noSwarm   bool
+		// setup runs after the model is populated and sized, for a case
+		// that needs a particular row selected or a list emptied.
+		setup func(*model)
 	}{
 		{name: "main", view: Main, width: 120, height: 40},
 		{name: "main_narrow", view: Main, width: 80, height: 24},
@@ -239,7 +248,23 @@ func TestGoldenViews(t *testing.T) {
 		// pane 58 of a 100-column terminal, which its five fixed columns
 		// nearly fill on their own.
 		{name: "monitor_tight", view: Monitor, width: 143, height: 40},
-		{name: "workspace_compose_projects", view: ComposeProjects, workspace: true, width: 100, height: 30},
+		// The cursor is on webapp's header, so the panel snapshots the
+		// count that names the services only the compose file knows about.
+		// Projects sort by name, so webapp is not the first row.
+		{name: "workspace_compose_projects", view: ComposeProjects, workspace: true, width: 100, height: 30,
+			setup: selectComposeRow("webapp")},
+		// And on the row for one of those services, where the panel says
+		// what the SYNC column's none means.
+		{name: "workspace_compose_not_created", view: ComposeProjects, workspace: true, width: 100, height: 30,
+			setup: selectComposeRow("cache")},
+		// The empty states, which are what a new user sees first: a loaded
+		// list with nothing in it, and a filter that matches nothing.
+		{name: "compose_projects_empty", view: ComposeProjects, width: 120, height: 40,
+			setup: func(m *model) { m.composeProjects.SetProjects(nil) }},
+		{name: "compose_projects_filtered_empty", view: ComposeProjects, width: 120, height: 40,
+			setup: func(m *model) { m.composeProjects.SetFilter("no-such-project") }},
+		{name: "compose_services_empty", view: ComposeServices, width: 120, height: 40,
+			setup: func(m *model) { m.composeServices.SetServices(nil, nil, nil, "webapp") }},
 	}
 
 	for _, tc := range cases {
@@ -247,6 +272,9 @@ func TestGoldenViews(t *testing.T) {
 			m := newGoldenModel(t, tc.workspace, tc.width, tc.height, tc.noSwarm)
 			m.view = tc.view
 			m.resizeContentModels()
+			if tc.setup != nil {
+				tc.setup(&m)
+			}
 
 			rendered := m.renderMainScreen()
 			if again := m.renderMainScreen(); again != rendered {
@@ -385,5 +413,26 @@ func TestViewsKeepTheirColumnGutters(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+// selectComposeRow walks the Compose Projects cursor to the project header
+// or service row with this name, for a golden that has to snapshot the
+// panel beside a particular row. It fails the test rather than rendering a
+// snapshot of the wrong row, which is how the count the panel is there to
+// show went missing when projects started sorting by name.
+func selectComposeRow(name string) func(*model) {
+	return func(m *model) {
+		for range 40 {
+			if p := m.composeProjects.SelectedProject(); p != nil && p.Name == name {
+				return
+			}
+			if svc := m.composeProjects.SelectedService(); svc != nil && svc.Name == name {
+				return
+			}
+			next, _ := m.composeProjects.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+			m.composeProjects = next
+		}
+		panic("no compose row named " + name)
 	}
 }

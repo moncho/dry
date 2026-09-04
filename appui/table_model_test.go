@@ -1159,3 +1159,112 @@ func TestTableModel_TheGutterHoldsAtTheContentLimit(t *testing.T) {
 		}
 	}
 }
+
+// The reason goes where the first row would be, so the column titles still
+// say what the columns are.
+func TestTableModel_EmptyMessageGoesWhereTheFirstRowWouldBe(t *testing.T) {
+	InitStyles()
+	m := NewTableModel([]Column{{Title: "NAME"}, {Title: "SIZE", Width: 8, Fixed: true}})
+	m.SetSize(60, 8)
+	m.SetEmptyMessage("Nothing here yet")
+	m.SetRows(nil)
+
+	lines := strings.Split(ansi.Strip(m.View()), "\n")
+	if !strings.Contains(lines[0], "NAME") {
+		t.Fatalf("expected the column titles on the first line, got %q", lines[0])
+	}
+	if got := strings.TrimRight(lines[1], " "); got != "Nothing here yet" {
+		t.Errorf("expected the message on the second line, got %q", got)
+	}
+	if got := ansi.StringWidth(strings.Split(m.View(), "\n")[1]); got != 60 {
+		t.Errorf("expected the message line padded to the width, got %d", got)
+	}
+	// Muted, not the colour of a row: it is an explanation in the place a
+	// row would be, and at full strength it reads as data.
+	styled := strings.Split(m.View(), "\n")[1]
+	if want := ColorFg("Nothing here yet", DryTheme.FgMuted); !strings.Contains(styled, want) {
+		t.Errorf("expected the message rendered muted, got %q", styled)
+	}
+}
+
+// With rows to show, the message must not appear.
+func TestTableModel_EmptyMessageIsOnlyForAnEmptyTable(t *testing.T) {
+	InitStyles()
+	m := NewTableModel([]Column{{Title: "NAME"}})
+	m.SetSize(40, 8)
+	m.SetEmptyMessage("Nothing here yet")
+	m.SetRows([]TableRow{testRow{id: "1", cols: []string{"one"}}})
+
+	if view := ansi.Strip(m.View()); strings.Contains(view, "Nothing here yet") {
+		t.Errorf("expected no empty-state line with a row present:\n%s", view)
+	}
+}
+
+// A message longer than the terminal is cut mid-word, like any other
+// clipped line, but the ellipsis says so rather than leaving it looking
+// like a rendering fault.
+func TestTableModel_ALongEmptyMessageIsMarkedWhenCut(t *testing.T) {
+	InitStyles()
+	m := NewTableModel([]Column{{Title: "NAME"}})
+	m.SetSize(30, 6)
+	m.SetEmptyMessage(strings.Repeat("a very long explanation ", 4))
+	m.SetRows(nil)
+
+	line := strings.TrimRight(ansi.Strip(strings.Split(m.View(), "\n")[1]), " ")
+	if ansi.StringWidth(line) > 30 {
+		t.Errorf("expected the message inside the width, got %d cells: %q", ansi.StringWidth(line), line)
+	}
+	if !strings.HasSuffix(line, "…") {
+		t.Errorf("expected the cut marked, got %q", line)
+	}
+}
+
+// SetSortField assigns -1 for a view whose rows are sorted elsewhere, so a
+// grouped model can reach the comparison with that field. Every cell then
+// reads as empty, which is an order, not a panic.
+func TestCompareRowsByColumn_AColumnOutsideTheRow(t *testing.T) {
+	a := testRow{id: "a", cols: []string{"aaa", "1"}}
+	b := testRow{id: "b", cols: []string{"bbb", "2"}}
+
+	for _, col := range []int{-1, 2, 99} {
+		if CompareRowsByColumn(a, b, col, true) || CompareRowsByColumn(b, a, col, true) {
+			t.Errorf("column %d: expected the rows to compare equal, not ordered", col)
+		}
+	}
+	if !CompareRowsByColumn(a, b, 0, true) {
+		t.Error("column 0: expected aaa before bbb")
+	}
+}
+
+// NextSortField moves the indicator one column on and wraps, and it does
+// not sort: a grouped model calls it and rebuilds its rows in order
+// instead. Off by one, one press per cycle lands on -1, which SetSortField
+// reads as "sorted elsewhere" and which stops the indicator rendering.
+func TestTableModel_NextSortFieldCyclesWithoutSorting(t *testing.T) {
+	InitStyles()
+	m := NewTableModel([]Column{{Title: "NAME"}, {Title: "SIZE"}, {Title: "AGE"}})
+	m.SetSize(60, 8)
+	rows := []TableRow{
+		testRow{id: "b", cols: []string{"bbb", "2", "x"}},
+		testRow{id: "a", cols: []string{"aaa", "1", "y"}},
+	}
+	m.SetRows(rows)
+
+	// Two turns of the cycle, so a wrap that lands off the end shows.
+	for turn := range 2 {
+		for want := range 3 {
+			if got := m.SortField(); got != want {
+				t.Fatalf("turn %d: expected field %d, got %d", turn, want, got)
+			}
+			if !strings.Contains(ansi.Strip(m.View()), m.columns[want].Title+" ↓") {
+				t.Errorf("turn %d: expected the indicator on %s", turn, m.columns[want].Title)
+			}
+			m.NextSortField()
+		}
+	}
+
+	// And the rows are where they were put: this moves the indicator only.
+	if first := m.FilteredRows()[0].ID(); first != "b" {
+		t.Errorf("expected the rows left in the order they were set, got %s first", first)
+	}
+}
