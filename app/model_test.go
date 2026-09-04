@@ -1783,3 +1783,121 @@ func TestModel_SwarmViewsAvailableWithSwarm(t *testing.T) {
 		}
 	}
 }
+
+// The footer strip is cut to the terminal width. It has to cut between
+// bindings, never inside one: "^e remo" reads as a rendering fault, where a
+// list ending in an ellipsis reads as a list that did not fit. Checked on
+// every view, since they all share the one renderer.
+func TestModel_FooterCutsBetweenBindings(t *testing.T) {
+	views := []viewMode{
+		Main, Images, Networks, Volumes, DiskUsage, Monitor,
+		Nodes, Services, Stacks, Tasks, ComposeProjects, ComposeServices,
+	}
+	// Workspace mode renders its own strip, three compaction modes and a
+	// last resort, and that last resort is what narrow widths reach.
+	for _, workspace := range []bool{false, true} {
+		for _, view := range views {
+			checkFooterCuts(t, view, workspace)
+		}
+	}
+}
+
+func checkFooterCuts(t *testing.T, view viewMode, workspace bool) {
+	t.Helper()
+	m := newTestModel()
+	if workspace {
+		m = newWorkspaceTestModel()
+	}
+	m.view = view
+	m.height = 40
+	sep := "  ·  "
+	label := fmt.Sprintf("view %v", view)
+	if workspace {
+		// Workspace mode compacts before it cuts, dropping descriptions in
+		// two steps, so its entries are narrower and its separator is too.
+		sep = " · "
+		label += " in workspace mode"
+	}
+
+	// Workspace mode pins a "?" to the right edge, so the strip under test
+	// is what is left after dropping it and the padding.
+	leftOf := func(rendered string) string {
+		out := strings.TrimRight(rendered, " ")
+		if workspace {
+			out = strings.TrimRight(strings.TrimSuffix(out, "?"), " ")
+		}
+		return out
+	}
+
+	// Every entry the strip may legitimately end with, in any of the
+	// compaction modes: a key on its own, or a key and its description.
+	valid := map[string]bool{"…": true}
+	m.width = 600
+	for _, b := range m.viewFooterBindings() {
+		valid[b.Help().Key] = true
+		valid[b.Help().Key+" "+b.Help().Desc] = true
+	}
+	for _, extra := range []string{"1-8/m nav", "tab/⇧tab pane", "p pin", "spc peek", "↑↓ move",
+		"↵ open", "F1 sort", "F2 all", "F5 ref", "1-8/m", "tab/⇧tab", "p", "spc", "↑↓", "↵",
+		"F1", "F2", "F5", "?", "^0 theme", ": palette", "space peek", "^0", ":", "space"} {
+		valid[extra] = true
+	}
+
+	full := leftOf(ansi.Strip(m.renderFooter()))
+
+	// From zero: a terminal reports odd sizes while it is being resized,
+	// and a width the strip cannot honour has to render as nothing rather
+	// than as an unbounded line.
+	for w := 0; w <= 200; w++ {
+		m.width = w
+		rendered := ansi.Strip(m.renderFooter())
+		if got := ansi.StringWidth(rendered); got != w {
+			t.Fatalf("%s at %d columns: the strip is %d cells wide", label, w, got)
+		}
+		cut := leftOf(rendered)
+		if cut == "" {
+			// Nothing fits at all, which is honest at this width.
+			continue
+		}
+		// A bare marker says less than the binding it replaced.
+		if cut == "…" {
+			t.Fatalf("%s at %d columns: the strip is nothing but a marker", label, w)
+		}
+		marked := strings.HasSuffix(cut, "…")
+		cut = strings.TrimRight(strings.TrimSuffix(cut, "…"), " ")
+		// Every entry whole: a cut inside one leaves "^e rm stop", which
+		// reads as a rendering fault rather than as a list that did not
+		// fit.
+		for _, entry := range strings.Split(cut, sep) {
+			if !valid[strings.TrimSpace(entry)] {
+				t.Fatalf("%s at %d columns: %q is not a whole binding, in %q", label, w, entry, cut)
+			}
+		}
+		if workspace {
+			// The rest below compares against one rendering, and this
+			// footer has three.
+			continue
+		}
+		if !strings.HasPrefix(full, cut) {
+			t.Fatalf("%s at %d columns: %q is not a prefix of the whole strip %q", label, w, cut, full)
+		}
+		// And it is as long as it can be: an entry that would have fit
+		// must not have been dropped.
+		if rest := strings.TrimPrefix(full[len(cut):], sep); rest != "" {
+			next := rest
+			if i := strings.Index(next, sep); i >= 0 {
+				next = next[:i]
+			}
+			if ansi.StringWidth(cut)+ansi.StringWidth(sep)+ansi.StringWidth(next) <= w {
+				t.Fatalf("%s at %d columns: %q was dropped and it fits after %q", label, w, next, cut)
+			}
+			// Something was dropped, so the marker says so whenever there
+			// is room for it without giving up a binding.
+			if !marked && ansi.StringWidth(cut)+3 <= w {
+				t.Fatalf("%s at %d columns: %q dropped the rest without a marker", label, w, cut)
+			}
+		} else if marked {
+			t.Fatalf("%s at %d columns: the whole strip fits and is still marked: %q", label, w, cut)
+		}
+	}
+}
