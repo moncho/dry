@@ -1788,6 +1788,14 @@ func TestModel_SwarmViewsAvailableWithSwarm(t *testing.T) {
 // bindings, never inside one: "^e remo" reads as a rendering fault, where a
 // list ending in an ellipsis reads as a list that did not fit. Checked on
 // every view, since they all share the one renderer.
+//
+// The two modes are asserted differently. The plain strip has one
+// rendering, so it is compared against the untruncated one: a prefix, as
+// long as it can be, marked when anything was dropped. Workspace mode
+// compacts through three renderings before it cuts, so there is no single
+// line to compare against; what is asserted there is that every entry is
+// whole, that the help anchor survives, and that the marker appears
+// exactly when entries are missing and there is room to say so.
 func TestModel_FooterCutsBetweenBindings(t *testing.T) {
 	views := []viewMode{
 		Main, Images, Networks, Volumes, DiskUsage, Monitor,
@@ -1829,21 +1837,32 @@ func checkFooterCuts(t *testing.T, view viewMode, workspace bool) {
 		return out
 	}
 
-	// Every entry the strip may legitimately end with, in any of the
-	// compaction modes: a key on its own, or a key and its description.
+	// Every entry the strip may legitimately contain. Only workspace mode
+	// renders a key without its description, and only in its two
+	// compaction modes: allowing bare keys everywhere would let the
+	// original defect back in, a next key squeezed on alone as a bare "4".
 	valid := map[string]bool{"…": true}
 	m.width = 600
 	for _, b := range m.viewFooterBindings() {
-		valid[b.Help().Key] = true
 		valid[b.Help().Key+" "+b.Help().Desc] = true
+		if workspace {
+			valid[b.Help().Key] = true
+		}
 	}
-	for _, extra := range []string{"1-8/m nav", "tab/⇧tab pane", "p pin", "spc peek", "↑↓ move",
-		"↵ open", "F1 sort", "F2 all", "F5 ref", "1-8/m", "tab/⇧tab", "p", "spc", "↑↓", "↵",
-		"F1", "F2", "F5", "?", "^0 theme", ": palette", "space peek", "^0", ":", "space"} {
-		valid[extra] = true
+	for _, entry := range []string{"1-8/m nav", "tab/⇧tab pane", "p pin", "spc peek", "↑↓ move",
+		"↵ open", "F1 sort", "F2 all", "F5 ref", "^0 theme", ": palette", "space peek"} {
+		valid[entry] = true
+	}
+	if workspace {
+		for _, key := range []string{"1-8/m", "tab/⇧tab", "p", "spc", "↑↓", "↵", "F1", "F2", "F5", "?"} {
+			valid[key] = true
+		}
 	}
 
 	full := leftOf(ansi.Strip(m.renderFooter()))
+	// Every binding renders once in every compaction mode, so the number
+	// of entries at a width where they all fit is the number there are.
+	total := len(strings.Split(full, sep))
 
 	// From zero: a terminal reports odd sizes while it is being resized,
 	// and a width the strip cannot honour has to render as nothing rather
@@ -1873,9 +1892,28 @@ func checkFooterCuts(t *testing.T, view viewMode, workspace bool) {
 				t.Fatalf("%s at %d columns: %q is not a whole binding, in %q", label, w, entry, cut)
 			}
 		}
+		entries := len(strings.Split(cut, sep))
 		if workspace {
-			// The rest below compares against one rendering, and this
-			// footer has three.
+			// The help anchor is pinned to the right edge and is the last
+			// thing the padding can push off: under-counting the marker's
+			// own width over-pads the line, and PadLine then truncates the
+			// "?" away.
+			if !strings.HasSuffix(strings.TrimRight(rendered, " "), "?") {
+				t.Fatalf("%s at %d columns: the help anchor is gone: %q", label, w, rendered)
+			}
+			// The three compaction modes rule out comparing against one
+			// rendering, but the entry count is the same in all of them,
+			// so a strip with fewer entries than there are dropped some
+			// and has to say so.
+			// The strip's own budget is the width less the "?" and the
+			// space before it, and the marker is two cells.
+			if entries < total && !marked && ansi.StringWidth(cut)+2 <= w-2 {
+				t.Fatalf("%s at %d columns: %d of %d entries and no marker: %q",
+					label, w, entries, total, cut)
+			}
+			if marked && entries >= total {
+				t.Fatalf("%s at %d columns: every entry fits and it is still marked: %q", label, w, cut)
+			}
 			continue
 		}
 		if !strings.HasPrefix(full, cut) {

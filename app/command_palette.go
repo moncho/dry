@@ -120,16 +120,22 @@ func (m model) commandPaletteActions() []paletteAction {
 	case ComposeProjects:
 		if svc := m.composeProjects.SelectedService(); svc != nil {
 			label := svc.Project + "/" + svc.Name
-			// Up first, and on its own for a service the compose file
-			// defines and nothing runs: a menu that lists six entries
-			// which all answer "u brings it up" is a menu of dead ends.
-			add("Compose Service", "compose-project-service:up", "Up", label, "up create start")
+			// Inspect stays the first entry, which is what enter runs on a
+			// freshly opened palette: a read. Up creates, and on a drifted
+			// row it destroys and recreates, so it does not belong at the
+			// head of a menu that opens under the cursor.
 			if svc.Containers > 0 {
 				add("Compose Service", "compose-project-service:inspect", "Inspect", label, "inspect")
 				add("Compose Service", "compose-project-service:logs", "Logs", label, "logs")
+				add("Compose Service", "compose-project-service:up", "Up", label, "up create start")
 				add("Compose Service", "compose-project-service:stop", "Stop", label, "stop")
 				add("Compose Service", "compose-project-service:restart", "Restart", label, "restart")
 				add("Compose Service", "compose-project-service:rm", "Remove Containers", label, "remove rm")
+			} else {
+				// The only entry that can act on a service the compose
+				// file defines and nothing runs: a menu of six that all
+				// answer "u brings it up" is a menu of dead ends.
+				add("Compose Service", "compose-project-service:up", "Up", label, "up create start")
 			}
 		}
 		if p := m.composeProjects.SelectedProject(); p != nil {
@@ -145,18 +151,23 @@ func (m model) commandPaletteActions() []paletteAction {
 	case ComposeServices:
 		if svc := m.composeServices.SelectedService(); svc != nil {
 			label := svc.Project + "/" + svc.Name
-			// The two that create the service come first and are always
-			// offered; the rest need a container to act on, and listing
-			// them on a row that has none is a menu of dead ends.
-			add("Compose Service", "compose-service:up", "Up", label, "up create start")
-			add("Compose Service", "compose:recreate", "Force Recreate", label, "recreate force replace container")
 			if svc.Containers > 0 {
+				// Inspect first, for the reason it is first in the other
+				// view: enter on a freshly opened palette reads rather
+				// than recreates.
 				add("Compose Service", "compose-service:inspect", "Inspect", label, "inspect")
 				add("Compose Service", "compose-service:logs", "Logs", label, "logs")
+				add("Compose Service", "compose-service:up", "Up", label, "up create start")
 				add("Compose Service", "compose-service:start", "Start", label, "start")
 				add("Compose Service", "compose-service:stop", "Stop", label, "stop")
 				add("Compose Service", "compose-service:restart", "Restart", label, "restart")
 				add("Compose Service", "compose-service:rm", "Remove Containers", label, "remove rm")
+				add("Compose Service", "compose:recreate", "Force Recreate", label, "recreate force replace container")
+			} else {
+				// The two that create the service are the only ones that
+				// can act on a row with no containers.
+				add("Compose Service", "compose-service:up", "Up", label, "up create start")
+				add("Compose Service", "compose:recreate", "Force Recreate", label, "recreate force replace container")
 			}
 		}
 		if n := m.composeServices.SelectedNetwork(); n != nil {
@@ -471,12 +482,11 @@ func (m model) executePaletteAction(id string) (tea.Model, tea.Cmd) {
 		// No gate: up is the action a service with no containers needs, and
 		// it is the one the refusals name.
 		if svc := m.composeProjects.SelectedService(); svc != nil {
+			// The lookup cannot miss, for the reason the u key's comment
+			// gives: the rows come from the list being searched.
 			if p := m.composeProjects.ProjectByName(svc.Project); p != nil {
 				return m, composeUpCmd(m.composeCLI, *p, svc.Name)
 			}
-			// The row is there and its project is not, which a refresh
-			// between opening the palette and choosing can do.
-			return m, composeSelectionCmd("Up needs " + svc.Project + ", and that project is gone")
 		}
 		return m, m.composeNoServiceRowCmd("Up")
 	case "compose-project:open":

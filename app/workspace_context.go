@@ -190,8 +190,8 @@ func workspaceContextFromComposeService(s docker.ComposeService) workspaceContex
 		// A service row with no containers is one the compose file defines
 		// and nothing runs, since every other row is built from a
 		// container. "containers: 0" on its own reads as a fault, so the
-		// panel names the state, in the SYNC column's own word so the two
-		// do not describe one thing twice.
+		// panel names the state, in the SYNC column's own word, absent, so
+		// the two do not describe one thing twice.
 		lines = append(lines, "state: absent, u brings it up")
 	}
 	if s.Image != "" {

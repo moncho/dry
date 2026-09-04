@@ -272,7 +272,6 @@ func (m *ServicesModel) restoreSelection(id string, forward bool) {
 // mean "loading" rather than "this project is empty".
 func (m *ServicesModel) SetProject(project string) {
 	m.project = project
-	m.serviceCount = 0
 	m.services = nil
 	m.networks = nil
 	m.volumes = nil
